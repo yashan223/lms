@@ -17,6 +17,7 @@ import {
   BookOpen,
   Calendar,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -27,8 +28,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
-  const [examBoard, setExamBoard] = useState("Pearson Edexcel");
-  const [targetSeries, setTargetSeries] = useState("May/June 2026");
+  const [academicTerm, setAcademicTerm] = useState("Spring / Summer 2026");
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -65,8 +65,7 @@ export default function RegisterPage() {
           email,
           password,
           qualification,
-          examBoard,
-          targetSeries,
+          targetSeries: academicTerm,
         }),
       });
 
@@ -88,19 +87,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f0f4f9] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       {/* Top Academic Header */}
-      <header className="bg-[#0a1e3f] text-white border-b border-white/10 py-3.5 px-4 sm:px-8 shadow-md">
+      <header className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-8 shadow-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
               <GraduationCap className="w-4 h-4 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight leading-none text-white">
+              <span className="font-extrabold text-sm tracking-tight leading-none text-slate-900">
                 EduPulse
               </span>
-              <span className="text-[9px] font-bold tracking-wider text-sky-400 uppercase">
+              <span className="text-[9px] font-bold tracking-wider text-blue-600 uppercase">
                 London A/L & O/L Academy
               </span>
             </div>
@@ -108,26 +107,26 @@ export default function RegisterPage() {
 
           <Link
             href="/login"
-            className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors"
+            className="text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
           >
-            Existing Student? Log In
+            Existing Member? Log In
           </Link>
         </div>
       </header>
 
       {/* Main Registration Form */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="max-w-xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-          <div className="bg-gradient-to-r from-[#0a1e3f] to-[#12366b] text-white p-6 sm:p-8 text-center relative overflow-hidden">
+        <div className="max-w-lg w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-sky-600 text-white p-6 sm:p-8 text-center relative overflow-hidden">
             <div className="space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 text-sky-300 flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center mx-auto mb-2 shadow-2xs">
                 <GraduationCap className="w-6 h-6" />
               </div>
-              <h1 className="text-xl sm:text-2xl font-serif font-black tracking-tight text-white">
-                Student Enrollment & Registration
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Student Registration
               </h1>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto">
-                Enroll for London A/L (IAL) or London O/L (IGCSE) Masterclasses
+              <p className="text-xs text-blue-100 max-w-sm mx-auto">
+                Create your student scholar account to access interactive courses, study notes, and coursework.
               </p>
             </div>
           </div>
@@ -151,14 +150,14 @@ export default function RegisterPage() {
                     placeholder="e.g. Tariq Al-Mansoor"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-10 h-10 text-xs border-slate-200 rounded-xl"
+                    className="pl-10 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-500"
                   />
                 </div>
               </div>
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">Academic Email Address</label>
+                <label className="font-bold text-slate-700 block">Student Email Address</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <Input
@@ -167,19 +166,19 @@ export default function RegisterPage() {
                     placeholder="student@edupulse.uk"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-10 text-xs border-slate-200 rounded-xl"
+                    className="pl-10 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-500"
                   />
                 </div>
               </div>
 
-              {/* Qualification & Board */}
+              {/* Qualification Level & Academic Term */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 block">Qualification Level</label>
+                  <label className="font-bold text-slate-700 block">Qualification Program</label>
                   <select
                     value={qualification}
                     onChange={(e) => setQualification(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold"
+                    className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold focus:ring-blue-500"
                   >
                     <option value="London A/L (IAL)">London A/L (IAL AS & A2)</option>
                     <option value="London O/L (IGCSE)">London O/L (IGCSE Foundation)</option>
@@ -187,30 +186,17 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 block">Exam Board</label>
+                  <label className="font-bold text-slate-700 block">Academic Term</label>
                   <select
-                    value={examBoard}
-                    onChange={(e) => setExamBoard(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold"
+                    value={academicTerm}
+                    onChange={(e) => setAcademicTerm(e.target.value)}
+                    className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold focus:ring-blue-500"
                   >
-                    <option value="Pearson Edexcel">Pearson Edexcel</option>
-                    <option value="Cambridge (CAIE)">Cambridge (CAIE)</option>
+                    <option value="Spring / Summer 2026">Spring / Summer 2026</option>
+                    <option value="Autumn / Winter 2026">Autumn / Winter 2026</option>
+                    <option value="Spring 2027">Spring 2027</option>
                   </select>
                 </div>
-              </div>
-
-              {/* Target Exam Series */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">Target Examination Series</label>
-                <select
-                  value={targetSeries}
-                  onChange={(e) => setTargetSeries(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold"
-                >
-                  <option value="May/June 2026">May / June 2026 Examination Series</option>
-                  <option value="Oct/Nov 2026">Oct / Nov 2026 Examination Series</option>
-                  <option value="Jan 2027">January 2027 Examination Series</option>
-                </select>
               </div>
 
               {/* Password & Confirm */}
@@ -223,7 +209,7 @@ export default function RegisterPage() {
                     placeholder="Min 6 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-10 text-xs border-slate-200 rounded-xl font-mono"
+                    className="h-10 text-xs border-slate-200 rounded-xl font-mono focus-visible:ring-blue-500"
                   />
                 </div>
 
@@ -235,7 +221,7 @@ export default function RegisterPage() {
                     placeholder="Re-enter password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-10 text-xs border-slate-200 rounded-xl font-mono"
+                    className="h-10 text-xs border-slate-200 rounded-xl font-mono focus-visible:ring-blue-500"
                   />
                 </div>
               </div>
@@ -245,9 +231,9 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs shadow-md gap-2"
+                  className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 gap-2 cursor-pointer transition-all"
                 >
-                  <span>Review & Complete Registration</span>
+                  <span>Complete Student Registration</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -255,7 +241,7 @@ export default function RegisterPage() {
 
             <div className="text-center pt-2 border-t border-slate-100 text-xs text-slate-500">
               Already have an academic account?{" "}
-              <Link href="/login" className="font-bold text-blue-700 hover:underline">
+              <Link href="/login" className="font-bold text-blue-600 hover:underline">
                 Log in here
               </Link>
             </div>
@@ -265,7 +251,7 @@ export default function RegisterPage() {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200/60">
-        London International Examination Academy • Pearson Edexcel & CAIE Center #UK-92810
+        EduPulse London A/L & O/L Academy • Authorized Academic Center #UK-92810
       </footer>
 
       {/* CONFIRMATION MODAL BEFORE REGISTRATION */}
@@ -273,9 +259,9 @@ export default function RegisterPage() {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmedRegister}
-        title="Confirm Student Enrollment"
-        description={`You are enrolling as a ${qualification} student for the ${targetSeries} academic term. Your account will be created and saved directly to the database.`}
-        confirmText="Confirm & Enter LMS"
+        title="Confirm Student Registration"
+        description={`You are registering as a ${qualification} student scholar for the ${academicTerm} term. Your account will be created and saved directly to the database.`}
+        confirmText="Confirm & Enter Student LMS"
         cancelText="Review Details"
         variant="success"
         requireConsentText="I confirm that all student details are accurate and agree to the academic honor code."

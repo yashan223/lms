@@ -74,6 +74,12 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
+    response.cookies.set("edupulse_user_email", newUser.email, {
+      path: "/",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
     return response;
   } catch (error) {
     console.error("Register API error:", error);

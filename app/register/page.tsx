@@ -6,19 +6,15 @@ import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   GraduationCap,
   Lock,
   Mail,
   User,
   ArrowRight,
-  ShieldCheck,
-  BookOpen,
-  Calendar,
   AlertCircle,
-  Sparkles,
-  CheckCircle2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -30,6 +26,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
   const [academicTerm, setAcademicTerm] = useState("Spring / Summer 2026");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -89,18 +86,18 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Top Academic Header */}
-      <header className="bg-white border-b border-slate-200 py-4 px-4 sm:px-10 shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-xs group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-5 h-5 text-white" />
+      {/* Top Header */}
+      <header className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-8 shadow-xs">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
+              <GraduationCap className="w-4 h-4 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-base tracking-tight leading-none text-slate-900">
+              <span className="font-extrabold text-sm tracking-tight leading-none text-slate-900">
                 EduPulse
               </span>
-              <span className="text-[10px] font-bold tracking-wider text-blue-600 uppercase">
+              <span className="text-[9px] font-bold tracking-wider text-blue-600 uppercase">
                 London A/L & O/L Academy
               </span>
             </div>
@@ -108,102 +105,101 @@ export default function RegisterPage() {
 
           <Link
             href="/login"
-            className="px-4 py-2 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-bold transition-all"
+            className="text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
           >
             Existing Member? Log In
           </Link>
         </div>
       </header>
 
-      {/* Main Registration Form - BIGGER & WIDER */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-8 lg:p-12">
-        <div className="max-w-3xl w-full bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-sky-600 text-white p-8 sm:p-10 text-center relative overflow-hidden">
-            <div className="space-y-2.5 relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/15 border border-white/25 text-white flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-900/30">
-                <GraduationCap className="w-7 h-7" />
+      {/* Main Registration Workspace - Matches Login Form Theme with Wider Layout */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="max-w-2xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="p-6 sm:p-10 space-y-6">
+            {/* Title & Subtitle */}
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2 shadow-2xs">
+                <GraduationCap className="w-6 h-6" />
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-                Student Scholar Enrollment
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+                Student Registration
               </h1>
-              <p className="text-sm text-blue-100 max-w-lg mx-auto leading-relaxed">
-                Join the accredited London A/L & O/L academic platform. Access interactive syllabus modules, unit proofs, and coursework.
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Create your student scholar account to access your courses and dashboard.
               </p>
             </div>
-          </div>
 
-          {/* Form Body */}
-          <div className="p-8 sm:p-10 md:p-12 space-y-6">
+            {/* Error Alert */}
             {errorMsg && (
-              <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
-            <form onSubmit={handlePreSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Form */}
+            <form onSubmit={handlePreSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Full Name */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Student Full Name <span className="text-blue-600">*</span>
+                    Student Full Name
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
                       required
                       placeholder="e.g. Tariq Al-Mansoor"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="pl-11 h-12 text-sm border-slate-200 rounded-2xl focus-visible:ring-blue-500"
+                      className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Student Email Address <span className="text-blue-600">*</span>
+                    Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
                       type="email"
                       required
-                      placeholder="student@edupulse.uk"
+                      placeholder="e.g. student@edupulse.uk"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-11 h-12 text-sm border-slate-200 rounded-2xl focus-visible:ring-blue-500"
+                      className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Qualification & Academic Term */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Qualification Program <span className="text-blue-600">*</span>
+                    Qualification Program
                   </label>
                   <select
                     value={qualification}
                     onChange={(e) => setQualification(e.target.value)}
-                    className="w-full h-12 rounded-2xl border border-slate-200 px-4 bg-white text-sm font-semibold text-slate-800 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full h-11 rounded-xl border border-slate-200 px-3 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
                   >
                     <option value="London A/L (IAL)">London A/L (IAL AS & A2)</option>
                     <option value="London O/L (IGCSE)">London O/L (IGCSE Foundation)</option>
                   </select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Academic Term <span className="text-blue-600">*</span>
+                    Academic Term
                   </label>
                   <select
                     value={academicTerm}
                     onChange={(e) => setAcademicTerm(e.target.value)}
-                    className="w-full h-12 rounded-2xl border border-slate-200 px-4 bg-white text-sm font-semibold text-slate-800 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full h-11 rounded-xl border border-slate-200 px-3 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
                   >
                     <option value="Spring / Summer 2026">Spring / Summer 2026</option>
                     <option value="Autumn / Winter 2026">Autumn / Winter 2026</option>
@@ -213,81 +209,73 @@ export default function RegisterPage() {
               </div>
 
               {/* Password & Confirm Password */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Create Password <span className="text-blue-600">*</span>
+                    Password
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       placeholder="Min 6 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-11 h-12 text-sm border-slate-200 rounded-2xl font-mono focus-visible:ring-blue-500"
+                      className="pl-9 pr-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Confirm Password <span className="text-blue-600">*</span>
+                    Confirm Password
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       placeholder="Re-enter password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-11 h-12 text-sm border-slate-200 rounded-2xl font-mono focus-visible:ring-blue-500"
+                      className="pl-9 pr-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Academic Highlights Strip */}
-              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 text-xs text-blue-900 grid grid-cols-1 sm:grid-cols-3 gap-2 font-medium">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span>Interactive Syllabus</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span>Coursework & Timeline</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span>Direct PostgreSQL Sync</span>
-                </div>
-              </div>
-
-              {/* Submit CTA */}
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-13 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-lg shadow-blue-600/25 gap-2.5 cursor-pointer transition-all"
-                >
-                  {loading ? (
-                    <span>Registering Account...</span>
-                  ) : (
-                    <>
-                      <span>Complete Student Registration</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
+              {/* Submit Button - Identical to Login Theme */}
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-md shadow-blue-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer mt-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Registering...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Create Student Account</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
             </form>
 
-            <div className="text-center pt-4 border-t border-slate-100 text-xs text-slate-500">
+            <div className="text-center pt-2 border-t border-slate-100 text-xs text-slate-500">
               Already have an academic account?{" "}
-              <Link href="/login" className="font-bold text-blue-600 hover:underline">
-                Sign in to your portal
+              <Link href="/login" className="font-bold text-blue-600 hover:text-blue-800">
+                Sign in here
               </Link>
             </div>
           </div>
@@ -295,8 +283,8 @@ export default function RegisterPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-5 text-center text-xs text-slate-500 border-t border-slate-200/70">
-        EduPulse London A/L & O/L Academy • Authorized Academic Center #UK-92810
+      <footer className="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
+        EduPulse London A/L & O/L Academy • Authorized Assessment Center #UK-92810
       </footer>
 
       {/* CONFIRMATION MODAL BEFORE REGISTRATION */}
@@ -306,7 +294,7 @@ export default function RegisterPage() {
         onConfirm={handleConfirmedRegister}
         title="Confirm Student Registration"
         description={`You are registering as a ${qualification} student scholar for the ${academicTerm} term. Your account will be created and saved directly to the database.`}
-        confirmText="Confirm & Enter Student LMS"
+        confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"
         requireConsentText="I confirm that all student details are accurate and agree to the academic honor code."

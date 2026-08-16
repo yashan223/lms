@@ -1,0 +1,455 @@
+import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
+import { prisma } from "../lib/prisma";
+
+async function main() {
+  console.log("🌱 Seeding London A/L & O/L LMS Database with real academic models...");
+
+  // 1. Upsert Admin / Registrar User
+  const adminUser = await prisma.user.upsert({
+    where: { email: "admin@edupulse.uk" },
+    update: {
+      name: "Dr. Alastair Vance",
+      role: Role.ADMIN,
+    },
+    create: {
+      email: "admin@edupulse.uk",
+      name: "Dr. Alastair Vance",
+      passwordHash: "AdminPass123!",
+      role: Role.ADMIN,
+      headline: "Chief Academic Registrar & Exam Center Director",
+      bio: "Managing London A/L (IAL) and London O/L (IGCSE) Pearson Edexcel and Cambridge operations.",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  // 2. Upsert Instructors / Senior Faculty
+  const instructor1 = await prisma.user.upsert({
+    where: { email: "jenkins@edupulse.uk" },
+    update: { role: Role.INSTRUCTOR },
+    create: {
+      email: "jenkins@edupulse.uk",
+      name: "Dr. Sarah Jenkins",
+      passwordHash: "InstructorPass123!",
+      role: Role.INSTRUCTOR,
+      headline: "Senior Faculty Lecturer in Pure Mathematics & Mechanics",
+      bio: "Subject Chair for IAL Pure Mathematics (P1-P4) with 18+ years of university and academic teaching experience.",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const instructor2 = await prisma.user.upsert({
+    where: { email: "vance@edupulse.uk" },
+    update: { role: Role.INSTRUCTOR },
+    create: {
+      email: "vance@edupulse.uk",
+      name: "Prof. Marcus Vance",
+      passwordHash: "InstructorPass123!",
+      role: Role.INSTRUCTOR,
+      headline: "Head of London A/L Physics & Practical Laboratory Assessment",
+      bio: "Specializing in Physics Units 1-6 and Virtual Laboratory masterclasses.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const instructor3 = await prisma.user.upsert({
+    where: { email: "chen@edupulse.uk" },
+    update: { role: Role.INSTRUCTOR },
+    create: {
+      email: "chen@edupulse.uk",
+      name: "Prof. David Chen",
+      passwordHash: "InstructorPass123!",
+      role: Role.INSTRUCTOR,
+      headline: "Chair of Chemistry & Bio-Molecular Sciences",
+      bio: "Doctoral research fellow in synthetic organic mechanisms and bio-energetics.",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  // 3. Upsert Student / Scholar Users
+  const studentUser = await prisma.user.upsert({
+    where: { email: "student@edupulse.uk" },
+    update: {
+      name: "S.Y.T. Perera",
+      role: Role.STUDENT,
+    },
+    create: {
+      email: "student@edupulse.uk",
+      name: "S.Y.T. Perera",
+      passwordHash: "StudentPass123!",
+      role: Role.STUDENT,
+      headline: "London A/L Scholar (Spring / Summer 2026)",
+      bio: "Enrolled in Pure Mathematics, Physics, and Chemistry.",
+      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "tariq@student.edupulse.uk" },
+    update: {},
+    create: {
+      email: "tariq@student.edupulse.uk",
+      name: "Tariq Al-Mansoor",
+      passwordHash: "StudentPass123!",
+      role: Role.STUDENT,
+      headline: "London A/L Engineering Scholar",
+      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "kavisha@student.edupulse.uk" },
+    update: {},
+    create: {
+      email: "kavisha@student.edupulse.uk",
+      name: "Kavisha Fernando",
+      passwordHash: "StudentPass123!",
+      role: Role.STUDENT,
+      headline: "London A/L Economics & Commerce Scholar",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  console.log("✅ Core Users Ready (Admin, Faculty, Students)");
+
+  // 4. Seed Complete London A/L and O/L Course Matrix
+  const coursesData = [
+    {
+      title: "London A/L Pure Mathematics (P1, P2, P3, P4 & Mechanics M1)",
+      slug: "edexcel-ial-pure-mathematics-mechanics",
+      subtitle: "Complete specification coverage, calculus proofs, vectors, and Mechanics M1 problem solving.",
+      description: "Comprehensive preparation for International Advanced Level Pure Mathematics. Covers P1-P4, integration by parts, parametric equations, differential equations, and kinematics.",
+      category: "School of Mathematics & Computing",
+      subjectCode: "WMA11-14 / WME01",
+      price: 95.0,
+      level: CourseLevel.ADVANCED,
+      status: CourseStatus.PUBLISHED,
+      featured: true,
+      thumbnail: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
+      instructorId: instructor1.id,
+      modules: [
+        {
+          title: "Module 1: Pure Mathematics 1 & 2 (Algebra, Trigonometry & Calculus)",
+          position: 1,
+          lessons: [
+            { title: "P1: Algebraic Division, Factor Theorem & Coordinate Geometry", durationMin: 35, position: 1, isFreePreview: true },
+            { title: "P2: Differentiation, Integration & Trigonometric Proofs", durationMin: 45, position: 2, isFreePreview: true },
+            { title: "P2: Exponentials & Logarithmic Modeling", durationMin: 40, position: 3, isFreePreview: false },
+          ],
+        },
+        {
+          title: "Module 2: Pure Mathematics 3 & 4 (Advanced Integration & Vectors)",
+          position: 2,
+          lessons: [
+            { title: "P3: Composite Functions, Modulus Graphs & Series Expansion", durationMin: 40, position: 1, isFreePreview: false },
+            { title: "P4: Parametric Equations, Integration by Parts & Partial Fractions", durationMin: 50, position: 2, isFreePreview: false },
+            { title: "P4: Vector Lines & Dot Product Geometry in 3D", durationMin: 45, position: 3, isFreePreview: false },
+          ],
+        },
+        {
+          title: "Module 3: Mechanics M1 & Statistical Modelling",
+          position: 3,
+          lessons: [
+            { title: "M1: Kinematics & Newton's Laws on Inclined Friction Planes", durationMin: 45, position: 1, isFreePreview: false },
+            { title: "M1: Connected Particles, Pulleys & Moments of Forces", durationMin: 40, position: 2, isFreePreview: false },
+          ],
+        },
+      ],
+    },
+    {
+      title: "London A/L Physics (Units 1 to 6 Theory & Virtual Laboratory)",
+      slug: "edexcel-ial-physics-unit-1-to-6",
+      subtitle: "Mechanics, Electric Circuits, Fields, Particle Physics, and Practical Video Demonstrations.",
+      description: "Master all 6 units of International Advanced Level Physics with step-by-step lecture walkthroughs and experimental lab demonstrations.",
+      category: "School of Computing & Engineering",
+      subjectCode: "WPH11-16",
+      price: 95.0,
+      level: CourseLevel.ADVANCED,
+      status: CourseStatus.PUBLISHED,
+      featured: true,
+      thumbnail: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=800&auto=format&fit=crop&q=80",
+      instructorId: instructor2.id,
+      modules: [
+        {
+          title: "Module 1: Unit 1 & 2 (Mechanics, Materials, Waves & Electricity)",
+          position: 1,
+          lessons: [
+            { title: "Unit 1: Kinematics, Dynamics & Fluid Flow Viscosity", durationMin: 40, position: 1, isFreePreview: true },
+            { title: "Unit 2: Wave Particle Duality, Photons & Circuit EMF", durationMin: 42, position: 2, isFreePreview: true },
+            { title: "Unit 3: Core Practical Lab 1-4 Analysis & Error Calculations", durationMin: 35, position: 3, isFreePreview: false },
+          ],
+        },
+        {
+          title: "Module 2: Unit 4 & 5 (Fields, Nuclear Radiation & Thermodynamics)",
+          position: 2,
+          lessons: [
+            { title: "Unit 4: Circular Motion, Momentum & Electric Fields", durationMin: 48, position: 1, isFreePreview: false },
+            { title: "Unit 5: Nuclear Decay, Oscillations & Astrophysics", durationMin: 52, position: 2, isFreePreview: false },
+            { title: "Unit 6: Synoptic Practical Assessment & Graph Uncertainties", durationMin: 45, position: 3, isFreePreview: false },
+          ],
+        },
+      ],
+    },
+    {
+      title: "London A/L Chemistry (Units 1 to 6 Physical, Inorganic & Organic)",
+      slug: "edexcel-ial-chemistry-unit-1-to-6",
+      subtitle: "Atomic structure, reaction kinetics, equilibrium, organic synthesis, and spectroscopic identification.",
+      description: "Comprehensive unit-by-unit masterclass covering thermodynamic cycles, redox titrations, transition metals, organic reaction mechanisms, and NMR spectra.",
+      category: "School of Science & O/L Academy",
+      subjectCode: "WCH11-16",
+      price: 95.0,
+      level: CourseLevel.ADVANCED,
+      status: CourseStatus.PUBLISHED,
+      featured: true,
+      thumbnail: "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=800&auto=format&fit=crop&q=80",
+      instructorId: instructor3.id,
+      modules: [
+        {
+          title: "Module 1: Unit 1 & 2 (Atomic Structure, Bonding & Organic Intro)",
+          position: 1,
+          lessons: [
+            { title: "Unit 1: Mass Spectrometry, Ionization Energies & Periodic Trends", durationMin: 38, position: 1, isFreePreview: true },
+            { title: "Unit 2: Intermolecular Forces, Alcohols & Halogenoalkanes", durationMin: 42, position: 2, isFreePreview: true },
+          ],
+        },
+        {
+          title: "Module 2: Unit 4 & 5 (Kinetics, Acid-Base & Organic Synthesis)",
+          position: 2,
+          lessons: [
+            { title: "Unit 4: Rate Equations, Arrhenius Plots & pH Buffer Titrations", durationMin: 50, position: 1, isFreePreview: false },
+            { title: "Unit 5: Transition Metals, Ligand Exchange & Redox Electrochemistry", durationMin: 55, position: 2, isFreePreview: false },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Economics & Business Studies Advanced Masterclass",
+      slug: "edexcel-cambridge-economics-business",
+      subtitle: "Microeconomics market structures, macro policy evaluation, business strategies, and essay structuring.",
+      description: "Master evaluation essays, elasticity calculations, monetary/fiscal policy data analysis, and competitive business strategies.",
+      category: "School of Economics & Commerce",
+      subjectCode: "WEC11-14 / 9708",
+      price: 85.0,
+      level: CourseLevel.ADVANCED,
+      status: CourseStatus.PUBLISHED,
+      featured: false,
+      thumbnail: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80",
+      instructorId: instructor1.id,
+      modules: [
+        {
+          title: "Module 1: Microeconomic Markets & Market Failure",
+          position: 1,
+          lessons: [
+            { title: "Price Elasticities, Consumer Surplus & Externalities", durationMin: 35, position: 1, isFreePreview: true },
+            { title: "Market Structures: Monopoly, Oligopoly & Game Theory", durationMin: 45, position: 2, isFreePreview: false },
+          ],
+        },
+        {
+          title: "Module 2: Macroeconomic Performance & Global Trade",
+          position: 2,
+          lessons: [
+            { title: "Inflation, Unemployment & Balance of Payments Equilibrium", durationMin: 40, position: 1, isFreePreview: false },
+            { title: "Exchange Rates, Protectionism & International Competitiveness", durationMin: 45, position: 2, isFreePreview: false },
+          ],
+        },
+      ],
+    },
+    {
+      title: "London O/L (IGCSE) Mathematics & Science Foundation",
+      slug: "cambridge-edexcel-igcse-maths-science",
+      subtitle: "Targeting Grade 9/8 (A*) with structured unit-by-unit topic breakdowns and problem solving.",
+      description: "A complete masterclass for London O/L (IGCSE) students covering foundation mathematics, mechanics, waves, and stoichiometry.",
+      category: "School of Science & O/L Academy",
+      subjectCode: "4MA1 / 0580",
+      price: 75.0,
+      level: CourseLevel.INTERMEDIATE,
+      status: CourseStatus.PUBLISHED,
+      featured: true,
+      thumbnail: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=80",
+      instructorId: instructor1.id,
+      modules: [
+        {
+          title: "Module 1: IGCSE Mathematics Paper 1H & 2H Mastery",
+          position: 1,
+          lessons: [
+            { title: "Algebraic Manipulation, Simultaneous Equations & Geometry", durationMin: 30, position: 1, isFreePreview: true },
+            { title: "Trigonometric Functions, Bearings & Probability Trees", durationMin: 35, position: 2, isFreePreview: true },
+          ],
+        },
+        {
+          title: "Module 2: IGCSE Science Core Foundations",
+          position: 2,
+          lessons: [
+            { title: "Physics: Velocity Time Graphs & Circuit Laws", durationMin: 30, position: 1, isFreePreview: false },
+            { title: "Chemistry: Moles, Periodic Table & Electrolysis", durationMin: 35, position: 2, isFreePreview: false },
+          ],
+        },
+      ],
+    },
+    {
+      title: "London A/L Biology (Units 1 to 6 Cellular & Environmental Sciences)",
+      slug: "edexcel-ial-biology-units-1-to-6",
+      subtitle: "Cell biology, genetics, physiology, microbiology, biochemistry, and ecological systems.",
+      description: "Complete syllabus coverage of cellular biology, enzyme kinetics, photosynthesis, cellular respiration, nervous coordination, and gene technology.",
+      category: "School of Science & O/L Academy",
+      subjectCode: "WBI11-16",
+      price: 90.0,
+      level: CourseLevel.ADVANCED,
+      status: CourseStatus.PUBLISHED,
+      featured: false,
+      thumbnail: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&auto=format&fit=crop&q=80",
+      instructorId: instructor3.id,
+      modules: [
+        {
+          title: "Module 1: Molecules, Cells & Health",
+          position: 1,
+          lessons: [
+            { title: "Biological Macromolecules: Lipids, Carbohydrates & Proteins", durationMin: 35, position: 1, isFreePreview: true },
+            { title: "Membrane Transport, Water Potential & Enzyme Action", durationMin: 40, position: 2, isFreePreview: true },
+          ],
+        },
+        {
+          title: "Module 2: Energy, Environment & Microbiology",
+          position: 2,
+          lessons: [
+            { title: "Photosynthesis: Light Dependent Reactions & Calvin Cycle", durationMin: 45, position: 1, isFreePreview: false },
+            { title: "Microbiology Techniques, PCR & Forensic DNA Profiling", durationMin: 45, position: 2, isFreePreview: false },
+          ],
+        },
+      ],
+    },
+  ];
+
+  for (const cData of coursesData) {
+    const existing = await prisma.course.findUnique({ where: { slug: cData.slug } });
+    let course;
+    if (!existing) {
+      course = await prisma.course.create({
+        data: {
+          title: cData.title,
+          slug: cData.slug,
+          subtitle: cData.subtitle,
+          description: cData.description,
+          category: cData.category,
+          subjectCode: cData.subjectCode,
+          price: cData.price,
+          level: cData.level,
+          status: cData.status,
+          featured: cData.featured,
+          thumbnail: cData.thumbnail,
+          instructorId: cData.instructorId,
+          modules: {
+            create: cData.modules.map((m) => ({
+              title: m.title,
+              position: m.position,
+              lessons: {
+                create: m.lessons.map((l) => ({
+                  title: l.title,
+                  durationMin: l.durationMin,
+                  position: l.position,
+                  isFreePreview: l.isFreePreview,
+                })),
+              },
+            })),
+          },
+        },
+      });
+      console.log(`✅ Seeded Course: ${course.title}`);
+    } else {
+      course = existing;
+    }
+
+    // Enroll student in course
+    await prisma.enrollment.upsert({
+      where: {
+        userId_courseId: {
+          userId: studentUser.id,
+          courseId: course.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: studentUser.id,
+        courseId: course.id,
+      },
+    });
+  }
+
+  // 5. Seed Timeline Events & Assignments
+  const mathCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-pure-mathematics-mechanics" } });
+  const physicsCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-physics-unit-1-to-6" } });
+
+  await prisma.event.deleteMany({}); // clear old events
+
+  if (mathCourse) {
+    await prisma.event.create({
+      data: {
+        title: "Assignment: Pure Mathematics P4 Differential Calculus Solution is due",
+        description: "Submit handwritten working for Questions 1-8 in PDF format.",
+        type: EventType.ASSIGNMENT,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Next 7 days
+        courseId: mathCourse.id,
+        userId: studentUser.id,
+      },
+    });
+  }
+
+  if (physicsCourse) {
+    await prisma.event.create({
+      data: {
+        title: "Assignment: Physics Unit 4 Electric Field Calculations Problem Set",
+        description: "Submit derivations and numerical solutions.",
+        type: EventType.ASSIGNMENT,
+        dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+        courseId: physicsCourse.id,
+        userId: studentUser.id,
+      },
+    });
+  }
+
+  // 6. Seed Private Files
+  await prisma.privateFile.deleteMany({});
+  await prisma.privateFile.createMany({
+    data: [
+      {
+        fileName: "Pure_Maths_P3_Formula_Handbook_2026.pdf",
+        fileSize: "2.4 MB",
+        fileType: "application/pdf",
+        userId: studentUser.id,
+      },
+      {
+        fileName: "Physics_Unit2_Circuit_EMF_Summary_Notes.pdf",
+        fileSize: "1.8 MB",
+        fileType: "application/pdf",
+        userId: studentUser.id,
+      },
+    ],
+  });
+
+  // 7. Seed Student Badges
+  await prisma.badgeAward.deleteMany({});
+  await prisma.badgeAward.createMany({
+    data: [
+      {
+        name: "Pure Mathematics Unit Mastery",
+        description: "Achieved 100% completion in P1 & P2 calculus foundations.",
+        userId: studentUser.id,
+      },
+      {
+        name: "Experimental Physics Distinction",
+        description: "Completed laboratory analysis and uncertainty evaluation.",
+        userId: studentUser.id,
+      },
+    ],
+  });
+
+  console.log("🚀 Database successfully seeded with 100% live academic records!");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -1,0 +1,214 @@
+// Prisma Schema for EduPulse LMS (London A/L & O/L Academy)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+enum CourseStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EventType {
+  ASSIGNMENT
+  EXAM_MOCK
+  LIVE_SEMINAR
+  DEADLINE
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          Role           @default(STUDENT)
+  avatar        String?
+  headline      String?
+  bio           String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Instructor relations
+  createdCourses Course[]      @relation("InstructorCourses")
+  
+  // Student relations
+  enrollments    Enrollment[]
+  progress       UserProgress[]
+  reviews        Review[]
+  certificates   Certificate[]
+  privateFiles   PrivateFile[]
+  badges         BadgeAward[]
+  events         Event[]
+
+  @@map("users")
+}
+
+model Course {
+  id            String         @id @default(cuid())
+  title         String
+  slug          String         @unique
+  subtitle      String?
+  description   String
+  thumbnail     String?
+  price         Float          @default(0.0)
+  level         CourseLevel    @default(ADVANCED)
+  category      String
+  subjectCode   String?
+  status        CourseStatus   @default(PUBLISHED)
+  featured      Boolean        @default(false)
+  instructorId  String
+  instructor    User           @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  modules       Module[]
+  enrollments   Enrollment[]
+  reviews       Review[]
+  certificates  Certificate[]
+  events        Event[]
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("courses")
+}
+
+model Module {
+  id          String    @id @default(cuid())
+  title       String
+  position    Int
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("modules")
+}
+
+model Lesson {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  videoUrl      String?
+  durationMin   Int            @default(10)
+  position      Int
+  isFreePreview Boolean        @default(false)
+  moduleId      String
+  module        Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress      UserProgress[]
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model UserProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  lessonId    String
+  isCompleted Boolean   @default(false)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, lessonId])
+  @@map("user_progress")
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        EventType @default(ASSIGNMENT)
+  dueDate     DateTime
+  courseId    String?
+  course      Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@map("events")
+}
+
+model PrivateFile {
+  id        String   @id @default(cuid())
+  fileName  String
+  fileSize  String
+  fileType  String
+  fileUrl   String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("private_files")
+}
+
+model BadgeAward {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  awardedAt   DateTime @default(now())
+
+  @@map("badge_awards")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @default(5)
+  comment   String?
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model Certificate {
+  id              String    @id @default(cuid())
+  certificateCode String    @unique
+  userId          String
+  courseId        String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  issuedAt        DateTime  @default(now())
+
+  @@map("certificates")
+}

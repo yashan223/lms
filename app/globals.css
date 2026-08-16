@@ -1,26 +1,145 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Dedicated Pure Light Theme (White & Blue) */
+  --background: 210 40% 98%;      /* Soft clean light mist #f8fafc */
+  --foreground: 222.2 84% 4.9%;   /* Deep slate #020817 */
+  
+  --card: 0 0% 100%;             /* Pure White #ffffff */
+  --card-foreground: 222.2 84% 4.9%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  
+  --primary: 221.2 83.2% 53.3%;   /* Royal Blue #2563eb */
+  --primary-foreground: 210 40% 98%;
+  
+  --secondary: 214 95% 93%;      /* Ice Blue #dbeafe */
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  
+  --muted: 210 40% 96.1%;        /* Slate 100 #f1f5f9 */
+  --muted-foreground: 215.4 16.3% 46.9%; /* Slate 500 #64748b */
+  
+  --accent: 213 94% 95%;         /* Soft Sky Accent #eff6ff */
+  --accent-foreground: 221.2 83.2% 43.3%;
+  
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 214.3 31.8% 91.4%;    /* Clean subtle border #e2e8f0 */
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  
+  --radius: 0.75rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base styling locked to light mode */
+html, body {
+  background-color: #ffffff;
+  color: #0f172a;
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Header navy gradient with slanted angle accent */
+.navy-header-bg {
+  background: linear-gradient(135deg, #0d2346 0%, #102e5c 60%, #133a75 100%);
+}
+
+/* Diamond badge animations & shadows */
+.diamond-card {
+  transform: rotate(45deg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.diamond-card:hover {
+  transform: rotate(45deg) scale(1.08);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+}
+
+.diamond-content {
+  transform: rotate(-45deg);
+}
+
+/* Brush / Jagged mask blend */
+.brush-edge-mask {
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.brush-edge-left {
+  mask-image: linear-gradient(to left, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, black 80%, transparent 100%);
+}
+
+/* Custom glowing blue gradients and glass backgrounds */
+.bg-grid-blue-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(37, 99, 235, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(37, 99, 235, 0.05) 1px, transparent 1px);
+}
+
+.bg-dot-blue-pattern {
+  background-size: 24px 24px;
+  background-image: radial-gradient(rgba(37, 99, 235, 0.12) 1.5px, transparent 1.5px);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(219, 234, 254, 0.8);
+}
+
+.blue-glow {
+  box-shadow: 0 0 40px -10px rgba(37, 99, 235, 0.25);
+}
+
+.blue-badge-glow {
+  box-shadow: 0 0 16px -2px rgba(56, 189, 248, 0.4);
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

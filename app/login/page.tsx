@@ -1,0 +1,225 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  GraduationCap,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
+
+export default function LoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Handle Login Submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error || "Invalid email or password. Please check your credentials.");
+        setLoading(false);
+        return;
+      }
+
+      // Automatically route directly to the user's role-based dashboard
+      if (data.redirectTo) {
+        router.push(data.redirectTo);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setErrorMsg("Unable to connect to the authentication server.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+      {/* Top Header */}
+      <header className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-8 shadow-xs">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
+              <GraduationCap className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-sm tracking-tight leading-none text-slate-900">
+                EduPulse
+              </span>
+              <span className="text-[9px] font-bold tracking-wider text-blue-600 uppercase">
+                London A/L & O/L Academy
+              </span>
+            </div>
+          </Link>
+
+          <Link
+            href="/register"
+            className="text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
+          >
+            New Student? Register here
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Login Workspace */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="p-6 sm:p-8 space-y-6">
+            {/* Title & Subtitle */}
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2 shadow-2xs">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                Sign In to Portal
+              </h1>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                Enter your email address and password to access your dashboard.
+              </p>
+            </div>
+
+            {/* Error Alert */}
+            {errorMsg && (
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    type="email"
+                    required
+                    placeholder="e.g. student@edupulse.uk"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Password
+                  </label>
+                  <a
+                    href="#forgot"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert("Please contact the Center Dean or use your default password (e.g. StudentPass123! or AdminPass123!).");
+                    }}
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-9 pr-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-slate-600">Remember my session</span>
+                </label>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-md shadow-blue-950/20 flex items-center justify-center gap-2 transition-all"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+
+            {/* Quick Demo Credentials hint for easy testing */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 space-y-1">
+              <div className="font-bold text-slate-700">Sample Registered Accounts:</div>
+              <div className="flex flex-col gap-0.5 font-mono text-[10px]">
+                <span>• Student: student@edupulse.uk / StudentPass123!</span>
+                <span>• Examiner: jenkins@edupulse.uk / InstructorPass123!</span>
+                <span>• Dean / Admin: admin@edupulse.uk / AdminPass123!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
+        EduPulse London A/L & O/L Academy • Authorized Assessment Center #UK-92810
+      </footer>
+    </div>
+  );
+}

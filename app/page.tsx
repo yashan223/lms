@@ -4,7 +4,6 @@ import { Hero } from "@/components/landing/Hero";
 import { AboutSection } from "@/components/landing/AboutSection";
 import { CourseGrid } from "@/components/landing/CourseGrid";
 import { BentoFeatures } from "@/components/landing/BentoFeatures";
-import { Testimonials } from "@/components/landing/Testimonials";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { Footer } from "@/components/layout/Footer";
@@ -28,9 +27,6 @@ export default function HomePage() {
 
         {/* 6. Platform Capabilities Bento Grid (id="features") */}
         <BentoFeatures />
-
-        {/* 7. Social Proof & Verified Testimonials */}
-        <Testimonials />
 
         {/* 8. Role-Oriented Pricing with Annual Discount */}
         <PricingSection />

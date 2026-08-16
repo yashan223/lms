@@ -60,12 +60,6 @@ export function Footer() {
                 Empowering scholars, faculty educators, and institutional deans with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
               </p>
 
-              {/* Status Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Campus Network: All Systems Operational</span>
-              </div>
-
               {/* Social Icons */}
               <div className="flex items-center gap-2 pt-2 text-slate-400">
                 <a

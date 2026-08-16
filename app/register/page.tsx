@@ -11,6 +11,7 @@ import {
   Lock,
   Mail,
   User,
+  Phone,
   ArrowRight,
   AlertCircle,
   Eye,
@@ -22,6 +23,7 @@ export default function RegisterPage() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
@@ -61,6 +63,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           name,
           email,
+          phone,
           password,
           qualification,
           targetSeries: academicTerm,
@@ -176,8 +179,26 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Qualification & Academic Term */}
+              {/* Contact Number & Qualification */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Contact Number */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Contact / WhatsApp Number
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type="tel"
+                      placeholder="e.g. +44 7911 123456"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Qualification */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
                     Qualification Program
@@ -191,21 +212,22 @@ export default function RegisterPage() {
                     <option value="London O/L (IGCSE)">London O/L (IGCSE Foundation)</option>
                   </select>
                 </div>
+              </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 block">
-                    Academic Term
-                  </label>
-                  <select
-                    value={academicTerm}
-                    onChange={(e) => setAcademicTerm(e.target.value)}
-                    className="w-full h-11 rounded-xl border border-slate-200 px-3 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
-                  >
-                    <option value="Spring / Summer 2026">Spring / Summer 2026</option>
-                    <option value="Autumn / Winter 2026">Autumn / Winter 2026</option>
-                    <option value="Spring 2027">Spring 2027</option>
-                  </select>
-                </div>
+              {/* Academic Term */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Academic Term
+                </label>
+                <select
+                  value={academicTerm}
+                  onChange={(e) => setAcademicTerm(e.target.value)}
+                  className="w-full h-11 rounded-xl border border-slate-200 px-3 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
+                >
+                  <option value="Spring / Summer 2026">Spring / Summer 2026</option>
+                  <option value="Autumn / Winter 2026">Autumn / Winter 2026</option>
+                  <option value="Spring 2027">Spring 2027</option>
+                </select>
               </div>
 
               {/* Password & Confirm Password */}

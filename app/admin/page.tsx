@@ -44,6 +44,7 @@ import {
   PlayCircle,
   FolderPlus,
   Sparkles,
+  Phone,
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
@@ -69,6 +70,7 @@ export default function AdminDashboardPage() {
   // New/Edit User Form Fields
   const [formUserName, setFormUserName] = useState("");
   const [formUserEmail, setFormUserEmail] = useState("");
+  const [formUserPhone, setFormUserPhone] = useState("");
   const [formUserPassword, setFormUserPassword] = useState("");
   const [formUserRole, setFormUserRole] = useState("STUDENT");
   const [formUserHeadline, setFormUserHeadline] = useState("");
@@ -195,6 +197,7 @@ export default function AdminDashboardPage() {
   const handleOpenAddUser = () => {
     setFormUserName("");
     setFormUserEmail("");
+    setFormUserPhone("");
     setFormUserPassword("StudentPass123!");
     setFormUserRole("STUDENT");
     setFormUserHeadline("London A/L Pure Maths Scholar");
@@ -212,6 +215,7 @@ export default function AdminDashboardPage() {
           action: "create_user",
           name: formUserName,
           email: formUserEmail,
+          phone: formUserPhone,
           password: formUserPassword,
           role: formUserRole,
           headline: formUserHeadline,
@@ -235,6 +239,7 @@ export default function AdminDashboardPage() {
     setSelectedUserForEdit(user);
     setFormUserName(user.name);
     setFormUserEmail(user.email);
+    setFormUserPhone(user.phone || "");
     setFormUserRole(user.role);
     setFormUserHeadline(user.headline || "");
     setFormUserBio(user.bio || "");
@@ -253,6 +258,7 @@ export default function AdminDashboardPage() {
           userId: selectedUserForEdit.id,
           name: formUserName,
           email: formUserEmail,
+          phone: formUserPhone,
           role: formUserRole,
           headline: formUserHeadline,
           bio: formUserBio,
@@ -1011,6 +1017,12 @@ export default function AdminDashboardPage() {
                               <div>
                                 <div className="font-bold text-slate-900">{u.name}</div>
                                 <div className="text-[11px] text-slate-500">{u.email}</div>
+                                {u.phone && (
+                                  <div className="text-[10px] text-blue-600 font-mono flex items-center gap-1 mt-0.5">
+                                    <Phone className="w-3 h-3" />
+                                    <span>{u.phone}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -1415,9 +1427,15 @@ export default function AdminDashboardPage() {
                 <label className="font-bold block mb-1">Full Name</label>
                 <Input required placeholder="e.g. Tariq Al-Mansoor" value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
-              <div>
-                <label className="font-bold block mb-1">Email Address</label>
-                <Input required type="email" placeholder="tariq@student.edupulse.uk" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-bold block mb-1">Email Address</label>
+                  <Input required type="email" placeholder="tariq@student.edupulse.uk" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                </div>
+                <div>
+                  <label className="font-bold block mb-1">Contact Number</label>
+                  <Input placeholder="+44 7911 123456" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -1460,9 +1478,15 @@ export default function AdminDashboardPage() {
                 <label className="font-bold block mb-1">Full Name</label>
                 <Input required value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
-              <div>
-                <label className="font-bold block mb-1">Email Address</label>
-                <Input required type="email" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-bold block mb-1">Email Address</label>
+                  <Input required type="email" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                </div>
+                <div>
+                  <label className="font-bold block mb-1">Contact Number</label>
+                  <Input placeholder="+44 7911 123456" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                </div>
               </div>
               <div>
                 <label className="font-bold block mb-1">Role</label>

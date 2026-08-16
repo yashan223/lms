@@ -44,6 +44,7 @@ model User {
   avatar        String?
   headline      String?
   bio           String?
+  phone         String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 

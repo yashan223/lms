@@ -4,7 +4,7 @@ import { Role } from "@prisma/client";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password, qualification, examBoard, targetSeries } = await request.json();
+    const { name, email, password, phone, qualification, examBoard, targetSeries } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         name: name.trim(),
         email: normalizedEmail,
         passwordHash: password,
+        phone: phone ? phone.trim() : null,
         role: Role.STUDENT,
         headline: `${qualification || "London A/L"} Scholar (${targetSeries || "Spring / Summer 2026"})`,
         bio: `Enrolled academic scholar studying ${examBoard || "London A/L & O/L"} curriculum.`,

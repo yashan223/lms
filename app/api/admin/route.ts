@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     // 1. Create User (Any Role: Student, Instructor, Admin)
     if (action === "create_user" || action === "create_candidate") {
-      const { name, email, password, role, headline, bio, initialCourseId } = body;
+      const { name, email, password, phone, role, headline, bio, initialCourseId } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
       const newUser = await prisma.user.create({
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
           email: email.trim().toLowerCase(),
           passwordHash: password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.INSTRUCTOR ? "InstructorPass123!" : "StudentPass123!"),
           role: assignedRole,
+          phone: phone ? phone.trim() : null,
           headline: headline || (assignedRole === Role.ADMIN ? "Academic Dean & Administrator" : assignedRole === Role.INSTRUCTOR ? "Senior Faculty Lecturer" : "London A/L Scholar"),
           bio: bio || `Registered academic member of EduPulse Academy.`,
           avatar: assignedRole === Role.ADMIN
@@ -101,10 +102,11 @@ export async function POST(request: Request) {
 
     // 2. Update User Details
     if (action === "update_user") {
-      const { userId, name, email, role, headline, bio, password } = body;
+      const { userId, name, email, phone, role, headline, bio, password } = body;
       const updateData: any = {
         name,
         email: email.trim().toLowerCase(),
+        phone: phone ? phone.trim() : null,
         role: (role as Role) || Role.STUDENT,
         headline,
         bio,

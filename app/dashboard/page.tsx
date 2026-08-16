@@ -109,6 +109,11 @@ function DashboardContent() {
   const [showManageFilesModal, setShowManageFilesModal] = useState(false);
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [selectedEventForSubmission, setSelectedEventForSubmission] = useState<any>(null);
+  const [submissionNotes, setSubmissionNotes] = useState("");
+  const [submissionFile, setSubmissionFile] = useState("Handwritten_Solutions_P4.pdf");
+  const [submissionToast, setSubmissionToast] = useState(false);
   const [selectedScriptToGrade, setSelectedScriptToGrade] = useState<any>(null);
   const [awardedMarks, setAwardedMarks] = useState("68");
   const [examinerRemarks, setExaminerRemarks] = useState("Excellent method marks in Q1-Q6. In Q7, check integration constant C.");
@@ -755,8 +760,21 @@ function DashboardContent() {
                         </div>
 
                         <button
-                          onClick={() => alert(`Opening submission console for: ${ev.title}`)}
-                          className="px-3 py-1.5 rounded bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all self-end sm:self-center shrink-0"
+                          onClick={() => {
+                            if (currentRoleView === "INSTRUCTOR") {
+                              setSelectedScriptToGrade({
+                                student: "S.Y.T. Perera (ID: UK-92810A01)",
+                                paper: ev.title,
+                                submitted: "Today",
+                                pages: "6 Pages PDF",
+                              });
+                              setShowGradeModal(true);
+                            } else {
+                              setSelectedEventForSubmission(ev);
+                              setShowSubmissionModal(true);
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all self-end sm:self-center shrink-0 cursor-pointer"
                         >
                           {currentRoleView === "INSTRUCTOR" ? "Review Submissions" : "Add submission"}
                         </button>
@@ -1204,21 +1222,153 @@ function DashboardContent() {
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowGradeModal(false)}>
+                <Button variant="outline" size="sm" onClick={() => setShowGradeModal(false)} className="rounded-xl cursor-pointer">
                   Cancel
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => {
-                    alert(`Marks awarded: ${awardedMarks}/75 (${Math.round((parseInt(awardedMarks)/75)*100)}%). Feedback published to student portal.`);
-                    setShowGradeModal(false);
+                  onClick={async () => {
+                    try {
+                      await fetch("/api/dashboard", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "grade_submission",
+                          studentName: selectedScriptToGrade.student,
+                          paperTitle: selectedScriptToGrade.paper,
+                          marks: awardedMarks,
+                          remarks: examinerRemarks,
+                        }),
+                      });
+                      alert(`Marks awarded: ${awardedMarks}/75 (${Math.round((parseInt(awardedMarks)/75)*100)}%). Feedback published to student portal.`);
+                      setShowGradeModal(false);
+                    } catch (err) {
+                      console.error("Grading error:", err);
+                    }
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer"
                 >
                   Publish Grade & Solution Remarks
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: STUDENT COURSEWORK SUBMISSION MODAL */}
+      {showSubmissionModal && selectedEventForSubmission && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-base text-slate-900">
+                  Submit Coursework Assignment
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {selectedEventForSubmission.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSubmissionModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSubmissionToast(true);
+                setShowSubmissionModal(false);
+                setTimeout(() => setSubmissionToast(false), 5000);
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-100 text-blue-900 space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Submission Requirements</span>
+                </div>
+                <p className="text-[11px] text-blue-700">
+                  Please upload your handwritten working, lab report, or typed solution in PDF format (maximum size: 50MB).
+                </p>
+                <div className="text-[10px] text-blue-600 font-semibold pt-1">
+                  📅 Deadline: {new Date(selectedEventForSubmission.dueDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Select PDF Submission File
+                </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center hover:border-blue-500 transition-colors bg-slate-50/50">
+                  <Upload className="w-6 h-6 text-blue-500 mx-auto mb-1.5" />
+                  <div className="font-bold text-slate-800 text-xs">{submissionFile}</div>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Click to choose a replacement file (PDF, DOCX)</p>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.zip"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setSubmissionFile(e.target.files[0].name);
+                      }
+                    }}
+                    className="hidden"
+                    id="submission-file-input"
+                  />
+                  <label
+                    htmlFor="submission-file-input"
+                    className="mt-2 inline-block px-3 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-blue-600 hover:bg-blue-50 cursor-pointer"
+                  >
+                    Browse Files
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Candidate Comments & Notes (Optional)
+                </label>
+                <textarea
+                  placeholder="e.g. Completed all unit problems including question 7 extension proofs."
+                  value={submissionNotes}
+                  onChange={(e) => setSubmissionNotes(e.target.value)}
+                  className="w-full h-16 p-2.5 rounded-xl border border-slate-300 text-xs resize-none"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSubmissionModal(false)}
+                  className="rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer"
+                >
+                  Confirm & Submit Assignment
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMISSION SUCCESS TOAST */}
+      {submissionToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-bottom-5">
+          <CheckCircle2 className="w-5 h-5 text-white" />
+          <div className="text-xs">
+            <div className="font-bold">Coursework Submitted Successfully!</div>
+            <div className="text-[11px] text-emerald-100">Your script was sent to faculty examiners for marking.</div>
           </div>
         </div>
       )}

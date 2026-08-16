@@ -128,7 +128,7 @@ export default function LoginPage() {
                   <Input
                     type="email"
                     required
-                    placeholder="e.g. student@edupulse.uk"
+                    placeholder="e.g. admin@edupulse.uk"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
@@ -203,13 +203,27 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Quick Demo Credentials hint for easy testing */}
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 space-y-1">
-              <div className="font-bold text-slate-700">Sample Registered Accounts:</div>
-              <div className="flex flex-col gap-0.5 font-mono text-[10px]">
-                <span>• Student: student@edupulse.uk / StudentPass123!</span>
-                <span>• Examiner: jenkins@edupulse.uk / InstructorPass123!</span>
-                <span>• Dean / Admin: admin@edupulse.uk / AdminPass123!</span>
+            {/* Admin Credentials */}
+            <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 text-xs text-slate-600 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-blue-900 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Admin Credentials:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("admin@edupulse.uk");
+                    setPassword("AdminPass123!");
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] cursor-pointer transition-colors"
+                >
+                  Auto-Fill Admin
+                </button>
+              </div>
+              <div className="font-mono text-[11px] text-slate-700 space-y-0.5">
+                <div>Email: <strong className="text-slate-900">admin@edupulse.uk</strong></div>
+                <div>Password: <strong className="text-slate-900">AdminPass123!</strong></div>
               </div>
             </div>
           </div>

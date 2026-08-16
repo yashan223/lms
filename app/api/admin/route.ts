@@ -285,6 +285,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, mock: newMock });
     }
 
+    // 14. Delete Coursework Assessment Event
+    if (action === "delete_assessment" || action === "delete_event") {
+      const { eventId } = body;
+      await prisma.event.delete({ where: { id: eventId } });
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
     console.error("Admin API POST error:", error);

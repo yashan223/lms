@@ -27,7 +27,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
-  const [academicTerm, setAcademicTerm] = useState("Spring / Summer 2026");
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -66,7 +65,6 @@ export default function RegisterPage() {
           phone,
           password,
           qualification,
-          targetSeries: academicTerm,
         }),
       });
 
@@ -214,22 +212,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Academic Term */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
-                  Academic Term
-                </label>
-                <select
-                  value={academicTerm}
-                  onChange={(e) => setAcademicTerm(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 px-3 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
-                >
-                  <option value="Spring / Summer 2026">Spring / Summer 2026</option>
-                  <option value="Autumn / Winter 2026">Autumn / Winter 2026</option>
-                  <option value="Spring 2027">Spring 2027</option>
-                </select>
-              </div>
-
               {/* Password & Confirm Password */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -315,7 +297,7 @@ export default function RegisterPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmedRegister}
         title="Confirm Student Registration"
-        description={`You are registering as a ${qualification} student scholar for the ${academicTerm} term. Your account will be created and saved directly to the database.`}
+        description={`You are registering as a ${qualification} student scholar. Your account will be created and saved directly to the database.`}
         confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"

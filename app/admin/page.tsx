@@ -766,12 +766,6 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-xs">
-                <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-slate-600 font-medium">Academic Term:</span>
-                <span className="font-bold text-blue-600">Spring / Summer 2026</span>
-              </div>
-
               {activeTab === "users" && (
                 <Button
                   size="sm"
@@ -818,37 +812,37 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Accounts</span>
+                    <span className="text-xs font-medium text-slate-500">Total Accounts</span>
                     <Users className="w-4 h-4 text-blue-500" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">{allUsersList.length} Active</div>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{allUsersList.length} Active</div>
                   <div className="text-[11px] text-slate-500">{allUsersList.filter(u => u.role === "STUDENT").length} Students • {facultyList.length} Faculty</div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-blue-500">Active Syllabi</span>
+                    <span className="text-xs font-medium text-blue-600">Active Syllabi</span>
                     <BookOpen className="w-4 h-4 text-blue-500" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">{coursesList.length} Masterclasses</div>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{coursesList.length} Masterclasses</div>
                   <div className="text-[11px] text-blue-600 font-semibold">{coursesList.reduce((acc, c) => acc + (c.modules?.length || 0), 0)} Total Modules</div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Course Enrollments</span>
+                    <span className="text-xs font-medium text-emerald-600">Course Enrollments</span>
                     <TrendingUp className="w-4 h-4 text-emerald-600" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">{totalEnrollmentsCount} Enrollments</div>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{totalEnrollmentsCount} Enrollments</div>
                   <div className="text-[11px] text-emerald-600 font-semibold">100% Live DB Sync</div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Gross Tuition Volume</span>
+                    <span className="text-xs font-medium text-indigo-600">Gross Tuition Volume</span>
                     <DollarSign className="w-4 h-4 text-indigo-600" />
                   </div>
-                  <div className="text-2xl font-black text-slate-900">£{totalCalculatedRevenue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}</div>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">£{totalCalculatedRevenue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}</div>
                   <div className="text-[11px] text-slate-500">Calculated from enrollments</div>
                 </div>
               </div>
@@ -923,25 +917,25 @@ export default function AdminDashboardPage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               {/* User Metric Counters */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Accounts</span>
-                  <div className="text-2xl font-black text-slate-900 mt-1">{allUsersList.length} Users</div>
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-slate-500">Total Accounts</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{allUsersList.length} Users</div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-500">Students</span>
-                  <div className="text-2xl font-black text-slate-900 mt-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-blue-600">Students</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {allUsersList.filter((u) => u.role === "STUDENT").length} Scholars
                   </div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-500">Faculty & Lecturers</span>
-                  <div className="text-2xl font-black text-slate-900 mt-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-sky-600">Faculty & Lecturers</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {allUsersList.filter((u) => u.role === "INSTRUCTOR").length} Lecturers
                   </div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-500">Deans / Admins</span>
-                  <div className="text-2xl font-black text-slate-900 mt-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-indigo-600">Deans / Admins</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {allUsersList.filter((u) => u.role === "ADMIN").length} Admins
                   </div>
                 </div>
@@ -1093,19 +1087,19 @@ export default function AdminDashboardPage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               {/* Course Metric Counters */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Courses in DB</span>
-                  <div className="text-2xl font-black text-slate-900 mt-1">{coursesList.length} Courses</div>
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-slate-500">Total Courses in DB</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{coursesList.length} Courses</div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-500">Published Status</span>
-                  <div className="text-2xl font-black text-slate-900 mt-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-blue-600">Published Status</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {coursesList.filter((c) => c.status === "PUBLISHED").length} Active
                   </div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-500">Total Curriculum Modules</span>
-                  <div className="text-2xl font-black text-slate-900 mt-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-sky-600">Total Curriculum Modules</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {coursesList.reduce((acc, c) => acc + (c.modules?.length || 0), 0)} Modules
                   </div>
                 </div>
@@ -1259,20 +1253,20 @@ export default function AdminDashboardPage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-bold text-slate-500 uppercase">Gross Collected Tuition</span>
-                  <div className="text-2xl font-black text-slate-900">
+                  <span className="text-xs font-medium text-slate-500">Gross Collected Tuition</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     £{totalCalculatedRevenue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}
                   </div>
                   <div className="text-[11px] text-emerald-600 font-semibold">100% Verified Bank Clearance</div>
                 </div>
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-bold text-slate-500 uppercase">Total Active Enrollments</span>
-                  <div className="text-2xl font-black text-blue-600">{totalEnrollmentsCount} Students</div>
+                  <span className="text-xs font-medium text-blue-600">Total Active Enrollments</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{totalEnrollmentsCount} Students</div>
                   <div className="text-[11px] text-slate-500">Across {coursesList.length} published courses</div>
                 </div>
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-bold text-slate-500 uppercase">Faculty Honorarium Pool</span>
-                  <div className="text-2xl font-black text-indigo-600">
+                  <span className="text-xs font-medium text-indigo-600">Faculty Honorarium Pool</span>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     £{(totalCalculatedRevenue * 0.3).toLocaleString("en-GB", { minimumFractionDigits: 2 })}
                   </div>
                   <div className="text-[11px] text-slate-500">Allocated to Senior Lecturers</div>

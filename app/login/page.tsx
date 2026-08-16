@@ -202,30 +202,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-
-            {/* Admin Credentials */}
-            <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 text-xs text-slate-600 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-blue-900 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Admin Credentials:</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("admin@edupulse.uk");
-                    setPassword("AdminPass123!");
-                  }}
-                  className="px-2 py-0.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] cursor-pointer transition-colors"
-                >
-                  Auto-Fill Admin
-                </button>
-              </div>
-              <div className="font-mono text-[11px] text-slate-700 space-y-0.5">
-                <div>Email: <strong className="text-slate-900">admin@edupulse.uk</strong></div>
-                <div>Password: <strong className="text-slate-900">AdminPass123!</strong></div>
-              </div>
-            </div>
           </div>
         </div>
       </main>

@@ -901,12 +901,13 @@ function DashboardContent() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => alert(`Launching course workspace for ${course.title}`)}
-                      className="px-4 py-2 rounded bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs self-end sm:self-center shrink-0 transition-colors"
+                    <Link
+                      href={`/courses/${course.slug}`}
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs self-end sm:self-center shrink-0 transition-colors shadow-2xs inline-flex items-center gap-1.5"
                     >
-                      {currentRoleView === "INSTRUCTOR" ? "Edit Curriculum" : "Enter Course"}
-                    </button>
+                      <span>{currentRoleView === "INSTRUCTOR" ? "View Syllabus" : "View Syllabus & Notes"}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
                 ))}
               </div>

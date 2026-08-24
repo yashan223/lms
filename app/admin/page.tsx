@@ -23,7 +23,6 @@ import {
   Layers,
   Award,
   ShieldCheck,
-  School,
   FileText,
   Trash2,
   Edit3,
@@ -53,7 +52,7 @@ import {
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "users" | "courses" | "finances" | "settings"
+    "overview" | "users" | "courses" | "finances"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -115,15 +114,6 @@ export default function AdminDashboardPage() {
   const [uploadingCourseMaterial, setUploadingCourseMaterial] = useState(false);
   const [materialStatusMsg, setMaterialStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [matSearchQuery, setMatSearchQuery] = useState("");
-
-  // Settings State
-  const [centerName, setCenterName] = useState("London International Academic Academy");
-  const [centerNumber, setCenterNumber] = useState("UK-92810");
-  const [accreditationNumber, setAccreditationNumber] = useState("GB-40182");
-  const [aStarBoundary, setAStarBoundary] = useState("90");
-  const [aBoundary, setABoundary] = useState("80");
-  const [bBoundary, setBBoundary] = useState("70");
-  const [settingsSavedToast, setSettingsSavedToast] = useState(false);
 
   // Confirmation modal state
   const [confirmModalData, setConfirmModalData] = useState<{
@@ -687,18 +677,11 @@ export default function AdminDashboardPage() {
     });
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSettingsSavedToast(true);
-    setTimeout(() => setSettingsSavedToast(false), 3000);
-  };
-
   const navMenuItems = [
     { id: "overview", label: "Executive Overview", icon: Layers },
     { id: "users", label: "User Management", icon: Users, badge: allUsersList.length },
     { id: "courses", label: "Course Management", icon: BookOpen, badge: coursesList.length },
     { id: "finances", label: "Financials & Tuition", icon: DollarSign },
-    { id: "settings", label: "Academy Settings & SIS", icon: School },
   ];
 
   return (
@@ -834,8 +817,6 @@ export default function AdminDashboardPage() {
                     ? "Course Management"
                     : activeTab === "finances"
                     ? "Financials & Tuition"
-                    : activeTab === "settings"
-                    ? "Academy Settings"
                     : "Executive Overview"}
                 </h2>
                 <p className="text-[11px] text-slate-500 hidden sm:block">
@@ -960,28 +941,6 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">£{totalCalculatedRevenue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}</div>
                   <div className="text-[11px] text-slate-500">Calculated from enrollments</div>
-                </div>
-              </div>
-
-              {/* Quick Actions Bar */}
-              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs text-blue-900 font-bold">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
-                  <span>Administrative Fast Actions:</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button size="sm" onClick={() => setActiveTab("users")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl cursor-pointer">
-                    <UserPlus className="w-3.5 h-3.5 text-blue-600 mr-1" />
-                    Manage Users
-                  </Button>
-                  <Button size="sm" onClick={() => setActiveTab("courses")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl cursor-pointer">
-                    <BookOpen className="w-3.5 h-3.5 text-blue-600 mr-1" />
-                    Manage Courses
-                  </Button>
-                  <Button size="sm" onClick={() => setActiveTab("finances")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl cursor-pointer">
-                    <DollarSign className="w-3.5 h-3.5 text-blue-600 mr-1" />
-                    View Financials
-                  </Button>
                 </div>
               </div>
 
@@ -1407,75 +1366,6 @@ export default function AdminDashboardPage() {
                   </table>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* ======================================================== */}
-          {/* TAB 6: ACADEMY SETTINGS & SIS */}
-          {/* ======================================================== */}
-          {activeTab === "settings" && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-6 animate-in fade-in duration-300 max-w-3xl">
-              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900">
-                    Academy & Grading Standardization Configuration
-                  </h3>
-                  <p className="text-xs text-slate-500">Configure global institutional settings and grade boundary rubrics</p>
-                </div>
-                {settingsSavedToast && (
-                  <Badge className="bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Saved!
-                  </Badge>
-                )}
-              </div>
-
-              <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Academy Name</label>
-                    <Input value={centerName} onChange={(e) => setCenterName(e.target.value)} className="text-xs rounded-xl" />
-                  </div>
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Academy Registration Code</label>
-                    <Input value={centerNumber} onChange={(e) => setCenterNumber(e.target.value)} className="text-xs font-mono rounded-xl" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Accreditation ID</label>
-                    <Input value={accreditationNumber} onChange={(e) => setAccreditationNumber(e.target.value)} className="text-xs font-mono rounded-xl" />
-                  </div>
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Default Academic Term</label>
-                    <Input defaultValue="Spring / Summer 2026" className="text-xs rounded-xl" />
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 space-y-2">
-                  <label className="font-bold text-slate-800 block">Standardized Grade Boundaries (%)</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <span className="text-[11px] text-slate-500 block mb-0.5">Grade A* Boundary</span>
-                      <Input value={aStarBoundary} onChange={(e) => setAStarBoundary(e.target.value)} className="text-xs font-bold rounded-xl" />
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-slate-500 block mb-0.5">Grade A Boundary</span>
-                      <Input value={aBoundary} onChange={(e) => setABoundary(e.target.value)} className="text-xs font-bold rounded-xl" />
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-slate-500 block mb-0.5">Grade B Boundary</span>
-                      <Input value={bBoundary} onChange={(e) => setBBoundary(e.target.value)} className="text-xs font-bold rounded-xl" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-3 flex justify-end">
-                  <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-xl cursor-pointer">
-                    Save System Configuration
-                  </Button>
-                </div>
-              </form>
             </div>
           )}
         </main>

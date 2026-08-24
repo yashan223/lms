@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     if (user.role === "ADMIN") {
       redirectPath = "/admin";
     } else if (user.role === "INSTRUCTOR") {
-      redirectPath = "/dashboard";
+      redirectPath = "/tutor";
     }
 
     const response = NextResponse.json({

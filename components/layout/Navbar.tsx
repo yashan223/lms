@@ -144,6 +144,15 @@ export function Navbar() {
                   <ShieldCheck className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
                   <span>Admin Console</span>
                 </Link>
+              ) : userRole === "INSTRUCTOR" ? (
+                <Link
+                  href="/tutor"
+                  title="Faculty Tutor Studio"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
+                >
+                  <GraduationCap className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
+                  <span>Tutor Studio</span>
+                </Link>
               ) : (
                 <Link
                   href="/dashboard"
@@ -170,7 +179,7 @@ export function Navbar() {
 
               {/* Profile Pill (in the corner) */}
               <Link
-                href={userRole === "ADMIN" ? "/admin" : "/dashboard"}
+                href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : "/dashboard"}
                 title={`Signed in as ${userEmail || displayName}`}
                 className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50/90 hover:border-slate-300 transition-all shadow-2xs group"
               >

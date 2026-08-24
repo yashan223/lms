@@ -588,42 +588,7 @@ function DashboardContent() {
               </button>
             </div>
 
-            {/* Block 3: Online Users */}
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Online users
-                </h3>
-              </div>
 
-              <div className="text-xs text-slate-500 font-medium">
-                {onlineUsers.length + 8} online users (last 5 minutes)
-              </div>
-
-              <div className="space-y-2">
-                {onlineUsers.map((u) => (
-                  <div key={u.id} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
-                        {u.name.charAt(0)}
-                      </div>
-                      <span className="font-semibold text-slate-800 truncate text-[11px]">
-                        {u.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => alert(`Opening academic chat messenger with ${u.name}`)}
-                      className="text-blue-600 hover:text-blue-800 p-1"
-                      title="Send message"
-                    >
-                      <MessageSquare className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="text-[11px] text-slate-400 pt-1">Other users (8)</div>
-            </div>
           </aside>
 
           {/* ======================================================== */}

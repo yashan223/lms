@@ -107,6 +107,8 @@ function TutorDashboardContent() {
 
   // Schedule Class Modal State
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState<"COURSE" | "STUDENT">("COURSE");
+  const [newClassStudentId, setNewClassStudentId] = useState("");
   const [newClassTitle, setNewClassTitle] = useState("");
   const [newClassCourseId, setNewClassCourseId] = useState("");
   const [newClassDate, setNewClassDate] = useState("");
@@ -114,6 +116,9 @@ function TutorDashboardContent() {
   const [newClassDesc, setNewClassDesc] = useState("");
   const [newClassType, setNewClassType] = useState("LIVE_SEMINAR");
   const [schedulingClass, setSchedulingClass] = useState(false);
+
+  // Selected Student Modal
+  const [selectedStudentForModal, setSelectedStudentForModal] = useState<StudentRecord | null>(null);
 
   // Profile Edit State
   const [profileName, setProfileName] = useState("");
@@ -249,7 +254,8 @@ function TutorDashboardContent() {
           action: "schedule_class",
           tutorId: tutor?.id,
           title: newClassTitle.trim(),
-          courseId: newClassCourseId || (courses[0]?.id ?? null),
+          courseId: scheduleMode === "COURSE" ? (newClassCourseId || courses[0]?.id || null) : (newClassCourseId || null),
+          studentId: scheduleMode === "STUDENT" ? newClassStudentId : null,
           scheduledDate: new Date(newClassDate).toISOString(),
           meetingLink: newClassMeetingLink.trim(),
           description: newClassDesc.trim(),
@@ -263,6 +269,7 @@ function TutorDashboardContent() {
         setNewClassDate("");
         setNewClassMeetingLink("");
         setNewClassDesc("");
+        setNewClassStudentId("");
         await fetchTutorData();
       } else {
         const data = await res.json();
@@ -906,17 +913,26 @@ function TutorDashboardContent() {
                           </td>
 
                           <td className="p-3.5 pr-5 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-1.5">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  setShowScheduleModal(true);
-                                  setNewClassTitle(`1-on-1 Academic Mentoring: ${st.name}`);
-                                }}
-                                className="text-[11px] font-bold h-7 rounded-lg border-slate-200 hover:bg-blue-50 hover:text-blue-700"
+                                onClick={() => setSelectedStudentForModal(st)}
+                                className="text-[11px] font-bold h-7 rounded-lg border-slate-200 hover:bg-slate-50 text-slate-700 cursor-pointer"
                               >
-                                + Schedule Session
+                                View Profile
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setScheduleMode("STUDENT");
+                                  setNewClassStudentId(st.id);
+                                  setNewClassTitle(`1-on-1 Mentoring: ${st.name}`);
+                                  setShowScheduleModal(true);
+                                }}
+                                className="text-[11px] font-bold h-7 rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-2xs"
+                              >
+                                + 1-on-1 Class
                               </Button>
                             </div>
                           </td>
@@ -1298,9 +1314,37 @@ function TutorDashboardContent() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Academic Qualifications & University Degrees <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-slate-700 block">
+                      Academic Qualifications & University Degrees <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">Click quick tag to append:</span>
+                  </div>
+
+                  {/* Quick Degree Snippets */}
+                  <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                    {[
+                      "B.Sc. (Hons) First Class (London)",
+                      "Ph.D. Mathematical Analysis (Imperial)",
+                      "Cambridge Tripos Masterclass Fellow",
+                      "Edexcel IAL Chief Examiner (Mathematics)",
+                      "PGCE Secondary Education with Distinction",
+                    ].map((deg, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setProfileBio((prev) =>
+                            prev.includes(deg) ? prev : prev ? `${prev} • ${deg}` : deg
+                          );
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[10px] font-bold transition-all cursor-pointer shadow-2xs"
+                      >
+                        + {deg}
+                      </button>
+                    ))}
+                  </div>
+
                   <textarea
                     required
                     rows={4}
@@ -1379,6 +1423,95 @@ function TutorDashboardContent() {
             </div>
 
             <form onSubmit={handleScheduleClass} className="space-y-3.5 text-xs">
+              {/* Assignment Mode Toggle */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1.5">
+                  Assignment Target
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("COURSE")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      scheduleMode === "COURSE"
+                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    📚 Whole Course Cohort
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("STUDENT")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      scheduleMode === "STUDENT"
+                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    🧑‍🎓 1-on-1 Student Mentoring
+                  </button>
+                </div>
+              </div>
+
+              {scheduleMode === "COURSE" ? (
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Select Target Course <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newClassCourseId}
+                    onChange={(e) => setNewClassCourseId(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
+                  >
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title} ({c.subjectCode || "MATH"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">
+                      Select Student Scholar <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={newClassStudentId}
+                      onChange={(e) => setNewClassStudentId(e.target.value)}
+                      className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
+                    >
+                      <option value="">-- Choose Student --</option>
+                      {students.map((st) => (
+                        <option key={st.id} value={st.id}>
+                          {st.name} ({st.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">
+                      Related Course
+                    </label>
+                    <select
+                      value={newClassCourseId}
+                      onChange={(e) => setNewClassCourseId(e.target.value)}
+                      className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
+                    >
+                      <option value="">General Academic Mentoring</option>
+                      {courses.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Class Topic / Title <span className="text-red-500">*</span>
@@ -1395,18 +1528,15 @@ function TutorDashboardContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Target Course <span className="text-red-500">*</span>
+                    Class Format / Type
                   </label>
                   <select
-                    value={newClassCourseId}
-                    onChange={(e) => setNewClassCourseId(e.target.value)}
+                    value={newClassType}
+                    onChange={(e) => setNewClassType(e.target.value)}
                     className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
                   >
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title}
-                      </option>
-                    ))}
+                    <option value="LIVE_SEMINAR">Live Virtual Seminar</option>
+                    <option value="ASSIGNMENT">Problem Workshop / Milestone</option>
                   </select>
                 </div>
 
@@ -1468,6 +1598,94 @@ function TutorDashboardContent() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: VIEW STUDENT SCHOLAR PROFILE & ENROLLMENTS */}
+      {/* ======================================================== */}
+      {selectedStudentForModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-700 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                  {selectedStudentForModal.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 leading-tight">
+                    {selectedStudentForModal.name}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">{selectedStudentForModal.headline}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedStudentForModal(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Mail className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="font-semibold">{selectedStudentForModal.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{selectedStudentForModal.phone || "Not provided"}</span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-xs text-slate-800 mb-1.5 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Enrolled Masterclasses ({selectedStudentForModal.enrolledCourses.length})</span>
+                </h4>
+                <div className="space-y-1.5">
+                  {selectedStudentForModal.enrolledCourses.map((c, i) => (
+                    <div
+                      key={i}
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs"
+                    >
+                      <div className="font-semibold text-slate-800 truncate">{c.courseTitle}</div>
+                      <span className="text-[10px] text-slate-400 shrink-0">
+                        {new Date(c.enrolledAt).toLocaleDateString("en-GB", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedStudentForModal(null)}
+                  className="rounded-xl cursor-pointer"
+                >
+                  Close
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const studentToAssign = selectedStudentForModal;
+                    setSelectedStudentForModal(null);
+                    setScheduleMode("STUDENT");
+                    setNewClassStudentId(studentToAssign.id);
+                    setNewClassTitle(`1-on-1 Mentoring: ${studentToAssign.name}`);
+                    setShowScheduleModal(true);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  <span>Schedule 1-on-1 Class</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

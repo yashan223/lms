@@ -197,6 +197,7 @@ export async function POST(request: NextRequest) {
         scheduledDate,
         courseId,
         tutorId,
+        studentId,
         type,
       } = body;
 
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
           dueDate: new Date(scheduledDate),
           type: (type as EventType) || EventType.LIVE_SEMINAR,
           courseId: courseId || null,
-          userId: tutorId || null,
+          userId: studentId || tutorId || null,
         },
       });
 

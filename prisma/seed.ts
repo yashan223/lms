@@ -86,41 +86,98 @@ async function main() {
     update: {
       name: "S.Y.T. Perera",
       role: Role.STUDENT,
+      phone: "+44 7700 900142",
+      headline: "London A/L Mathematics & Science Scholar",
     },
     create: {
       email: "student@edupulse.uk",
       name: "S.Y.T. Perera",
       passwordHash: "StudentPass123!",
       role: Role.STUDENT,
-      headline: "London A/L Scholar (Spring / Summer 2026)",
-      bio: "Enrolled in Pure Mathematics, Physics, and Chemistry.",
+      phone: "+44 7700 900142",
+      headline: "London A/L Mathematics & Science Scholar",
+      bio: "Enrolled in Pure Mathematics (P1-P4), Physics, and Chemistry.",
       avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
     },
   });
 
-  await prisma.user.upsert({
+  const student2 = await prisma.user.upsert({
     where: { email: "tariq@student.edupulse.uk" },
-    update: {},
+    update: {
+      name: "Tariq Al-Mansoor",
+      role: Role.STUDENT,
+      phone: "+44 7700 900258",
+      headline: "London A/L Engineering & Pure Maths Scholar",
+    },
     create: {
       email: "tariq@student.edupulse.uk",
       name: "Tariq Al-Mansoor",
       passwordHash: "StudentPass123!",
       role: Role.STUDENT,
-      headline: "London A/L Engineering Scholar",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+      phone: "+44 7700 900258",
+      headline: "London A/L Engineering & Pure Maths Scholar",
+      bio: "Targeting Cambridge Engineering Tripos with Pure Maths and Mechanics.",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
     },
   });
 
-  await prisma.user.upsert({
+  const student3 = await prisma.user.upsert({
     where: { email: "kavisha@student.edupulse.uk" },
-    update: {},
+    update: {
+      name: "Kavisha Fernando",
+      role: Role.STUDENT,
+      phone: "+44 7700 900389",
+      headline: "London A/L Economics & Further Mathematics Scholar",
+    },
     create: {
       email: "kavisha@student.edupulse.uk",
       name: "Kavisha Fernando",
       passwordHash: "StudentPass123!",
       role: Role.STUDENT,
-      headline: "London A/L Economics & Commerce Scholar",
+      phone: "+44 7700 900389",
+      headline: "London A/L Economics & Further Mathematics Scholar",
+      bio: "Enrolled in Advanced Pure Mathematics P1-P4 and Economics.",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const student4 = await prisma.user.upsert({
+    where: { email: "amara@student.edupulse.uk" },
+    update: {
+      name: "Amara Okafor",
+      role: Role.STUDENT,
+      phone: "+44 7700 900412",
+      headline: "London A/L Physical Sciences Scholar",
+    },
+    create: {
+      email: "amara@student.edupulse.uk",
+      name: "Amara Okafor",
+      passwordHash: "StudentPass123!",
+      role: Role.STUDENT,
+      phone: "+44 7700 900412",
+      headline: "London A/L Physical Sciences Scholar",
+      bio: "Enrolled in Pure Mathematics and Advanced Physics Unit 1-6.",
+      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  const student5 = await prisma.user.upsert({
+    where: { email: "ethan@student.edupulse.uk" },
+    update: {
+      name: "Ethan Wright",
+      role: Role.STUDENT,
+      phone: "+44 7700 900573",
+      headline: "London O/L & A/L Transition Scholar",
+    },
+    create: {
+      email: "ethan@student.edupulse.uk",
+      name: "Ethan Wright",
+      passwordHash: "StudentPass123!",
+      role: Role.STUDENT,
+      phone: "+44 7700 900573",
+      headline: "London O/L & A/L Transition Scholar",
+      bio: "Focusing on Pure Mathematics foundations, integration proofs, and Mechanics.",
+      avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
     },
   });
 
@@ -373,20 +430,25 @@ async function main() {
       course = existing;
     }
 
-    // Enroll student in course
-    await prisma.enrollment.upsert({
-      where: {
-        userId_courseId: {
-          userId: studentUser.id,
-          courseId: course.id,
+    // Enroll students in course
+    const studentList = [studentUser, student2, student3, student4, student5];
+    for (let i = 0; i < studentList.length; i++) {
+      const st = studentList[i];
+      await prisma.enrollment.upsert({
+        where: {
+          userId_courseId: {
+            userId: st.id,
+            courseId: course.id,
+          },
         },
-      },
-      update: {},
-      create: {
-        userId: studentUser.id,
-        courseId: course.id,
-      },
-    });
+        update: {},
+        create: {
+          userId: st.id,
+          courseId: course.id,
+          enrolledAt: new Date(Date.now() - (i * 3 + 2) * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
   }
 
   // 5. Seed Course Study Materials & Handbooks
@@ -533,6 +595,28 @@ async function main() {
   if (mathCourse) {
     await prisma.event.create({
       data: {
+        title: "Live Masterclass: Pure Mathematics P3 Integration by Parts & Proofs",
+        description: "Interactive live theory masterclass and worked exam proofs.\n\nClassroom Link: https://meet.google.com/pmn-edupulse-live",
+        type: EventType.LIVE_SEMINAR,
+        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000), // In 2 days
+        courseId: mathCourse.id,
+        userId: instructor1.id,
+      },
+    });
+
+    await prisma.event.create({
+      data: {
+        title: "Workshop: Mechanics M1 Inclined Planes & Friction Dynamics",
+        description: "Problem-solving seminar on inclined planes, resolving forces, and connected pulley systems.\n\nClassroom Link: https://meet.google.com/mec-edupulse-live",
+        type: EventType.LIVE_SEMINAR,
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000), // In 5 days
+        courseId: mathCourse.id,
+        userId: instructor1.id,
+      },
+    });
+
+    await prisma.event.create({
+      data: {
         title: "Assignment: Pure Mathematics P4 Differential Calculus Solution is due",
         description: "Submit handwritten working for Questions 1-8 in PDF format.",
         type: EventType.ASSIGNMENT,
@@ -544,6 +628,17 @@ async function main() {
   }
 
   if (physicsCourse) {
+    await prisma.event.create({
+      data: {
+        title: "Live Lecture: Physics Unit 4 Circular Motion & Magnetic Fields",
+        description: "Theory walkthrough and virtual experimental calculations.\n\nClassroom Link: https://meet.google.com/phy-edupulse-live",
+        type: EventType.LIVE_SEMINAR,
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),
+        courseId: physicsCourse.id,
+        userId: instructor2.id,
+      },
+    });
+
     await prisma.event.create({
       data: {
         title: "Assignment: Physics Unit 4 Electric Field Calculations Problem Set",

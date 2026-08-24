@@ -2,6 +2,30 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
+async function findCourseBySlugOrId(rawSlug: string) {
+  if (!rawSlug) return null;
+  const decoded = decodeURIComponent(rawSlug).trim();
+  const slugWithHyphens = decoded.replace(/[_\s]+/g, "-").toLowerCase();
+  const slugWithUnderscores = decoded.replace(/[-\s]+/g, "_").toLowerCase();
+
+  return await prisma.course.findFirst({
+    where: {
+      OR: [
+        { slug: rawSlug },
+        { slug: decoded },
+        { slug: slugWithHyphens },
+        { slug: slugWithUnderscores },
+        { id: rawSlug },
+        { id: decoded },
+        { slug: { equals: rawSlug, mode: "insensitive" } },
+        { slug: { equals: decoded, mode: "insensitive" } },
+        { slug: { equals: slugWithHyphens, mode: "insensitive" } },
+        { slug: { equals: slugWithUnderscores, mode: "insensitive" } },
+      ],
+    },
+  });
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -12,9 +36,7 @@ export async function POST(
     const userRoleCookie = cookieStore.get("edupulse_user_role")?.value;
 
     // Find course
-    const course = await prisma.course.findUnique({
-      where: { slug },
-    });
+    const course = await findCourseBySlugOrId(slug);
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });

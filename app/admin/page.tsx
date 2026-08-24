@@ -1314,7 +1314,7 @@ export default function AdminDashboardPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {coursesList.flatMap(c => (c.enrollments || []).map((en: any) => ({
-                        student: en.user?.name || "Student Scholar",
+                        student: en.user?.name || "Student",
                         email: en.user?.email || "student@edupulse.uk",
                         course: c.title,
                         price: c.price,
@@ -1445,7 +1445,7 @@ export default function AdminDashboardPage() {
                 <div>
                   <label className="font-bold block mb-1">Role</label>
                   <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                    <option value="STUDENT">Student Scholar</option>
+                    <option value="STUDENT">Student</option>
                     <option value="INSTRUCTOR">Faculty Lecturer</option>
                     <option value="ADMIN">Administrator</option>
                   </select>
@@ -1495,7 +1495,7 @@ export default function AdminDashboardPage() {
               <div>
                 <label className="font-bold block mb-1">Role</label>
                 <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                  <option value="STUDENT">Student Scholar</option>
+                  <option value="STUDENT">Student</option>
                   <option value="INSTRUCTOR">Faculty Lecturer</option>
                   <option value="ADMIN">Administrator</option>
                 </select>

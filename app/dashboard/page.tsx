@@ -283,8 +283,8 @@ function DashboardContent() {
     } else {
       return {
         name: user?.name || "S.Y.T. Perera",
-        title: user?.headline || "London A/L Scholar",
-        badge: "Student Scholar",
+        title: user?.headline || "London A/L Student",
+        badge: "Student",
         avatar: user?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
       };
     }
@@ -383,40 +383,14 @@ function DashboardContent() {
       {/* 2. BREADCRUMB & TITLE BAR */}
       <section className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6">
         <div className="max-w-[1480px] mx-auto flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none mb-1">
-                {userRole === "INSTRUCTOR"
-                  ? "Faculty Studio & Coursework Gradebook"
-                  : userRole === "ADMIN"
-                  ? "System Admin Overview"
-                  : "Dashboard"}
-              </h1>
-              <Badge
-                variant={
-                  userRole === "INSTRUCTOR"
-                    ? "roleInstructor"
-                    : userRole === "ADMIN"
-                    ? "roleAdmin"
-                    : "roleStudent"
-                }
-              >
-                {currentProfile.badge}
-              </Badge>
-            </div>
-            <div className="text-xs text-blue-700 font-medium flex items-center gap-2">
-              <Link href="/dashboard" className="hover:underline">
-                Dashboard
-              </Link>
-              {userRole === "ADMIN" && (
-                <>
-                  <span>/</span>
-                  <Link href="/admin" className="font-bold text-indigo-700 underline">
-                    Open Academic Command Console →
-                  </Link>
-                </>
-              )}
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">
+              {userRole === "INSTRUCTOR"
+                ? "Faculty Studio & Coursework Gradebook"
+                : userRole === "ADMIN"
+                ? "System Admin Overview"
+                : "Dashboard"}
+            </h1>
           </div>
 
           <button
@@ -523,19 +497,23 @@ function DashboardContent() {
                     {navCoursesOpen && (
                       <div className="pl-4 pt-1 space-y-1 text-[11px] text-slate-600">
                         {allCourses.map((c, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate"
+                          <Link
+                            key={c.id || idx}
+                            href={c.slug ? `/courses/${c.slug}` : "/courses"}
+                            className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
                             title={c.title}
                           >
-                            <ChevronRight className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                            <span className="truncate">{c.title}</span>
-                          </div>
+                            <ChevronRight className="w-2.5 h-2.5 text-slate-400 group-hover:text-blue-600 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                            <span className="truncate group-hover:underline">{c.title}</span>
+                          </Link>
                         ))}
-                        <div className="flex items-center gap-1.5 text-blue-700 font-semibold cursor-pointer pt-1">
+                        <Link
+                          href="/courses"
+                          className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
+                        >
                           <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
                           <span>More...</span>
-                        </div>
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -651,7 +629,7 @@ function DashboardContent() {
           {/* ======================================================== */}
           {/* CENTER MAIN FEED (Role-Specific Workspaces) */}
           {/* ======================================================== */}
-          <section className="lg:col-span-6 space-y-5">
+          <section className={`${userRole === "INSTRUCTOR" ? "lg:col-span-6" : "lg:col-span-9"} space-y-5`}>
             {/* FOR INSTRUCTORS: Mock Exam Grading Queue */}
             {userRole === "INSTRUCTOR" && (
               <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
@@ -948,7 +926,7 @@ function DashboardContent() {
                       href={`/courses/${course.slug}`}
                       className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs self-end sm:self-center shrink-0 transition-colors shadow-2xs inline-flex items-center gap-1.5"
                     >
-                      <span>{userRole === "INSTRUCTOR" ? "View Syllabus" : "View Syllabus & Notes"}</span>
+                      <span>{userRole === "INSTRUCTOR" ? "Manage Syllabus & Materials" : "Study Materials & Notes"}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
@@ -958,11 +936,11 @@ function DashboardContent() {
           </section>
 
           {/* ======================================================== */}
-          {/* RIGHT SIDEBAR (Badges, Instructor Honorarium, Center Accreditation) */}
+          {/* RIGHT SIDEBAR (For Instructor Stats) */}
           {/* ======================================================== */}
-          <aside className="lg:col-span-3 space-y-4">
-            {/* FOR INSTRUCTOR: Honorarium & Evaluator Stats */}
-            {userRole === "INSTRUCTOR" && (
+          {userRole === "INSTRUCTOR" && (
+            <aside className="lg:col-span-3 space-y-4">
+              {/* FOR INSTRUCTOR: Honorarium & Evaluator Stats */}
               <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Examiner Honorarium & Stats
@@ -982,58 +960,8 @@ function DashboardContent() {
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Block 1: Latest Badges (For Student) */}
-            {userRole === "STUDENT" && (
-              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Latest badges
-                </h3>
-
-                {user?.badges && user.badges.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {user.badges.map((b) => (
-                      <div key={b.id} className="flex items-start gap-2.5 text-xs p-2 rounded bg-amber-50/60 border border-amber-200/80">
-                        <div className="p-1.5 rounded-full bg-amber-400 text-amber-950 shrink-0">
-                          <Award className="w-3.5 h-3.5" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-900 text-[11px]">{b.name}</div>
-                          <div className="text-[10px] text-slate-500 leading-tight mt-0.5">
-                            {b.description}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400 italic">You have no badges to display</p>
-                )}
-              </div>
-            )}
-
-            {/* Block 2: Examination Center Verification */}
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Exam Center Accreditation
-              </h3>
-              <div className="text-xs space-y-2 text-slate-600">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                  <span className="text-slate-500">Center No:</span>
-                  <span className="font-mono font-bold text-slate-900">UK-92810</span>
-                </div>
-                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                  <span className="text-slate-500">Exam Board:</span>
-                  <span className="font-semibold text-blue-700">Pearson Edexcel</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Target Series:</span>
-                  <span className="font-bold text-amber-700">May/June 2026</span>
-                </div>
-              </div>
-            </div>
-          </aside>
+            </aside>
+          )}
         </div>
       </main>
 

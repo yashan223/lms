@@ -80,6 +80,7 @@ model Course {
   instructor    User           @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Cascade)
 
   modules       Module[]
+  materials     CourseMaterial[]
   enrollments   Enrollment[]
   reviews       Review[]
   certificates  Certificate[]
@@ -212,4 +213,20 @@ model Certificate {
   issuedAt        DateTime  @default(now())
 
   @@map("certificates")
+}
+
+model CourseMaterial {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileUrl     String
+  fileSize    String   @default("1.5 MB")
+  fileType    String   @default("application/pdf")
+  category    String   @default("HANDOUT") // "HANDOUT", "FORMULA_SHEET", "MOCK_PAPER", "LAB_GUIDE", "SLIDES"
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("course_materials")
 }

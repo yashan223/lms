@@ -126,7 +126,7 @@ export default function RegisterPage() {
                 Student Registration
               </h1>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Create your student scholar account to access your courses and dashboard.
+                Create your student account to access your courses and dashboard.
               </p>
             </div>
 
@@ -297,7 +297,7 @@ export default function RegisterPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmedRegister}
         title="Confirm Student Registration"
-        description={`You are registering as a ${qualification} student scholar. Your account will be created and saved directly to the database.`}
+        description={`You are registering as a ${qualification} student. Your account will be created and saved directly to the database.`}
         confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"

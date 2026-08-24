@@ -88,7 +88,7 @@ export function RolePreviewModal({
       borderColor: "border-emerald-200",
       email: "student@edupulse.io",
       password: "StudentPass123!",
-      credentialLabel: "Student Scholar Account",
+      credentialLabel: "Student Account",
       description:
         "Experience seamless video lecture streaming, participate in seminar discussions, get 24/7 assistance from the AI Study Tutor, and earn verifiable credentials.",
       features: [

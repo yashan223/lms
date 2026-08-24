@@ -389,7 +389,142 @@ async function main() {
     });
   }
 
-  // 5. Seed Timeline Events & Assignments
+  // 5. Seed Course Study Materials & Handbooks
+  await prisma.courseMaterial.deleteMany({});
+  const allSeededCourses = await prisma.course.findMany();
+  for (const c of allSeededCourses) {
+    if (c.slug.includes("mathematics")) {
+      await prisma.courseMaterial.createMany({
+        data: [
+          {
+            title: "Pure Mathematics P3 Comprehensive Integration Handbook",
+            description: "Step-by-step proofs for integration by parts, partial fractions, and trigonometric substitutions.",
+            fileUrl: "/api/files/public/Pure_Maths_P3_Formula_Handbook_2026.pdf",
+            fileSize: "3.4 MB",
+            fileType: "application/pdf",
+            category: "HANDOUT",
+            courseId: c.id,
+          },
+          {
+            title: "Official Edexcel IAL Mathematics Formula Book & Tables",
+            description: "Full formula specifications, standard integrals, trigonometric identities, and statistical tables.",
+            fileUrl: "/api/files/public/Maths_Formula_Book_IAL.pdf",
+            fileSize: "1.8 MB",
+            fileType: "application/pdf",
+            category: "FORMULA_SHEET",
+            courseId: c.id,
+          },
+          {
+            title: "IAL Pure Mathematics P1-P4 Worked Past Paper Solutions",
+            description: "Complete exemplar solutions and examiners mark scheme annotations for 2023-2025 series.",
+            fileUrl: "/api/files/public/Pure_Maths_Past_Paper_Solutions.pdf",
+            fileSize: "5.2 MB",
+            fileType: "application/pdf",
+            category: "MOCK_PAPER",
+            courseId: c.id,
+          },
+          {
+            title: "Mechanics M1 Kinematics & Statics Problem Set",
+            description: "Vectors, Newton's laws of motion, friction on inclined planes, and moments.",
+            fileUrl: "/api/files/public/Mechanics_M1_Problems.pdf",
+            fileSize: "2.1 MB",
+            fileType: "application/pdf",
+            category: "HANDOUT",
+            courseId: c.id,
+          },
+        ],
+      });
+    } else if (c.slug.includes("physics")) {
+      await prisma.courseMaterial.createMany({
+        data: [
+          {
+            title: "Unit 4 Electric & Magnetic Fields Complete Derivations",
+            description: "Electric potential gradients, capacitance calculations, and Faraday/Lenz law derivations.",
+            fileUrl: "/api/files/public/Physics_Unit4_Fields_Derivations.pdf",
+            fileSize: "2.9 MB",
+            fileType: "application/pdf",
+            category: "HANDOUT",
+            courseId: c.id,
+          },
+          {
+            title: "IAL Physics Virtual Practical Guide & Error Analysis",
+            description: "Uncertainty calculations, percentage errors, calibration curves, and Unit 6 experimental methods.",
+            fileUrl: "/api/files/public/Physics_Lab_Practical_Guide.pdf",
+            fileSize: "4.1 MB",
+            fileType: "application/pdf",
+            category: "LAB_GUIDE",
+            courseId: c.id,
+          },
+          {
+            title: "Physics Unit 1-6 Essential Equations Reference Sheet",
+            description: "All definitions, SI unit conversions, gravitational constants, and harmonic motion formulas.",
+            fileUrl: "/api/files/public/Physics_Equations_Sheet.pdf",
+            fileSize: "1.2 MB",
+            fileType: "application/pdf",
+            category: "FORMULA_SHEET",
+            courseId: c.id,
+          },
+        ],
+      });
+    } else if (c.slug.includes("chemistry")) {
+      await prisma.courseMaterial.createMany({
+        data: [
+          {
+            title: "Synthetic Organic Reaction Pathways & Mechanisms Map",
+            description: "Nucleophilic addition, electrophilic substitution, optical isomerism, and reaction schemes.",
+            fileUrl: "/api/files/public/Organic_Chemistry_Mechanisms_Map.pdf",
+            fileSize: "3.1 MB",
+            fileType: "application/pdf",
+            category: "HANDOUT",
+            courseId: c.id,
+          },
+          {
+            title: "Acid-Base Equilibria & Buffer Solution Calculations",
+            description: "pH calculations, Ka/pKa expressions, buffer actions, and titration curve analysis.",
+            fileUrl: "/api/files/public/Chemistry_Acid_Base_Calculations.pdf",
+            fileSize: "2.6 MB",
+            fileType: "application/pdf",
+            category: "MOCK_PAPER",
+            courseId: c.id,
+          },
+          {
+            title: "Qualitative Analysis & Organic Functional Group Tests",
+            description: "Precipitate observations, flame tests, infrared spectroscopy, and mass spectrometry guide.",
+            fileUrl: "/api/files/public/Chemistry_Qualitative_Analysis_Guide.pdf",
+            fileSize: "2.1 MB",
+            fileType: "application/pdf",
+            category: "LAB_GUIDE",
+            courseId: c.id,
+          },
+        ],
+      });
+    } else {
+      await prisma.courseMaterial.createMany({
+        data: [
+          {
+            title: `${c.title} - Complete Unit Syllabus Guide & Notes`,
+            description: "Comprehensive notes covering all core syllabus learning outcomes and specification units.",
+            fileUrl: "/api/files/public/Unit_Syllabus_Guide.pdf",
+            fileSize: "3.5 MB",
+            fileType: "application/pdf",
+            category: "HANDOUT",
+            courseId: c.id,
+          },
+          {
+            title: `${c.title} - Essential Formula & Reference Sheet`,
+            description: "Key definitions, formulas, terms, and examiner guidance.",
+            fileUrl: "/api/files/public/Formula_Reference_Sheet.pdf",
+            fileSize: "1.5 MB",
+            fileType: "application/pdf",
+            category: "FORMULA_SHEET",
+            courseId: c.id,
+          },
+        ],
+      });
+    }
+  }
+
+  // 6. Seed Timeline Events & Assignments
   const mathCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-pure-mathematics-mechanics" } });
   const physicsCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-physics-unit-1-to-6" } });
 

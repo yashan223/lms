@@ -263,7 +263,7 @@ export default function CoursesPage() {
                       href={`/courses/${course.slug}`}
                       className="px-4 py-2 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
                     >
-                      <span>View Syllabus</span>
+                      <span>Study Materials & Syllabus</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>

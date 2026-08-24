@@ -135,29 +135,27 @@ export function Navbar() {
           {userRole ? (
             <div className="flex items-center gap-2">
               {/* Quick Action Icons */}
-              {/* 1. Dashboard Icon Button */}
-              <Link
-                href="/dashboard"
-                title="My Dashboard"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
-              >
-                <LayoutDashboard className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
-                <span className="hidden xl:inline">Dashboard</span>
-              </Link>
-
-              {/* 2. Admin Console (if Admin) */}
-              {userRole === "ADMIN" && (
+              {userRole === "ADMIN" ? (
                 <Link
                   href="/admin"
-                  title="Admin Console"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100 hover:border-purple-300 text-purple-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
+                  title="Admin Command Console"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50/80 hover:bg-purple-100 hover:border-purple-300 text-purple-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
                 >
                   <ShieldCheck className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
-                  <span className="hidden xl:inline">Admin</span>
+                  <span>Admin Console</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  title="My Dashboard"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
+                  <span className="hidden xl:inline">Dashboard</span>
                 </Link>
               )}
 
-              {/* 3. Sign Out Icon Button */}
+              {/* Sign Out Icon Button */}
               <button
                 onClick={() => setConfirmLogoutModalOpen(true)}
                 title="Sign Out"
@@ -172,7 +170,7 @@ export function Navbar() {
 
               {/* Profile Pill (in the corner) */}
               <Link
-                href="/dashboard"
+                href={userRole === "ADMIN" ? "/admin" : "/dashboard"}
                 title={`Signed in as ${userEmail || displayName}`}
                 className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50/90 hover:border-slate-300 transition-all shadow-2xs group"
               >
@@ -235,7 +233,11 @@ export function Navbar() {
         <div className="lg:hidden bg-white border-t border-slate-200 px-5 py-4 space-y-4 animate-in slide-in-from-top-2 shadow-lg">
           {/* Mobile User Profile Header if logged in */}
           {userRole && (
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 border border-slate-200/80 flex items-center gap-3">
+            <Link
+              href={userRole === "ADMIN" ? "/admin" : "/dashboard"}
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-3 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 border border-slate-200/80 flex items-center gap-3 hover:border-blue-300 transition-colors"
+            >
               <div
                 className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${roleConfig.avatarGradient} text-white flex items-center justify-center text-sm font-black shadow-xs ring-2 ring-white shrink-0`}
               >
@@ -254,10 +256,19 @@ export function Navbar() {
                   {userEmail || `${userRole?.toLowerCase()}@edupulse.uk`}
                 </p>
               </div>
-            </div>
+            </Link>
           )}
 
           <div className="flex flex-col gap-2 text-xs font-bold tracking-wider uppercase">
+            {userRole && (
+              <Link
+                href={userRole === "ADMIN" ? "/admin" : "/dashboard"}
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-purple-700 hover:text-purple-800 py-1.5 px-2 rounded-lg hover:bg-purple-50/50 font-black"
+              >
+                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : "MY DASHBOARD"}
+              </Link>
+            )}
             <Link
               href="/courses"
               onClick={() => setMobileMenuOpen(false)}
@@ -324,7 +335,7 @@ export function Navbar() {
         onConfirm={handleSignOut}
         variant="danger"
         title="Sign Out of EduPulse?"
-        description="Are you sure you want to end your session? You will need to sign in again to access your active course materials, live discussions, and coursework gradebook."
+        description="Are you sure you want to end your session? You will need to sign in again to access your active course materials, syllabus vaults, and study guides."
         confirmText="Sign Out"
         cancelText="Stay Signed In"
       />

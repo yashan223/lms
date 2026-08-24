@@ -297,7 +297,7 @@ export default function RegisterPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmedRegister}
         title="Confirm Student Registration"
-        description={`You are registering as a ${qualification} student. Your account will be created and saved directly to the database.`}
+        description={`You are registering as a ${qualification} student. Your official student profile will be registered with the academy.`}
         confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"

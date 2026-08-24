@@ -1,11 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { deleteStorageFile } from "@/lib/storage";
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export async function GET(request: NextRequest) {
   try {
-    const [allUsers, courses, events, privateFiles] = await Promise.all([
-      prisma.user.findMany({
+    let allUsers: any[] = [];
+    let courses: any[] = [];
+    let events: any[] = [];
+    let privateFiles: any[] = [];
+
+    try {
+      allUsers = await prisma.user.findMany({
         include: {
           enrollments: {
             include: { course: true },
@@ -15,32 +24,56 @@ export async function GET() {
           badges: true,
         },
         orderBy: { createdAt: "desc" },
-      }),
-      prisma.course.findMany({
+      });
+    } catch (uErr) {
+      console.error("Error fetching users with relations:", uErr);
+      allUsers = await prisma.user.findMany().catch(() => []);
+    }
+
+    try {
+      courses = await prisma.course.findMany({
         include: {
           instructor: true,
           modules: {
             include: { lessons: true },
             orderBy: { position: "asc" },
           },
+          materials: {
+            orderBy: { createdAt: "desc" },
+          },
           enrollments: {
             include: { user: true },
           },
         },
         orderBy: { createdAt: "desc" },
-      }),
-      prisma.event.findMany({
+      });
+    } catch (cErr) {
+      console.error("Error fetching courses with relations:", cErr);
+      courses = await prisma.course.findMany().catch(() => []);
+    }
+
+    try {
+      events = await prisma.event.findMany({
         include: {
           course: true,
           user: true,
         },
         orderBy: { dueDate: "asc" },
-      }),
-      prisma.privateFile.findMany({
+      });
+    } catch (eErr) {
+      console.error("Error fetching events:", eErr);
+      events = [];
+    }
+
+    try {
+      privateFiles = await prisma.privateFile.findMany({
         include: { user: true },
         orderBy: { createdAt: "desc" },
-      }),
-    ]);
+      });
+    } catch (fErr) {
+      console.error("Error fetching privateFiles:", fErr);
+      privateFiles = [];
+    }
 
     const candidates = allUsers.filter((u) => u.role === Role.STUDENT);
     const faculty = allUsers.filter((u) => u.role === Role.INSTRUCTOR);
@@ -55,9 +88,12 @@ export async function GET() {
       events,
       privateFiles,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Admin API GET error:", error);
-    return NextResponse.json({ error: "Failed to fetch admin data" }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || "Failed to fetch admin data" },
+      { status: 500 }
+    );
   }
 }
 
@@ -291,6 +327,38 @@ export async function POST(request: Request) {
     if (action === "delete_assessment" || action === "delete_event") {
       const { eventId } = body;
       await prisma.event.delete({ where: { id: eventId } });
+      return NextResponse.json({ success: true });
+    }
+
+    // 15. Add Course Material File
+    if (action === "add_course_material") {
+      const { courseId, title, description, fileUrl, fileSize, fileType, category } = body;
+      if (!courseId || !title || !fileUrl) {
+        return NextResponse.json({ error: "Course, title, and file are required" }, { status: 400 });
+      }
+      const material = await prisma.courseMaterial.create({
+        data: {
+          courseId,
+          title,
+          description: description || null,
+          fileUrl,
+          fileSize: fileSize || "1.5 MB",
+          fileType: fileType || "application/pdf",
+          category: category || "HANDOUT",
+        },
+      });
+      return NextResponse.json({ success: true, material });
+    }
+
+    // 16. Delete Course Material File
+    if (action === "delete_course_material") {
+      const { materialId } = body;
+      const existing = await prisma.courseMaterial.findUnique({ where: { id: materialId } });
+      if (existing && existing.fileUrl.startsWith("/api/files/")) {
+        const fileKey = existing.fileUrl.replace("/api/files/", "");
+        await deleteStorageFile(fileKey);
+      }
+      await prisma.courseMaterial.delete({ where: { id: materialId } });
       return NextResponse.json({ success: true });
     }
 

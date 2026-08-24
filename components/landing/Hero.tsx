@@ -27,7 +27,7 @@ export function Hero() {
     {
       image: "/images/campus_students_hero.jpg",
       title: "London A/L & O/L Academy",
-      subtitle: "Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, structured marking rubrics, and digital coursework assistance.",
+      subtitle: "Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, downloadable study materials, and past paper video vaults.",
     },
     {
       image: "/images/campus_library_study.jpg",

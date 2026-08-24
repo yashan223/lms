@@ -15,7 +15,6 @@ import {
   BookOpen,
   Users,
   ArrowRight,
-  ShieldCheck,
   Filter,
   GraduationCap,
   Sparkles,
@@ -100,26 +99,8 @@ export default function CoursesPage() {
     <div className="min-h-screen flex flex-col bg-white text-slate-900">
       <Navbar />
 
-      <main className="flex-1 py-12 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* Header Banner */}
-          <div className="bg-[#0a1e3f] rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
-            <div className="relative z-10 max-w-2xl space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-sky-300 text-xs font-bold border border-white/15">
-                <ShieldCheck className="w-4 h-4 text-sky-400" />
-                <span>International Academic Curriculum Specifications</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black tracking-tight text-white leading-tight">
-                London A/L & O/L Course Directory
-              </h1>
-
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-                Explore comprehensive unit-by-unit syllabus masterclasses, detailed lecture walkthroughs, and structured topic masterclasses.
-              </p>
-            </div>
-          </div>
-
+      <main className="flex-1 py-8 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           {/* Search & Filter Controls */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">

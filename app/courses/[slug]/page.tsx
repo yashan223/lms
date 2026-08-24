@@ -78,7 +78,7 @@ export default function CourseDetailPage({
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"materials" | "curriculum" | "assignments" | "overview">("materials");
+  const [activeTab, setActiveTab] = useState<"materials" | "curriculum" | "overview">("materials");
   const [activeModuleIdx, setActiveModuleIdx] = useState<number | null>(0);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
@@ -259,7 +259,7 @@ export default function CourseDetailPage({
         <Navbar />
         <div className="text-center py-24 space-y-3">
           <h2 className="text-2xl font-bold text-slate-900">Course Not Found</h2>
-          <p className="text-xs text-slate-500">The requested syllabus unit is not currently published in the database.</p>
+          <p className="text-xs text-slate-500">The requested course syllabus is not currently available.</p>
           <Link href="/courses" className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs">
             Return to Course Directory
           </Link>
@@ -459,17 +459,7 @@ export default function CourseDetailPage({
                 </span>
               </button>
 
-              <button
-                onClick={() => setActiveTab("assignments")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                  activeTab === "assignments"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <FileCheck2 className="w-4 h-4" />
-                <span>Coursework & Assessments</span>
-              </button>
+
 
               <button
                 onClick={() => setActiveTab("overview")}
@@ -804,72 +794,7 @@ export default function CourseDetailPage({
           </section>
         )}
 
-        {/* Tab 3: Coursework & Assessments */}
-        {activeTab === "assignments" && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xs space-y-6">
-              <div className="border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                    <FileCheck2 className="w-4 h-4" />
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Coursework, Homework & Examiner Rubrics
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Submit required handwritten problem sets and view examiner feedback for this specification.
-                </p>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-amber-100 text-amber-800 text-[10px]">Due in 7 Days</Badge>
-                    <span className="text-xs text-slate-500 font-semibold">100 Marks</span>
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">
-                    Pure Mathematics P4 Differential Calculus Solution Problem Set
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Submit handwritten workings for Questions 1 through 8. Show full derivation steps and intermediate integration constants.
-                  </p>
-                  <div className="pt-2 flex items-center justify-between">
-                    <Link
-                      href="/dashboard"
-                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-2xs inline-flex items-center gap-1.5"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Submit Handwritten PDF</span>
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-blue-100 text-blue-800 text-[10px]">Practice Milestone</Badge>
-                    <span className="text-xs text-slate-500 font-semibold">50 Marks</span>
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">
-                    Mechanics M1 Friction & Vector Kinematics Mock Exam
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Timed 1-hour assessment covering resolving forces on inclined slopes, impulse, and particle equilibrium.
-                  </p>
-                  <div className="pt-2 flex items-center justify-between">
-                    <Link
-                      href="/dashboard"
-                      className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all inline-flex items-center gap-1.5"
-                    >
-                      <span>View Rubric</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* Tab 4: Specification Details & Overview */}
         {activeTab === "overview" && (
@@ -1051,7 +976,7 @@ export default function CourseDetailPage({
                   {uploadingMaterial ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Uploading to VPS...</span>
+                      <span>Uploading File...</span>
                     </>
                   ) : (
                     <>

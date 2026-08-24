@@ -29,7 +29,7 @@ export function AboutSection() {
     {
       icon: Users,
       title: "Senior Lead Lecturers",
-      description: "Learn directly from active UK university and college faculty who structure course content, evaluate coursework, and guide scholars.",
+      description: "Learn directly from active UK university and college faculty who structure course content, author study materials, and guide scholars.",
       badge: "Expert Faculty",
       badgeColor: "bg-purple-100 text-purple-800",
     },
@@ -44,7 +44,7 @@ export function AboutSection() {
 
   const highlights = [
     "Comprehensive 10-Year past topic proofs and step-by-step video solutions",
-    "Handwritten homework and coursework evaluation with margin remarks",
+    "Downloadable lecture handbooks, unit formula sheets, and practical notes",
     "24/7 AI-powered academic question and formula assistance",
     "Structured syllabus progress tracking and lecture schedule alerts",
     "Recognized academic standards partnered with global learning institutions",

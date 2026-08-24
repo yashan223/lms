@@ -47,6 +47,16 @@ interface UserProfile {
   avatar: string | null;
   role: "STUDENT" | "INSTRUCTOR" | "ADMIN";
   headline: string | null;
+  createdCourses?: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    subjectCode: string | null;
+    category: string;
+    modules?: Array<{
+      lessons: Array<{ id: string; title: string }>;
+    }>;
+  }>;
   enrollments: Array<{
     course: {
       id: string;
@@ -102,21 +112,9 @@ function DashboardContent() {
   const [timelineSearch, setTimelineSearch] = useState("");
   const [calendarCourseFilter, setCalendarCourseFilter] = useState("all");
 
-  // Customization mode
-  const [isCustomizing, setIsCustomizing] = useState(false);
-
   // Modals
   const [showManageFilesModal, setShowManageFilesModal] = useState(false);
   const [showNewEventModal, setShowNewEventModal] = useState(false);
-  const [showGradeModal, setShowGradeModal] = useState(false);
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const [selectedEventForSubmission, setSelectedEventForSubmission] = useState<any>(null);
-  const [submissionNotes, setSubmissionNotes] = useState("");
-  const [submissionFile, setSubmissionFile] = useState("Handwritten_Solutions_P4.pdf");
-  const [submissionToast, setSubmissionToast] = useState(false);
-  const [selectedScriptToGrade, setSelectedScriptToGrade] = useState<any>(null);
-  const [awardedMarks, setAwardedMarks] = useState("68");
-  const [examinerRemarks, setExaminerRemarks] = useState("Excellent method marks in Q1-Q6. In Q7, check integration constant C.");
 
   // New Event Form State
   const [newEventTitle, setNewEventTitle] = useState("");
@@ -125,13 +123,13 @@ function DashboardContent() {
   const [newEventType, setNewEventType] = useState("ASSIGNMENT");
   const [newEventCourseId, setNewEventCourseId] = useState("");
 
-  // Real VPS File Upload State
+  // Real File Upload State
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  // Fetch real database records from Prisma
+  // Fetch real records from server
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -163,6 +161,19 @@ function DashboardContent() {
       return matchSearch;
     });
   }, [timelineEvents, timelineSearch]);
+
+  // Role-specific assigned/enrolled courses
+  const myCourses: any[] = useMemo(() => {
+    if (userRole === "STUDENT") {
+      return (user?.enrollments || []).map((e) => e.course).filter(Boolean);
+    }
+    if (userRole === "INSTRUCTOR") {
+      return user?.createdCourses && user.createdCourses.length > 0
+        ? user.createdCourses
+        : allCourses;
+    }
+    return allCourses;
+  }, [userRole, user, allCourses]);
 
   // Handle Event Creation saved directly to DB
   const handleCreateEvent = async (e: React.FormEvent) => {
@@ -219,10 +230,10 @@ function DashboardContent() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to upload file to VPS storage");
+        throw new Error(data.error || "Failed to upload file");
       }
 
-      setUploadSuccess(`"${selectedUploadFile.name}" successfully uploaded to VPS storage!`);
+      setUploadSuccess(`"${selectedUploadFile.name}" successfully uploaded!`);
       setSelectedUploadFile(null);
       await fetchDashboardData();
     } catch (err: any) {
@@ -386,23 +397,10 @@ function DashboardContent() {
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">
               {userRole === "INSTRUCTOR"
-                ? "Faculty Studio & Coursework Gradebook"
-                : userRole === "ADMIN"
-                ? "System Admin Overview"
-                : "Dashboard"}
+                ? "Faculty Studio & Academic Hub"
+                : "Scholar Academic Dashboard"}
             </h1>
           </div>
-
-          <button
-            onClick={() => setIsCustomizing(!isCustomizing)}
-            className={`px-3.5 py-1.5 rounded text-xs font-semibold border transition-all ${
-              isCustomizing
-                ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
-            }`}
-          >
-            {isCustomizing ? "Stop customising this page" : "Customise this page"}
-          </button>
         </div>
       </section>
 
@@ -496,23 +494,27 @@ function DashboardContent() {
 
                     {navCoursesOpen && (
                       <div className="pl-4 pt-1 space-y-1 text-[11px] text-slate-600">
-                        {allCourses.map((c, idx) => (
-                          <Link
-                            key={c.id || idx}
-                            href={c.slug ? `/courses/${c.slug}` : "/courses"}
-                            className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
-                            title={c.title}
-                          >
-                            <ChevronRight className="w-2.5 h-2.5 text-slate-400 group-hover:text-blue-600 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                            <span className="truncate group-hover:underline">{c.title}</span>
-                          </Link>
-                        ))}
+                        {myCourses.length > 0 ? (
+                          myCourses.map((c, idx) => (
+                            <Link
+                              key={c.id || idx}
+                              href={c.slug ? `/courses/${c.slug}` : "/courses"}
+                              className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
+                              title={c.title}
+                            >
+                              <ChevronRight className="w-2.5 h-2.5 text-slate-400 group-hover:text-blue-600 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                              <span className="truncate group-hover:underline">{c.title}</span>
+                            </Link>
+                          ))
+                        ) : (
+                          <div className="text-slate-400 italic py-0.5">No enrolled courses</div>
+                        )}
                         <Link
                           href="/courses"
                           className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
                         >
                           <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
-                          <span>More...</span>
+                          <span>Browse all courses...</span>
                         </Link>
                       </div>
                     )}
@@ -528,7 +530,7 @@ function DashboardContent() {
                   Private files
                 </h3>
                 <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                  VPS Storage
+                  Private Cloud Storage
                 </span>
               </div>
 
@@ -577,7 +579,7 @@ function DashboardContent() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic">No files stored on VPS yet</p>
+                <p className="text-xs text-slate-400 italic">No private files stored yet</p>
               )}
 
               <button
@@ -629,78 +631,7 @@ function DashboardContent() {
           {/* ======================================================== */}
           {/* CENTER MAIN FEED (Role-Specific Workspaces) */}
           {/* ======================================================== */}
-          <section className={`${userRole === "INSTRUCTOR" ? "lg:col-span-6" : "lg:col-span-9"} space-y-5`}>
-            {/* FOR INSTRUCTORS: Mock Exam Grading Queue */}
-            {userRole === "INSTRUCTOR" && (
-              <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">
-                      Student Coursework Grading Queue
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Pending student submissions awaiting faculty review & solution remarks
-                    </p>
-                  </div>
-                  <Badge className="bg-amber-100 text-amber-800 font-bold text-[10px]">
-                    3 Submissions Pending
-                  </Badge>
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    {
-                      student: "S.Y.T. Perera (ID: UK-92810A01)",
-                      paper: "Pure Mathematics P4 Coursework",
-                      submitted: "2 hours ago",
-                      pages: "8 Pages PDF",
-                    },
-                    {
-                      student: "Tariq Al-Mansoor (ID: UK-92810A02)",
-                      paper: "Physics Unit 4 Laboratory Problem Set",
-                      submitted: "4 hours ago",
-                      pages: "10 Pages PDF",
-                    },
-                    {
-                      student: "Kavisha Fernando (ID: UK-92810A03)",
-                      paper: "Foundation Mathematics Assignment 1H",
-                      submitted: "Yesterday",
-                      pages: "6 Pages PDF",
-                    },
-                  ].map((script, sIdx) => (
-                    <div
-                      key={sIdx}
-                      className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-blue-50/40 transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <div className="font-bold text-xs text-slate-900">
-                          {script.student}
-                        </div>
-                        <div className="text-[11px] text-blue-700 font-medium">
-                          {script.paper}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          ⏱️ {script.submitted} • 📄 {script.pages}
-                        </div>
-                      </div>
-
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSelectedScriptToGrade(script);
-                          setShowGradeModal(true);
-                        }}
-                        className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold gap-1 self-end sm:self-center shrink-0"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Grade Script</span>
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
+          <section className="lg:col-span-9 space-y-5">
             {/* Block 1: Timeline Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
@@ -762,25 +693,12 @@ function DashboardContent() {
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => {
-                            if (userRole === "INSTRUCTOR") {
-                              setSelectedScriptToGrade({
-                                student: "S.Y.T. Perera (ID: UK-92810A01)",
-                                paper: ev.title,
-                                submitted: "Today",
-                                pages: "6 Pages PDF",
-                              });
-                              setShowGradeModal(true);
-                            } else {
-                              setSelectedEventForSubmission(ev);
-                              setShowSubmissionModal(true);
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all self-end sm:self-center shrink-0 cursor-pointer"
+                        <Link
+                          href={ev.course?.slug ? `/courses/${ev.course.slug}` : "/courses"}
+                          className="px-3 py-1.5 rounded bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all self-end sm:self-center shrink-0"
                         >
-                          {userRole === "INSTRUCTOR" ? "Review Submissions" : "Add submission"}
-                        </button>
+                          View Study Materials
+                        </Link>
                       </div>
                     ))}
                   </div>
@@ -839,8 +757,8 @@ function DashboardContent() {
                     onChange={(e) => setCalendarCourseFilter(e.target.value)}
                     className="h-7 text-xs rounded border border-slate-300 px-2 bg-white font-medium"
                   >
-                    <option value="all">All courses</option>
-                    {allCourses.map((c) => (
+                    <option value="all">{userRole === "STUDENT" ? "All my courses" : "All courses"}</option>
+                    {myCourses.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.title}
                       </option>
@@ -900,38 +818,56 @@ function DashboardContent() {
 
             {/* Block 4: Enrolled Course Cards (Course Overview) */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
-                {userRole === "INSTRUCTOR" ? "My Syllabus Courses" : "Course overview"}
-              </h3>
-
-              <div className="space-y-4">
-                {allCourses.map((course, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-blue-300 transition-all"
-                  >
-                    <div className="space-y-1 min-w-0">
-                      <div className="text-[10px] font-bold font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded inline-block border border-blue-200">
-                        {course.subjectCode || "Pearson Edexcel"}
-                      </div>
-                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
-                        {course.title}
-                      </h4>
-                      <div className="text-[11px] text-slate-500">
-                        {course.category} • {course.modules?.length || 2} Modules Active
-                      </div>
-                    </div>
-
-                    <Link
-                      href={`/courses/${course.slug}`}
-                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs self-end sm:self-center shrink-0 transition-colors shadow-2xs inline-flex items-center gap-1.5"
-                    >
-                      <span>{userRole === "INSTRUCTOR" ? "Manage Syllabus & Materials" : "Study Materials & Notes"}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 className="text-sm font-bold text-slate-900">
+                  {userRole === "INSTRUCTOR" ? "My Syllabus Courses" : "Enrolled Course Overview"}
+                </h3>
+                <span className="text-xs font-semibold text-slate-500">
+                  {myCourses.length} {myCourses.length === 1 ? "Unit" : "Units"} Active
+                </span>
               </div>
+
+              {myCourses.length > 0 ? (
+                <div className="space-y-4">
+                  {myCourses.map((course, idx) => (
+                    <div
+                      key={course.id || idx}
+                      className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-blue-300 transition-all"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="text-[10px] font-bold font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded inline-block border border-blue-200">
+                          {course.subjectCode || "Pearson Edexcel"}
+                        </div>
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                          {course.title}
+                        </h4>
+                        <div className="text-[11px] text-slate-500">
+                          {course.category} • {course.modules?.length || 2} Modules Active
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/courses/${course.slug}`}
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs self-end sm:self-center shrink-0 transition-colors shadow-2xs inline-flex items-center gap-1.5"
+                      >
+                        <span>{userRole === "INSTRUCTOR" ? "Manage Syllabus & Materials" : "Study Materials & Notes"}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 px-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                  <p className="text-xs text-slate-500 font-medium mb-3">You are not enrolled in any courses yet.</p>
+                  <Link
+                    href="/courses"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs"
+                  >
+                    <span>Browse Course Catalog</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              )}
             </div>
           </section>
 
@@ -976,7 +912,7 @@ function DashboardContent() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-slate-900">Manage Private Files</h3>
-                  <p className="text-[11px] text-slate-500">Secure VPS Storage for Study Materials & Assignments</p>
+                  <p className="text-[11px] text-slate-500">Secure Storage for Study Materials & Notes</p>
                 </div>
               </div>
               <button
@@ -1067,12 +1003,12 @@ function DashboardContent() {
                   {uploadingFile ? (
                     <span className="flex items-center gap-1.5">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving to VPS Storage...</span>
+                      <span>Saving File...</span>
                     </span>
                   ) : (
                     <span className="flex items-center gap-1.5">
                       <Upload className="w-3.5 h-3.5" />
-                      <span>Upload to VPS Storage</span>
+                      <span>Upload File</span>
                     </span>
                   )}
                 </Button>
@@ -1083,7 +1019,7 @@ function DashboardContent() {
             <div className="space-y-2 pt-3 border-t border-slate-100 max-h-56 overflow-y-auto">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase">
                 <span>Stored Private Files ({user?.privateFiles?.length || 0})</span>
-                <span className="text-slate-400 font-normal lowercase">saved on disk</span>
+                <span className="text-slate-400 font-normal lowercase">saved to account</span>
               </div>
               {user?.privateFiles && user.privateFiles.length > 0 ? (
                 <div className="space-y-1.5">
@@ -1127,7 +1063,7 @@ function DashboardContent() {
                         <button
                           onClick={() => handleDeletePrivateFile(file.id)}
                           className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Delete from VPS"
+                          title="Delete file"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1220,9 +1156,9 @@ function DashboardContent() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-[#0c2461] hover:bg-[#103080] text-white font-bold"
+                  className="px-4 py-1.5 rounded bg-[#0c2461] hover:bg-[#103080] text-white font-bold cursor-pointer"
                 >
-                  Save Event to Database
+                  Save Calendar Event
                 </button>
               </div>
             </form>
@@ -1230,211 +1166,7 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* MODAL 3: EXAMINER SCRIPT GRADING MODAL */}
-      {showGradeModal && selectedScriptToGrade && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  Evaluate & Grade Mock Paper
-                </h3>
-                <p className="text-xs text-slate-500">
-                  {selectedScriptToGrade.paper} • {selectedScriptToGrade.student}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowGradeModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
-              >
-                ✕
-              </button>
-            </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-between">
-                <span>Total Maximum Paper Marks: <strong>75 Marks</strong></span>
-                <span className="text-[11px] font-bold uppercase bg-white px-2 py-0.5 rounded border border-blue-200">
-                  Academic Evaluation Rubric
-                </span>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Awarded Score (Out of 75)
-                </label>
-                <input
-                  type="number"
-                  max={75}
-                  min={0}
-                  value={awardedMarks}
-                  onChange={(e) => setAwardedMarks(e.target.value)}
-                  className="w-full h-9 px-3 rounded-xl border border-slate-300 text-sm font-bold text-emerald-700"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Faculty Solution Remarks & Feedback
-                </label>
-                <textarea
-                  value={examinerRemarks}
-                  onChange={(e) => setExaminerRemarks(e.target.value)}
-                  className="w-full h-20 p-2.5 rounded-xl border border-slate-300 text-xs resize-none"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowGradeModal(false)} className="rounded-xl cursor-pointer">
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      await fetch("/api/dashboard", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          action: "grade_submission",
-                          studentName: selectedScriptToGrade.student,
-                          paperTitle: selectedScriptToGrade.paper,
-                          marks: awardedMarks,
-                          remarks: examinerRemarks,
-                        }),
-                      });
-                      alert(`Marks awarded: ${awardedMarks}/75 (${Math.round((parseInt(awardedMarks)/75)*100)}%). Feedback published to student portal.`);
-                      setShowGradeModal(false);
-                    } catch (err) {
-                      console.error("Grading error:", err);
-                    }
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer"
-                >
-                  Publish Grade & Solution Remarks
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: STUDENT COURSEWORK SUBMISSION MODAL */}
-      {showSubmissionModal && selectedEventForSubmission && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  Submit Coursework Assignment
-                </h3>
-                <p className="text-xs text-slate-500">
-                  {selectedEventForSubmission.title}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowSubmissionModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSubmissionToast(true);
-                setShowSubmissionModal(false);
-                setTimeout(() => setSubmissionToast(false), 5000);
-              }}
-              className="space-y-4 text-xs"
-            >
-              <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-100 text-blue-900 space-y-1">
-                <div className="font-bold flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Submission Requirements</span>
-                </div>
-                <p className="text-[11px] text-blue-700">
-                  Please upload your handwritten working, lab report, or typed solution in PDF format (maximum size: 50MB).
-                </p>
-                <div className="text-[10px] text-blue-600 font-semibold pt-1">
-                  📅 Deadline: {new Date(selectedEventForSubmission.dueDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Select PDF Submission File
-                </label>
-                <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center hover:border-blue-500 transition-colors bg-slate-50/50">
-                  <Upload className="w-6 h-6 text-blue-500 mx-auto mb-1.5" />
-                  <div className="font-bold text-slate-800 text-xs">{submissionFile}</div>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Click to choose a replacement file (PDF, DOCX)</p>
-                  <input
-                    type="file"
-                    accept=".pdf,.docx,.zip"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setSubmissionFile(e.target.files[0].name);
-                      }
-                    }}
-                    className="hidden"
-                    id="submission-file-input"
-                  />
-                  <label
-                    htmlFor="submission-file-input"
-                    className="mt-2 inline-block px-3 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-blue-600 hover:bg-blue-50 cursor-pointer"
-                  >
-                    Browse Files
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Candidate Comments & Notes (Optional)
-                </label>
-                <textarea
-                  placeholder="e.g. Completed all unit problems including question 7 extension proofs."
-                  value={submissionNotes}
-                  onChange={(e) => setSubmissionNotes(e.target.value)}
-                  className="w-full h-16 p-2.5 rounded-xl border border-slate-300 text-xs resize-none"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSubmissionModal(false)}
-                  className="rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer"
-                >
-                  Confirm & Submit Assignment
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* SUBMISSION SUCCESS TOAST */}
-      {submissionToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-bottom-5">
-          <CheckCircle2 className="w-5 h-5 text-white" />
-          <div className="text-xs">
-            <div className="font-bold">Coursework Submitted Successfully!</div>
-            <div className="text-[11px] text-emerald-100">Your script was sent to faculty examiners for marking.</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

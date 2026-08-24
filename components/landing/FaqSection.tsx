@@ -28,7 +28,7 @@ export function FaqSection() {
             Frequently Asked Questions
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
-            Everything you need to know about our multi-role platform, database architecture, and curriculum.
+            Everything you need to know about our academic programs, study materials, and curriculum.
           </p>
         </div>
 

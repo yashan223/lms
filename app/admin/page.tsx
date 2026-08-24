@@ -45,11 +45,14 @@ import {
   FolderPlus,
   Sparkles,
   Phone,
+  Upload,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "users" | "courses" | "assessments" | "finances" | "settings"
+    "overview" | "users" | "courses" | "finances" | "settings"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -57,7 +60,6 @@ export default function AdminDashboardPage() {
   const [allUsersList, setAllUsersList] = useState<any[]>([]);
   const [coursesList, setCoursesList] = useState<any[]>([]);
   const [facultyList, setFacultyList] = useState<any[]>([]);
-  const [eventsList, setEventsList] = useState<any[]>([]);
 
   // User Management State
   const [userSearch, setUserSearch] = useState("");
@@ -102,13 +104,18 @@ export default function AdminDashboardPage() {
   const [newLessonDuration, setNewLessonDuration] = useState("30");
   const [selectedModuleIdForLesson, setSelectedModuleIdForLesson] = useState("");
 
-  // Assessment & Settings State
-  const [showAddAssessmentModal, setShowAddAssessmentModal] = useState(false);
-  const [newAssessTitle, setNewAssessTitle] = useState("");
-  const [newAssessDesc, setNewAssessDesc] = useState("");
-  const [newAssessCourseId, setNewAssessCourseId] = useState("");
-  const [newAssessDate, setNewAssessDate] = useState("2026-08-30T23:55");
+  // Course Material & File Management State
+  const [showManageMaterialsModal, setShowManageMaterialsModal] = useState(false);
+  const [selectedCourseForMaterials, setSelectedCourseForMaterials] = useState<any>(null);
+  const [matFormTitle, setMatFormTitle] = useState("");
+  const [matFormCategory, setMatFormCategory] = useState("HANDOUT");
+  const [matFormDesc, setMatFormDesc] = useState("");
+  const [selectedMatUploadFile, setSelectedMatUploadFile] = useState<File | null>(null);
+  const [uploadingCourseMaterial, setUploadingCourseMaterial] = useState(false);
+  const [materialStatusMsg, setMaterialStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [matSearchQuery, setMatSearchQuery] = useState("");
 
+  // Settings State
   const [centerName, setCenterName] = useState("London International Academic Academy");
   const [centerNumber, setCenterNumber] = useState("UK-92810");
   const [accreditationNumber, setAccreditationNumber] = useState("GB-40182");
@@ -142,20 +149,32 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   // Fetch live database records from PostgreSQL
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin");
+      setFetchError(null);
+      const res = await fetch("/api/admin", {
+        cache: "no-store",
+        headers: {
+          "Pragma": "no-cache",
+          "Cache-Control": "no-cache",
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         setAllUsersList(data.allUsers || []);
         setCoursesList(data.courses || []);
         setFacultyList(data.faculty || []);
-        setEventsList(data.events || []);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setFetchError(errData.error || "Failed to load academy records from server");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Admin data fetch error:", err);
+      setFetchError(err.message || "Unable to connect to administration server");
     } finally {
       setLoading(false);
     }
@@ -288,7 +307,7 @@ export default function AdminDashboardPage() {
     setConfirmModalData({
       isOpen: true,
       title: `Delete User: ${user.name}?`,
-      description: `This will permanently remove ${user.name} (${user.email}) and all related enrollments from the database.`,
+      description: `This will permanently remove ${user.name} (${user.email}) and all related enrollments from academy records.`,
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -553,39 +572,90 @@ export default function AdminDashboardPage() {
   };
 
   // ========================================================
-  // ASSESSMENT HANDLERS
+  // COURSE MATERIAL / FILE HANDLERS
   // ========================================================
-  const handleCreateAssessment = async (e: React.FormEvent) => {
+  const handleOpenManageMaterials = (course: any) => {
+    setSelectedCourseForMaterials(course);
+    setMatFormTitle("");
+    setMatFormCategory("HANDOUT");
+    setMatFormDesc("");
+    setSelectedMatUploadFile(null);
+    setMaterialStatusMsg(null);
+    setMatSearchQuery("");
+    setShowManageMaterialsModal(true);
+  };
+
+  const handleUploadCourseMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedCourseForMaterials || !selectedMatUploadFile || !matFormTitle.trim()) {
+      setMaterialStatusMsg({ type: "error", text: "Please select a file and provide a title." });
+      return;
+    }
+
     try {
-      const res = await fetch("/api/admin", {
+      setUploadingCourseMaterial(true);
+      setMaterialStatusMsg(null);
+
+      // 1. Upload to VPS storage
+      const formData = new FormData();
+      formData.append("file", selectedMatUploadFile);
+      formData.append("isPrivate", "false");
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
+        setMaterialStatusMsg({ type: "error", text: uploadData.error || "File upload failed" });
+        return;
+      }
+
+      // 2. Link material in academy records via admin
+      const saveRes = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "create_assessment",
-          title: newAssessTitle,
-          description: newAssessDesc,
-          dueDate: newAssessDate,
-          courseId: newAssessCourseId || null,
+          action: "add_course_material",
+          courseId: selectedCourseForMaterials.id,
+          title: matFormTitle.trim(),
+          description: matFormDesc.trim() || null,
+          fileUrl: uploadData.fileUrl,
+          fileSize: uploadData.fileSize,
+          fileType: uploadData.mimeType,
+          category: matFormCategory,
         }),
       });
 
-      if (res.ok) {
-        setShowAddAssessmentModal(false);
-        setNewAssessTitle("");
-        setNewAssessDesc("");
-        fetchAdminData();
+      if (saveRes.ok) {
+        setMaterialStatusMsg({ type: "success", text: "Course file published successfully!" });
+        setMatFormTitle("");
+        setMatFormDesc("");
+        setSelectedMatUploadFile(null);
+
+        await fetchAdminData();
+        const updatedRes = await fetch("/api/admin");
+        const data = await updatedRes.json();
+        const updatedCourse = data.courses.find((c: any) => c.id === selectedCourseForMaterials.id);
+        if (updatedCourse) setSelectedCourseForMaterials(updatedCourse);
+      } else {
+        const err = await saveRes.json();
+        setMaterialStatusMsg({ type: "error", text: err.error || "Failed to record material." });
       }
     } catch (err) {
-      console.error("Error creating assessment:", err);
+      console.error("Course file upload error:", err);
+      setMaterialStatusMsg({ type: "error", text: "Connection error during file upload." });
+    } finally {
+      setUploadingCourseMaterial(false);
     }
   };
 
-  const handleDeleteAssessment = (event: any) => {
+  const handleDeleteCourseMaterial = (mat: any) => {
     setConfirmModalData({
       isOpen: true,
-      title: `Delete Coursework: ${event.title}?`,
-      description: `This will remove the assignment and deadline from all student calendars.`,
+      title: `Delete File: ${mat.title}?`,
+      description: `This will permanently remove this material from student download portals.`,
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -593,15 +663,17 @@ export default function AdminDashboardPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              action: "delete_assessment",
-              eventId: event.id,
+              action: "delete_course_material",
+              materialId: mat.id,
             }),
           });
-          fetchAdminData();
+          await fetchAdminData();
+          const updatedRes = await fetch("/api/admin");
+          const data = await updatedRes.json();
+          const updatedCourse = data.courses.find((c: any) => c.id === selectedCourseForMaterials?.id);
+          if (updatedCourse) setSelectedCourseForMaterials(updatedCourse);
         } catch (err) {
-          console.error("Error deleting assessment:", err);
-        } finally {
-          setConfirmModalData((prev) => ({ ...prev, isOpen: false }));
+          console.error("Error deleting course material:", err);
         }
       },
     });
@@ -617,7 +689,6 @@ export default function AdminDashboardPage() {
     { id: "overview", label: "Executive Overview", icon: Layers },
     { id: "users", label: "User Management", icon: Users, badge: allUsersList.length },
     { id: "courses", label: "Course Management", icon: BookOpen, badge: coursesList.length },
-    { id: "assessments", label: "Coursework & Tasks", icon: FileCheck2, badge: eventsList.length },
     { id: "finances", label: "Financials & Tuition", icon: DollarSign },
     { id: "settings", label: "Academy Settings & SIS", icon: School },
   ];
@@ -709,14 +780,6 @@ export default function AdminDashboardPage() {
 
           <div className="space-y-1 text-xs">
             <Link
-              href="/dashboard"
-              className="w-full px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-white flex items-center gap-2 transition-colors font-semibold text-[11px]"
-            >
-              <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
-              <span>Student LMS View</span>
-            </Link>
-
-            <Link
               href="/"
               className="w-full px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white flex items-center gap-2 transition-colors font-semibold text-[11px]"
             >
@@ -761,8 +824,6 @@ export default function AdminDashboardPage() {
                     ? "User Management"
                     : activeTab === "courses"
                     ? "Course Management"
-                    : activeTab === "assessments"
-                    ? "Coursework & Tasks"
                     : activeTab === "finances"
                     ? "Financials & Tuition"
                     : activeTab === "settings"
@@ -770,12 +831,23 @@ export default function AdminDashboardPage() {
                     : "Executive Overview"}
                 </h2>
                 <p className="text-[11px] text-slate-500 hidden sm:block">
-                  Live PostgreSQL Administration & Institutional Governance
+                  Live Institutional Administration & Academic Governance
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={fetchAdminData}
+                disabled={loading}
+                className="text-xs font-bold text-slate-700 h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${loading ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">Refresh Data</span>
+              </Button>
+
               {activeTab === "users" && (
                 <Button
                   size="sm"
@@ -797,22 +869,36 @@ export default function AdminDashboardPage() {
                   <span>+ Create Course</span>
                 </Button>
               )}
-
-              {activeTab === "assessments" && (
-                <Button
-                  size="sm"
-                  onClick={() => setShowAddAssessmentModal(true)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-blue-100" />
-                  <span>+ Add Coursework</span>
-                </Button>
-              )}
             </div>
           </div>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto">
+          {/* Error Banner */}
+          {fetchError && (
+            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span><strong>System Connection Error:</strong> {fetchError}</span>
+              </div>
+              <Button
+                size="sm"
+                onClick={fetchAdminData}
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl h-8"
+              >
+                Retry Connection
+              </Button>
+            </div>
+          )}
+
+          {/* Loading Indicator for Initial Mount */}
+          {loading && allUsersList.length === 0 && !fetchError && (
+            <div className="py-24 text-center space-y-3">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+              <div className="text-sm font-bold text-slate-800">Loading Institutional Records...</div>
+              <p className="text-xs text-slate-400">Synchronizing student scholars, faculty lecturers, and curriculum syllabi.</p>
+            </div>
+          )}
           {/* ======================================================== */}
           {/* TAB 1: EXECUTIVE OVERVIEW */}
           {/* ======================================================== */}
@@ -844,7 +930,7 @@ export default function AdminDashboardPage() {
                     <TrendingUp className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">{totalEnrollmentsCount} Enrollments</div>
-                  <div className="text-[11px] text-emerald-600 font-semibold">100% Live DB Sync</div>
+                  <div className="text-[11px] text-emerald-600 font-semibold">Verified Enrollment Records</div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -864,17 +950,17 @@ export default function AdminDashboardPage() {
                   <span>Administrative Fast Actions:</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button size="sm" onClick={() => setActiveTab("users")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl">
+                  <Button size="sm" onClick={() => setActiveTab("users")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl cursor-pointer">
                     <UserPlus className="w-3.5 h-3.5 text-blue-600 mr-1" />
                     Manage Users
                   </Button>
-                  <Button size="sm" onClick={() => setActiveTab("courses")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl">
+                  <Button size="sm" onClick={() => setActiveTab("courses")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl cursor-pointer">
                     <BookOpen className="w-3.5 h-3.5 text-blue-600 mr-1" />
                     Manage Courses
                   </Button>
-                  <Button size="sm" onClick={() => setActiveTab("assessments")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl">
-                    <FileCheck2 className="w-3.5 h-3.5 text-blue-600 mr-1" />
-                    Schedule Tasks
+                  <Button size="sm" onClick={() => setActiveTab("finances")} className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold h-8 rounded-xl cursor-pointer">
+                    <DollarSign className="w-3.5 h-3.5 text-blue-600 mr-1" />
+                    View Financials
                   </Button>
                 </div>
               </div>
@@ -1098,7 +1184,7 @@ export default function AdminDashboardPage() {
               {/* Course Metric Counters */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-slate-500">Total Courses in DB</span>
+                  <span className="text-xs font-medium text-slate-500">Total Active Courses</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">{coursesList.length} Courses</div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -1162,8 +1248,9 @@ export default function AdminDashboardPage() {
                       </p>
 
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                        <span>📚 {course.modules?.length || 2} Modules</span>
-                        <span>👥 {course.enrollments?.length || 1} Enrolled</span>
+                        <span>📚 {course.modules?.length || 0} Modules</span>
+                        <span>📄 {course.materials?.length || 0} Files</span>
+                        <span>👥 {course.enrollments?.length || 0} Enrolled</span>
                         <span className="font-bold text-slate-900">£{course.price}</span>
                       </div>
                     </div>
@@ -1179,7 +1266,17 @@ export default function AdminDashboardPage() {
                         className="text-xs font-bold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 h-8 rounded-xl flex-1 cursor-pointer"
                       >
                         <FolderPlus className="w-3.5 h-3.5 text-blue-500" />
-                        <span>Syllabus & Modules</span>
+                        <span>Syllabus</span>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenManageMaterials(course)}
+                        className="text-xs font-bold gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50 h-8 rounded-xl flex-1 cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Files ({course.materials?.length || 0})</span>
                       </Button>
 
                       <button
@@ -1204,57 +1301,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ======================================================== */}
-          {/* TAB 4: COURSEWORK & TASKS */}
-          {/* ======================================================== */}
-          {activeTab === "assessments" && (
-            <div className="space-y-5 animate-in fade-in duration-300">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">Coursework Assignments & Deadlines</h3>
-                  <p className="text-xs text-slate-500">Publish coursework, problem sets, and academic deadlines directly to student calendars</p>
-                </div>
-                <Button
-                  onClick={() => setShowAddAssessmentModal(true)}
-                  className="text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-blue-100" />
-                  <span>+ Schedule Coursework Task</span>
-                </Button>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {eventsList.map((paper, idx) => (
-                  <div key={paper.id || idx} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px]">
-                          {paper.course?.subjectCode || "Assignment"}
-                        </Badge>
-                        <span className="text-[11px] text-slate-400">
-                          📅 Due: {new Date(paper.dueDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
-                        </span>
-                      </div>
-                      <h4 className="font-bold text-slate-900 text-sm leading-snug">{paper.title}</h4>
-                      <p className="text-xs text-slate-500">{paper.description}</p>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-blue-600">
-                        {paper.course?.title || "Academic Coursework"}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteAssessment(paper)}
-                        className="text-xs font-bold text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* ======================================================== */}
           {/* TAB 5: FINANCIALS & TUITION */}
@@ -1288,7 +1335,7 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
                     <h3 className="font-bold text-sm text-slate-900">Student Tuition & Enrollment Ledger</h3>
-                    <p className="text-xs text-slate-500">Live database transaction log for student registrations and course enrollments</p>
+                    <p className="text-xs text-slate-500">Official transaction log for student registrations and course enrollments</p>
                   </div>
                   <Button
                     size="sm"
@@ -1766,68 +1813,254 @@ export default function AdminDashboardPage() {
       )}
 
       {/* ======================================================== */}
-      {/* ASSESSMENT MODAL: ADD COURSEWORK */}
+      {/* COURSE MATERIAL & FILE MANAGEMENT MODAL */}
       {/* ======================================================== */}
-      {showAddAssessmentModal && (
+      {showManageMaterialsModal && selectedCourseForMaterials && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+          <div className="bg-white rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
+            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-base text-slate-900">Schedule Coursework Task</h3>
-              <button onClick={() => setShowAddAssessmentModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                    {selectedCourseForMaterials.subjectCode || "COURSE-FILE-HUB"}
+                  </span>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Course Files & Study Materials
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {selectedCourseForMaterials.title} • {selectedCourseForMaterials.materials?.length || 0} Files Published
+                </p>
+              </div>
+              <button
+                onClick={() => setShowManageMaterialsModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleCreateAssessment} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold block mb-1">Task Title</label>
-                <Input
-                  required
-                  placeholder="e.g. Assignment: Pure Mathematics P4 Integration Problem Set"
-                  value={newAssessTitle}
-                  onChange={(e) => setNewAssessTitle(e.target.value)}
-                  className="rounded-xl"
-                />
+            {/* Upload File Form */}
+            <form
+              onSubmit={handleUploadCourseMaterial}
+              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-blue-600" />
+                  Upload Course Study Material
+                </span>
+                <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  Academy Resource Repository
+                </span>
               </div>
-              <div>
-                <label className="font-bold block mb-1">Linked Course</label>
-                <select
-                  value={newAssessCourseId}
-                  onChange={(e) => setNewAssessCourseId(e.target.value)}
-                  className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs"
+
+              {/* Status Message */}
+              {materialStatusMsg && (
+                <div
+                  className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                    materialStatusMsg.type === "success"
+                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      : "bg-red-50 text-red-800 border border-red-200"
+                  }`}
                 >
-                  <option value="">-- General Academic Task --</option>
-                  {coursesList.map((c) => (
-                    <option key={c.id} value={c.id}>{c.title}</option>
-                  ))}
-                </select>
+                  {materialStatusMsg.type === "success" ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  )}
+                  <span>{materialStatusMsg.text}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Document Title <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    required
+                    placeholder="e.g. Pure Maths P3 Revision Guide 2026"
+                    value={matFormTitle}
+                    onChange={(e) => setMatFormTitle(e.target.value)}
+                    className="bg-white rounded-xl text-xs h-9"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Material Classification
+                  </label>
+                  <select
+                    value={matFormCategory}
+                    onChange={(e) => setMatFormCategory(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
+                  >
+                    <option value="HANDOUT">Handout & Study Notes</option>
+                    <option value="FORMULA_SHEET">Formula Sheet & Tables</option>
+                    <option value="MOCK_PAPER">Mock Exam Paper & Solutions</option>
+                    <option value="LAB_GUIDE">Practical Lab Guide</option>
+                    <option value="SLIDES">Lecture Slides</option>
+                    <option value="OTHER">General Resource File</option>
+                  </select>
+                </div>
               </div>
+
               <div>
-                <label className="font-bold block mb-1">Due Date</label>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Description / Topic Notes
+                </label>
                 <Input
-                  type="datetime-local"
-                  required
-                  value={newAssessDate}
-                  onChange={(e) => setNewAssessDate(e.target.value)}
-                  className="rounded-xl"
+                  placeholder="Optional brief description of the document contents..."
+                  value={matFormDesc}
+                  onChange={(e) => setMatFormDesc(e.target.value)}
+                  className="bg-white rounded-xl text-xs h-9"
                 />
               </div>
+
               <div>
-                <label className="font-bold block mb-1">Description & Instructions</label>
-                <textarea
-                  rows={3}
-                  placeholder="Instructions for students regarding handwritten working, rubric points, and PDF submission."
-                  value={newAssessDesc}
-                  onChange={(e) => setNewAssessDesc(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none"
+                <label className="font-bold text-slate-700 block mb-1">
+                  Choose File <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  required
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setSelectedMatUploadFile(file);
+                    if (file && !matFormTitle) {
+                      const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " ");
+                      setMatFormTitle(cleanName);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer bg-white p-1 rounded-xl border border-slate-200"
                 />
               </div>
-              <div className="pt-2 flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowAddAssessmentModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
-                <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Schedule Task</Button>
+
+              <div className="pt-1 flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={uploadingCourseMaterial || !selectedMatUploadFile}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-9 rounded-xl gap-1.5 cursor-pointer shadow-xs shadow-blue-600/20"
+                >
+                  {uploadingCourseMaterial ? (
+                    <>
+                      <Clock className="w-3.5 h-3.5 animate-spin" />
+                      <span>Uploading File...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Publish to Course Files</span>
+                    </>
+                  )}
+                </Button>
               </div>
             </form>
+
+            {/* Existing Course Materials List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+                  Published Files ({selectedCourseForMaterials.materials?.length || 0})
+                </h4>
+                {selectedCourseForMaterials.materials?.length > 3 && (
+                  <div className="relative w-48">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      placeholder="Filter files..."
+                      value={matSearchQuery}
+                      onChange={(e) => setMatSearchQuery(e.target.value)}
+                      className="pl-8 h-7 text-[11px] rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {selectedCourseForMaterials.materials && selectedCourseForMaterials.materials.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedCourseForMaterials.materials
+                    .filter((mat: any) =>
+                      !matSearchQuery ||
+                      mat.title.toLowerCase().includes(matSearchQuery.toLowerCase()) ||
+                      (mat.description && mat.description.toLowerCase().includes(matSearchQuery.toLowerCase())) ||
+                      (mat.category && mat.category.toLowerCase().includes(matSearchQuery.toLowerCase()))
+                    )
+                    .map((mat: any) => (
+                      <div
+                        key={mat.id}
+                        className="p-3 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-blue-300 transition-colors"
+                      >
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                              {mat.category ? mat.category.replace(/_/g, " ") : "HANDOUT"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {mat.fileSize || "1.5 MB"}
+                            </span>
+                          </div>
+                          <div className="font-bold text-xs text-slate-900 truncate">
+                            {mat.title}
+                          </div>
+                          {mat.description && (
+                            <div className="text-[11px] text-slate-500 line-clamp-1">
+                              {mat.description}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          {mat.fileUrl && (
+                            <a
+                              href={mat.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              download
+                              className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download</span>
+                            </a>
+                          )}
+                          <button
+                            onClick={() => handleDeleteCourseMaterial(mat)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                            title="Delete Material"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 px-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+                  <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-slate-600">No study materials uploaded yet</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Use the form above to attach lecture slides, formula booklets, handouts, and problem sets to this syllabus unit.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowManageMaterialsModal(false)}
+                className="rounded-xl cursor-pointer"
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}
+
+
 
       {/* CONFIRMATION MODAL */}
       <ConfirmationModal

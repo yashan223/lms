@@ -6,49 +6,56 @@ import { broadcastLMSEvent } from "@/lib/events";
 async function findCourseBySlugOrId(rawSlug: string) {
   if (!rawSlug) return null;
   const decoded = decodeURIComponent(rawSlug).trim();
-  const slugWithHyphens = decoded.replace(/[_\s]+/g, "-").toLowerCase();
-  const slugWithUnderscores = decoded.replace(/[-\s]+/g, "_").toLowerCase();
 
-  return await prisma.course.findFirst({
-    where: {
-      OR: [
-        { slug: rawSlug },
-        { slug: decoded },
-        { slug: slugWithHyphens },
-        { slug: slugWithUnderscores },
-        { id: rawSlug },
-        { id: decoded },
-        { slug: { equals: rawSlug, mode: "insensitive" } },
-        { slug: { equals: decoded, mode: "insensitive" } },
-        { slug: { equals: slugWithHyphens, mode: "insensitive" } },
-        { slug: { equals: slugWithUnderscores, mode: "insensitive" } },
-      ],
-    },
-    include: {
-      instructor: true,
-      modules: {
-        include: {
-          lessons: {
-            orderBy: { position: "asc" },
-          },
-        },
-        orderBy: { position: "asc" },
-      },
-      materials: {
-        orderBy: { createdAt: "desc" },
-      },
-      enrollments: {
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, role: true },
-          },
+  const includeOptions = {
+    instructor: true,
+    modules: {
+      include: {
+        lessons: {
+          orderBy: { position: "asc" as const },
         },
       },
-      reviews: {
-        include: { user: true },
+      orderBy: { position: "asc" as const },
+    },
+    materials: {
+      orderBy: { createdAt: "desc" as const },
+    },
+    enrollments: {
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, role: true },
+        },
       },
     },
+    reviews: {
+      include: { user: true },
+    },
+  };
+
+  // Try exact slug match first
+  let course = await prisma.course.findUnique({
+    where: { slug: decoded },
+    include: includeOptions,
   });
+  if (course) return course;
+
+  // Try exact ID match
+  course = await prisma.course.findUnique({
+    where: { id: decoded },
+    include: includeOptions,
+  });
+  if (course) return course;
+
+  // Try raw slug (in case encoded differently)
+  if (rawSlug !== decoded) {
+    course = await prisma.course.findUnique({
+      where: { slug: rawSlug },
+      include: includeOptions,
+    });
+    if (course) return course;
+  }
+
+  return null;
 }
 
 export async function GET(

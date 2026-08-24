@@ -143,7 +143,7 @@ export function Hero() {
                   >
                     {/* The Rotated Diamond Square */}
                     <div
-                      className={`w-18 h-18 sm:w-22 sm:h-22 ${prog.colorBg} rounded-2xl flex items-center justify-center shadow-lg transform rotate-45 group-hover:scale-110 group-hover:rotate-45 transition-all duration-300 border-2 border-white/90 ring-2 ring-slate-100`}
+                      className={`w-18 h-18 sm:w-22 sm:h-22 ${prog.colorBg} rounded-2xl flex items-center justify-center shadow-lg transform rotate-45 transition-all duration-300 border-2 border-white/90 ring-2 ring-slate-100 ${isSelected ? 'ring-4 ring-offset-2 ring-blue-500' : ''}`}
                     >
                       {/* Counter-Rotated Content */}
                       <div className="transform -rotate-45 flex flex-col items-center justify-center text-white text-center p-1">
@@ -166,7 +166,7 @@ export function Hero() {
 
           {/* Selected Diamond Detail Toast */}
           {selectedDiamond && (
-            <div className="mt-4 p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="mt-4 p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-center animate-in fade-in duration-200">
               <div className="text-xs font-bold text-blue-900">
                 {diamondPrograms.find((d) => d.id === selectedDiamond)?.name} ({diamondPrograms.find((d) => d.id === selectedDiamond)?.code})
               </div>

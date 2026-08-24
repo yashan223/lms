@@ -472,17 +472,7 @@ function DashboardContent() {
                     <span>Site home</span>
                   </Link>
 
-                  <div
-                    onClick={() => setNavSitePagesOpen(!navSitePagesOpen)}
-                    className="flex items-center gap-1.5 cursor-pointer hover:text-blue-700 transition-colors"
-                  >
-                    {navSitePagesOpen ? (
-                      <ChevronDown className="w-3 h-3 text-slate-400" />
-                    ) : (
-                      <ChevronRight className="w-3 h-3 text-slate-400" />
-                    )}
-                    <span>Site pages</span>
-                  </div>
+
 
                   {/* My Courses Navigation Tree */}
                   <div>

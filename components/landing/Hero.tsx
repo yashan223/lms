@@ -93,9 +93,9 @@ export function Hero() {
 
   return (
     <section className="relative w-full overflow-hidden bg-white border-b border-slate-200">
-      <div className="w-full min-h-[560px] lg:min-h-[620px] grid grid-cols-1 lg:grid-cols-12 relative items-stretch">
+      <div className="w-full h-[560px] lg:h-[680px] grid grid-cols-1 lg:grid-cols-12 relative items-stretch overflow-hidden">
         {/* Left Side: Campus Photograph with Brush Edge */}
-        <div className="lg:col-span-6 relative w-full min-h-[360px] sm:min-h-[420px] lg:min-h-[620px] h-full overflow-hidden bg-slate-900 self-stretch">
+        <div className="lg:col-span-6 relative w-full h-full overflow-hidden bg-slate-900 self-stretch">
           <img
             src="/images/campus_students_hero.jpg"
             alt="London A/L and O/L Students"
@@ -110,7 +110,7 @@ export function Hero() {
         </div>
 
         {/* Right Side: Headline & Diamond Program Badges */}
-        <div className="lg:col-span-6 px-6 sm:px-10 lg:px-12 xl:px-16 py-10 sm:py-14 flex flex-col justify-center items-center relative z-10 bg-white">
+        <div className="lg:col-span-6 px-6 sm:px-10 lg:px-12 xl:px-16 py-10 sm:py-14 flex flex-col justify-center items-center relative z-10 bg-white overflow-hidden">
           <div className="max-w-xl w-full flex flex-col items-center">
           {/* Main Hero Headline */}
           <div className="text-center space-y-3 mb-8">
@@ -164,26 +164,28 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Selected Diamond Detail Toast */}
-          {selectedDiamond && (
-            <div className="mt-4 p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-center animate-in fade-in duration-200">
-              <div className="text-xs font-bold text-blue-900">
-                {diamondPrograms.find((d) => d.id === selectedDiamond)?.name} ({diamondPrograms.find((d) => d.id === selectedDiamond)?.code})
+          {/* Selected Diamond Detail Toast — absolutely positioned so it never shifts layout height */}
+          <div className="relative w-full">
+            {selectedDiamond && (
+              <div className="absolute top-1 left-0 right-0 mx-auto max-w-sm p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-center animate-in fade-in duration-200 shadow-md z-20">
+                <div className="text-xs font-bold text-blue-900">
+                  {diamondPrograms.find((d) => d.id === selectedDiamond)?.name} ({diamondPrograms.find((d) => d.id === selectedDiamond)?.code})
+                </div>
+                <div className="text-[11px] text-slate-600 mt-0.5">
+                  {diamondPrograms.find((d) => d.id === selectedDiamond)?.description}
+                </div>
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <Link
+                    href="#courses"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-900 underline"
+                  >
+                    <span>Explore Subject Units & Past Papers</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
-              <div className="text-[11px] text-slate-600 mt-0.5">
-                {diamondPrograms.find((d) => d.id === selectedDiamond)?.description}
-              </div>
-              <div className="mt-2 flex items-center justify-center gap-2">
-                <Link
-                  href="#courses"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-900 underline"
-                >
-                  <span>Explore Subject Units & Past Papers</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Quick CTA Links */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

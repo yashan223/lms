@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import {
   Search,
   Star,
@@ -34,49 +35,58 @@ export default function CoursesPage() {
     "School of Economics & Commerce",
   ];
 
-  // Fetch live courses 100% from PostgreSQL database
-  useEffect(() => {
-    async function loadCourses() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/courses");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.courses && data.courses.length > 0) {
-            const formatted = data.courses.map((c: any) => ({
-              id: c.id,
-              title: c.title,
-              slug: c.slug,
-              subtitle: c.subtitle || c.description,
-              category: c.category,
-              level: c.level === "ADVANCED" ? "London A/L" : "London O/L",
-              subjectCode: c.subjectCode || "MATH-101",
-              thumbnail: c.thumbnail || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
-              price: c.price,
-              rating: 4.98,
-              reviewCount: 1240,
-              studentsEnrolled: c.enrollments?.length ? c.enrollments.length * 1420 + 200 : 5200,
-              durationHours: 58,
-              lessonsCount: c.modules?.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0) || 12,
-              instructor: {
-                name: c.instructor?.name || "Dr. Sarah Jenkins",
-                avatar: c.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-                roleTitle: c.instructor?.headline || "Senior Faculty Lecturer",
-              },
-              skills: ["Calculus Proofs", "Vectors", "Method Marks", "Topic Mastery"],
-              tags: [c.category],
-            }));
-            setCourses(formatted);
-          }
+  // Fetch live courses from server
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/courses");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.courses && data.courses.length > 0) {
+          const formatted = data.courses.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            slug: c.slug,
+            subtitle: c.subtitle || c.description,
+            category: c.category,
+            level: c.level === "ADVANCED" ? "London A/L" : "London O/L",
+            subjectCode: c.subjectCode || "MATH-101",
+            thumbnail: c.thumbnail || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
+            price: c.price,
+            rating: 4.98,
+            reviewCount: 1240,
+            studentsEnrolled: c.enrollments?.length ? c.enrollments.length * 1420 + 200 : 5200,
+            durationHours: 58,
+            lessonsCount: c.modules?.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0) || 12,
+            instructor: {
+              name: c.instructor?.name || "Dr. Sarah Jenkins",
+              avatar: c.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+              roleTitle: c.instructor?.headline || "Senior Faculty Lecturer",
+            },
+            skills: ["Calculus Proofs", "Vectors", "Method Marks", "Topic Mastery"],
+            tags: [c.category],
+          }));
+          setCourses(formatted);
         }
-      } catch (err) {
-        console.error("Failed to load courses from API:", err);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error("Failed to load courses from API:", err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadCourses();
   }, []);
+
+  // Real-time updates when courses change
+  useRealtimeSync({
+    events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED"],
+    onSync: () => {
+      loadCourses();
+    },
+  });
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {

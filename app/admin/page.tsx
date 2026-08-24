@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import {
   GraduationCap,
   Users,
@@ -183,6 +184,13 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  // Real-time multi-user live synchronization via SSE
+  const { isConnected: realtimeConnected } = useRealtimeSync({
+    onSync: () => {
+      fetchAdminData();
+    },
+  });
 
   // Filtered Users
   const filteredUsers = useMemo(() => {
@@ -837,6 +845,18 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex items-center gap-2.5">
+              <div
+                className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                  realtimeConnected
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-amber-50 border-amber-200 text-amber-700"
+                }`}
+                title={realtimeConnected ? "Real-time updates active without page refresh" : "Connecting to real-time sync stream..."}
+              >
+                <span className={`w-2 h-2 rounded-full ${realtimeConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                <span>{realtimeConnected ? "Live Sync" : "Syncing"}</span>
+              </div>
+
               <Button
                 size="sm"
                 variant="outline"

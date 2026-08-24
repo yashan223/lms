@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import {
   Clock,
   BookOpen,
@@ -136,6 +137,14 @@ export default function CourseDetailPage({
   useEffect(() => {
     loadCourse();
   }, [slug]);
+
+  // Real-time synchronization for study materials & syllabus changes
+  useRealtimeSync({
+    events: ["MATERIALS_CHANGED", "COURSES_CHANGED", "ENROLLMENTS_CHANGED"],
+    onSync: () => {
+      loadCourse();
+    },
+  });
 
   // Handle Enrollment
   const handleEnroll = async () => {

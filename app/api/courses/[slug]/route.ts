@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
+import { broadcastLMSEvent } from "@/lib/events";
 
 async function findCourseBySlugOrId(rawSlug: string) {
   if (!rawSlug) return null;
@@ -102,6 +103,9 @@ export async function POST(
         },
       });
 
+      broadcastLMSEvent("MATERIALS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
+
       return NextResponse.json({ success: true, material });
     }
 
@@ -113,6 +117,10 @@ export async function POST(
         await deleteStorageFile(fileKey);
       }
       await prisma.courseMaterial.delete({ where: { id: materialId } });
+      
+      broadcastLMSEvent("MATERIALS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
+
       return NextResponse.json({ success: true });
     }
 

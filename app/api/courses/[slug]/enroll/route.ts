@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { broadcastLMSEvent } from "@/lib/events";
 import { cookies } from "next/headers";
 
 async function findCourseBySlugOrId(rawSlug: string) {
@@ -92,6 +93,10 @@ export async function POST(
         userId: user.id,
       },
     });
+
+    broadcastLMSEvent("ENROLLMENTS_CHANGED");
+    broadcastLMSEvent("COURSES_CHANGED");
+    broadcastLMSEvent("EVENTS_CHANGED");
 
     return NextResponse.json({
       success: true,

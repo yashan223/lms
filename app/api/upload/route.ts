@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveUploadedFile, SaveFileOptions } from "@/lib/storage";
 import { prisma } from "@/lib/prisma";
+import { broadcastLMSEvent } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     let dbRecord = null;
 
-    // If student/instructor private file upload, persist to PostgreSQL PrivateFile table
+    // If student/instructor private file upload, persist to PrivateFile table
     if (saveToDb && userId) {
       dbRecord = await prisma.privateFile.create({
         data: {
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
           userId: userId,
         },
       });
+      broadcastLMSEvent("MATERIALS_CHANGED");
     }
 
     return NextResponse.json({

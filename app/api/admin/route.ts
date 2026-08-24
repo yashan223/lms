@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
+import { broadcastLMSEvent } from "@/lib/events";
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -133,6 +134,11 @@ export async function POST(request: Request) {
         });
       }
 
+      broadcastLMSEvent("USERS_CHANGED");
+      if (initialCourseId && assignedRole === Role.STUDENT) {
+        broadcastLMSEvent("ENROLLMENTS_CHANGED");
+        broadcastLMSEvent("COURSES_CHANGED");
+      }
       return NextResponse.json({ success: true, user: newUser });
     }
 
@@ -156,6 +162,7 @@ export async function POST(request: Request) {
         data: updateData,
       });
 
+      broadcastLMSEvent("USERS_CHANGED");
       return NextResponse.json({ success: true, user: updatedUser });
     }
 
@@ -164,6 +171,8 @@ export async function POST(request: Request) {
       const { userId, candidateId } = body;
       const targetId = userId || candidateId;
       await prisma.user.delete({ where: { id: targetId } });
+      broadcastLMSEvent("USERS_CHANGED");
+      broadcastLMSEvent("ENROLLMENTS_CHANGED");
       return NextResponse.json({ success: true });
     }
 
@@ -184,6 +193,9 @@ export async function POST(request: Request) {
           data: { userId, courseId },
         });
       }
+      broadcastLMSEvent("ENROLLMENTS_CHANGED");
+      broadcastLMSEvent("USERS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
     }
 
@@ -191,6 +203,9 @@ export async function POST(request: Request) {
     if (action === "unenroll_user") {
       const { enrollmentId } = body;
       await prisma.enrollment.delete({ where: { id: enrollmentId } });
+      broadcastLMSEvent("ENROLLMENTS_CHANGED");
+      broadcastLMSEvent("USERS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
     }
 
@@ -234,6 +249,7 @@ export async function POST(request: Request) {
           },
         },
       });
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true, course: newCourse });
     }
 
@@ -254,6 +270,7 @@ export async function POST(request: Request) {
           instructorId: instructorId || undefined,
         },
       });
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true, course: updatedCourse });
     }
 
@@ -261,6 +278,7 @@ export async function POST(request: Request) {
     if (action === "delete_course") {
       const { courseId } = body;
       await prisma.course.delete({ where: { id: courseId } });
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
     }
 
@@ -274,6 +292,7 @@ export async function POST(request: Request) {
           position: position || 2,
         },
       });
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true, module: newModule });
     }
 
@@ -281,6 +300,7 @@ export async function POST(request: Request) {
     if (action === "delete_module") {
       const { moduleId } = body;
       await prisma.module.delete({ where: { id: moduleId } });
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
     }
 
@@ -298,6 +318,7 @@ export async function POST(request: Request) {
           videoUrl: videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         },
       });
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true, lesson: newLesson });
     }
 
@@ -305,6 +326,7 @@ export async function POST(request: Request) {
     if (action === "delete_lesson") {
       const { lessonId } = body;
       await prisma.lesson.delete({ where: { id: lessonId } });
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
     }
 
@@ -320,6 +342,7 @@ export async function POST(request: Request) {
           courseId: courseId || null,
         },
       });
+      broadcastLMSEvent("EVENTS_CHANGED");
       return NextResponse.json({ success: true, mock: newMock });
     }
 
@@ -327,6 +350,7 @@ export async function POST(request: Request) {
     if (action === "delete_assessment" || action === "delete_event") {
       const { eventId } = body;
       await prisma.event.delete({ where: { id: eventId } });
+      broadcastLMSEvent("EVENTS_CHANGED");
       return NextResponse.json({ success: true });
     }
 
@@ -347,6 +371,8 @@ export async function POST(request: Request) {
           category: category || "HANDOUT",
         },
       });
+      broadcastLMSEvent("MATERIALS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true, material });
     }
 
@@ -359,6 +385,8 @@ export async function POST(request: Request) {
         await deleteStorageFile(fileKey);
       }
       await prisma.courseMaterial.delete({ where: { id: materialId } });
+      broadcastLMSEvent("MATERIALS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
     }
 

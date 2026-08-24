@@ -1,6 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
+import { broadcastLMSEvent } from "@/lib/events";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
@@ -165,6 +169,7 @@ export async function POST(request: Request) {
           type: type || "ASSIGNMENT",
         },
       });
+      broadcastLMSEvent("EVENTS_CHANGED");
       return NextResponse.json({ success: true, event: newEvent });
     }
 
@@ -179,6 +184,7 @@ export async function POST(request: Request) {
           userId,
         },
       });
+      broadcastLMSEvent("MATERIALS_CHANGED");
       return NextResponse.json({ success: true, file: newFile });
     }
 
@@ -191,6 +197,7 @@ export async function POST(request: Request) {
         await deleteStorageFile(fileKey);
       }
       await prisma.privateFile.delete({ where: { id: fileId } });
+      broadcastLMSEvent("MATERIALS_CHANGED");
       return NextResponse.json({ success: true });
     }
 

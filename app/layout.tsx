@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "EduPulse | Accredited Learning Platform for Students, Instructors & Admins",
   description:
-    "Unified multi-role learning platform with accredited courses, interactive faculty curriculum studio, and institutional dean command center.",
+    "Unified multi-role learning platform with accredited courses, interactive faculty curriculum studio, and system administrator control center.",
   keywords: [
     "LMS",
     "Learning Management System",

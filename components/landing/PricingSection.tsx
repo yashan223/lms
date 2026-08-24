@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MOCK_PRICING } from "@/lib/mock-data";
+import { PRICING_PLANS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RolePreviewModal } from "@/components/landing/RolePreviewModal";
@@ -73,7 +73,7 @@ export function PricingSection() {
 
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {MOCK_PRICING.map((plan) => {
+          {PRICING_PLANS.map((plan) => {
             const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
             return (
               <div

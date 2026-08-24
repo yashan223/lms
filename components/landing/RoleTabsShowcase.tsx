@@ -47,7 +47,7 @@ export function RoleTabsShowcase() {
             </span>
           </h2>
           <p className="text-base text-slate-600 leading-relaxed">
-            EduPulse delivers specialized workspaces designed specifically for scholars, faculty educators, and institutional deans.
+            EduPulse delivers specialized workspaces designed specifically for scholars, faculty educators, and system administrators.
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export function RoleTabsShowcase() {
                 className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-bold"
               >
                 <ShieldCheck className="w-4 h-4" />
-                <span>Dean & Admin Console</span>
+                <span>System Admin Console</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -330,7 +330,7 @@ export function RoleTabsShowcase() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-6 space-y-6">
                   <div className="flex items-center gap-2">
-                    <Badge variant="roleAdmin">Admin & Dean Console</Badge>
+                    <Badge variant="roleAdmin">System Admin Console</Badge>
                     <span className="text-xs text-slate-500">Governance & Quality</span>
                   </div>
 
@@ -339,7 +339,7 @@ export function RoleTabsShowcase() {
                   </h3>
 
                   <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                    Empower institutional leaders and deans with role-based access control (RBAC), multi-campus student records sync, course quality accreditation pipelines, and audit logs.
+                    Empower system administrators and institutional leaders with role-based access control (RBAC), multi-campus student records sync, course quality accreditation pipelines, and audit logs.
                   </p>
 
                   <div className="space-y-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MOCK_TESTIMONIALS } from "@/lib/mock-data";
+import { ACADEMY_TESTIMONIALS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Star, Quote, CheckCircle2 } from "lucide-react";
@@ -22,7 +22,7 @@ export function Testimonials() {
             Social Proof & Reviews
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Loved by Students, Instructors & Deans
+            Loved by Students, Instructors & Admins
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
             Real stories from members of our 140,000+ global learning community.
@@ -31,7 +31,7 @@ export function Testimonials() {
 
         {/* Testimonial Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {MOCK_TESTIMONIALS.map((testimonial) => {
+          {ACADEMY_TESTIMONIALS.map((testimonial) => {
             const roleInfo = roleBadges[testimonial.userType];
             return (
               <div

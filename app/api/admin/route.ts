@@ -78,7 +78,7 @@ export async function POST(request: Request) {
           passwordHash: password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.INSTRUCTOR ? "InstructorPass123!" : "StudentPass123!"),
           role: assignedRole,
           phone: phone ? phone.trim() : null,
-          headline: headline || (assignedRole === Role.ADMIN ? "Academic Dean & Administrator" : assignedRole === Role.INSTRUCTOR ? "Senior Faculty Lecturer" : "London A/L Scholar"),
+          headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.INSTRUCTOR ? "Senior Faculty Lecturer" : "London A/L Scholar"),
           bio: bio || `Registered academic member of EduPulse Academy.`,
           avatar: assignedRole === Role.ADMIN
             ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"

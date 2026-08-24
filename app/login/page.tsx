@@ -145,7 +145,7 @@ export default function LoginPage() {
                     href="#forgot"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert("Please contact the Center Dean or use your default password (e.g. StudentPass123! or AdminPass123!).");
+                      alert("Please contact the System Administrator or use your default password (e.g. StudentPass123! or AdminPass123!).");
                     }}
                     className="text-[11px] font-semibold text-blue-600 hover:text-blue-800"
                   >
@@ -187,7 +187,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-md shadow-blue-950/20 flex items-center justify-center gap-2 transition-all"
+                className="w-full h-11 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-md shadow-blue-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -202,6 +202,45 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
+
+            {/* Quick Demo Credentials for Manual Role Testing */}
+            <div className="pt-4 border-t border-slate-100 space-y-2.5">
+              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                Select Account to Log In:
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("student@edupulse.uk");
+                    setPassword("StudentPass123!");
+                  }}
+                  className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-[11px] font-bold text-center transition-all cursor-pointer"
+                >
+                  🧑‍🎓 Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("tutor@edupulse.uk");
+                    setPassword("InstructorPass123!");
+                  }}
+                  className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold text-center transition-all cursor-pointer"
+                >
+                  👨‍🏫 Tutor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("admin@edupulse.uk");
+                    setPassword("AdminPass123!");
+                  }}
+                  className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 text-[11px] font-bold text-center transition-all cursor-pointer"
+                >
+                  ⚙️ Admin
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>

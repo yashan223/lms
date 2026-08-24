@@ -4,35 +4,50 @@ import { prisma } from "../lib/prisma";
 async function main() {
   console.log("🌱 Seeding London A/L & O/L LMS Database with real academic models...");
 
-  // 1. Upsert Admin / Registrar User
+  // 1. Upsert Admin / System Administrator User
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@edupulse.uk" },
     update: {
       name: "Dr. Alastair Vance",
       role: Role.ADMIN,
+      headline: "System Administrator",
     },
     create: {
       email: "admin@edupulse.uk",
       name: "Dr. Alastair Vance",
       passwordHash: "AdminPass123!",
       role: Role.ADMIN,
-      headline: "Chief Academic Registrar & Exam Center Director",
-      bio: "Managing London A/L (IAL) and London O/L (IGCSE) Pearson Edexcel and Cambridge operations.",
+      headline: "System Administrator",
+      bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     },
   });
 
-  // 2. Upsert Instructors / Senior Faculty
+  // 2. Upsert Instructors / Senior Faculty & Tutors
   const instructor1 = await prisma.user.upsert({
     where: { email: "jenkins@edupulse.uk" },
-    update: { role: Role.INSTRUCTOR },
+    update: { role: Role.INSTRUCTOR, headline: "Senior Faculty Tutor in Pure Mathematics & Mechanics" },
     create: {
       email: "jenkins@edupulse.uk",
       name: "Dr. Sarah Jenkins",
       passwordHash: "InstructorPass123!",
       role: Role.INSTRUCTOR,
-      headline: "Senior Faculty Lecturer in Pure Mathematics & Mechanics",
-      bio: "Subject Chair for IAL Pure Mathematics (P1-P4) with 18+ years of university and academic teaching experience.",
+      headline: "Senior Faculty Tutor in Pure Mathematics & Mechanics",
+      bio: "Subject Lead for IAL Pure Mathematics (P1-P4) and Mechanics with 18+ years of academic teaching experience.",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "tutor@edupulse.uk" },
+    update: { role: Role.INSTRUCTOR },
+    create: {
+      email: "tutor@edupulse.uk",
+      name: "Dr. Sarah Jenkins",
+      passwordHash: "InstructorPass123!",
+      role: Role.INSTRUCTOR,
+      headline: "Senior Faculty Tutor in Pure Mathematics & Mechanics",
+      bio: "Subject Lead for IAL Pure Mathematics (P1-P4) and Mechanics with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
   });

@@ -57,7 +57,7 @@ export function Footer() {
               </Link>
 
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-sm">
-                Empowering scholars, faculty educators, and institutional deans with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
+                Empowering scholars, faculty educators, and system administrators with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
               </p>
 
               {/* Social Icons */}
@@ -128,7 +128,7 @@ export function Footer() {
                     className="hover:text-blue-600 transition-colors text-left flex items-center gap-1.5"
                   >
                     <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                    Dean & Admin Console
+                    System Admin Console
                   </button>
                 </li>
                 <li>

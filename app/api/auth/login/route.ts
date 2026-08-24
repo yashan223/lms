@@ -50,11 +50,11 @@ export async function POST(request: Request) {
       enrolledCount: user.enrollments.length,
     };
 
-    let redirectPath = "/dashboard?role=STUDENT";
+    let redirectPath = "/dashboard";
     if (user.role === "ADMIN") {
       redirectPath = "/admin";
     } else if (user.role === "INSTRUCTOR") {
-      redirectPath = "/dashboard?role=INSTRUCTOR";
+      redirectPath = "/dashboard";
     }
 
     const response = NextResponse.json({

@@ -58,37 +58,7 @@ export interface Course {
   skills: string[];
 }
 
-export interface StudentScholar {
-  id: string;
-  studentNumber: string;
-  name: string;
-  email: string;
-  avatar: string;
-  qualification: "London A/L (IAL)" | "London O/L (IGCSE)";
-  examBoard: ExamBoard;
-  targetSeries: "May/June 2026" | "Oct/Nov 2026" | "Jan 2027";
-  enrolledSubjects: string[];
-  mockAverage: string;
-  status: "ACTIVE" | "PENDING_MOCK" | "ACCREDITED";
-  feeStatus: "PAID" | "PARTIAL" | "OVERDUE";
-  registeredDate: string;
-}
 
-export type CandidateStudent = StudentScholar;
-
-export interface MockExamPaper {
-  id: string;
-  paperCode: string;
-  title: string;
-  examBoard: ExamBoard;
-  level: "London A/L (IAL)" | "London O/L (IGCSE)";
-  durationMins: number;
-  totalMarks: number;
-  submittedCount: number;
-  gradedCount: number;
-  avgPercentage: number;
-  releaseDate: string;
-}
 
 export interface Testimonial {
   id: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MOCK_METRICS } from "@/lib/mock-data";
+import { PLATFORM_METRICS } from "@/lib/constants";
 import {
   Users,
   Award,
@@ -27,7 +27,7 @@ export function MetricsStrip() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Metric Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12">
-          {MOCK_METRICS.map((metric, idx) => {
+          {PLATFORM_METRICS.map((metric, idx) => {
             const Icon = metricIcons[idx % metricIcons.length];
             return (
               <div

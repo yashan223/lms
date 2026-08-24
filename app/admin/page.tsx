@@ -132,6 +132,16 @@ export default function AdminDashboardPage() {
     variant: "info",
   });
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Admin logout error:", err);
+    } finally {
+      window.location.href = "/login";
+    }
+  };
+
   // Fetch live database records from PostgreSQL
   const fetchAdminData = async () => {
     try {
@@ -693,7 +703,7 @@ export default function AdminDashboardPage() {
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-slate-900 truncate">Dr. Alastair Vance</div>
-              <div className="text-[10px] text-blue-500 font-semibold truncate">Academic Dean</div>
+              <div className="text-[10px] text-blue-500 font-semibold truncate">System Administrator</div>
             </div>
           </div>
 
@@ -714,13 +724,13 @@ export default function AdminDashboardPage() {
               <span>Public Academy Home</span>
             </Link>
 
-            <Link
-              href="/login"
-              className="w-full px-2.5 py-1.5 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-2 transition-colors font-semibold text-[11px]"
+            <button
+              onClick={handleLogout}
+              className="w-full px-2.5 py-1.5 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-2 transition-colors font-semibold text-[11px] cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5 text-red-500" />
               <span>Sign Out</span>
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
@@ -934,7 +944,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-indigo-600">Deans / Admins</span>
+                  <span className="text-xs font-medium text-indigo-600">System Admins</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {allUsersList.filter((u) => u.role === "ADMIN").length} Admins
                   </div>

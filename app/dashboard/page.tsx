@@ -32,6 +32,10 @@ import {
   FileCheck2,
   DollarSign,
   TrendingUp,
+  Download,
+  ExternalLink,
+  Loader2,
+  LogOut,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +64,7 @@ interface UserProfile {
     fileName: string;
     fileSize: string;
     fileType: string;
+    fileUrl?: string | null;
     createdAt: string;
   }>;
   badges: Array<{
@@ -79,19 +84,14 @@ interface UserProfile {
 }
 
 function DashboardContent() {
-  const searchParams = useSearchParams();
-  const roleParam = searchParams.get("role") as "STUDENT" | "INSTRUCTOR" | "ADMIN" | null;
-
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
 
-  // Active View Role (defaults to roleParam, or user role, or STUDENT)
-  const [currentRoleView, setCurrentRoleView] = useState<"STUDENT" | "INSTRUCTOR" | "ADMIN">(
-    roleParam || "STUDENT"
-  );
+  // Authentic Database User Role
+  const userRole: "STUDENT" | "INSTRUCTOR" | "ADMIN" = user?.role || "STUDENT";
 
   // Navigation tree expansion
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
@@ -125,9 +125,11 @@ function DashboardContent() {
   const [newEventType, setNewEventType] = useState("ASSIGNMENT");
   const [newEventCourseId, setNewEventCourseId] = useState("");
 
-  // New File Upload State
-  const [newFileName, setNewFileName] = useState("");
-  const [newFileSize, setNewFileSize] = useState("1.4 MB");
+  // Real VPS File Upload State
+  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   // Fetch real database records from Prisma
   const fetchDashboardData = async () => {
@@ -140,10 +142,6 @@ function DashboardContent() {
         setAllCourses(data.allCourses || []);
         setOnlineUsers(data.onlineUsers || []);
         setTimelineEvents(data.timelineEvents || []);
-
-        if (!roleParam && data.user?.role) {
-          setCurrentRoleView(data.user.role);
-        }
       }
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -155,12 +153,6 @@ function DashboardContent() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
-
-  useEffect(() => {
-    if (roleParam) {
-      setCurrentRoleView(roleParam);
-    }
-  }, [roleParam]);
 
   // Filtered timeline events
   const filteredTimeline = useMemo(() => {
@@ -203,29 +195,41 @@ function DashboardContent() {
     }
   };
 
-  // Handle Add Private File saved directly to DB
+  // Handle Add Private File - Uploads real file to VPS storage & saves to DB
   const handleAddPrivateFile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFileName || !user) return;
+    if (!selectedUploadFile || !user) return;
 
     try {
-      const res = await fetch("/api/dashboard", {
+      setUploadingFile(true);
+      setUploadError(null);
+      setUploadSuccess(null);
+
+      const formData = new FormData();
+      formData.append("file", selectedUploadFile);
+      formData.append("category", "document");
+      formData.append("isPrivate", "true");
+      formData.append("userId", user.id);
+      formData.append("saveToDb", "true");
+
+      const res = await fetch("/api/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "add_private_file",
-          fileName: newFileName,
-          fileSize: newFileSize,
-          userId: user.id,
-        }),
+        body: formData,
       });
 
-      if (res.ok) {
-        await fetchDashboardData();
-        setNewFileName("");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload file to VPS storage");
       }
-    } catch (err) {
-      console.error("Error adding private file:", err);
+
+      setUploadSuccess(`"${selectedUploadFile.name}" successfully uploaded to VPS storage!`);
+      setSelectedUploadFile(null);
+      await fetchDashboardData();
+    } catch (err: any) {
+      console.error("Error uploading private file:", err);
+      setUploadError(err.message || "Upload failed");
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -249,26 +253,37 @@ function DashboardContent() {
     }
   };
 
-  // Dynamic user naming based on role view
+  // Handle Logout
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      window.location.href = "/login";
+    }
+  };
+
+  // Dynamic user naming based on authentic database user
   const getRoleUserHeader = () => {
-    if (currentRoleView === "INSTRUCTOR") {
+    if (userRole === "INSTRUCTOR") {
       return {
-        name: "Dr. Sarah Jenkins, M.Sc.",
-        title: "Senior Pearson Edexcel Lead Examiner",
-        badge: "Chief Examiner",
-        avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+        name: user?.name || "Dr. Sarah Jenkins",
+        title: user?.headline || "Senior Faculty Tutor in Pure Mathematics",
+        badge: "Faculty Tutor",
+        avatar: user?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
       };
-    } else if (currentRoleView === "ADMIN") {
+    } else if (userRole === "ADMIN") {
       return {
-        name: "Dr. Alastair Vance, M.Ed.",
-        title: "Chief Academic Registrar & Center Dean",
-        badge: "Center Admin",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        name: user?.name || "Dr. Alastair Vance",
+        title: user?.headline || "System Administrator",
+        badge: "System Admin",
+        avatar: user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       };
     } else {
       return {
-        name: user?.name || "S.Y.T. PERERA",
-        title: "London A/L Scholar (Spring / Summer 2026)",
+        name: user?.name || "S.Y.T. Perera",
+        title: user?.headline || "London A/L Scholar",
         badge: "Student Scholar",
         avatar: user?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
       };
@@ -294,86 +309,73 @@ function DashboardContent() {
                   ACADEMY
                 </span>
                 <span className="text-[8px] font-bold tracking-widest text-sky-600">
-                  WORLDWIDE
+                  LONDON A/L & O/L
                 </span>
               </div>
             </Link>
 
-            {/* University Dropdown Menus */}
-            <nav className="hidden lg:flex items-center gap-5 text-xs font-semibold text-slate-600">
-              <div className="flex items-center gap-1 hover:text-blue-700 cursor-pointer">
-                <span>Services</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </div>
-              <div className="flex items-center gap-1 hover:text-blue-700 cursor-pointer">
-                <span>Library</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </div>
-              <div className="flex items-center gap-1 hover:text-blue-700 cursor-pointer">
-                <span>Questionnaire</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </div>
-              <div className="flex items-center gap-1 hover:text-blue-700 cursor-pointer">
-                <span>Downloads</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </div>
-              <div className="flex items-center gap-1 hover:text-blue-700 cursor-pointer">
-                <span>Help</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </div>
+            <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
+              <Link
+                href="/courses"
+                className="px-3 py-1.5 rounded-lg hover:bg-slate-100 hover:text-blue-700 transition-colors"
+              >
+                Course Catalog
+              </Link>
+              <Link
+                href="/dashboard"
+                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
+              >
+                Dashboard
+              </Link>
+              {userRole === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Admin Console</span>
+                </Link>
+              )}
             </nav>
           </div>
 
-          {/* Right Header Utilities: Role Switcher, Search, Bell, Messages, User Profile */}
+          {/* Right Header Utilities: Role Badge, Search, User Profile, Sign Out */}
           <div className="flex items-center gap-3">
-            {/* Quick Role Switcher Dropdown */}
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-              <span className="text-[11px] font-bold text-slate-500 pl-1 hidden sm:inline">Role:</span>
-              <select
-                value={currentRoleView}
-                onChange={(e: any) => setCurrentRoleView(e.target.value)}
-                className="bg-white font-bold text-slate-800 rounded-lg px-2 py-1 text-xs border-0 shadow-xs cursor-pointer focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="STUDENT">🧑‍🎓 Student Scholar</option>
-                <option value="INSTRUCTOR">👨‍🏫 Faculty Lecturer</option>
-                <option value="ADMIN">🏛️ Academic Dean / Admin</option>
-              </select>
-            </div>
+            {/* User Role Badge */}
+            <Badge
+              variant={
+                userRole === "INSTRUCTOR"
+                  ? "roleInstructor"
+                  : userRole === "ADMIN"
+                  ? "roleAdmin"
+                  : "roleStudent"
+              }
+              className="text-[11px] px-2.5 py-1 font-bold"
+            >
+              {currentProfile.badge}
+            </Badge>
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
-            <button
-              title="Search Portal"
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-
-            <button
-              title="Notifications"
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors relative"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
-            </button>
-
-            <button
-              title="Messages"
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
-            >
-              <MessageSquare className="w-4 h-4" />
-            </button>
-
-            {/* User Dropdown */}
-            <div className="flex items-center gap-2 cursor-pointer hover:opacity-90 pl-1">
+            {/* User Profile */}
+            <div className="flex items-center gap-2 pl-1">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wide hidden md:block">
                 {currentProfile.name}
               </span>
               <div className="w-8 h-8 rounded-full bg-[#0c2461] text-white flex items-center justify-center font-bold text-xs shadow-xs">
                 {currentProfile.name.charAt(0)}
               </div>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
             </div>
+
+            {/* Sign Out Button */}
+            <button
+              onClick={handleLogout}
+              title="Sign Out"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-600 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
         </div>
       </header>
@@ -384,17 +386,17 @@ function DashboardContent() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none mb-1">
-                {currentRoleView === "INSTRUCTOR"
+                {userRole === "INSTRUCTOR"
                   ? "Faculty Studio & Coursework Gradebook"
-                  : currentRoleView === "ADMIN"
-                  ? "Academic Dean Overview"
+                  : userRole === "ADMIN"
+                  ? "System Admin Overview"
                   : "Dashboard"}
               </h1>
               <Badge
                 variant={
-                  currentRoleView === "INSTRUCTOR"
+                  userRole === "INSTRUCTOR"
                     ? "roleInstructor"
-                    : currentRoleView === "ADMIN"
+                    : userRole === "ADMIN"
                     ? "roleAdmin"
                     : "roleStudent"
                 }
@@ -406,7 +408,7 @@ function DashboardContent() {
               <Link href="/dashboard" className="hover:underline">
                 Dashboard
               </Link>
-              {currentRoleView === "ADMIN" && (
+              {userRole === "ADMIN" && (
                 <>
                   <span>/</span>
                   <Link href="/admin" className="font-bold text-indigo-700 underline">
@@ -445,7 +447,7 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-2">
-            {currentRoleView === "INSTRUCTOR" && (
+            {userRole === "INSTRUCTOR" && (
               <Button
                 size="sm"
                 onClick={() => setShowNewEventModal(true)}
@@ -455,7 +457,7 @@ function DashboardContent() {
                 <span>+ Schedule Assignment</span>
               </Button>
             )}
-            {currentRoleView === "ADMIN" && (
+            {userRole === "ADMIN" && (
               <Link
                 href="/admin"
                 className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
@@ -514,7 +516,7 @@ function DashboardContent() {
                         <ChevronRight className="w-3 h-3 text-slate-400" />
                       )}
                       <span>
-                        {currentRoleView === "INSTRUCTOR" ? "My Assigned Units" : "My courses"}
+                        {userRole === "INSTRUCTOR" ? "My Assigned Units" : "My courses"}
                       </span>
                     </div>
 
@@ -543,38 +545,61 @@ function DashboardContent() {
 
             {/* Block 2: Private Files */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Private files
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Private files
+                </h3>
+                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  VPS Storage
+                </span>
+              </div>
 
               {user?.privateFiles && user.privateFiles.length > 0 ? (
                 <div className="space-y-1.5">
                   {user.privateFiles.map((file) => (
                     <div
                       key={file.id}
-                      className="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between text-xs group"
+                      className="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between text-xs group hover:bg-blue-50/50 transition-colors"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <a
+                        href={file.fileUrl || "#"}
+                        target={file.fileUrl ? "_blank" : undefined}
+                        rel="noreferrer"
+                        className="flex items-center gap-2 min-w-0 flex-1 hover:underline text-left"
+                        title={file.fileUrl ? "Open file" : file.fileName}
+                      >
                         <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                         <div className="min-w-0">
-                          <div className="font-semibold text-slate-800 truncate text-[11px]">
+                          <div className="font-semibold text-slate-800 truncate text-[11px] group-hover:text-blue-700">
                             {file.fileName}
                           </div>
                           <div className="text-[10px] text-slate-400">{file.fileSize}</div>
                         </div>
+                      </a>
+                      <div className="flex items-center gap-1">
+                        {file.fileUrl && (
+                          <a
+                            href={file.fileUrl}
+                            download={file.fileName}
+                            className="text-slate-400 hover:text-blue-600 p-1"
+                            title="Download file"
+                          >
+                            <Download className="w-3 h-3" />
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleDeletePrivateFile(file.id)}
+                          className="text-slate-300 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Delete file"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleDeletePrivateFile(file.id)}
-                        className="text-slate-300 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Delete file"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic">No files available</p>
+                <p className="text-xs text-slate-400 italic">No files stored on VPS yet</p>
               )}
 
               <button
@@ -628,7 +653,7 @@ function DashboardContent() {
           {/* ======================================================== */}
           <section className="lg:col-span-6 space-y-5">
             {/* FOR INSTRUCTORS: Mock Exam Grading Queue */}
-            {currentRoleView === "INSTRUCTOR" && (
+            {userRole === "INSTRUCTOR" && (
               <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div>
@@ -761,7 +786,7 @@ function DashboardContent() {
 
                         <button
                           onClick={() => {
-                            if (currentRoleView === "INSTRUCTOR") {
+                            if (userRole === "INSTRUCTOR") {
                               setSelectedScriptToGrade({
                                 student: "S.Y.T. Perera (ID: UK-92810A01)",
                                 paper: ev.title,
@@ -776,7 +801,7 @@ function DashboardContent() {
                           }}
                           className="px-3 py-1.5 rounded bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all self-end sm:self-center shrink-0 cursor-pointer"
                         >
-                          {currentRoleView === "INSTRUCTOR" ? "Review Submissions" : "Add submission"}
+                          {userRole === "INSTRUCTOR" ? "Review Submissions" : "Add submission"}
                         </button>
                       </div>
                     ))}
@@ -898,7 +923,7 @@ function DashboardContent() {
             {/* Block 4: Enrolled Course Cards (Course Overview) */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
-                {currentRoleView === "INSTRUCTOR" ? "My Syllabus Courses" : "Course overview"}
+                {userRole === "INSTRUCTOR" ? "My Syllabus Courses" : "Course overview"}
               </h3>
 
               <div className="space-y-4">
@@ -923,7 +948,7 @@ function DashboardContent() {
                       href={`/courses/${course.slug}`}
                       className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs self-end sm:self-center shrink-0 transition-colors shadow-2xs inline-flex items-center gap-1.5"
                     >
-                      <span>{currentRoleView === "INSTRUCTOR" ? "View Syllabus" : "View Syllabus & Notes"}</span>
+                      <span>{userRole === "INSTRUCTOR" ? "View Syllabus" : "View Syllabus & Notes"}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
@@ -937,7 +962,7 @@ function DashboardContent() {
           {/* ======================================================== */}
           <aside className="lg:col-span-3 space-y-4">
             {/* FOR INSTRUCTOR: Honorarium & Evaluator Stats */}
-            {currentRoleView === "INSTRUCTOR" && (
+            {userRole === "INSTRUCTOR" && (
               <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Examiner Honorarium & Stats
@@ -960,7 +985,7 @@ function DashboardContent() {
             )}
 
             {/* Block 1: Latest Badges (For Student) */}
-            {currentRoleView === "STUDENT" && (
+            {userRole === "STUDENT" && (
               <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Latest badges
@@ -1012,70 +1037,180 @@ function DashboardContent() {
         </div>
       </main>
 
-      {/* MODAL 1: MANAGE PRIVATE FILES */}
+      {/* MODAL 1: MANAGE PRIVATE FILES (VPS LOCAL STORAGE) */}
       {showManageFilesModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <FolderOpen className="w-4 h-4 text-blue-600" />
-                <span>Manage Private Files</span>
-              </h3>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+                  <FolderOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Manage Private Files</h3>
+                  <p className="text-[11px] text-slate-500">Secure VPS Storage for Study Materials & Assignments</p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowManageFilesModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                onClick={() => {
+                  setShowManageFilesModal(false);
+                  setSelectedUploadFile(null);
+                  setUploadError(null);
+                  setUploadSuccess(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded hover:bg-slate-100"
               >
                 ✕
               </button>
             </div>
 
+            {/* Upload Feedback */}
+            {uploadSuccess && (
+              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{uploadSuccess}</span>
+              </div>
+            )}
+            {uploadError && (
+              <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
+            {/* Upload Box */}
             <form onSubmit={handleAddPrivateFile} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">File Name</label>
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-blue-500 hover:bg-blue-50/30 transition-all cursor-pointer relative group">
                 <input
-                  type="text"
-                  required
-                  placeholder="e.g. Edexcel_Physics_Unit2_Formula_Notes.pdf"
-                  value={newFileName}
-                  onChange={(e) => setNewFileName(e.target.value)}
-                  className="w-full h-8 px-3 rounded border border-slate-300 text-xs"
+                  type="file"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setSelectedUploadFile(e.target.files[0]);
+                      setUploadError(null);
+                      setUploadSuccess(null);
+                    }
+                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.png,.jpg,.jpeg,.webp,.mp4,.mp3"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
+                <div className="flex flex-col items-center justify-center space-y-1.5 pointer-events-none">
+                  <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Upload className="w-4 h-4" />
+                  </div>
+                  {selectedUploadFile ? (
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-slate-800 truncate max-w-xs">
+                        {selectedUploadFile.name}
+                      </div>
+                      <div className="text-[11px] text-blue-600 font-semibold">
+                        {(selectedUploadFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to upload
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-slate-700">
+                        Choose a file or drag & drop here
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        PDF, DOCX, Images, Videos, ZIP up to 100MB
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Estimated Size</label>
-                <input
-                  type="text"
-                  value={newFileSize}
-                  onChange={(e) => setNewFileSize(e.target.value)}
-                  className="w-full h-8 px-3 rounded border border-slate-300 text-xs"
-                />
+              <div className="flex items-center gap-2">
+                {selectedUploadFile && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSelectedUploadFile(null)}
+                    disabled={uploadingFile}
+                    className="h-8 text-xs font-semibold"
+                  >
+                    Clear
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  disabled={!selectedUploadFile || uploadingFile}
+                  className="flex-1 h-8 bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs"
+                >
+                  {uploadingFile ? (
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving to VPS Storage...</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload to VPS Storage</span>
+                    </span>
+                  )}
+                </Button>
               </div>
-
-              <button
-                type="submit"
-                className="w-full h-8 rounded bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs"
-              >
-                Upload File to Database
-              </button>
             </form>
 
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <div className="text-[11px] font-bold text-slate-600 uppercase">Your Stored Files:</div>
+            {/* List of Stored Files */}
+            <div className="space-y-2 pt-3 border-t border-slate-100 max-h-56 overflow-y-auto">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase">
+                <span>Stored Private Files ({user?.privateFiles?.length || 0})</span>
+                <span className="text-slate-400 font-normal lowercase">saved on disk</span>
+              </div>
               {user?.privateFiles && user.privateFiles.length > 0 ? (
-                user.privateFiles.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between p-2 rounded bg-slate-50 text-xs">
-                    <span className="truncate max-w-[240px] text-slate-800">{file.fileName}</span>
-                    <button
-                      onClick={() => handleDeletePrivateFile(file.id)}
-                      className="text-red-500 hover:text-red-700"
+                <div className="space-y-1.5">
+                  {user.privateFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200/60 hover:bg-slate-100/60 text-xs transition-colors"
                     >
-                      Delete
-                    </button>
-                  </div>
-                ))
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-800 truncate max-w-[220px]">
+                            {file.fileName}
+                          </div>
+                          <div className="text-[10px] text-slate-400">{file.fileSize}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {file.fileUrl && (
+                          <>
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2 py-1 rounded bg-white border border-slate-200 hover:bg-blue-50 text-blue-700 text-[11px] font-semibold flex items-center gap-1 shadow-2xs"
+                              title="Open/View in browser"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>View</span>
+                            </a>
+                            <a
+                              href={file.fileUrl}
+                              download={file.fileName}
+                              className="p-1 rounded bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 shadow-2xs"
+                              title="Download to device"
+                            >
+                              <Download className="w-3 h-3" />
+                            </a>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleDeletePrivateFile(file.id)}
+                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete from VPS"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p className="text-xs text-slate-400 italic">No files uploaded yet</p>
+                <p className="text-xs text-slate-400 italic py-2 text-center">
+                  No private files uploaded yet. Upload lecture notes, mock scripts, or revision guides.
+                </p>
               )}
             </div>
           </div>

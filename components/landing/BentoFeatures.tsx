@@ -115,7 +115,7 @@ export function BentoFeatures() {
                 Campus Learning Analytics
               </h3>
               <p className="text-slate-600 text-xs leading-relaxed mb-4">
-                University deans can monitor campus-wide competencies across departments with real-time academic progress matrices.
+                System administrators can monitor campus-wide competencies across departments with real-time academic progress matrices.
               </p>
             </div>
 

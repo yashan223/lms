@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MOCK_FAQS } from "@/lib/mock-data";
+import { FAQ_ITEMS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +34,7 @@ export function FaqSection() {
 
         {/* Accordion List */}
         <Accordion type="single" collapsible defaultValue="faq-1" className="w-full">
-          {MOCK_FAQS.map((faq) => (
+          {FAQ_ITEMS.map((faq) => (
             <AccordionItem key={faq.id} value={faq.id}>
               <AccordionTrigger className="text-sm sm:text-base font-bold text-slate-800">
                 <span className="flex items-center gap-2.5">

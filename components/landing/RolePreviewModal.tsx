@@ -37,7 +37,7 @@ export function RolePreviewModal({
 
   const roleDetails = {
     ADMIN: {
-      title: "Dean & Admin Command Console",
+      title: "System Administrator Console",
       badge: "Institutional Governance",
       badgeVariant: "roleAdmin" as const,
       icon: ShieldCheck,
@@ -55,7 +55,7 @@ export function RolePreviewModal({
         "Institutional Learning Analytics",
         "Role-Based Access Control (RBAC)",
       ],
-      mockStat: "180+ Partner Campuses • 4,200 Courses Active",
+      statSummary: "180+ Partner Campuses • 4,200 Courses Active",
     },
     INSTRUCTOR: {
       title: "Faculty & Educator Studio",
@@ -76,7 +76,7 @@ export function RolePreviewModal({
         "Student Comprehension & Progress Matrices",
         "Honorarium & Compensation Dashboard",
       ],
-      mockStat: "38.4k Scholars Enrolled • 4.96 Avg Rating",
+      statSummary: "38.4k Scholars Enrolled • 4.96 Avg Rating",
     },
     STUDENT: {
       title: "Scholar & Student Experience",
@@ -97,7 +97,7 @@ export function RolePreviewModal({
         "Synchronized Note-Taking & Discussion Boards",
         "Verifiable LinkedIn Shareable Certificates",
       ],
-      mockStat: "6 Enrolled Courses • 4 Certificates Earned",
+      statSummary: "6 Enrolled Courses • 4 Certificates Earned",
     },
   };
 
@@ -172,7 +172,7 @@ export function RolePreviewModal({
                 {current.description}
               </p>
               <div className="text-[11px] font-semibold text-slate-700 bg-white/70 px-2.5 py-1 rounded-md inline-block border border-slate-200/50">
-                📊 {current.mockStat}
+                📊 {current.statSummary}
               </div>
             </div>
           </div>

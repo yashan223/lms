@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { deleteStorageFile } from "@/lib/storage";
 
 export async function GET(request: NextRequest) {
   try {
@@ -168,12 +169,13 @@ export async function POST(request: Request) {
     }
 
     if (action === "add_private_file") {
-      const { fileName, fileSize, fileType, userId } = body;
+      const { fileName, fileSize, fileType, fileUrl, userId } = body;
       const newFile = await prisma.privateFile.create({
         data: {
           fileName,
           fileSize: fileSize || "1.2 MB",
           fileType: fileType || "application/pdf",
+          fileUrl: fileUrl || null,
           userId,
         },
       });
@@ -182,6 +184,12 @@ export async function POST(request: Request) {
 
     if (action === "delete_private_file") {
       const { fileId } = body;
+      // Fetch file to get fileUrl if it exists
+      const existing = await prisma.privateFile.findUnique({ where: { id: fileId } });
+      if (existing && existing.fileUrl && existing.fileUrl.startsWith("/api/files/")) {
+        const fileKey = existing.fileUrl.replace("/api/files/", "");
+        await deleteStorageFile(fileKey);
+      }
       await prisma.privateFile.delete({ where: { id: fileId } });
       return NextResponse.json({ success: true });
     }

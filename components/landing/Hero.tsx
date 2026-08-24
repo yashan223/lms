@@ -93,7 +93,7 @@ export function Hero() {
 
   return (
     <section className="relative w-full overflow-hidden bg-white border-b border-slate-200">
-      <div className="max-w-[1440px] mx-auto min-h-[560px] lg:min-h-[620px] grid grid-cols-1 lg:grid-cols-12 relative items-stretch">
+      <div className="w-full min-h-[560px] lg:min-h-[620px] grid grid-cols-1 lg:grid-cols-12 relative items-stretch">
         {/* Left Side: Campus Photograph with Brush Edge */}
         <div className="lg:col-span-6 relative w-full min-h-[360px] sm:min-h-[420px] lg:min-h-[620px] h-full overflow-hidden bg-slate-900 self-stretch">
           <img
@@ -110,7 +110,8 @@ export function Hero() {
         </div>
 
         {/* Right Side: Headline & Diamond Program Badges */}
-        <div className="lg:col-span-6 px-6 sm:px-10 lg:px-12 py-10 sm:py-14 flex flex-col justify-center relative z-10 bg-white">
+        <div className="lg:col-span-6 px-6 sm:px-10 lg:px-12 xl:px-16 py-10 sm:py-14 flex flex-col justify-center items-center relative z-10 bg-white">
+          <div className="max-w-xl w-full flex flex-col items-center">
           {/* Main Hero Headline */}
           <div className="text-center space-y-3 mb-8">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.1]">
@@ -201,6 +202,7 @@ export function Hero() {
               <ShieldCheck className="w-4 h-4" />
               <span>Open Admin Command Center</span>
             </Link>
+          </div>
           </div>
         </div>
       </div>

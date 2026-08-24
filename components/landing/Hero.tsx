@@ -119,13 +119,13 @@ export function Hero() {
 
   return (
     <section className="relative w-full overflow-hidden bg-white border-b border-slate-200">
-      <div className="max-w-[1440px] mx-auto min-h-[560px] lg:min-h-[620px] grid grid-cols-1 lg:grid-cols-12 relative items-center">
+      <div className="max-w-[1440px] mx-auto min-h-[560px] lg:min-h-[620px] grid grid-cols-1 lg:grid-cols-12 relative items-stretch">
         {/* Left Side: Campus Photograph with Brush Edge */}
-        <div className="lg:col-span-6 relative w-full h-[360px] sm:h-[420px] lg:h-[620px] overflow-hidden bg-slate-900">
+        <div className="lg:col-span-6 relative w-full min-h-[360px] sm:min-h-[420px] lg:min-h-[620px] h-full overflow-hidden bg-slate-900 self-stretch">
           <img
             src={activeSlide.image}
             alt="London A/L and O/L Students"
-            className="w-full h-full object-cover object-center transition-all duration-700 ease-in-out"
+            className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 ease-in-out"
           />
 
           {/* Jagged Brush / Feathered Edge (Desktop) */}

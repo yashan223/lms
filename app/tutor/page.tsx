@@ -398,28 +398,7 @@ function TutorDashboardContent() {
 
             {/* Quick Action Buttons & Real-Time Sync Indicator */}
             <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Real-time Status Badge */}
-              <div
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
-                  realtimeConnected
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                    : "bg-amber-50 border-amber-200 text-amber-700"
-                }`}
-                title={
-                  realtimeConnected
-                    ? "Live real-time sync active across students & calendar"
-                    : "Connecting to sync stream..."
-                }
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    realtimeConnected
-                      ? "bg-emerald-500 animate-pulse"
-                      : "bg-amber-500"
-                  }`}
-                />
-                <span>{realtimeConnected ? "Live Sync Active" : "Connecting..."}</span>
-              </div>
+              {/* Real-time Status Badge removed */}
 
               {/* Fast Schedule Class Button */}
               <Button

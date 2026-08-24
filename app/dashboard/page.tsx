@@ -409,18 +409,6 @@ function DashboardContent() {
                 : "Scholar Academic Dashboard"}
             </h1>
           </div>
-
-          <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
-              realtimeConnected
-                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                : "bg-amber-50 border-amber-200 text-amber-700"
-            }`}
-            title={realtimeConnected ? "Real-time updates active without page refresh" : "Connecting to real-time sync stream..."}
-          >
-            <span className={`w-2 h-2 rounded-full ${realtimeConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-            <span>{realtimeConnected ? "Live Sync Active" : "Connecting..."}</span>
-          </div>
         </div>
       </section>
 

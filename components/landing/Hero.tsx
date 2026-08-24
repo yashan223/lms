@@ -5,8 +5,6 @@ import Link from "next/link";
 import { RolePreviewModal } from "@/components/landing/RolePreviewModal";
 import { UserRole } from "@/lib/types";
 import {
-  ChevronLeft,
-  ChevronRight,
   GraduationCap,
   Atom,
   TrendingUp,
@@ -18,23 +16,9 @@ import {
 } from "lucide-react";
 
 export function Hero() {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedDiamond, setSelectedDiamond] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewRole, setPreviewRole] = useState<UserRole>("ADMIN");
-
-  const slides = [
-    {
-      image: "/images/campus_students_hero.jpg",
-      title: "London A/L & O/L Academy",
-      subtitle: "Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, downloadable study materials, and past paper video vaults.",
-    },
-    {
-      image: "/images/campus_library_study.jpg",
-      title: "Academic Subject Excellence",
-      subtitle: "Master Pure Mathematics (P1-P4), Physics Units 1-6, Chemistry, Biology, and Economics with Senior UK Faculty Lecturers.",
-    },
-  ];
 
   const diamondPrograms = [
     {
@@ -102,19 +86,9 @@ export function Hero() {
     { label: "Biology & Life Sciences", color: "bg-indigo-700", href: "#courses" },
   ];
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
-
-  const activeSlide = slides[currentSlide];
-
   const openDemoModal = (role: UserRole) => {
     setPreviewRole(role);
-    setIsModalOpen(true);
+    setIsModalOpen(false);
   };
 
   return (
@@ -123,22 +97,13 @@ export function Hero() {
         {/* Left Side: Campus Photograph with Brush Edge */}
         <div className="lg:col-span-6 relative w-full min-h-[360px] sm:min-h-[420px] lg:min-h-[620px] h-full overflow-hidden bg-slate-900 self-stretch">
           <img
-            src={activeSlide.image}
+            src="/images/campus_students_hero.jpg"
             alt="London A/L and O/L Students"
-            className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 ease-in-out"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
 
           {/* Jagged Brush / Feathered Edge (Desktop) */}
           <div className="hidden lg:block absolute inset-y-0 right-0 w-32 bg-gradient-to-r from-transparent via-white/70 to-white pointer-events-none" />
-
-          {/* Slider Prev Arrow */}
-          <button
-            onClick={prevSlide}
-            aria-label="Previous Slide"
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-md z-10"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
 
           {/* Mobile Bottom Fade */}
           <div className="lg:hidden absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
@@ -146,24 +111,13 @@ export function Hero() {
 
         {/* Right Side: Headline & Diamond Program Badges */}
         <div className="lg:col-span-6 px-6 sm:px-10 lg:px-12 py-10 sm:py-14 flex flex-col justify-center relative z-10 bg-white">
-          {/* Slider Next Arrow */}
-          <button
-            onClick={nextSlide}
-            aria-label="Next Slide"
-            className="absolute right-4 top-1/2 -translate-y-1/2 hidden xl:flex w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 items-center justify-center transition-all shadow-sm z-10"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
           {/* Main Hero Headline */}
           <div className="text-center space-y-3 mb-8">
-
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.1]">
-              {activeSlide.title}
+              London A/L & O/L Academy
             </h1>
             <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-              {activeSlide.subtitle}
+              Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, downloadable study materials, and past paper video vaults.
             </p>
           </div>
 

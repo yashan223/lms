@@ -86,6 +86,16 @@ export default function CourseDetailPage({
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
 
+  // Role check — only ADMIN / INSTRUCTOR can upload or delete materials
+  const [isStaff, setIsStaff] = useState(false);
+  useEffect(() => {
+    const role = document.cookie
+      .split("; ")
+      .find((r) => r.startsWith("edupulse_user_role="))
+      ?.split("=")[1];
+    setIsStaff(role === "ADMIN" || role === "INSTRUCTOR");
+  }, []);
+
   // Materials filter & search
   const [materialCategory, setMaterialCategory] = useState<string>("ALL");
   const [materialSearch, setMaterialSearch] = useState<string>("");
@@ -505,13 +515,15 @@ export default function CourseDetailPage({
                   </p>
                 </div>
 
-                <Button
-                  onClick={() => setShowUploadModal(true)}
-                  className="bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-2 shrink-0 cursor-pointer"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>Upload Study Material</span>
-                </Button>
+                {isStaff && (
+                  <Button
+                    onClick={() => setShowUploadModal(true)}
+                    className="bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-2 shrink-0 cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Study Material</span>
+                  </Button>
+                )}
               </div>
 
               {/* Filters & Search Toolbar */}
@@ -630,13 +642,15 @@ export default function CourseDetailPage({
                           <span>Download</span>
                         </a>
 
-                        <button
-                          onClick={() => handleDeleteMaterial(material.id)}
-                          title="Delete material"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {isStaff && (
+                          <button
+                            onClick={() => handleDeleteMaterial(material.id)}
+                            title="Delete material"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

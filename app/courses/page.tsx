@@ -17,7 +17,7 @@ import {
   ArrowRight,
   Filter,
   GraduationCap,
-  Sparkles,
+  CalendarCheck,
   Video,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
@@ -259,7 +259,7 @@ export default function CoursesPage() {
                         className="px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
                         title="Book a 30-min free online trial session"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
                         <span>Free Trial</span>
                       </button>
 

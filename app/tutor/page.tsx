@@ -13,6 +13,7 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import {
   GraduationCap,
+  LayoutDashboard,
   Users,
   Calendar,
   Video,
@@ -29,7 +30,7 @@ import {
   UserCheck,
   Mail,
   Phone,
-  Sparkles,
+  CalendarCheck,
   Layers,
   ArrowRight,
   RefreshCw,
@@ -504,7 +505,7 @@ function TutorDashboardContent() {
                   : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Studio Overview</span>
             </button>
 
@@ -807,7 +808,7 @@ function TutorDashboardContent() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4" />
+                        <CalendarCheck className="w-4 h-4" />
                       </div>
                       <div>
                         <h4 className="font-bold text-xs text-slate-900">

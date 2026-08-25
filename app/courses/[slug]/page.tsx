@@ -23,7 +23,7 @@ import {
   ChevronDown,
   ChevronRight,
   Lock,
-  Sparkles,
+  CalendarCheck,
   Check,
   FolderOpen,
   Plus,
@@ -443,7 +443,7 @@ export default function CourseDetailPage({
                       onClick={() => setShowTrialModal(true)}
                       className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
                       <span>Book 1-on-1 Faculty Trial (30 Mins)</span>
                     </button>
                   </div>
@@ -461,7 +461,7 @@ export default function CourseDetailPage({
                       onClick={() => setShowTrialModal(true)}
                       className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
                       <span>Request 30-Min Free Trial Session</span>
                     </button>
                   </div>
@@ -764,7 +764,7 @@ export default function CourseDetailPage({
                         {/* Objectives Callout */}
                         <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-slate-700 space-y-2">
                           <div className="font-bold text-blue-900 flex items-center gap-1.5">
-                            <Sparkles className="w-4 h-4 text-blue-600" />
+                            <Award className="w-4 h-4 text-blue-600" />
                             <span>Lesson Core Learning Outcomes & Derivations</span>
                           </div>
                           <p className="leading-relaxed text-slate-600">

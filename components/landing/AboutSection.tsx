@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   ArrowRight,
   School,
-  Sparkles,
 } from "lucide-react";
 
 export function AboutSection() {

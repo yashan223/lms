@@ -26,7 +26,7 @@ import {
   Upload,
   Trash2,
   FolderOpen,
-  Sparkles,
+  CalendarCheck,
   ShieldCheck,
   Edit3,
   Video,
@@ -1203,7 +1203,7 @@ function DashboardContent() {
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-blue-600" />
+                  <CalendarCheck className="w-3 h-3 text-blue-600" />
                   <span>Synced with Faculty Schedule</span>
                 </span>
                 <button

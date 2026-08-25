@@ -11,7 +11,6 @@ import {
   MessageSquareLock,
   Calendar,
   FileText,
-  Sparkles,
   ExternalLink,
   Loader2,
   Clock,
@@ -156,8 +155,8 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
         );
       default:
         return (
-          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+            <Bell className="w-4 h-4" />
           </div>
         );
     }

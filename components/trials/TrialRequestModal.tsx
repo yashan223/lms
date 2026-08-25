@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
+  CalendarCheck,
   Clock,
   Video,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -158,7 +158,7 @@ export function TrialRequestModal({
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-              <Sparkles className="w-5 h-5" />
+              <CalendarCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -413,7 +413,7 @@ export function TrialRequestModal({
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <CalendarCheck className="w-3.5 h-3.5" />
                     <span>Confirm 30-Min Free Trial</span>
                   </>
                 )}

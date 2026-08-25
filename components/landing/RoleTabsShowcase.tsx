@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { UserRole } from "@/lib/types";
 import {
   GraduationCap,
-  Sparkles,
   ShieldCheck,
   CheckCircle2,
   Play,
@@ -64,7 +63,7 @@ export function RoleTabsShowcase() {
                 value="INSTRUCTOR"
                 className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold"
               >
-                <Sparkles className="w-4 h-4" />
+                <BookOpen className="w-4 h-4" />
                 <span>Faculty Studio</span>
               </TabsTrigger>
 

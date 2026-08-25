@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { PRICING_PLANS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, Award } from "lucide-react";
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
@@ -76,7 +76,7 @@ export function PricingSection() {
                       variant="default"
                       className="bg-gradient-to-r from-blue-600 to-sky-600 text-white font-bold text-xs py-1 px-4 shadow-md shadow-blue-500/30 flex items-center gap-1"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <Award className="w-3.5 h-3.5" />
                       <span>{plan.badge || "Most Popular"}</span>
                     </Badge>
                   </div>

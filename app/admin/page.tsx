@@ -43,7 +43,6 @@ import {
   KeyRound,
   PlayCircle,
   FolderPlus,
-  Sparkles,
   Phone,
   Upload,
   Loader2,

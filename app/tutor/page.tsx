@@ -42,7 +42,9 @@ import {
   Info,
   Loader2,
   PlayCircle,
+  MessageSquareLock,
 } from "lucide-react";
+import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 
 interface EnrolledCourseInfo {
   courseId: string;
@@ -127,6 +129,8 @@ function TutorDashboardContent() {
 
   // Selected Student Modal
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<StudentRecord | null>(null);
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
   // Profile Edit State
   const [profileName, setProfileName] = useState("");
@@ -1101,11 +1105,25 @@ function TutorDashboardContent() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                onClick={() => {
+                                  setActiveChatRecipientId(st.id);
+                                  setIsChatDrawerOpen(true);
+                                }}
+                                className="text-[11px] font-bold h-7 rounded-lg border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100 text-indigo-700 cursor-pointer gap-1"
+                              >
+                                <MessageSquareLock className="w-3 h-3" />
+                                <span>Message</span>
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => setSelectedStudentForModal(st)}
                                 className="text-[11px] font-bold h-7 rounded-lg border-slate-200 hover:bg-slate-50 text-slate-700 cursor-pointer"
                               >
                                 View Profile
                               </Button>
+
                               <Button
                                 size="sm"
                                 onClick={() => {
@@ -1944,6 +1962,19 @@ function TutorDashboardContent() {
         description={confirmModalData.description}
         variant={confirmModalData.variant}
       />
+
+      {/* End-to-End Encrypted Chat Drawer */}
+      {tutor && (
+        <EncryptedChatDrawer
+          currentUser={tutor}
+          initialRecipientId={activeChatRecipientId}
+          isOpen={isChatDrawerOpen}
+          onClose={() => {
+            setIsChatDrawerOpen(false);
+            setActiveChatRecipientId(undefined);
+          }}
+        />
+      )}
 
       <Footer />
     </div>

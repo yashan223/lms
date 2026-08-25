@@ -52,6 +52,7 @@ model User {
   headline      String?
   bio           String?
   phone         String?
+  publicKey     String?        // E2EE Public Key for client-side encryption
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -69,6 +70,15 @@ model User {
   passwordResetTokens PasswordResetToken[]
   tutorTrials    TrialRequest[] @relation("TutorTrials")
   studentTrials  TrialRequest[] @relation("StudentTrials")
+
+  // E2EE Chat Relations
+  conversationsA Conversation[] @relation("ParticipantA")
+  conversationsB Conversation[] @relation("ParticipantB")
+  sentMessages   Message[]      @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
+
+  // Notification Relations
+  notifications  Notification[]
 
   @@map("users")
 }
@@ -286,4 +296,64 @@ model TrialRequest {
 
   @@map("trial_requests")
 }
+
+// ========================================================
+// NOTIFICATIONS SYSTEM
+// ========================================================
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // "INFO", "CLASS_LIVE", "CLASS_SCHEDULED", "CHAT_MESSAGE", "MATERIAL_ADDED", "TRIAL_UPDATE"
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ========================================================
+// END-TO-END ENCRYPTED (E2EE) CHAT SYSTEM
+// ========================================================
+model Conversation {
+  id             String    @id @default(cuid())
+  participantAId String
+  participantA   User      @relation("ParticipantA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantBId String
+  participantB   User      @relation("ParticipantB", fields: [participantBId], references: [id], onDelete: Cascade)
+  courseId       String?
+  lastMessageAt  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  messages       Message[]
+
+  @@unique([participantAId, participantBId])
+  @@index([participantAId])
+  @@index([participantBId])
+  @@map("conversations")
+}
+
+model Message {
+  id               String       @id @default(cuid())
+  conversationId   String
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId         String
+  sender           User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId       String
+  receiver         User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  encryptedContent String       // AES-GCM Ciphertext (Base64) - Zero Knowledge to Server
+  iv               String       // AES-GCM Initialization Vector (Base64)
+  senderPublicKey  String?      // Ephemeral / Session Key Identifier
+  isRead           Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([receiverId, isRead])
+  @@map("messages")
+}
+
 

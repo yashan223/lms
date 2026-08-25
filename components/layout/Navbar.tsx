@@ -13,15 +13,21 @@ import {
   LayoutDashboard,
   LogOut,
   BookOpen,
+  MessageSquareLock,
+  Bell,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 
 export function Navbar() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name?: string; email?: string; role?: string } | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [confirmLogoutModalOpen, setConfirmLogoutModalOpen] = useState(false);
 
   useEffect(() => {
@@ -37,6 +43,19 @@ export function Navbar() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (userEmail || userRole) {
+      fetch("/api/dashboard")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.user) {
+            setCurrentUser(data.user);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [userEmail, userRole]);
 
   const handleSignOut = () => {
     document.cookie = "edupulse_user_role=; path=/; max-age=0";
@@ -164,6 +183,19 @@ export function Navbar() {
                 </Link>
               )}
 
+              {/* Notifications Center */}
+              <NotificationBell userRole={userRole || undefined} />
+
+              {/* End-to-End Encrypted Chat Launcher */}
+              <button
+                onClick={() => setIsChatOpen(true)}
+                title="End-to-End Encrypted Academic Chat"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 text-slate-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
+              >
+                <MessageSquareLock className="w-4 h-4 text-indigo-600 transition-transform group-hover:scale-110" />
+                <span className="hidden xl:inline">Messages</span>
+              </button>
+
               {/* Sign Out Icon Button */}
               <button
                 onClick={() => setConfirmLogoutModalOpen(true)}
@@ -278,18 +310,31 @@ export function Navbar() {
             </Link>
           </div>
 
-          <div className="pt-3 border-t border-slate-200">
+          <div className="pt-3 border-t border-slate-200 space-y-2">
             {userRole ? (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setConfirmLogoutModalOpen(true);
-                }}
-                className="w-full px-3 py-2.5 rounded-xl text-xs font-bold bg-red-50 text-red-700 hover:bg-red-100/80 text-center flex items-center justify-center gap-2 border border-red-200 cursor-pointer transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsChatOpen(true);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-center flex items-center justify-center gap-2 border border-indigo-200 cursor-pointer transition-colors"
+                >
+                  <MessageSquareLock className="w-4 h-4 text-indigo-600" />
+                  <span>Encrypted Messages</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setConfirmLogoutModalOpen(true);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl text-xs font-bold bg-red-50 text-red-700 hover:bg-red-100/80 text-center flex items-center justify-center gap-2 border border-red-200 cursor-pointer transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </>
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 <Link
@@ -325,6 +370,15 @@ export function Navbar() {
         confirmText="Sign Out"
         cancelText="Stay Signed In"
       />
+
+      {/* End-to-End Encrypted Chat Drawer */}
+      {currentUser && (
+        <EncryptedChatDrawer
+          currentUser={currentUser}
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
     </header>
   );
 }

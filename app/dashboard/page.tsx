@@ -39,12 +39,15 @@ import {
   LogOut,
   X,
   Tag,
+  MessageSquareLock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Button } from "@/components/ui/button";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 
 const formatForDateTimeInput = (date: Date) => {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -138,6 +141,8 @@ function DashboardContent() {
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
   // New Event Form State
   const [newEventTitle, setNewEventTitle] = useState("");
@@ -669,6 +674,19 @@ function DashboardContent() {
             >
               {currentProfile.badge}
             </Badge>
+
+            {/* Notification Center */}
+            <NotificationBell userRole={userRole} />
+
+            {/* Encrypted Chat Launcher */}
+            <button
+              onClick={() => setIsChatDrawerOpen(true)}
+              title="End-to-End Encrypted Academic Chat"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            >
+              <MessageSquareLock className="w-4 h-4 text-indigo-600" />
+              <span className="hidden xl:inline">Messages</span>
+            </button>
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
@@ -1489,13 +1507,28 @@ function DashboardContent() {
                         </div>
                       </div>
 
-                      <Link
-                        href={`/courses/${course.slug}`}
-                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs self-end sm:self-center shrink-0 transition-colors shadow-2xs inline-flex items-center gap-1.5"
-                      >
-                        <span>{userRole === "INSTRUCTOR" ? "Manage Syllabus & Materials" : "Study Materials & Notes"}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
+                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        {userRole === "STUDENT" && (course.instructorId || course.instructor?.id) && (
+                          <button
+                            onClick={() => {
+                              setActiveChatRecipientId(course.instructorId || course.instructor?.id);
+                              setIsChatDrawerOpen(true);
+                            }}
+                            className="px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <MessageSquareLock className="w-3.5 h-3.5" />
+                            <span>Message Tutor</span>
+                          </button>
+                        )}
+
+                        <Link
+                          href={`/courses/${course.slug}`}
+                          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5"
+                        >
+                          <span>{userRole === "INSTRUCTOR" ? "Manage Syllabus & Materials" : "Study Materials & Notes"}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1880,6 +1913,19 @@ function DashboardContent() {
           fetchDashboardData();
         }}
       />
+
+      {/* End-to-End Encrypted Chat Drawer */}
+      {user && (
+        <EncryptedChatDrawer
+          currentUser={user}
+          initialRecipientId={activeChatRecipientId}
+          isOpen={isChatDrawerOpen}
+          onClose={() => {
+            setIsChatDrawerOpen(false);
+            setActiveChatRecipientId(undefined);
+          }}
+        />
+      )}
 
     </div>
   );

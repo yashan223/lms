@@ -7,6 +7,8 @@ export type LMSEventType =
   | "EVENTS_CHANGED"
   | "ENROLLMENTS_CHANGED"
   | "TRIALS_CHANGED"
+  | "CHAT_MESSAGE"
+  | "NOTIFICATIONS_CHANGED"
   | "PING";
 
 export interface LMSEventPayload {

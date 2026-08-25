@@ -1,57 +1,74 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
-import { useRealtimeSync } from "@/hooks/useRealtimeSync";
-import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import {
   GraduationCap,
-  LayoutDashboard,
+  Search,
+  Bell,
+  MessageSquare,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Home,
+  FileText,
   Users,
   Calendar,
-  Video,
-  BookOpen,
+  Plus,
+  ArrowRight,
   Award,
   Clock,
-  Plus,
-  Search,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
+  BookOpen,
+  SlidersHorizontal,
   Trash2,
+  FolderOpen,
+  CalendarCheck,
+  ShieldCheck,
   Edit3,
+  Video,
+  FileCheck2,
+  DollarSign,
+  TrendingUp,
+  Download,
+  ExternalLink,
+  Loader2,
+  LogOut,
+  X,
+  Tag,
+  MessageSquareLock,
+  Radio,
+  PlayCircle,
   UserCheck,
   Mail,
   Phone,
-  Layers,
-  ArrowRight,
   RefreshCw,
-  Sliders,
-  FileText,
-  ShieldCheck,
-  ChevronRight,
-  LogOut,
-  Download,
-  Info,
-  Loader2,
-  PlayCircle,
-  MessageSquareLock,
-  CalendarCheck,
-  Radio,
-  ChevronDown,
+  Layers,
   Globe,
   Settings,
-  Flame,
   Check,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { buildGoogleCalendarUrl } from "@/lib/calendar";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { Footer } from "@/components/layout/Footer";
+
+const formatForDateTimeInput = (date: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  return `${y}-${m}-${d}T${hh}:${mm}`;
+};
 
 interface EnrolledCourseInfo {
   courseId: string;
@@ -104,10 +121,6 @@ interface ScheduledClassEvent {
 function TutorDashboardContent() {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "students" | "courses" | "classes" | "trials" | "profile"
-  >("overview");
-
   const [loading, setLoading] = useState(true);
   const [tutor, setTutor] = useState<any>(null);
   const [courses, setCourses] = useState<TutorCourse[]>([]);
@@ -115,10 +128,17 @@ function TutorDashboardContent() {
   const [events, setEvents] = useState<ScheduledClassEvent[]>([]);
   const [trials, setTrials] = useState<any[]>([]);
 
-  // Search & Filter States
+  // Navigation tree state
+  const [navCoursesOpen, setNavCoursesOpen] = useState(true);
+
+  // Filters & Search
+  const [courseSearch, setCourseSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [selectedCourseFilter, setSelectedCourseFilter] = useState("ALL");
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
+
+  // Center Tab View: "courses" | "classes" | "students" | "trials"
+  const [centerTab, setCenterTab] = useState<"courses" | "classes" | "students" | "trials">("courses");
 
   // Schedule Class Modal State
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -134,12 +154,13 @@ function TutorDashboardContent() {
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
-  // Selected Student Modal & Chat
+  // Student Details Modal & Chat
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<StudentRecord | null>(null);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
-  // Profile Edit State
+  // Profile Edit Modal
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [profileHeadline, setProfileHeadline] = useState("");
   const [profileBio, setProfileBio] = useState("");
@@ -150,6 +171,9 @@ function TutorDashboardContent() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // Calendar Navigation State
+  const [calDate, setCalDate] = useState(() => new Date());
 
   // Confirmation Modal
   const [confirmModalData, setConfirmModalData] = useState<{
@@ -194,7 +218,7 @@ function TutorDashboardContent() {
         setNewClassCourseId(data.courses[0].id);
       }
     } catch (err) {
-      console.error("Failed to load tutor data:", err);
+      console.error("Failed to load tutor studio data:", err);
     } finally {
       setLoading(false);
     }
@@ -211,19 +235,75 @@ function TutorDashboardContent() {
     },
   });
 
+  // Calendar calculation
+  const calendarDays = useMemo(() => {
+    const year = calDate.getFullYear();
+    const month = calDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const days = [];
+    for (let i = 0; i < firstDayIndex; i++) {
+      days.push(null);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      days.push(new Date(year, month, d));
+    }
+    return days;
+  }, [calDate]);
+
+  const hasEventOnDate = useCallback(
+    (date: Date | null) => {
+      if (!date) return false;
+      const y = date.getFullYear();
+      const m = date.getMonth();
+      const d = date.getDate();
+      return events.some((ev) => {
+        const evDate = new Date(ev.dueDate);
+        return (
+          evDate.getFullYear() === y &&
+          evDate.getMonth() === m &&
+          evDate.getDate() === d
+        );
+      });
+    },
+    [events]
+  );
+
+  const prevMonth = () => {
+    setCalDate(new Date(calDate.getFullYear(), calDate.getMonth() - 1, 1));
+  };
+  const nextMonth = () => {
+    setCalDate(new Date(calDate.getFullYear(), calDate.getMonth() + 1, 1));
+  };
+  const goToToday = () => {
+    setCalDate(new Date());
+  };
+
+  // Filtered Courses
+  const filteredCourses = useMemo(() => {
+    return courses.filter((c) => {
+      const matchSearch =
+        c.title.toLowerCase().includes(courseSearch.toLowerCase()) ||
+        (c.subjectCode && c.subjectCode.toLowerCase().includes(courseSearch.toLowerCase())) ||
+        (c.category && c.category.toLowerCase().includes(courseSearch.toLowerCase()));
+      return matchSearch;
+    });
+  }, [courses, courseSearch]);
+
   // Filtered Students
   const filteredStudents = useMemo(() => {
     return students.filter((st) => {
-      const matchesQuery =
+      const matchQuery =
         st.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
         st.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
         (st.phone && st.phone.includes(studentSearch));
 
-      const matchesCourse =
+      const matchCourse =
         selectedCourseFilter === "ALL" ||
         st.enrolledCourses.some((c) => c.courseId === selectedCourseFilter);
 
-      return matchesQuery && matchesCourse;
+      return matchQuery && matchCourse;
     });
   }, [students, studentSearch, selectedCourseFilter]);
 
@@ -238,17 +318,7 @@ function TutorDashboardContent() {
     });
   }, [events, classFilter]);
 
-  // Upcoming / Live Class for Hero card
-  const activeOrNextClass = useMemo(() => {
-    const live = events.find((e) => e.status === "LIVE");
-    if (live) return live;
-    const sorted = [...events].sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    );
-    return sorted.find((e) => new Date(e.dueDate).getTime() >= Date.now() - 3600000);
-  }, [events]);
-
-  // Handle Schedule Class Submit
+  // Schedule class
   const handleScheduleClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClassTitle.trim() || !newClassDate) return;
@@ -286,7 +356,7 @@ function TutorDashboardContent() {
     }
   };
 
-  // Start Live Class
+  // Start Class
   const handleStartClass = async (eventId: string, existingMeetingLink?: string | null) => {
     try {
       setStartingClassId(eventId);
@@ -313,7 +383,7 @@ function TutorDashboardContent() {
     }
   };
 
-  // End Live Class
+  // End Class
   const handleEndClass = async (eventId: string) => {
     try {
       setEndingClassId(eventId);
@@ -340,7 +410,7 @@ function TutorDashboardContent() {
     setConfirmModalData({
       isOpen: true,
       title: "Cancel & Delete Class Session?",
-      description: "This will remove the scheduled live class from all enrolled student calendars and dashboards.",
+      description: "This will remove the scheduled live class from all enrolled scholar calendars.",
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -388,9 +458,10 @@ function TutorDashboardContent() {
       if (res.ok) {
         setProfileStatusMsg({
           type: "success",
-          text: "Faculty credentials & bio saved successfully!",
+          text: "Faculty qualifications saved successfully!",
         });
         setTutor(data.tutor);
+        setTimeout(() => setShowProfileModal(false), 1200);
       } else {
         setProfileStatusMsg({
           type: "error",
@@ -407,6 +478,15 @@ function TutorDashboardContent() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    } catch {
+      router.push("/login");
+    }
+  };
+
   const openChatWithStudent = (studentId: string) => {
     setActiveChatRecipientId(studentId);
     setIsChatDrawerOpen(true);
@@ -416,6 +496,10 @@ function TutorDashboardContent() {
     setScheduleMode("STUDENT");
     setNewClassStudentId(student.id);
     setNewClassTitle(`1-on-1 Consultation: ${student.name}`);
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(10, 0, 0, 0);
+    setNewClassDate(formatForDateTimeInput(d));
     setShowScheduleModal(true);
   };
 
@@ -430,1400 +514,1028 @@ function TutorDashboardContent() {
     );
   }
 
+  const tutorName = tutor?.name || "Senior Faculty Lecturer";
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans text-slate-800">
-      <Navbar />
-
+    <div className="min-h-screen bg-[#f4f6f9] flex flex-col font-sans text-slate-800">
+      
       {/* ========================================================================= */}
-      {/* 1. EXECUTIVE FACULTY HERO BANNER                                         */}
+      {/* 1. TOP HEADER BAR (Exact same as Dashboard)                                */}
       {/* ========================================================================= */}
-      <div className="bg-gradient-to-r from-[#071739] via-[#0c2461] to-[#1e3799] text-white pt-8 pb-12 border-b border-blue-900/50 shadow-xl relative overflow-hidden">
-        {/* Subtle grid pattern background */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            
-            {/* Lecturer Bio & Avatar */}
-            <div className="flex items-center gap-4 sm:gap-5">
-              <div className="relative group shrink-0">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-white/30 shadow-xl bg-blue-950">
-                  <img
-                    src={
-                      tutor?.avatar ||
-                      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-                    }
-                    alt={tutor?.name || "Faculty Lecturer"}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-[#0c2461] flex items-center justify-center shadow-xs" title="Online Faculty">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                </div>
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
+        <div className="max-w-[1480px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          
+          {/* Left Brand & Logo */}
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#0c2461] text-white flex items-center justify-center shadow-sm">
+                <ShieldCheck className="w-5 h-5 text-blue-300" />
               </div>
-
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                    {tutor?.name || "Senior Faculty Lecturer"}
-                  </h1>
-                  <Badge className="bg-blue-500/20 text-blue-200 border-blue-400/30 text-[11px] font-semibold flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
-                    <span>Lead UK Educator</span>
-                  </Badge>
-                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 text-[11px] font-semibold">
-                    Accredited #UK-92810
-                  </Badge>
-                </div>
-
-                <p className="text-xs sm:text-sm text-blue-200/90 font-medium">
-                  {tutor?.headline || "Senior Lecturer • London A/L & O/L Subject Lead"}
-                </p>
-
-                <div className="flex flex-wrap items-center gap-4 text-xs text-blue-300/80 pt-1 font-mono">
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5" />
-                    {tutor?.email || "faculty@edupulse.uk"}
-                  </span>
-                  {tutor?.phone && (
-                    <span className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5" />
-                      {tutor.phone}
-                    </span>
-                  )}
-                </div>
+              <div className="flex flex-col">
+                <span className="font-serif font-black text-sm text-[#0c2461] tracking-tight leading-none">
+                  EDUPULSE ACADEMY
+                </span>
+                <span className="text-[10px] text-blue-600 font-bold tracking-widest leading-tight">
+                  LONDON A/L & O/L
+                </span>
               </div>
-            </div>
+            </Link>
 
-            {/* Top Quick Actions */}
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              <Button
-                onClick={() => {
-                  setScheduleMode("COURSE");
-                  setNewClassTitle("");
-                  setShowScheduleModal(true);
-                }}
-                className="bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600 text-white text-xs font-bold rounded-xl px-4 py-2.5 h-auto shadow-lg shadow-blue-500/20 flex items-center gap-2 cursor-pointer transition-all hover:scale-[1.02]"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Schedule Live Class</span>
-              </Button>
-
+            <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
               <Link
-                href="/courses"
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-xs border border-white/10 flex items-center gap-1.5 transition-all"
+                href="/dashboard"
+                className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-600"
               >
-                <BookOpen className="w-4 h-4 text-blue-300" />
-                <span>Explore Catalog</span>
+                Dashboard
               </Link>
-
-              <button
-                onClick={fetchTutorData}
-                className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-all cursor-pointer"
-                title="Refresh Studio Data"
+              <Link
+                href="/tutor"
+                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
               >
-                <RefreshCw className="w-4 h-4 text-blue-200" />
-              </button>
-            </div>
-
+                Faculty Studio
+              </Link>
+            </nav>
           </div>
 
-          {/* Quick Metrics Bar in Banner */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8 pt-6 border-t border-white/10">
-            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl font-bold text-white leading-tight">
-                  {students.length}
-                </div>
-                <div className="text-[11px] text-blue-200 font-medium">Enrolled Scholars</div>
+          {/* Right Header Utilities */}
+          <div className="flex items-center gap-3">
+            {/* Faculty Role Badge */}
+            <Badge variant="roleInstructor" className="text-[11px] px-2.5 py-1 font-bold">
+              Faculty Educator
+            </Badge>
+
+            {/* Notification Center */}
+            <NotificationBell userRole="INSTRUCTOR" />
+
+            <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+
+            {/* User Profile */}
+            <div className="flex items-center gap-2 pl-1">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wide hidden md:block">
+                {tutorName}
+              </span>
+              <div className="w-8 h-8 rounded-full bg-[#0c2461] text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden">
+                {tutor?.avatar ? (
+                  <img src={tutor.avatar} alt={tutorName} className="w-full h-full object-cover" />
+                ) : (
+                  tutorName.charAt(0)
+                )}
               </div>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl font-bold text-white leading-tight">
-                  {courses.length}
-                </div>
-                <div className="text-[11px] text-blue-200 font-medium">Active Courses</div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
-                <Video className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl font-bold text-white leading-tight">
-                  {events.length}
-                </div>
-                <div className="text-[11px] text-blue-200 font-medium">Live Sessions</div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
-                <CalendarCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl font-bold text-white leading-tight">
-                  {trials.length}
-                </div>
-                <div className="text-[11px] text-blue-200 font-medium">Trial Bookings</div>
-              </div>
-            </div>
+            {/* Sign Out Button */}
+            <button
+              onClick={handleLogout}
+              title="Sign Out"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-600 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
 
         </div>
-      </div>
+      </header>
 
       {/* ========================================================================= */}
-      {/* 2. TABBED NAVIGATION BAR                                                  */}
+      {/* 2. BREADCRUMB & TITLE BAR                                                 */}
       {/* ========================================================================= */}
-      <div className="sticky top-16 z-30 bg-white border-b border-slate-200 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between overflow-x-auto no-scrollbar gap-2 py-2.5">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === "overview"
-                    ? "bg-[#0c2461] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Overview</span>
-              </button>
+      <section className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6">
+        <div className="max-w-[1480px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">
+              Faculty Studio & Academic Hub
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <span>Accredited Faculty</span>
+            <span>•</span>
+            <span className="font-mono text-blue-700 font-bold">#UK-92810</span>
+          </div>
+        </div>
+      </section>
 
-              <button
-                onClick={() => setActiveTab("students")}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === "students"
-                    ? "bg-[#0c2461] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Enrolled Scholars</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  activeTab === "students" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-                }`}>
-                  {students.length}
+      {/* ========================================================================= */}
+      {/* 3. MAIN DASHBOARD 3-COLUMN WORKSPACE                                      */}
+      {/* ========================================================================= */}
+      <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-6 space-y-5 flex-1">
+        
+        {/* Welcome Greeting Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span>Hi, {tutorName.split(" ")[0]}!</span>
+              <span>👋</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {tutor?.headline || "Senior Faculty Lecturer"} • EduPulse Academy #UK-92810
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                setScheduleMode("COURSE");
+                setNewClassTitle("");
+                const d = new Date();
+                d.setDate(d.getDate() + 1);
+                d.setHours(18, 0, 0, 0);
+                setNewClassDate(formatForDateTimeInput(d));
+                setShowScheduleModal(true);
+              }}
+              className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs gap-1.5 h-8 shadow-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Schedule Live Class</span>
+            </Button>
+
+            <button
+              onClick={fetchTutorData}
+              className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all cursor-pointer"
+              title="Refresh Studio Data"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* 3-Column Grid Workspace */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          
+          {/* ===================================================================== */}
+          {/* LEFT SIDEBAR (col-span-3) - Navigation, Quick Tools, Online Scholars */}
+          {/* ===================================================================== */}
+          <aside className="lg:col-span-3 space-y-4">
+            
+            {/* Block 1: Navigation Tree (Dashboard style) */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
+                Navigation
+              </h3>
+              <div className="space-y-2 text-xs font-medium text-slate-700">
+                <div className="flex items-center gap-1.5 text-blue-700 font-bold">
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Faculty Studio</span>
+                </div>
+
+                <div className="pl-4 space-y-1.5 text-slate-600">
+                  <Link href="/" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
+                    <Home className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Site home</span>
+                  </Link>
+
+                  <Link href="/dashboard" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
+                    <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Student Dashboard View</span>
+                  </Link>
+
+                  {/* My Courses Navigation Tree */}
+                  <div>
+                    <div
+                      onClick={() => setNavCoursesOpen(!navCoursesOpen)}
+                      className="flex items-center gap-1.5 cursor-pointer hover:text-blue-700 font-semibold text-slate-800 transition-colors"
+                    >
+                      {navCoursesOpen ? (
+                        <ChevronDown className="w-3 h-3 text-slate-400" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3 text-slate-400" />
+                      )}
+                      <span>My Taught Courses ({courses.length})</span>
+                    </div>
+
+                    {navCoursesOpen && (
+                      <div className="pl-4 pt-1 space-y-1 text-[11px] text-slate-600">
+                        {courses.length > 0 ? (
+                          courses.map((c, idx) => (
+                            <Link
+                              key={c.id || idx}
+                              href={`/courses/${c.slug}`}
+                              className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
+                              title={c.title}
+                            >
+                              <ChevronRight className="w-2.5 h-2.5 text-slate-400 group-hover:text-blue-600 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                              <span className="truncate group-hover:underline">{c.title}</span>
+                            </Link>
+                          ))
+                        ) : (
+                          <div className="text-slate-400 italic py-0.5">No assigned courses</div>
+                        )}
+                        <Link
+                          href="/courses"
+                          className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
+                        >
+                          <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
+                          <span>Browse all courses...</span>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Block 2: Quick Studio Management Tools */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Faculty Tools
+              </h3>
+
+              <div className="space-y-1.5 text-xs font-medium">
+                <button
+                  onClick={() => setCenterTab("courses")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "courses"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                    <span>My Courses & Syllabus</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
+                    {courses.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setCenterTab("classes")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "classes"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Video className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Live Classes</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
+                    {events.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setCenterTab("students")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "students"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Enrolled Scholars</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
+                    {students.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setCenterTab("trials")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "trials"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <CalendarCheck className="w-3.5 h-3.5 text-amber-600" />
+                    <span>1-on-1 Trial Bookings</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
+                    {trials.length}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Block 3: Enrolled Scholars Online / Direct Chat */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Scholars Roster ({students.length})
+                </h3>
+                <span className="flex items-center gap-1 text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Online</span>
                 </span>
-              </button>
+              </div>
 
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {students.slice(0, 6).map((st) => (
+                  <div
+                    key={st.id}
+                    className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-all text-xs"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-800 font-bold text-[11px] flex items-center justify-center shrink-0">
+                        {st.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 truncate">{st.name}</div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {st.enrolledCourses[0]?.courseTitle || "London A/L"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => openChatWithStudent(st.id)}
+                      className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                      title="Direct Encrypted Message"
+                    >
+                      <MessageSquareLock className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {students.length > 6 && (
+                <button
+                  onClick={() => setCenterTab("students")}
+                  className="w-full text-center text-xs font-semibold text-blue-600 hover:underline pt-1"
+                >
+                  View all {students.length} scholars...
+                </button>
+              )}
+            </div>
+
+          </aside>
+
+          {/* ===================================================================== */}
+          {/* CENTER COLUMN (col-span-6) - Main Workspace Content                  */}
+          {/* ===================================================================== */}
+          <div className="lg:col-span-6 space-y-4">
+            
+            {/* Center Tab Header Switcher */}
+            <div className="bg-white rounded-lg border border-slate-200 p-2 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <button
-                onClick={() => setActiveTab("courses")}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === "courses"
-                    ? "bg-[#0c2461] text-white shadow-sm"
+                onClick={() => setCenterTab("courses")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  centerTab === "courses"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>My Courses & Syllabus</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  activeTab === "courses" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-                }`}>
-                  {courses.length}
-                </span>
+                <span>My Courses ({courses.length})</span>
               </button>
 
               <button
-                onClick={() => setActiveTab("classes")}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === "classes"
-                    ? "bg-[#0c2461] text-white shadow-sm"
+                onClick={() => setCenterTab("classes")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  centerTab === "classes"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <Video className="w-3.5 h-3.5" />
-                <span>Live Classes</span>
-                {events.some((e) => e.status === "LIVE") ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-extrabold bg-red-500 text-white animate-pulse">
-                    LIVE NOW
-                  </span>
-                ) : (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    activeTab === "classes" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-                  }`}>
-                    {events.length}
-                  </span>
-                )}
+                <span>Live Classes ({events.length})</span>
               </button>
 
               <button
-                onClick={() => setActiveTab("trials")}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === "trials"
-                    ? "bg-[#0c2461] text-white shadow-sm"
+                onClick={() => setCenterTab("students")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  centerTab === "students"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Scholars Directory ({students.length})</span>
+              </button>
+
+              <button
+                onClick={() => setCenterTab("trials")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  centerTab === "trials"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <CalendarCheck className="w-3.5 h-3.5" />
-                <span>1-on-1 Trial Sessions</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  activeTab === "trials" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-                }`}>
-                  {trials.length}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("profile")}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === "profile"
-                    ? "bg-[#0c2461] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>Faculty Profile</span>
+                <span>Trials ({trials.length})</span>
               </button>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* ========================================================================= */}
-      {/* 3. MAIN TAB CONTENT AREA                                                  */}
-      {/* ========================================================================= */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            {/* VIEW 1: MY COURSES & CURRICULUM */}
+            {centerTab === "courses" && (
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                      Assigned Curriculum Courses
+                    </h3>
 
-        {/* ----------------------------------------------------------------------- */}
-        {/* TAB 1: STUDIO OVERVIEW                                                  */}
-        {/* ----------------------------------------------------------------------- */}
-        {activeTab === "overview" && (
-          <div className="space-y-6">
-            
-            {/* Top Row: Next Live Class Callout & Quick Trial Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              
-              {/* Left 7 cols: Live Class Showcase */}
-              <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                      <Radio className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">
-                        Next Live Classroom Session
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Interactive Google Meet lecture broadcasting
-                      </p>
+                    {/* Search Course Input */}
+                    <div className="relative w-full sm:w-56">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search courses..."
+                        value={courseSearch}
+                        onChange={(e) => setCourseSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
                     </div>
                   </div>
 
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setScheduleMode("COURSE");
-                      setShowScheduleModal(true);
-                    }}
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 gap-1.5 h-8 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Schedule Class</span>
-                  </Button>
-                </div>
-
-                {activeOrNextClass ? (
-                  <div className={`p-5 rounded-2xl border transition-all ${
-                    activeOrNextClass.status === "LIVE"
-                      ? "bg-red-50/70 border-red-200"
-                      : "bg-blue-50/50 border-blue-100"
-                  } space-y-4`}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          {activeOrNextClass.status === "LIVE" ? (
-                            <Badge className="bg-red-600 text-white font-extrabold text-[10px] animate-pulse">
-                              ● LIVE BROADCASTING
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-blue-100 text-blue-800 font-bold text-[10px] border-blue-200">
-                              Upcoming Scheduled Class
-                            </Badge>
-                          )}
-                          {activeOrNextClass.course?.subjectCode && (
-                            <span className="text-[11px] font-mono font-bold text-slate-600">
-                              [{activeOrNextClass.course.subjectCode}]
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="font-bold text-base text-slate-900">
-                          {activeOrNextClass.title}
-                        </h4>
-                        <p className="text-xs text-slate-600 mt-1 line-clamp-2">
-                          {activeOrNextClass.description || "Live syllabus topic lecture and past paper analysis."}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 justify-end">
-                          <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                          {new Date(activeOrNextClass.dueDate).toLocaleDateString("en-GB", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </div>
-                        <div className="text-xs font-semibold text-slate-500">
-                          {new Date(activeOrNextClass.dueDate).toLocaleTimeString("en-GB", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-xs text-slate-600 flex items-center gap-2">
-                        <Globe className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-mono truncate max-w-[220px]">
-                          {activeOrNextClass.meetingLink || "Room generated upon start"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {activeOrNextClass.status === "LIVE" ? (
-                          <>
-                            <a
-                              href={activeOrNextClass.meetingLink || "#"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-red-500/20"
-                            >
-                              <Video className="w-3.5 h-3.5" />
-                              <span>Join Live Room</span>
-                            </a>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEndClass(activeOrNextClass.id)}
-                              disabled={endingClassId === activeOrNextClass.id}
-                              className="text-xs font-semibold text-slate-700 h-8"
-                            >
-                              {endingClassId === activeOrNextClass.id ? "Ending..." : "End Session"}
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                handleStartClass(
-                                  activeOrNextClass.id,
-                                  activeOrNextClass.meetingLink
-                                )
-                              }
-                              disabled={startingClassId === activeOrNextClass.id}
-                              className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-8 gap-1.5 shadow-sm cursor-pointer"
-                            >
-                              <PlayCircle className="w-3.5 h-3.5 text-blue-300" />
-                              <span>
-                                {startingClassId === activeOrNextClass.id
-                                  ? "Launching..."
-                                  : "Start Class Now"}
-                              </span>
-                            </Button>
-                            <a
-                              href={buildGoogleCalendarUrl({
-                                title: activeOrNextClass.title,
-                                description: activeOrNextClass.description || "",
-                                dueDate: activeOrNextClass.dueDate,
-                                location: activeOrNextClass.meetingLink || "",
-                              })}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-white"
-                              title="Add to Google Calendar"
-                            >
-                              <Calendar className="w-3.5 h-3.5" />
-                            </a>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
-                    <Video className="w-8 h-8 text-slate-400 mx-auto" />
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-800">No Active or Scheduled Classes</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Schedule a live seminar for your course cohorts or 1-on-1 student consultations.
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => setShowScheduleModal(true)}
-                      className="bg-[#0c2461] text-white text-xs font-bold rounded-xl px-4"
-                    >
-                      + Schedule Class
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Right 5 cols: Student 1-on-1 Trial Inquiries */}
-              <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
-                      <CalendarCheck className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">
-                        1-on-1 Trial Bookings
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        30-Min student consultations
-                      </p>
-                    </div>
-                  </div>
-
-                  <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs font-bold">
-                    {trials.length} Booked
-                  </Badge>
-                </div>
-
-                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                  {trials.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-400 italic">
-                      No trial consultation requests at the moment.
+                  {filteredCourses.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-slate-400 italic">
+                      No courses match your search.
                     </div>
                   ) : (
-                    trials.slice(0, 4).map((trial) => (
-                      <div
-                        key={trial.id}
-                        className="p-3.5 rounded-xl bg-slate-50 hover:bg-blue-50/40 border border-slate-200/80 transition-all space-y-2"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="font-bold text-xs text-slate-900">
-                              {trial.studentName}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {filteredCourses.map((c) => (
+                        <div
+                          key={c.id}
+                          className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-200 transition-all flex flex-col justify-between space-y-3 shadow-2xs"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                                {c.subjectCode || "LONDON A/L"}
+                              </span>
+                              <span className="text-xs font-bold text-slate-900 font-mono">
+                                £{c.price}
+                              </span>
                             </div>
-                            <div className="text-[11px] text-slate-500">
-                              {trial.course?.title || "London A/L General Inquiry"}
+
+                            <h4 className="font-bold text-xs text-slate-900 line-clamp-2">
+                              {c.title}
+                            </h4>
+
+                            <div className="flex items-center gap-3 text-[11px] text-slate-500 pt-1">
+                              <span className="flex items-center gap-1">
+                                <Layers className="w-3 h-3 text-slate-400" />
+                                {c.modules?.length || 0} Modules
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <FileText className="w-3 h-3 text-slate-400" />
+                                {c.materials?.length || 0} Handbooks
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3 text-slate-400" />
+                                {c.enrollments?.length || 0} Scholars
+                              </span>
                             </div>
                           </div>
-                          <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-bold border-emerald-200">
-                            Confirmed
-                          </Badge>
+
+                          <div className="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                            <Link
+                              href={`/courses/${c.slug}`}
+                              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              <span>Open Syllabus</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </Link>
+
+                            <button
+                              onClick={() => {
+                                setScheduleMode("COURSE");
+                                setNewClassCourseId(c.id);
+                                setNewClassTitle(`Live Class: ${c.title}`);
+                                setShowScheduleModal(true);
+                              }}
+                              className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded-md"
+                            >
+                              + Schedule
+                            </button>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px]">
-                          <span className="text-slate-600 font-mono flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            {new Date(trial.preferredDate).toLocaleDateString("en-GB", {
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
+            {/* VIEW 2: LIVE CLASSES */}
+            {centerTab === "classes" && (
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                      Live Classroom Sessions
+                    </h3>
 
-                          <div className="flex items-center gap-2">
+                    {/* Filter Pills */}
+                    <div className="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs">
+                      {(["ALL", "LIVE", "SCHEDULED", "COMPLETED"] as const).map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => setClassFilter(f)}
+                          className={`px-2.5 py-1 font-bold rounded-md transition-all ${
+                            classFilter === f
+                              ? "bg-white text-blue-700 shadow-2xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          {f === "ALL" && "All"}
+                          {f === "LIVE" && "Live Now"}
+                          {f === "SCHEDULED" && "Upcoming"}
+                          {f === "COMPLETED" && "Past"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {filteredEvents.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-slate-400 italic">
+                      No live sessions found for this filter.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredEvents.map((ev) => {
+                        const isLive = ev.status === "LIVE";
+                        const isCompleted = ev.status === "COMPLETED";
+
+                        return (
+                          <div
+                            key={ev.id}
+                            className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                              isLive
+                                ? "bg-red-50/50 border-red-200"
+                                : "bg-white border-slate-200 hover:border-blue-200"
+                            }`}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-xs text-slate-900">
+                                  {ev.title}
+                                </span>
+                                {isLive && (
+                                  <Badge className="bg-red-600 text-white font-extrabold text-[9px] animate-pulse">
+                                    ● LIVE
+                                  </Badge>
+                                )}
+                                {isCompleted && (
+                                  <Badge className="bg-slate-100 text-slate-600 text-[9px]">
+                                    Ended
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 font-mono">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3 text-slate-400" />
+                                  {new Date(ev.dueDate).toLocaleDateString("en-GB", {
+                                    day: "numeric",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                {ev.meetingLink && (
+                                  <a
+                                    href={ev.meetingLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline truncate max-w-[180px]"
+                                  >
+                                    {ev.meetingLink}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                              {isLive ? (
+                                <>
+                                  <a
+                                    href={ev.meetingLink || "#"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
+                                  >
+                                    Join Room
+                                  </a>
+                                  <button
+                                    onClick={() => handleEndClass(ev.id)}
+                                    disabled={endingClassId === ev.id}
+                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold hover:bg-slate-50"
+                                  >
+                                    End
+                                  </button>
+                                </>
+                              ) : isCompleted ? null : (
+                                <>
+                                  <button
+                                    onClick={() => handleStartClass(ev.id, ev.meetingLink)}
+                                    disabled={startingClassId === ev.id}
+                                    className="px-3 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold cursor-pointer"
+                                  >
+                                    Start
+                                  </button>
+                                  <a
+                                    href={buildGoogleCalendarUrl({
+                                      title: ev.title,
+                                      description: ev.description || "",
+                                      dueDate: ev.dueDate,
+                                      location: ev.meetingLink || "",
+                                    })}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                    title="Add to Google Calendar"
+                                  >
+                                    <Calendar className="w-3.5 h-3.5" />
+                                  </a>
+                                  <button
+                                    onClick={() => handleDeleteClass(ev.id)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600"
+                                    title="Delete Class"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 3: ENROLLED SCHOLARS */}
+            {centerTab === "students" && (
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                      Enrolled Scholars Directory ({filteredStudents.length})
+                    </h3>
+
+                    {/* Search & Filter */}
+                    <div className="flex items-center gap-2">
+                      <div className="relative w-full sm:w-44">
+                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Search scholar..."
+                          value={studentSearch}
+                          onChange={(e) => setStudentSearch(e.target.value)}
+                          className="w-full pl-8 pr-3 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <select
+                        value={selectedCourseFilter}
+                        onChange={(e) => setSelectedCourseFilter(e.target.value)}
+                        className="py-1 px-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-700"
+                      >
+                        <option value="ALL">All Courses</option>
+                        {courses.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.subjectCode || c.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {filteredStudents.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-slate-400 italic">
+                      No scholars match your query.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {filteredStudents.map((st) => (
+                        <div
+                          key={st.id}
+                          className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white transition-all space-y-2.5"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
+                                {st.name.charAt(0)}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-xs text-slate-900">{st.name}</h4>
+                                <p className="text-[10px] text-slate-500">{st.email}</p>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => setSelectedStudentForModal(st)}
+                              className="text-slate-400 hover:text-slate-700 p-1"
+                              title="View Scholar Details"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1">
+                            {st.enrolledCourses.map((c, idx) => (
+                              <span
+                                key={idx}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700 font-medium truncate max-w-[160px]"
+                              >
+                                {c.courseTitle}
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                            <button
+                              onClick={() => openChatWithStudent(st.id)}
+                              className="flex-1 py-1 text-center rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-[11px] font-semibold flex items-center justify-center gap-1"
+                            >
+                              <MessageSquareLock className="w-3 h-3 text-blue-600" />
+                              <span>Message</span>
+                            </button>
+
+                            <button
+                              onClick={() => openScheduleForStudent(st)}
+                              className="flex-1 py-1 text-center rounded-md bg-[#0c2461] hover:bg-[#103080] text-white text-[11px] font-bold"
+                            >
+                              1-on-1 Class
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 4: 1-ON-1 TRIALS */}
+            {centerTab === "trials" && (
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                      Student 1-on-1 Free Trial Bookings ({trials.length})
+                    </h3>
+                    <Badge className="bg-amber-100 text-amber-800 text-xs font-bold">
+                      30-Min Sessions
+                    </Badge>
+                  </div>
+
+                  {trials.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-slate-400 italic">
+                      No trial booking inquiries received.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {trials.map((tr) => (
+                        <div
+                          key={tr.id}
+                          className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-slate-900">
+                                {tr.studentName}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-semibold">
+                                ({tr.course?.title || "London A/L"})
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+                              <span className="flex items-center gap-1 font-mono text-blue-700 font-bold">
+                                <Clock className="w-3 h-3 text-blue-600" />
+                                {new Date(tr.preferredDate).toLocaleDateString("en-GB", {
+                                  day: "numeric",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              <span>{tr.studentEmail}</span>
+                              {tr.studentPhone && <span>{tr.studentPhone}</span>}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                             <a
-                              href={`mailto:${trial.studentEmail}`}
-                              className="text-blue-600 hover:text-blue-800 font-semibold"
-                              title="Email Scholar"
+                              href={`mailto:${tr.studentEmail}?subject=EduPulse Trial Session&body=Dear ${tr.studentName},`}
+                              className="px-2.5 py-1 rounded-md border border-slate-200 text-xs font-semibold hover:bg-slate-50"
                             >
                               Email
                             </a>
                             <a
                               href={buildGoogleCalendarUrl({
-                                title: `30-Min Trial: ${trial.studentName}`,
-                                description: `1-on-1 Academic Consultation for ${trial.course?.title || "Curriculum"}`,
-                                dueDate: trial.preferredDate,
+                                title: `30-Min Trial: ${tr.studentName}`,
+                                description: `1-on-1 Consultation for ${tr.course?.title || "London A/L"}`,
+                                dueDate: tr.preferredDate,
                               })}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-slate-600 hover:text-slate-900 font-semibold"
-                              title="Add to Google Calendar"
+                              className="px-2.5 py-1 rounded-md bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold"
                             >
-                              Calendar
+                              Add to Calendar
                             </a>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   )}
                 </div>
+              </div>
+            )}
 
-                {trials.length > 4 && (
-                  <button
-                    onClick={() => setActiveTab("trials")}
-                    className="w-full py-2 text-center text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50/50 hover:bg-blue-50 rounded-xl transition-all"
-                  >
-                    View All {trials.length} Trial Bookings →
-                  </button>
+          </div>
+
+          {/* ===================================================================== */}
+          {/* RIGHT SIDEBAR (col-span-3) - Faculty Card, Calendar, Studio Metrics   */}
+          {/* ===================================================================== */}
+          <aside className="lg:col-span-3 space-y-4">
+            
+            {/* Block 1: Faculty Profile Card */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Faculty Lead Profile
+                </h3>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-blue-950 text-white overflow-hidden border border-slate-200 shrink-0">
+                  <img
+                    src={
+                      tutor?.avatar ||
+                      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+                    }
+                    alt={tutorName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-xs text-slate-900 truncate">{tutorName}</h4>
+                  <p className="text-[11px] text-slate-500 truncate">{tutor?.headline || "Subject Lead"}</p>
+                  <span className="text-[10px] text-emerald-700 font-bold">● Active Online</span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed border-t border-slate-100 pt-2">
+                {tutor?.bio || "UK Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge syllabi."}
+              </p>
+            </div>
+
+            {/* Block 2: Upcoming Class Schedule */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Upcoming Classes
+                </h3>
+                <span className="text-[11px] font-bold text-blue-700 font-mono">
+                  {events.length} Scheduled
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {events.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic text-center py-2">
+                    No scheduled sessions.
+                  </p>
+                ) : (
+                  events.slice(0, 3).map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs space-y-1"
+                    >
+                      <div className="font-bold text-slate-900 truncate">{ev.title}</div>
+                      <div className="text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                        <span>
+                          {new Date(ev.dueDate).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        <span className="text-blue-600 font-semibold">Live Seminar</span>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
 
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                  <CalendarCheck className="w-3 h-3 text-blue-600" />
+                  <span>Synced with Faculty Schedule</span>
+                </span>
+                <button
+                  onClick={goToToday}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  Jump to Today
+                </button>
+              </div>
             </div>
 
-            {/* Bottom Row: Active Courses Grid & Quick Student Roster */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              
-              {/* Courses overview */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">
-                        My Taught Courses & Curricula
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        {courses.length} courses managed under your faculty credentials
-                      </p>
-                    </div>
-                  </div>
-
+            {/* Block 3: Interactive Calendar Card */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  {calDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
+                </h3>
+                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setActiveTab("courses")}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-800"
+                    onClick={prevMonth}
+                    className="p-1 rounded hover:bg-slate-100 text-slate-600"
+                    title="Previous month"
                   >
-                    View All Courses →
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={nextMonth}
+                    className="p-1 rounded hover:bg-slate-100 text-slate-600"
+                    title="Next month"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {courses.slice(0, 4).map((course) => (
-                    <div
-                      key={course.id}
-                      className="p-4 rounded-xl bg-slate-50 hover:bg-blue-50/30 border border-slate-200/80 transition-all flex flex-col justify-between"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
-                            {course.subjectCode || course.category}
-                          </span>
-                          <span className="text-xs font-bold text-slate-900">
-                            £{course.price}
-                          </span>
-                        </div>
-
-                        <h4 className="font-bold text-xs text-slate-900 line-clamp-2">
-                          {course.title}
-                        </h4>
-
-                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                          <span className="flex items-center gap-1">
-                            <Layers className="w-3 h-3 text-slate-400" />
-                            {course.modules?.length || 0} Modules
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-3 h-3 text-slate-400" />
-                            {course.materials?.length || 0} Materials
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-3 h-3 text-slate-400" />
-                            {course.enrollments?.length || 0} Students
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 mt-3 border-t border-slate-200/60 flex items-center justify-between">
-                        <Link
-                          href={`/courses/${course.slug}`}
-                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                        >
-                          <span>Open Syllabus</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </Link>
-                        <button
-                          onClick={() => {
-                            setScheduleMode("COURSE");
-                            setNewClassCourseId(course.id);
-                            setNewClassTitle(`Masterclass: ${course.title}`);
-                            setShowScheduleModal(true);
-                          }}
-                          className="text-[11px] font-semibold text-slate-600 hover:text-slate-900"
-                        >
-                          + Live Class
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
 
-              {/* Quick Students Roster */}
-              <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">
-                        Recent Scholars
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        {students.length} enrolled across courses
-                      </p>
-                    </div>
+              {/* Day names */}
+              <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">
+                {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                  <div key={i} className="py-1">
+                    {d}
                   </div>
-
-                  <button
-                    onClick={() => setActiveTab("students")}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-800"
-                  >
-                    View All →
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {students.slice(0, 5).map((student) => (
-                    <div
-                      key={student.id}
-                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-all"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center shrink-0">
-                          {student.name.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-bold text-xs text-slate-900 truncate">
-                            {student.name}
-                          </div>
-                          <div className="text-[10px] text-slate-500 truncate">
-                            {student.enrolledCourses[0]?.courseTitle || "Enrolled Scholar"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => openChatWithStudent(student.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all shrink-0"
-                        title="Direct Message"
-                      >
-                        <MessageSquareLock className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
 
-            </div>
+              {/* Days grid */}
+              <div className="grid grid-cols-7 text-center text-xs">
+                {calendarDays.map((date, idx) => {
+                  if (!date) return <div key={`empty-${idx}`} className="p-1" />;
+                  const isToday =
+                    date.getDate() === new Date().getDate() &&
+                    date.getMonth() === new Date().getMonth() &&
+                    date.getFullYear() === new Date().getFullYear();
 
-          </div>
-        )}
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* TAB 2: ENROLLED SCHOLARS DIRECTORY                                     */}
-        {/* ----------------------------------------------------------------------- */}
-        {activeTab === "students" && (
-          <div className="space-y-6">
-            
-            {/* Header with Search & Course Filter */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">
-                    Enrolled Scholars Directory ({filteredStudents.length})
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Direct access to scholars across all your London A/L & O/L course cohorts
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Search Input */}
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      placeholder="Search scholar name or email..."
-                      value={studentSearch}
-                      onChange={(e) => setStudentSearch(e.target.value)}
-                      className="pl-9 h-9 text-xs rounded-xl"
-                    />
-                  </div>
-
-                  {/* Course Filter */}
-                  <select
-                    value={selectedCourseFilter}
-                    onChange={(e) => setSelectedCourseFilter(e.target.value)}
-                    className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white font-medium text-slate-700"
-                  >
-                    <option value="ALL">All Enrolled Courses</option>
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.subjectCode ? `[${c.subjectCode}] ` : ""}{c.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Students Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredStudents.length === 0 ? (
-                <div className="col-span-full bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
-                  <Users className="w-10 h-10 text-slate-300 mx-auto" />
-                  <h4 className="font-bold text-sm text-slate-700">No Scholars Match Your Criteria</h4>
-                  <p className="text-xs text-slate-500">
-                    Try searching a different name or changing the course filter.
-                  </p>
-                </div>
-              ) : (
-                filteredStudents.map((student) => (
-                  <div
-                    key={student.id}
-                    className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-md hover:border-blue-200 transition-all flex flex-col justify-between space-y-4"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-sm flex items-center justify-center shadow-sm">
-                            {student.name.charAt(0)}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-sm text-slate-900">
-                              {student.name}
-                            </h4>
-                            <p className="text-[11px] text-slate-500">
-                              {student.headline || "London A/L Scholar"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => setSelectedStudentForModal(student)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                          title="View Scholar Profile"
-                        >
-                          <Info className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-1 text-xs text-slate-600">
-                        <div className="flex items-center gap-2 truncate">
-                          <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{student.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2 truncate">
-                          <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>{student.phone}</span>
-                        </div>
-                      </div>
-
-                      {/* Enrolled Courses Badges */}
-                      <div className="pt-2 border-t border-slate-100 space-y-1.5">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Enrolled Cohorts ({student.enrolledCourses.length}):
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {student.enrolledCourses.map((c, i) => (
-                            <span
-                              key={i}
-                              className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200/60 truncate max-w-[200px]"
-                            >
-                              {c.courseTitle}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openChatWithStudent(student.id)}
-                        className="text-xs font-semibold gap-1.5 h-8 w-full"
-                      >
-                        <MessageSquareLock className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Message</span>
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        onClick={() => openScheduleForStudent(student)}
-                        className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold gap-1.5 h-8 w-full cursor-pointer"
-                      >
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>1-on-1 Class</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* TAB 3: MY COURSES & SYLLABUS                                            */}
-        {/* ----------------------------------------------------------------------- */}
-        {activeTab === "courses" && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  Curriculum & Course Management ({courses.length})
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Manage module syllabi, video lectures, and student enrollments for each specification
-                </p>
-              </div>
-
-              <Link
-                href="/courses"
-                className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 flex items-center gap-1.5 w-fit"
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Browse Student Catalog View</span>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {courses.map((course) => (
-                <div
-                  key={course.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-lg hover:border-blue-200 transition-all flex flex-col justify-between space-y-4"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-mono font-extrabold px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-800 border border-blue-200/60">
-                        {course.subjectCode || "LONDON A/L"}
-                      </span>
-                      <span className="text-sm font-bold text-slate-900 font-mono">
-                        £{course.price}
-                      </span>
-                    </div>
-
-                    <h4 className="font-bold text-base text-slate-900 leading-snug">
-                      {course.title}
-                    </h4>
-
-                    {course.subtitle && (
-                      <p className="text-xs text-slate-500 line-clamp-2">
-                        {course.subtitle}
-                      </p>
-                    )}
-
-                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-center text-xs">
-                      <div>
-                        <div className="font-bold text-slate-800">{course.modules?.length || 0}</div>
-                        <div className="text-[10px] text-slate-400 font-medium">Modules</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-800">{course.materials?.length || 0}</div>
-                        <div className="text-[10px] text-slate-400 font-medium">Handbooks</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-800">{course.enrollments?.length || 0}</div>
-                        <div className="text-[10px] text-slate-400 font-medium">Scholars</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <Link
-                      href={`/courses/${course.slug}`}
-                      className="flex-1 py-2 text-center rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <span>Open Syllabus</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setScheduleMode("COURSE");
-                        setNewClassCourseId(course.id);
-                        setNewClassTitle(`Live Class: ${course.title}`);
-                        setShowScheduleModal(true);
-                      }}
-                      className="text-xs font-semibold gap-1 h-9 rounded-xl"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Class</span>
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* TAB 4: LIVE CLASSES & SEMINARS                                          */}
-        {/* ----------------------------------------------------------------------- */}
-        {activeTab === "classes" && (
-          <div className="space-y-6">
-            
-            {/* Header & Filter Controls */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  Live Classroom Sessions ({filteredEvents.length})
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Broadcasting rooms, seminar schedules, and lecture meetings
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-                  {(["ALL", "LIVE", "SCHEDULED", "COMPLETED"] as const).map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setClassFilter(filter)}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                        classFilter === filter
-                          ? "bg-white text-blue-700 shadow-2xs"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      {filter === "ALL" && "All Sessions"}
-                      {filter === "LIVE" && "Live Now"}
-                      {filter === "SCHEDULED" && "Upcoming"}
-                      {filter === "COMPLETED" && "Completed"}
-                    </button>
-                  ))}
-                </div>
-
-                <Button
-                  onClick={() => setShowScheduleModal(true)}
-                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-4 gap-1.5 h-9"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Schedule Class</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Classes List */}
-            <div className="space-y-3">
-              {filteredEvents.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
-                  <Video className="w-10 h-10 text-slate-300 mx-auto" />
-                  <h4 className="font-bold text-sm text-slate-700">No Classes Found</h4>
-                  <p className="text-xs text-slate-500">
-                    No classes match the active filter. Schedule a new class using the button above.
-                  </p>
-                </div>
-              ) : (
-                filteredEvents.map((ev) => {
-                  const isLive = ev.status === "LIVE";
-                  const isCompleted = ev.status === "COMPLETED";
+                  const hasEvents = hasEventOnDate(date);
 
                   return (
                     <div
-                      key={ev.id}
-                      className={`bg-white rounded-2xl border transition-all p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                        isLive
-                          ? "border-red-300 bg-red-50/30 ring-1 ring-red-200"
-                          : "border-slate-200 hover:border-blue-200"
+                      key={date.toISOString()}
+                      className={`p-1 relative flex flex-col items-center justify-center rounded-md ${
+                        isToday
+                          ? "bg-[#0c2461] text-white font-bold"
+                          : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className={`p-3 rounded-2xl shrink-0 ${
-                          isLive
-                            ? "bg-red-500 text-white animate-pulse"
-                            : isCompleted
-                            ? "bg-slate-100 text-slate-500"
-                            : "bg-blue-50 text-blue-600"
-                        }`}>
-                          <Video className="w-5 h-5" />
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="font-bold text-sm text-slate-900">
-                              {ev.title}
-                            </h4>
-                            {isLive && (
-                              <Badge className="bg-red-600 text-white font-extrabold text-[10px]">
-                                ● LIVE NOW
-                              </Badge>
-                            )}
-                            {isCompleted && (
-                              <Badge className="bg-slate-100 text-slate-600 font-bold text-[10px]">
-                                Completed
-                              </Badge>
-                            )}
-                            {ev.course?.title && (
-                              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-                                {ev.course.title}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                            <span className="flex items-center gap-1 font-mono">
-                              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                              {new Date(ev.dueDate).toLocaleDateString("en-GB", {
-                                weekday: "short",
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </span>
-                            <span className="flex items-center gap-1 font-mono">
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              {new Date(ev.dueDate).toLocaleTimeString("en-GB", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                            {ev.meetingLink && (
-                              <span className="flex items-center gap-1 font-mono text-blue-600">
-                                <Globe className="w-3.5 h-3.5" />
-                                <a
-                                  href={ev.meetingLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline truncate max-w-[200px]"
-                                >
-                                  {ev.meetingLink}
-                                </a>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex items-center gap-2 self-end md:self-center shrink-0">
-                        {isLive ? (
-                          <>
-                            <a
-                              href={ev.meetingLink || "#"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-red-500/20"
-                            >
-                              <Video className="w-3.5 h-3.5" />
-                              <span>Join Room</span>
-                            </a>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEndClass(ev.id)}
-                              disabled={endingClassId === ev.id}
-                              className="text-xs font-semibold h-9"
-                            >
-                              {endingClassId === ev.id ? "Ending..." : "End Session"}
-                            </Button>
-                          </>
-                        ) : isCompleted ? (
-                          <span className="text-xs text-slate-400 font-semibold px-3 py-1 bg-slate-50 rounded-lg">
-                            Session Ended
-                          </span>
-                        ) : (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => handleStartClass(ev.id, ev.meetingLink)}
-                              disabled={startingClassId === ev.id}
-                              className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 gap-1.5 shadow-sm cursor-pointer"
-                            >
-                              <PlayCircle className="w-3.5 h-3.5 text-blue-300" />
-                              <span>
-                                {startingClassId === ev.id ? "Starting..." : "Start Class"}
-                              </span>
-                            </Button>
-
-                            <a
-                              href={buildGoogleCalendarUrl({
-                                title: ev.title,
-                                description: ev.description || "",
-                                dueDate: ev.dueDate,
-                                location: ev.meetingLink || "",
-                              })}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                              title="Add to Google Calendar"
-                            >
-                              <Calendar className="w-3.5 h-3.5" />
-                            </a>
-
-                            <button
-                              onClick={() => handleDeleteClass(ev.id)}
-                              className="p-2.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                              title="Cancel & Delete Class"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* TAB 5: 1-ON-1 TRIAL SESSIONS                                            */}
-        {/* ----------------------------------------------------------------------- */}
-        {activeTab === "trials" && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  Student 1-on-1 Free Trial Consultations ({trials.length})
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Prospective student bookings requesting a 30-min online evaluation session
-                </p>
-              </div>
-
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs font-bold px-3 py-1 w-fit">
-                {trials.length} Inquiries Received
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {trials.length === 0 ? (
-                <div className="col-span-full bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
-                  <CalendarCheck className="w-10 h-10 text-slate-300 mx-auto" />
-                  <h4 className="font-bold text-sm text-slate-700">No Trial Bookings Yet</h4>
-                  <p className="text-xs text-slate-500">
-                    When prospective students request a 30-min trial session on your courses, they will appear here.
-                  </p>
-                </div>
-              ) : (
-                trials.map((trial) => (
-                  <div
-                    key={trial.id}
-                    className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-md hover:border-amber-200 transition-all flex flex-col justify-between space-y-4"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 font-bold text-sm flex items-center justify-center">
-                            {trial.studentName.charAt(0)}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-sm text-slate-900">
-                              {trial.studentName}
-                            </h4>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
-                              30-Min Trial Session
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <div className="font-bold text-slate-800 truncate">
-                          Course: {trial.course?.title || "General Curriculum"}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{trial.studentEmail}</span>
-                        </div>
-                        {trial.studentPhone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>{trial.studentPhone}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 font-mono text-[11px] text-blue-700 font-semibold pt-1 border-t border-slate-200/60">
-                          <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                          <span>
-                            {new Date(trial.preferredDate).toLocaleDateString("en-GB", {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                      </div>
-
-                      {trial.notes && (
-                        <p className="text-xs text-slate-500 italic bg-white p-2 rounded-lg border border-slate-100">
-                          "{trial.notes}"
-                        </p>
+                      <span className="text-[11px] leading-tight">{date.getDate()}</span>
+                      {hasEvents && (
+                        <span
+                          className={`w-1 h-1 rounded-full mt-0.5 ${
+                            isToday ? "bg-amber-300" : "bg-blue-600"
+                          }`}
+                        />
                       )}
                     </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <a
-                        href={`mailto:${trial.studentEmail}?subject=EduPulse: 30-Min Trial Session Confirmation&body=Dear ${trial.studentName},%0D%0A%0D%0AThank you for requesting a 30-min online trial session with EduPulse Academy.`}
-                        className="flex-1 py-2 text-center rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs border border-blue-200 transition-all"
-                      >
-                        Email Scholar
-                      </a>
-
-                      <a
-                        href={buildGoogleCalendarUrl({
-                          title: `30-Min Trial: ${trial.studentName}`,
-                          description: `1-on-1 Consultation for ${trial.course?.title || "London A/L"}`,
-                          dueDate: trial.preferredDate,
-                        })}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 py-2 text-center rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs shadow-xs transition-all"
-                      >
-                        Add to Calendar
-                      </a>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* TAB 6: FACULTY PROFILE & QUALIFICATIONS                                 */}
-        {/* ----------------------------------------------------------------------- */}
-        {activeTab === "profile" && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="border-b border-slate-100 pb-4">
-                <h3 className="font-bold text-lg text-slate-900">
-                  Faculty Credentials & Studio Settings
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Update your lecturer identity, qualifications summary, and student contact details.
-                </p>
+                  );
+                })}
               </div>
-
-              {profileStatusMsg && (
-                <div
-                  className={`p-4 rounded-xl text-xs font-semibold flex items-center gap-2 ${
-                    profileStatusMsg.type === "success"
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                      : "bg-red-50 text-red-800 border border-red-200"
-                  }`}
-                >
-                  {profileStatusMsg.type === "success" ? (
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                  )}
-                  <span>{profileStatusMsg.text}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSaveProfile} className="space-y-5">
-                <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-blue-950 shrink-0">
-                    <img
-                      src={
-                        profileAvatar ||
-                        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-                      }
-                      alt={profileName || "Avatar Preview"}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="space-y-1.5 w-full">
-                    <label className="font-bold text-xs text-slate-700 block">
-                      Profile Avatar URL
-                    </label>
-                    <Input
-                      value={profileAvatar}
-                      onChange={(e) => setProfileAvatar(e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                      className="text-xs rounded-xl h-9 bg-white"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Paste a direct HTTPS image link for your lecturer avatar.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="font-bold text-xs text-slate-700 block">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      required
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      className="text-xs rounded-xl h-9"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-xs text-slate-700 block">
-                      Academic Title & Headline
-                    </label>
-                    <Input
-                      value={profileHeadline}
-                      onChange={(e) => setProfileHeadline(e.target.value)}
-                      className="text-xs rounded-xl h-9"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-xs text-slate-700 block">
-                    Phone / WhatsApp Number
-                  </label>
-                  <Input
-                    value={profilePhone}
-                    onChange={(e) => setProfilePhone(e.target.value)}
-                    className="text-xs rounded-xl h-9"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-xs text-slate-700 block">
-                    Lecturer Biography & Qualifications Summary
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={profileBio}
-                    onChange={(e) => setProfileBio(e.target.value)}
-                    className="w-full p-3 text-xs rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-                  />
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                  <Button
-                    type="submit"
-                    disabled={profileSaving}
-                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-6 h-10 gap-2 shadow-md cursor-pointer"
-                  >
-                    {profileSaving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Saving Credentials...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Save Faculty Profile</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
             </div>
-          </div>
-        )}
+
+            {/* Block 4: Studio Statistics Summary */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-2.5">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Studio Statistics
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{students.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Scholars</div>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{courses.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Courses</div>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{events.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Classes</div>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{trials.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Trials</div>
+                </div>
+              </div>
+            </div>
+
+          </aside>
+
+        </div>
 
       </main>
 
@@ -1837,12 +1549,12 @@ function TutorDashboardContent() {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-600 text-white">
+                <div className="p-2 rounded-xl bg-[#0c2461] text-white">
                   <Video className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900">
-                    Schedule Live Virtual Class
+                    Schedule Live Classroom Session
                   </h3>
                   <p className="text-xs text-slate-500">
                     Broadcast a Google Meet interactive seminar to students
@@ -1936,7 +1648,7 @@ function TutorDashboardContent() {
                 </label>
                 <Input
                   required
-                  placeholder="e.g. Unit 4 Differential Calculus Past Papers"
+                  placeholder="e.g. Pure Mathematics Unit 4 Differential Calculus Past Papers"
                   value={newClassTitle}
                   onChange={(e) => setNewClassTitle(e.target.value)}
                   className="rounded-xl h-9 text-xs"
@@ -2019,20 +1731,133 @@ function TutorDashboardContent() {
         </div>
       )}
 
+      {/* Edit Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-600 text-white">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Edit Faculty Qualifications
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Update lecturer identity, credentials, and contact details
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {profileStatusMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  profileStatusMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}
+              >
+                {profileStatusMsg.type === "success" ? (
+                  <Check className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600" />
+                )}
+                <span>{profileStatusMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block">Full Name *</label>
+                <Input
+                  required
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  className="rounded-xl h-9 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block">Academic Headline</label>
+                <Input
+                  value={profileHeadline}
+                  onChange={(e) => setProfileHeadline(e.target.value)}
+                  className="rounded-xl h-9 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block">Avatar URL</label>
+                <Input
+                  value={profileAvatar}
+                  onChange={(e) => setProfileAvatar(e.target.value)}
+                  className="rounded-xl h-9 text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block">Phone / WhatsApp</label>
+                <Input
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value)}
+                  className="rounded-xl h-9 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block">Biography</label>
+                <textarea
+                  rows={3}
+                  value={profileBio}
+                  onChange={(e) => setProfileBio(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProfileModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={profileSaving}
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5"
+                >
+                  {profileSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Student Details Inspection Modal */}
       {selectedStudentForModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white font-bold text-base flex items-center justify-center shadow-md">
+                <div className="w-11 h-11 rounded-xl bg-[#0c2461] text-white font-bold text-sm flex items-center justify-center shadow-sm">
                   {selectedStudentForModal.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">
+                  <h3 className="font-bold text-sm text-slate-900">
                     {selectedStudentForModal.name}
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-[11px] text-slate-500">
                     {selectedStudentForModal.headline || "London A/L Scholar"}
                   </p>
                 </div>
@@ -2046,7 +1871,7 @@ function TutorDashboardContent() {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 border border-slate-100">
+              <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-100">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500 font-medium">Email:</span>
                   <span className="font-mono font-bold text-slate-800">{selectedStudentForModal.email}</span>
@@ -2087,7 +1912,7 @@ function TutorDashboardContent() {
                   setSelectedStudentForModal(null);
                   openChatWithStudent(s.id);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+                className="bg-[#0c2461] hover:bg-[#103080] text-white gap-1.5"
               >
                 <MessageSquareLock className="w-3.5 h-3.5" />
                 <span>Open Chat</span>
@@ -2097,7 +1922,7 @@ function TutorDashboardContent() {
         </div>
       )}
 
-      {/* Confirmation Modal for Destructive Actions */}
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={confirmModalData.isOpen}
         onClose={() => setConfirmModalData((prev) => ({ ...prev, isOpen: false }))}
@@ -2114,7 +1939,7 @@ function TutorDashboardContent() {
         currentUser={
           tutor || {
             id: "instructor",
-            name: "Senior Faculty Lecturer",
+            name: tutorName,
             email: "faculty@edupulse.uk",
             role: "INSTRUCTOR",
           }

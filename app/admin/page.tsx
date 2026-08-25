@@ -1238,23 +1238,27 @@ export default function AdminDashboardPage() {
 
                   <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
                     {[
-                      { id: "ALL", label: `All Classes (${eventsList.length})` },
-                      { id: "LIVE", label: `🔴 Live Now (${liveNowCount})` },
-                      { id: "SCHEDULED", label: `📅 Scheduled (${upcomingCount})` },
-                      { id: "COMPLETED", label: `✓ Completed (${completedCount})` },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setLiveClassFilter(tab.id as any)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
-                          liveClassFilter === tab.id
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
+                      { id: "ALL", label: `All Classes (${eventsList.length})`, icon: Video },
+                      { id: "LIVE", label: `Live Now (${liveNowCount})`, icon: Radio },
+                      { id: "SCHEDULED", label: `Scheduled (${upcomingCount})`, icon: Calendar },
+                      { id: "COMPLETED", label: `Completed (${completedCount})`, icon: CheckCircle2 },
+                    ].map((tab) => {
+                      const TabIcon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setLiveClassFilter(tab.id as any)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${
+                            liveClassFilter === tab.id
+                              ? "bg-blue-600 text-white shadow-xs"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          <TabIcon className="w-3.5 h-3.5" />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1298,8 +1302,9 @@ export default function AdminDashboardPage() {
                           <div className="space-y-2">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <Badge className="bg-red-600 text-white text-[10px] font-black animate-pulse uppercase tracking-wider mb-1">
-                                  🔴 LIVE NOW
+                                <Badge className="bg-red-600 text-white text-[10px] font-black uppercase tracking-wider mb-1 flex items-center gap-1 w-fit">
+                                  <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
+                                  <span>LIVE NOW</span>
                                 </Badge>
                                 <h4 className="font-extrabold text-sm text-slate-900 leading-snug">
                                   {ev.title}
@@ -1419,13 +1424,15 @@ export default function AdminDashboardPage() {
                                   {ev.title}
                                 </h4>
                                 {isLive && (
-                                  <Badge className="bg-red-600 text-white text-[9px] font-black uppercase">
-                                    🔴 Live Now
+                                  <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
+                                    <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
+                                    <span>Live Now</span>
                                   </Badge>
                                 )}
                                 {isCompleted && (
-                                  <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold">
-                                    ✓ Completed
+                                  <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold flex items-center gap-1">
+                                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-700" />
+                                    <span>Completed</span>
                                   </Badge>
                                 )}
                                 {!isLive && !isCompleted && (
@@ -1815,9 +1822,9 @@ export default function AdminDashboardPage() {
                       </p>
 
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                        <span>📚 {course.modules?.length || 0} Modules</span>
-                        <span>📄 {course.materials?.length || 0} Files</span>
-                        <span>👥 {course.enrollments?.length || 0} Enrolled</span>
+                        <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> {course.modules?.length || 0} Modules</span>
+                        <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-slate-400" /> {course.materials?.length || 0} Files</span>
+                        <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-slate-400" /> {course.enrollments?.length || 0} Enrolled</span>
                         <span className="font-bold text-slate-900">£{course.price}</span>
                       </div>
                     </div>
@@ -1968,7 +1975,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">Add New User</h3>
-              <button onClick={() => setShowAddUserModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+              <button onClick={() => setShowAddUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleCreateUser} className="space-y-3 text-xs">
@@ -2019,7 +2026,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">Edit User Details</h3>
-              <button onClick={() => setShowEditUserModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+              <button onClick={() => setShowEditUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleUpdateUser} className="space-y-3 text-xs">
@@ -2067,7 +2074,7 @@ export default function AdminDashboardPage() {
                 <h3 className="font-bold text-base text-slate-900">Enroll Student</h3>
                 <p className="text-xs text-slate-500">{selectedUserForEdit.name} ({selectedUserForEdit.email})</p>
               </div>
-              <button onClick={() => setShowEnrollUserModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+              <button onClick={() => setShowEnrollUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleEnrollUserSubmit} className="space-y-4 text-xs">
@@ -2104,7 +2111,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">Create New Course</h3>
-              <button onClick={() => setShowAddCourseModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+              <button onClick={() => setShowAddCourseModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleCreateCourse} className="space-y-3 text-xs">
@@ -2167,7 +2174,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">Edit Course Details</h3>
-              <button onClick={() => setShowEditCourseModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+              <button onClick={() => setShowEditCourseModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleUpdateCourse} className="space-y-3 text-xs">
@@ -2216,7 +2223,7 @@ export default function AdminDashboardPage() {
                 <h3 className="font-bold text-base text-slate-900">Syllabus & Module Builder</h3>
                 <p className="text-xs text-slate-500">{selectedCourseForSyllabus.title}</p>
               </div>
-              <button onClick={() => setShowManageSyllabusModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+              <button onClick={() => setShowManageSyllabusModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             {/* Add Module Input */}
@@ -2291,7 +2298,7 @@ export default function AdminDashboardPage() {
                           className="bg-white text-xs h-8 w-16 rounded-lg"
                         />
                         <Button type="submit" size="sm" className="bg-blue-500 text-white text-xs h-8 rounded-lg cursor-pointer">Add</Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => setSelectedModuleIdForLesson("")} className="text-xs h-8 rounded-lg cursor-pointer">✕</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setSelectedModuleIdForLesson("")} className="text-xs h-8 rounded-lg cursor-pointer px-2" aria-label="Close"><X className="w-3.5 h-3.5" /></Button>
                       </form>
                     ) : (
                       <button
@@ -2333,9 +2340,10 @@ export default function AdminDashboardPage() {
               </div>
               <button
                 onClick={() => setShowManageMaterialsModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -2582,9 +2590,10 @@ export default function AdminDashboardPage() {
               </div>
               <button
                 onClick={() => setShowScheduleModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

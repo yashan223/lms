@@ -40,6 +40,7 @@ import {
   X,
   Tag,
   MessageSquareLock,
+  Radio,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -995,8 +996,9 @@ function DashboardContent() {
                                 {ev.title}
                               </h4>
                               {ev.status === "LIVE" && (
-                                <Badge className="bg-red-600 text-white text-[9px] font-black animate-pulse uppercase">
-                                  🔴 Live Now
+                                <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
+                                  <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
+                                  <span>Live Now</span>
                                 </Badge>
                               )}
                               {ev.type && (
@@ -1588,9 +1590,10 @@ function DashboardContent() {
                   setUploadError(null);
                   setUploadSuccess(null);
                 }}
-                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded hover:bg-slate-100 cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -1762,9 +1765,10 @@ function DashboardContent() {
                   setEventError(null);
                   setEventSuccess(null);
                 }}
-                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded hover:bg-slate-100 cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

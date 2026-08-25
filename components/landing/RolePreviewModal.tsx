@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   ArrowRight,
   UserCheck,
+  BarChart3,
 } from "lucide-react";
 
 interface RolePreviewModalProps {
@@ -171,8 +172,9 @@ export function RolePreviewModal({
               <p className="text-xs text-slate-600 leading-relaxed mb-2">
                 {current.description}
               </p>
-              <div className="text-[11px] font-semibold text-slate-700 bg-white/70 px-2.5 py-1 rounded-md inline-block border border-slate-200/50">
-                📊 {current.statSummary}
+              <div className="text-[11px] font-semibold text-slate-700 bg-white/70 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 border border-slate-200/50">
+                <BarChart3 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>{current.statSummary}</span>
               </div>
             </div>
           </div>

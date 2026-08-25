@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   AlertCircle,
   CheckCircle2,
+  UserCheck,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -211,9 +212,10 @@ export default function LoginPage() {
                     setEmail("student@edupulse.uk");
                     setPassword("StudentPass123!");
                   }}
-                  className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-[11px] font-bold text-center transition-all cursor-pointer"
+                  className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
-                  🧑‍🎓 Student
+                  <GraduationCap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Student</span>
                 </button>
                 <button
                   type="button"
@@ -221,9 +223,10 @@ export default function LoginPage() {
                     setEmail("tutor@edupulse.uk");
                     setPassword("InstructorPass123!");
                   }}
-                  className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold text-center transition-all cursor-pointer"
+                  className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
-                  👨‍🏫 Tutor
+                  <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span>Tutor</span>
                 </button>
                 <button
                   type="button"
@@ -231,9 +234,10 @@ export default function LoginPage() {
                     setEmail("admin@edupulse.uk");
                     setPassword("AdminPass123!");
                   }}
-                  className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 text-[11px] font-bold text-center transition-all cursor-pointer"
+                  className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
-                  ⚙️ Admin
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <span>Admin</span>
                 </button>
               </div>
             </div>

@@ -43,6 +43,8 @@ import {
   Loader2,
   PlayCircle,
   MessageSquareLock,
+  X,
+  Radio,
 } from "lucide-react";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 
@@ -686,8 +688,9 @@ function TutorDashboardContent() {
                                 {ev.title}
                               </h4>
                               {ev.status === "LIVE" && (
-                                <Badge className="bg-red-600 text-white text-[9px] font-black uppercase animate-pulse">
-                                  🔴 LIVE NOW
+                                <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
+                                  <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
+                                  <span>LIVE NOW</span>
                                 </Badge>
                               )}
                               <Badge className="text-[9px] px-1.5 py-0 bg-purple-100 text-purple-800 font-bold">
@@ -840,8 +843,17 @@ function TutorDashboardContent() {
                               )}
                             </div>
                             <div className="text-slate-600 text-[11px] flex items-center gap-2 flex-wrap">
-                              <span>📧 {tr.studentEmail}</span>
-                              {tr.studentPhone && <span>• 📱 {tr.studentPhone}</span>}
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3 text-slate-400" />
+                                <span>{tr.studentEmail}</span>
+                              </span>
+                              {tr.studentPhone && (
+                                <span className="flex items-center gap-1">
+                                  <span>•</span>
+                                  <Phone className="w-3 h-3 text-slate-400" />
+                                  <span>{tr.studentPhone}</span>
+                                </span>
+                              )}
                             </div>
                             {tr.topic && (
                               <p className="text-[11px] text-slate-500 italic">
@@ -1203,8 +1215,9 @@ function TutorDashboardContent() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           {ev.status === "LIVE" && (
-                            <Badge className="bg-red-600 text-white text-[9px] font-black uppercase animate-pulse">
-                              🔴 LIVE NOW
+                            <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
+                              <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
+                              <span>LIVE NOW</span>
                             </Badge>
                           )}
                           <Badge className="bg-purple-100 text-purple-800 text-[10px] font-bold">
@@ -1678,8 +1691,9 @@ function TutorDashboardContent() {
               <button
                 onClick={() => setShowScheduleModal(false)}
                 className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -1693,24 +1707,26 @@ function TutorDashboardContent() {
                   <button
                     type="button"
                     onClick={() => setScheduleMode("COURSE")}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       scheduleMode === "COURSE"
                         ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
                         : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    📚 Whole Course Cohort
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Whole Course Cohort</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setScheduleMode("STUDENT")}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       scheduleMode === "STUDENT"
                         ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
                         : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    🧑‍🎓 1-on-1 Student Mentoring
+                    <GraduationCap className="w-3.5 h-3.5 text-purple-600" />
+                    <span>1-on-1 Student Mentoring</span>
                   </button>
                 </div>
               </div>
@@ -1884,8 +1900,9 @@ function TutorDashboardContent() {
               <button
                 onClick={() => setSelectedStudentForModal(null)}
                 className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

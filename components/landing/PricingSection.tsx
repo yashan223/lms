@@ -89,9 +89,10 @@ export function PricingSection() {
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                     <Badge
                       variant="default"
-                      className="bg-gradient-to-r from-blue-600 to-sky-600 text-white font-bold text-xs py-1 px-4 shadow-md shadow-blue-500/30"
+                      className="bg-gradient-to-r from-blue-600 to-sky-600 text-white font-bold text-xs py-1 px-4 shadow-md shadow-blue-500/30 flex items-center gap-1"
                     >
-                      ★ {plan.badge || "Most Popular"}
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{plan.badge || "Most Popular"}</span>
                     </Badge>
                   </div>
                 )}

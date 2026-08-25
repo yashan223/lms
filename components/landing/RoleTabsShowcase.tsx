@@ -412,7 +412,7 @@ export function RoleTabsShowcase() {
                           <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
                           Platform Administrator
                         </span>
-                        <span className="text-indigo-700 font-mono text-[11px]">admin@edupulse.io</span>
+                        <span className="text-indigo-700 font-mono text-[11px]">admin@edupulse.uk</span>
                       </div>
 
                       <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   ShieldCheck,
   Lock,
@@ -8,15 +8,12 @@ import {
   X,
   Search,
   MessageSquare,
-  User,
-  Plus,
   Loader2,
-  Check,
   CheckCheck,
-  Sparkles,
   ArrowLeft,
-  GraduationCap,
   Users,
+  MessageSquareLock,
+  Minimize2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,16 +30,45 @@ interface ChatDrawerProps {
     role?: string;
   };
   initialRecipientId?: string;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onOpen?: () => void;
 }
 
 export function EncryptedChatDrawer({
   currentUser,
   initialRecipientId,
-  isOpen,
-  onClose,
+  isOpen: controlledIsOpen,
+  onClose: controlledOnClose,
+  onOpen: controlledOnOpen,
 }: ChatDrawerProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+  const handleToggleOpen = () => {
+    if (isOpen) {
+      if (controlledOnClose) {
+        controlledOnClose();
+      } else {
+        setInternalIsOpen(false);
+      }
+    } else {
+      if (controlledOnOpen) {
+        controlledOnOpen();
+      } else {
+        setInternalIsOpen(true);
+      }
+    }
+  };
+
+  const handleClose = () => {
+    if (controlledOnClose) {
+      controlledOnClose();
+    } else {
+      setInternalIsOpen(false);
+    }
+  };
+
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConversation, setActiveConversation] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -58,6 +84,11 @@ export function EncryptedChatDrawer({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate total unread messages
+  const totalUnreadCount = useMemo(() => {
+    return conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  }, [conversations]);
 
   // Auto-scroll to bottom of message list
   const scrollToBottom = () => {
@@ -92,6 +123,11 @@ export function EncryptedChatDrawer({
       console.error("Error fetching contacts:", err);
     }
   };
+
+  useEffect(() => {
+    fetchConversations();
+    fetchContacts();
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -229,8 +265,6 @@ export function EncryptedChatDrawer({
     }
   };
 
-  if (!isOpen) return null;
-
   const filteredContacts = contacts.filter((c) =>
     c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -242,226 +276,123 @@ export function EncryptedChatDrawer({
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl h-full shadow-2xl flex flex-col justify-between overflow-hidden animate-in slide-in-from-right duration-300">
-        
-        {/* Top App Header */}
-        <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-900 text-white flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
-              <Lock className="w-4 h-4" />
+    <>
+      {/* Side Round Pop-up Floating Action Button */}
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+        <button
+          onClick={handleToggleOpen}
+          aria-label={isOpen ? "Close Messages" : "Open Messages"}
+          title={isOpen ? "Close Messages" : "End-to-End Encrypted Messages"}
+          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform active:scale-95 cursor-pointer relative group ${
+            isOpen
+              ? "bg-slate-900 text-white rotate-90 scale-100 hover:bg-slate-800"
+              : "bg-gradient-to-tr from-[#0c2461] via-blue-600 to-indigo-600 text-white hover:scale-105 ring-4 ring-blue-500/20"
+          }`}
+        >
+          {isOpen ? (
+            <X className="w-6 h-6 transition-transform" />
+          ) : (
+            <div className="relative flex items-center justify-center">
+              <MessageSquare className="w-6 h-6" />
+              <Lock className="w-2.5 h-2.5 absolute -bottom-1 -right-1 text-emerald-300" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-sm text-white">
-                  Academic Encrypted Chat
-                </h3>
-                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[9px] font-bold gap-1 flex items-center">
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                  <span>AES-256 E2EE</span>
-                </Badge>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Direct secure student & tutor communication channel
-              </p>
+          )}
+
+          {/* Unread Count Badge */}
+          {!isOpen && totalUnreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center ring-2 ring-white shadow-md animate-pulse">
+              {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
+            </span>
+          )}
+
+          {/* Tooltip Label on Hover (when closed) */}
+          {!isOpen && (
+            <div className="absolute right-full mr-3 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg hidden sm:flex items-center gap-1.5">
+              <Lock className="w-3 h-3 text-emerald-400" />
+              <span>Messages</span>
             </div>
-          </div>
+          )}
+        </button>
+      </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Close Chat"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
+      {/* Floating Side Round Popup Window */}
+      {isOpen && (
+        <div className="fixed bottom-22 right-4 sm:right-6 z-50 w-[92vw] sm:w-[420px] max-w-[440px] h-[580px] max-h-[calc(100vh-7rem)] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
           
-          {/* LEFT SIDEBAR: Conversations & Contact List */}
-          <div
-            className={`w-full sm:w-72 border-r border-slate-200 bg-slate-50 flex flex-col ${
-              activeConversation ? "hidden sm:flex" : "flex"
-            }`}
-          >
-            {/* Search & Actions Bar */}
-            <div className="p-3 border-b border-slate-200 space-y-2 bg-white">
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                <Input
-                  placeholder="Search chats or faculty..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-8 text-xs rounded-xl bg-slate-50 border-slate-200"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  {showContactsList ? "Available Contacts" : "Recent Conversations"}
-                </span>
-
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowContactsList(!showContactsList)}
-                  className="h-6 px-2 text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg cursor-pointer"
+          {/* Header */}
+          <div className="px-4 py-3.5 bg-[#0c2461] text-white flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {activeConversation ? (
+                <button
+                  onClick={() => setActiveConversation(null)}
+                  className="p-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors mr-0.5"
+                  title="Back to conversations"
                 >
-                  {showContactsList ? "View Chats" : "+ New Chat"}
-                </Button>
-              </div>
-            </div>
-
-            {/* Conversation / Contacts Scroll List */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-              {showContactsList ? (
-                // 1. New Chat Contacts Directory
-                filteredContacts.length > 0 ? (
-                  filteredContacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      onClick={() => handleStartConversationWith(contact.id)}
-                      className="p-3 flex items-center justify-between gap-3 hover:bg-blue-50/60 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Avatar className="w-8 h-8 ring-1 ring-slate-200">
-                          <AvatarImage src={contact.avatar} />
-                          <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">
-                            {contact.name?.substring(0, 2).toUpperCase() || "AC"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-xs text-slate-900 truncate">
-                            {contact.name}
-                          </h4>
-                          <p className="text-[10px] text-slate-500 truncate">
-                            {contact.headline || (contact.role === "INSTRUCTOR" ? "Faculty Tutor" : "Scholar")}
-                          </p>
-                        </div>
-                      </div>
-
-                      <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[9px] font-bold">
-                        Start
-                      </Badge>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center space-y-1 text-xs text-slate-400">
-                    <Users className="w-6 h-6 mx-auto text-slate-300 mb-1" />
-                    <p className="font-bold text-slate-600">No contacts found</p>
-                  </div>
-                )
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
               ) : (
-                // 2. Active Conversations List
-                filteredConversations.length > 0 ? (
-                  filteredConversations.map((conv) => {
-                    const isSelected = activeConversation?.id === conv.id;
-                    return (
-                      <div
-                        key={conv.id}
-                        onClick={() => handleSelectConversation(conv)}
-                        className={`p-3 flex items-center justify-between gap-2 transition-colors cursor-pointer ${
-                          isSelected
-                            ? "bg-blue-100/70 border-l-4 border-blue-600"
-                            : "hover:bg-slate-100/70"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Avatar className="w-8 h-8 ring-1 ring-slate-200">
-                            <AvatarImage src={conv.otherUser?.avatar} />
-                            <AvatarFallback className="bg-slate-200 text-slate-700 font-bold text-xs">
-                              {conv.otherUser?.name?.substring(0, 2).toUpperCase() || "US"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <h4 className="font-bold text-xs text-slate-900 truncate">
-                              {conv.otherUser?.name}
-                            </h4>
-                            <p className="text-[10px] text-slate-500 truncate flex items-center gap-1">
-                              <Lock className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
-                              <span>End-to-End Encrypted</span>
-                            </p>
-                          </div>
-                        </div>
-
-                        {conv.unreadCount > 0 && (
-                          <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-black flex items-center justify-center shrink-0">
-                            {conv.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-8 text-center space-y-2 text-xs text-slate-400">
-                    <MessageSquare className="w-6 h-6 mx-auto text-slate-300" />
-                    <p className="font-bold text-slate-600">No Conversations</p>
-                    <p className="text-[11px] text-slate-400">
-                      Click &quot;+ New Chat&quot; to message your tutor or student.
-                    </p>
-                    <Button
-                      size="sm"
-                      onClick={() => setShowContactsList(true)}
-                      className="text-xs font-bold bg-blue-600 text-white rounded-xl"
-                    >
-                      + Start Conversation
-                    </Button>
-                  </div>
-                )
+                <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center">
+                  <MessageSquareLock className="w-3.5 h-3.5 text-blue-300" />
+                </div>
               )}
-            </div>
-          </div>
 
-          {/* RIGHT PANE: Active Chat Conversation */}
-          <div className={`flex-1 flex flex-col bg-slate-50/50 ${!activeConversation ? "hidden sm:flex" : "flex"}`}>
-            {activeConversation ? (
-              <>
-                {/* Active Chat Header */}
-                <div className="p-3.5 border-b border-slate-200 bg-white flex items-center justify-between">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <button
-                      onClick={() => setActiveConversation(null)}
-                      className="sm:hidden p-1 rounded-lg text-slate-400 hover:text-slate-700"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                    </button>
-                    <Avatar className="w-9 h-9 ring-1 ring-slate-200">
-                      <AvatarImage src={activeConversation.otherUser?.avatar} />
-                      <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">
-                        {activeConversation.otherUser?.name?.substring(0, 2).toUpperCase() || "US"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">
-                        {activeConversation.otherUser?.name}
-                      </h4>
-                      <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                        <Lock className="w-2.5 h-2.5" />
-                        <span>Client-side 256-bit AES Encrypted</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] font-bold">
-                    Secure Session
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-xs sm:text-sm text-white truncate">
+                    {activeConversation ? activeConversation.otherUser?.name : "Academic Messages"}
+                  </h3>
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[9px] px-1.5 py-0 font-bold gap-0.5 flex items-center shrink-0">
+                    <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                    <span>E2EE</span>
                   </Badge>
                 </div>
+                <p className="text-[10px] text-slate-300 truncate">
+                  {activeConversation
+                    ? (activeConversation.otherUser?.role === "INSTRUCTOR" ? "Faculty Instructor" : "Student")
+                    : "Zero-knowledge 256-bit encrypted"}
+                </p>
+              </div>
+            </div>
 
-                {/* E2EE Info Security Banner */}
-                <div className="bg-emerald-50/70 border-b border-emerald-200/50 px-4 py-2 flex items-center gap-2 text-[11px] text-emerald-900">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <p className="text-[10px] sm:text-[11px]">
-                    <strong>Zero-Knowledge Security:</strong> Messages are encrypted on your device. The server and third parties cannot read these communications.
-                  </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleClose}
+                className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Minimize Chat"
+                title="Minimize"
+              >
+                <Minimize2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleClose}
+                className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Close Chat"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+            {activeConversation ? (
+              // ACTIVE CONVERSATION CHAT VIEW
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Security reminder banner */}
+                <div className="bg-emerald-50/80 border-b border-emerald-200/60 px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-emerald-900">
+                  <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span className="truncate">
+                    Encrypted on-device with AES-256 GCM.
+                  </span>
                 </div>
 
                 {/* Messages Scroll Area */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-3">
+                <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 bg-slate-50/60">
                   {loadingMessages ? (
-                    <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                    <div className="py-16 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                      <span>Decrypting conversation keys...</span>
+                      <span>Decrypting messages...</span>
                     </div>
                   ) : messages.length > 0 ? (
                     messages.map((msg) => {
@@ -474,7 +405,7 @@ export function EncryptedChatDrawer({
                           className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                         >
                           <div
-                            className={`max-w-[82%] sm:max-w-[70%] p-3 rounded-2xl text-xs leading-relaxed shadow-2xs ${
+                            className={`max-w-[85%] p-2.5 rounded-2xl text-xs leading-relaxed shadow-2xs ${
                               isMe
                                 ? "bg-blue-600 text-white rounded-br-xs"
                                 : "bg-white text-slate-900 border border-slate-200 rounded-bl-xs"
@@ -483,7 +414,7 @@ export function EncryptedChatDrawer({
                             <p className="whitespace-pre-wrap break-words">{plainText}</p>
                           </div>
 
-                          <div className="flex items-center gap-1 text-[9px] text-slate-400 mt-1 px-1">
+                          <div className="flex items-center gap-1 text-[9px] text-slate-400 mt-0.5 px-1">
                             <span>
                               {new Date(msg.createdAt).toLocaleTimeString("en-GB", {
                                 hour: "2-digit",
@@ -502,13 +433,13 @@ export function EncryptedChatDrawer({
                       );
                     })
                   ) : (
-                    <div className="py-16 text-center space-y-2">
-                      <Lock className="w-8 h-8 text-emerald-400 mx-auto" />
+                    <div className="py-12 text-center space-y-2">
+                      <Lock className="w-7 h-7 text-emerald-500 mx-auto" />
                       <h4 className="font-bold text-xs text-slate-800">
-                        End-to-End Encrypted Session Established
+                        Secure Conversation Started
                       </h4>
-                      <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-                        Send your first secure message to {activeConversation.otherUser?.name}. All exchanges are encrypted with client-side cryptography.
+                      <p className="text-[11px] text-slate-500 max-w-[240px] mx-auto">
+                        Send a message to {activeConversation.otherUser?.name}. All messages are encrypted with AES-256.
                       </p>
                     </div>
                   )}
@@ -518,59 +449,161 @@ export function EncryptedChatDrawer({
                 {/* Message Input Form */}
                 <form
                   onSubmit={handleSendMessage}
-                  className="p-3 border-t border-slate-200 bg-white flex items-center gap-2"
+                  className="p-2.5 border-t border-slate-200 bg-white flex items-center gap-2"
                 >
                   <div className="relative flex-1">
                     <Input
                       ref={inputRef}
-                      placeholder={`Message ${activeConversation.otherUser?.name}...`}
+                      placeholder={`Message ${activeConversation.otherUser?.name || ""}...`}
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       disabled={isSending}
-                      className="pr-8 h-10 text-xs rounded-xl border-slate-200 focus-visible:ring-blue-500"
+                      className="pr-8 h-9 text-xs rounded-xl border-slate-200 focus-visible:ring-blue-500 bg-slate-50"
                     />
-                    <Lock className="w-3.5 h-3.5 text-slate-300 absolute right-3 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2" />
                   </div>
 
                   <Button
                     type="submit"
                     disabled={!inputText.trim() || isSending}
-                    className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm cursor-pointer"
+                    size="sm"
+                    className="h-9 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold gap-1 shadow-xs cursor-pointer shrink-0"
                   >
                     {isSending ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <>
-                        <span>Send</span>
-                        <Send className="w-3.5 h-3.5" />
-                      </>
+                      <Send className="w-3.5 h-3.5" />
                     )}
                   </Button>
                 </form>
-              </>
+              </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-2xs">
-                  <MessageSquare className="w-6 h-6" />
+              // CONVERSATIONS & CONTACTS LIST VIEW
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Search & Tabs */}
+                <div className="p-3 border-b border-slate-200 space-y-2 bg-white">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      placeholder="Search messages or people..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 h-8 text-xs rounded-xl bg-slate-50 border-slate-200"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      {showContactsList ? "Faculty & Students" : "Recent Chats"}
+                    </span>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowContactsList(!showContactsList)}
+                      className="h-6 px-2 text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg cursor-pointer"
+                    >
+                      {showContactsList ? "View Chats" : "+ New Message"}
+                    </Button>
+                  </div>
                 </div>
-                <h4 className="font-black text-sm text-slate-900">
-                  Select a Conversation to Start Chatting
-                </h4>
-                <p className="text-xs text-slate-500 max-w-xs">
-                  Choose a student or tutor from the left sidebar to open a zero-knowledge end-to-end encrypted messaging session.
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => setShowContactsList(true)}
-                  className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
-                >
-                  + Start New Chat
-                </Button>
+
+                {/* List Items */}
+                <div className="flex-1 overflow-y-auto divide-y divide-slate-100 bg-white">
+                  {showContactsList ? (
+                    filteredContacts.length > 0 ? (
+                      filteredContacts.map((contact) => (
+                        <div
+                          key={contact.id}
+                          onClick={() => handleStartConversationWith(contact.id)}
+                          className="p-3 flex items-center justify-between gap-3 hover:bg-blue-50/70 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Avatar className="w-8 h-8 ring-1 ring-slate-200">
+                              <AvatarImage src={contact.avatar} />
+                              <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">
+                                {contact.name?.substring(0, 2).toUpperCase() || "AC"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-xs text-slate-900 truncate">
+                                {contact.name}
+                              </h4>
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {contact.headline || (contact.role === "INSTRUCTOR" ? "Faculty Instructor" : "Student")}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[9px] font-bold">
+                            Chat
+                          </Badge>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center space-y-1 text-xs text-slate-400">
+                        <Users className="w-6 h-6 mx-auto text-slate-300 mb-1" />
+                        <p className="font-bold text-slate-600">No contacts found</p>
+                      </div>
+                    )
+                  ) : (
+                    filteredConversations.length > 0 ? (
+                      filteredConversations.map((conv) => {
+                        return (
+                          <div
+                            key={conv.id}
+                            onClick={() => handleSelectConversation(conv)}
+                            className="p-3 flex items-center justify-between gap-2.5 hover:bg-slate-50 transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Avatar className="w-8 h-8 ring-1 ring-slate-200">
+                                <AvatarImage src={conv.otherUser?.avatar} />
+                                <AvatarFallback className="bg-slate-200 text-slate-700 font-bold text-xs">
+                                  {conv.otherUser?.name?.substring(0, 2).toUpperCase() || "US"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-xs text-slate-900 truncate">
+                                  {conv.otherUser?.name}
+                                </h4>
+                                <p className="text-[10px] text-slate-500 truncate flex items-center gap-1">
+                                  <Lock className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                  <span>End-to-End Encrypted</span>
+                                </p>
+                              </div>
+                            </div>
+
+                            {conv.unreadCount > 0 && (
+                              <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-black flex items-center justify-center shrink-0">
+                                {conv.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-8 text-center space-y-2 text-xs text-slate-400">
+                        <MessageSquare className="w-8 h-8 mx-auto text-slate-300" />
+                        <p className="font-bold text-slate-700">No active conversations</p>
+                        <p className="text-[11px] text-slate-500">
+                          Click &quot;+ New Message&quot; to message your tutor or scholar.
+                        </p>
+                        <Button
+                          size="sm"
+                          onClick={() => setShowContactsList(true)}
+                          className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
+                        >
+                          + Start New Chat
+                        </Button>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

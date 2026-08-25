@@ -9,13 +9,10 @@ import {
   Atom,
   TrendingUp,
   Calculator,
-  FileCheck2,
   BookOpen,
-  ArrowRight,
 } from "lucide-react";
 
 export function Hero() {
-  const [selectedDiamond, setSelectedDiamond] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewRole, setPreviewRole] = useState<UserRole>("ADMIN");
 
@@ -27,7 +24,6 @@ export function Hero() {
       colorBg: "bg-purple-600",
       colorText: "text-purple-600",
       icon: GraduationCap,
-      description: "Pearson Edexcel International Advanced Level (Units 1-6, Pure Maths P1-P4, Mechanics & Stats)",
     },
     {
       id: "igcse",
@@ -36,7 +32,6 @@ export function Hero() {
       colorBg: "bg-cyan-500",
       colorText: "text-cyan-600",
       icon: BookOpen,
-      description: "Pearson Edexcel & Cambridge IGCSE / GCSE Grade 9/8 (A*) targeted curriculum",
     },
     {
       id: "math",
@@ -45,7 +40,6 @@ export function Hero() {
       colorBg: "bg-lime-500",
       colorText: "text-lime-600",
       icon: Calculator,
-      description: "Edexcel P1, P2, P3, P4, Mechanics M1, and Statistics S1 comprehensive paper solving",
     },
     {
       id: "sci",
@@ -54,7 +48,6 @@ export function Hero() {
       colorBg: "bg-pink-500",
       colorText: "text-pink-600",
       icon: Atom,
-      description: "Units 1-6 theory & Alternative to Practical (Unit 3/6) video laboratory masterclasses",
     },
     {
       id: "comm",
@@ -63,7 +56,6 @@ export function Hero() {
       colorBg: "bg-amber-700",
       colorText: "text-amber-700",
       icon: TrendingUp,
-      description: "Edexcel Units 1-4 20/25 mark evaluation essay structure & macroeconomic data response",
     },
     {
       id: "bio",
@@ -72,7 +64,6 @@ export function Hero() {
       colorBg: "bg-indigo-600",
       colorText: "text-indigo-600",
       icon: BookOpen,
-      description: "Human physiology, cellular genetics, biochemistry & environmental systems",
     },
   ];
 
@@ -132,17 +123,16 @@ export function Hero() {
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5 relative z-10">
               {diamondPrograms.map((prog) => {
                 const Icon = prog.icon;
-                const isSelected = selectedDiamond === prog.id;
 
                 return (
-                  <div
+                  <Link
                     key={prog.id}
-                    onClick={() => setSelectedDiamond(isSelected ? null : prog.id)}
+                    href="#courses"
                     className="group cursor-pointer flex flex-col items-center"
                   >
                     {/* The Rotated Diamond Square */}
                     <div
-                      className={`w-18 h-18 sm:w-22 sm:h-22 ${prog.colorBg} rounded-2xl flex items-center justify-center shadow-lg transform rotate-45 transition-all duration-300 border-2 border-white/90 ring-2 ring-slate-100 ${isSelected ? 'ring-4 ring-offset-2 ring-blue-500' : ''}`}
+                      className={`w-18 h-18 sm:w-22 sm:h-22 ${prog.colorBg} rounded-2xl flex items-center justify-center shadow-lg transform rotate-45 transition-all duration-300 border-2 border-white/90 ring-2 ring-slate-100 group-hover:scale-105 group-hover:shadow-xl`}
                     >
                       {/* Counter-Rotated Content */}
                       <div className="transform -rotate-45 flex flex-col items-center justify-center text-white text-center p-1">
@@ -157,33 +147,10 @@ export function Hero() {
                     <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center mt-3 max-w-[85px] leading-tight group-hover:text-blue-700 transition-colors">
                       {prog.name}
                     </span>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
-          </div>
-
-          {/* Selected Diamond Detail Toast — absolutely positioned so it never shifts layout height */}
-          <div className="relative w-full">
-            {selectedDiamond && (
-              <div className="absolute top-1 left-0 right-0 mx-auto max-w-sm p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-center animate-in fade-in duration-200 shadow-md z-20">
-                <div className="text-xs font-bold text-blue-900">
-                  {diamondPrograms.find((d) => d.id === selectedDiamond)?.name} ({diamondPrograms.find((d) => d.id === selectedDiamond)?.code})
-                </div>
-                <div className="text-[11px] text-slate-600 mt-0.5">
-                  {diamondPrograms.find((d) => d.id === selectedDiamond)?.description}
-                </div>
-                <div className="mt-2 flex items-center justify-center gap-2">
-                  <Link
-                    href="#courses"
-                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-900 underline"
-                  >
-                    <span>Explore Subject Units & Past Papers</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            )}
           </div>
 
           </div>

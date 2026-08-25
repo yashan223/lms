@@ -44,8 +44,8 @@ export function RolePreviewModal({
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-200",
-      email: "admin@edupulse.io",
-      password: "AdminSecurePass123!",
+      email: "admin@edupulse.uk",
+      password: "AdminPass123!",
       credentialLabel: "Institutional Admin Account",
       description:
         "Manage multi-campus university institutions, oversee faculty accreditation, review course syllabus submissions, and manage RBAC permissions.",
@@ -65,7 +65,7 @@ export function RolePreviewModal({
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200",
-      email: "instructor@edupulse.io",
+      email: "tutor@edupulse.uk",
       password: "InstructorPass123!",
       credentialLabel: "Faculty Educator Account",
       description:
@@ -86,7 +86,7 @@ export function RolePreviewModal({
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
       borderColor: "border-emerald-200",
-      email: "student@edupulse.io",
+      email: "student@edupulse.uk",
       password: "StudentPass123!",
       credentialLabel: "Student Account",
       description:

@@ -1969,6 +1969,7 @@ function TutorDashboardContent() {
           currentUser={tutor}
           initialRecipientId={activeChatRecipientId}
           isOpen={isChatDrawerOpen}
+          onOpen={() => setIsChatDrawerOpen(true)}
           onClose={() => {
             setIsChatDrawerOpen(false);
             setActiveChatRecipientId(undefined);

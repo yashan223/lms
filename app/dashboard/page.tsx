@@ -678,16 +678,6 @@ function DashboardContent() {
             {/* Notification Center */}
             <NotificationBell userRole={userRole} />
 
-            {/* Encrypted Chat Launcher */}
-            <button
-              onClick={() => setIsChatDrawerOpen(true)}
-              title="End-to-End Encrypted Academic Chat"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
-            >
-              <MessageSquareLock className="w-4 h-4 text-indigo-600" />
-              <span className="hidden xl:inline">Messages</span>
-            </button>
-
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
             {/* User Profile */}
@@ -1920,6 +1910,7 @@ function DashboardContent() {
           currentUser={user}
           initialRecipientId={activeChatRecipientId}
           isOpen={isChatDrawerOpen}
+          onOpen={() => setIsChatDrawerOpen(true)}
           onClose={() => {
             setIsChatDrawerOpen(false);
             setActiveChatRecipientId(undefined);

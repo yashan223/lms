@@ -2,15 +2,36 @@ import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
 async function main() {
-  console.log("🌱 Seeding London A/L & O/L LMS Database with real academic models...");
+  console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
 
-  // 1. Upsert Admin / System Administrator User
+  // Delete all users EXCEPT the 3 primary test accounts (and their dependent records)
+  const allowedEmails = [
+    "admin@edupulse.uk",
+    "tutor@edupulse.uk",
+    "student@edupulse.uk",
+  ];
+
+  // Clean up all other users (cascade deletes enrollments, events, messages, etc.)
+  const deletedUsers = await prisma.user.deleteMany({
+    where: {
+      email: { notIn: allowedEmails },
+    },
+  });
+
+  if (deletedUsers.count > 0) {
+    console.log(`🧹 Removed ${deletedUsers.count} extra test user(s) and their records.`);
+  }
+
+  // 1. Single Admin Account
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@edupulse.uk" },
     update: {
       name: "Dr. Alastair Vance",
+      passwordHash: "AdminPass123!",
       role: Role.ADMIN,
       headline: "System Administrator",
+      bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     },
     create: {
       email: "admin@edupulse.uk",
@@ -23,71 +44,39 @@ async function main() {
     },
   });
 
-  // 2. Upsert Instructors / Senior Faculty & Tutors
-  const instructor1 = await prisma.user.upsert({
-    where: { email: "jenkins@edupulse.uk" },
-    update: { role: Role.INSTRUCTOR, headline: "Senior Faculty Tutor in Pure Mathematics & Mechanics" },
-    create: {
-      email: "jenkins@edupulse.uk",
+  // 2. Single Tutor / Instructor Account
+  const tutorUser = await prisma.user.upsert({
+    where: { email: "tutor@edupulse.uk" },
+    update: {
       name: "Dr. Sarah Jenkins",
       passwordHash: "InstructorPass123!",
       role: Role.INSTRUCTOR,
-      headline: "Senior Faculty Tutor in Pure Mathematics & Mechanics",
-      bio: "Subject Lead for IAL Pure Mathematics (P1-P4) and Mechanics with 18+ years of academic teaching experience.",
+      headline: "Senior Faculty Tutor in Pure Mathematics & Sciences",
+      bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
-  });
-
-  await prisma.user.upsert({
-    where: { email: "tutor@edupulse.uk" },
-    update: { role: Role.INSTRUCTOR },
     create: {
       email: "tutor@edupulse.uk",
       name: "Dr. Sarah Jenkins",
       passwordHash: "InstructorPass123!",
       role: Role.INSTRUCTOR,
-      headline: "Senior Faculty Tutor in Pure Mathematics & Mechanics",
-      bio: "Subject Lead for IAL Pure Mathematics (P1-P4) and Mechanics with 18+ years of academic teaching experience.",
+      headline: "Senior Faculty Tutor in Pure Mathematics & Sciences",
+      bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
   });
 
-  const instructor2 = await prisma.user.upsert({
-    where: { email: "vance@edupulse.uk" },
-    update: { role: Role.INSTRUCTOR },
-    create: {
-      email: "vance@edupulse.uk",
-      name: "Prof. Marcus Vance",
-      passwordHash: "InstructorPass123!",
-      role: Role.INSTRUCTOR,
-      headline: "Head of London A/L Physics & Practical Laboratory Assessment",
-      bio: "Specializing in Physics Units 1-6 and Virtual Laboratory masterclasses.",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    },
-  });
-
-  const instructor3 = await prisma.user.upsert({
-    where: { email: "chen@edupulse.uk" },
-    update: { role: Role.INSTRUCTOR },
-    create: {
-      email: "chen@edupulse.uk",
-      name: "Prof. David Chen",
-      passwordHash: "InstructorPass123!",
-      role: Role.INSTRUCTOR,
-      headline: "Chair of Chemistry & Bio-Molecular Sciences",
-      bio: "Doctoral research fellow in synthetic organic mechanisms and bio-energetics.",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    },
-  });
-
-  // 3. Upsert Student / Scholar Users
+  // 3. Single Student Account
   const studentUser = await prisma.user.upsert({
     where: { email: "student@edupulse.uk" },
     update: {
       name: "S.Y.T. Perera",
+      passwordHash: "StudentPass123!",
       role: Role.STUDENT,
       phone: "+44 7700 900142",
       headline: "London A/L Mathematics & Science Scholar",
+      bio: "Enrolled in Pure Mathematics (P1-P4), Physics, and Chemistry.",
+      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
     },
     create: {
       email: "student@edupulse.uk",
@@ -101,89 +90,19 @@ async function main() {
     },
   });
 
-  const student2 = await prisma.user.upsert({
-    where: { email: "tariq@student.edupulse.uk" },
-    update: {
-      name: "Tariq Al-Mansoor",
-      role: Role.STUDENT,
-      phone: "+44 7700 900258",
-      headline: "London A/L Engineering & Pure Maths Scholar",
-    },
-    create: {
-      email: "tariq@student.edupulse.uk",
-      name: "Tariq Al-Mansoor",
-      passwordHash: "StudentPass123!",
-      role: Role.STUDENT,
-      phone: "+44 7700 900258",
-      headline: "London A/L Engineering & Pure Maths Scholar",
-      bio: "Targeting Cambridge Engineering Tripos with Pure Maths and Mechanics.",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+  console.log("✅ Exactly 3 Test Users Initialized:");
+  console.log("   👑 Admin:   admin@edupulse.uk   / AdminPass123!");
+  console.log("   🎓 Tutor:   tutor@edupulse.uk   / InstructorPass123!");
+  console.log("   📚 Student: student@edupulse.uk / StudentPass123!");
+
+  // 4. Update all courses to belong to the single Tutor
+  await prisma.course.updateMany({
+    data: {
+      instructorId: tutorUser.id,
     },
   });
 
-  const student3 = await prisma.user.upsert({
-    where: { email: "kavisha@student.edupulse.uk" },
-    update: {
-      name: "Kavisha Fernando",
-      role: Role.STUDENT,
-      phone: "+44 7700 900389",
-      headline: "London A/L Economics & Further Mathematics Scholar",
-    },
-    create: {
-      email: "kavisha@student.edupulse.uk",
-      name: "Kavisha Fernando",
-      passwordHash: "StudentPass123!",
-      role: Role.STUDENT,
-      phone: "+44 7700 900389",
-      headline: "London A/L Economics & Further Mathematics Scholar",
-      bio: "Enrolled in Advanced Pure Mathematics P1-P4 and Economics.",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    },
-  });
-
-  const student4 = await prisma.user.upsert({
-    where: { email: "amara@student.edupulse.uk" },
-    update: {
-      name: "Amara Okafor",
-      role: Role.STUDENT,
-      phone: "+44 7700 900412",
-      headline: "London A/L Physical Sciences Scholar",
-    },
-    create: {
-      email: "amara@student.edupulse.uk",
-      name: "Amara Okafor",
-      passwordHash: "StudentPass123!",
-      role: Role.STUDENT,
-      phone: "+44 7700 900412",
-      headline: "London A/L Physical Sciences Scholar",
-      bio: "Enrolled in Pure Mathematics and Advanced Physics Unit 1-6.",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    },
-  });
-
-  const student5 = await prisma.user.upsert({
-    where: { email: "ethan@student.edupulse.uk" },
-    update: {
-      name: "Ethan Wright",
-      role: Role.STUDENT,
-      phone: "+44 7700 900573",
-      headline: "London O/L & A/L Transition Scholar",
-    },
-    create: {
-      email: "ethan@student.edupulse.uk",
-      name: "Ethan Wright",
-      passwordHash: "StudentPass123!",
-      role: Role.STUDENT,
-      phone: "+44 7700 900573",
-      headline: "London O/L & A/L Transition Scholar",
-      bio: "Focusing on Pure Mathematics foundations, integration proofs, and Mechanics.",
-      avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
-    },
-  });
-
-  console.log("✅ Core Users Ready (Admin, Faculty, Students)");
-
-  // 4. Seed Complete London A/L and O/L Course Matrix
+  // 5. Seed Complete London A/L and O/L Course Matrix
   const coursesData = [
     {
       title: "London A/L Pure Mathematics (P1, P2, P3, P4 & Mechanics M1)",
@@ -197,7 +116,7 @@ async function main() {
       status: CourseStatus.PUBLISHED,
       featured: true,
       thumbnail: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
-      instructorId: instructor1.id,
+      instructorId: tutorUser.id,
       modules: [
         {
           title: "Module 1: Pure Mathematics 1 & 2 (Algebra, Trigonometry & Calculus)",
@@ -239,7 +158,7 @@ async function main() {
       status: CourseStatus.PUBLISHED,
       featured: true,
       thumbnail: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=800&auto=format&fit=crop&q=80",
-      instructorId: instructor2.id,
+      instructorId: tutorUser.id,
       modules: [
         {
           title: "Module 1: Unit 1 & 2 (Mechanics, Materials, Waves & Electricity)",
@@ -273,7 +192,7 @@ async function main() {
       status: CourseStatus.PUBLISHED,
       featured: true,
       thumbnail: "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=800&auto=format&fit=crop&q=80",
-      instructorId: instructor3.id,
+      instructorId: tutorUser.id,
       modules: [
         {
           title: "Module 1: Unit 1 & 2 (Atomic Structure, Bonding & Organic Intro)",
@@ -305,7 +224,7 @@ async function main() {
       status: CourseStatus.PUBLISHED,
       featured: false,
       thumbnail: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80",
-      instructorId: instructor1.id,
+      instructorId: tutorUser.id,
       modules: [
         {
           title: "Module 1: Microeconomic Markets & Market Failure",
@@ -337,7 +256,7 @@ async function main() {
       status: CourseStatus.PUBLISHED,
       featured: true,
       thumbnail: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=80",
-      instructorId: instructor1.id,
+      instructorId: tutorUser.id,
       modules: [
         {
           title: "Module 1: IGCSE Mathematics Paper 1H & 2H Mastery",
@@ -369,7 +288,7 @@ async function main() {
       status: CourseStatus.PUBLISHED,
       featured: false,
       thumbnail: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&auto=format&fit=crop&q=80",
-      instructorId: instructor3.id,
+      instructorId: tutorUser.id,
       modules: [
         {
           title: "Module 1: Molecules, Cells & Health",
@@ -408,7 +327,7 @@ async function main() {
           status: cData.status,
           featured: cData.featured,
           thumbnail: cData.thumbnail,
-          instructorId: cData.instructorId,
+          instructorId: tutorUser.id,
           modules: {
             create: cData.modules.map((m) => ({
               title: m.title,
@@ -427,31 +346,30 @@ async function main() {
       });
       console.log(`✅ Seeded Course: ${course.title}`);
     } else {
-      course = existing;
-    }
-
-    // Enroll students in course
-    const studentList = [studentUser, student2, student3, student4, student5];
-    for (let i = 0; i < studentList.length; i++) {
-      const st = studentList[i];
-      await prisma.enrollment.upsert({
-        where: {
-          userId_courseId: {
-            userId: st.id,
-            courseId: course.id,
-          },
-        },
-        update: {},
-        create: {
-          userId: st.id,
-          courseId: course.id,
-          enrolledAt: new Date(Date.now() - (i * 3 + 2) * 24 * 60 * 60 * 1000),
-        },
+      course = await prisma.course.update({
+        where: { id: existing.id },
+        data: { instructorId: tutorUser.id },
       });
     }
+
+    // Enroll our 1 student in the course
+    await prisma.enrollment.upsert({
+      where: {
+        userId_courseId: {
+          userId: studentUser.id,
+          courseId: course.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: studentUser.id,
+        courseId: course.id,
+        enrolledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      },
+    });
   }
 
-  // 5. Seed Course Study Materials & Handbooks
+  // 6. Seed Course Study Materials & Handbooks
   await prisma.courseMaterial.deleteMany({});
   const allSeededCourses = await prisma.course.findMany();
   for (const c of allSeededCourses) {
@@ -586,7 +504,7 @@ async function main() {
     }
   }
 
-  // 6. Seed Timeline Events & Assignments
+  // 7. Seed Timeline Events & Live Seminars
   const mathCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-pure-mathematics-mechanics" } });
   const physicsCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-physics-unit-1-to-6" } });
 
@@ -598,20 +516,9 @@ async function main() {
         title: "Live Masterclass: Pure Mathematics P3 Integration by Parts & Proofs",
         description: "Interactive live theory masterclass and worked exam proofs.\n\nClassroom Link: https://meet.google.com/pmn-edupulse-live",
         type: EventType.LIVE_SEMINAR,
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000), // In 2 days
+        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
         courseId: mathCourse.id,
-        userId: instructor1.id,
-      },
-    });
-
-    await prisma.event.create({
-      data: {
-        title: "Workshop: Mechanics M1 Inclined Planes & Friction Dynamics",
-        description: "Problem-solving seminar on inclined planes, resolving forces, and connected pulley systems.\n\nClassroom Link: https://meet.google.com/mec-edupulse-live",
-        type: EventType.LIVE_SEMINAR,
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000), // In 5 days
-        courseId: mathCourse.id,
-        userId: instructor1.id,
+        userId: tutorUser.id,
       },
     });
 
@@ -620,7 +527,7 @@ async function main() {
         title: "Assignment: Pure Mathematics P4 Differential Calculus Solution is due",
         description: "Submit handwritten working for Questions 1-8 in PDF format.",
         type: EventType.ASSIGNMENT,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Next 7 days
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         courseId: mathCourse.id,
         userId: studentUser.id,
       },
@@ -635,23 +542,12 @@ async function main() {
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),
         courseId: physicsCourse.id,
-        userId: instructor2.id,
-      },
-    });
-
-    await prisma.event.create({
-      data: {
-        title: "Assignment: Physics Unit 4 Electric Field Calculations Problem Set",
-        description: "Submit derivations and numerical solutions.",
-        type: EventType.ASSIGNMENT,
-        dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-        courseId: physicsCourse.id,
-        userId: studentUser.id,
+        userId: tutorUser.id,
       },
     });
   }
 
-  // 6. Seed Private Files
+  // 8. Seed Private Files
   await prisma.privateFile.deleteMany({});
   await prisma.privateFile.createMany({
     data: [
@@ -670,7 +566,7 @@ async function main() {
     ],
   });
 
-  // 7. Seed Student Badges
+  // 9. Seed Student Badges
   await prisma.badgeAward.deleteMany({});
   await prisma.badgeAward.createMany({
     data: [
@@ -687,7 +583,7 @@ async function main() {
     ],
   });
 
-  console.log("🚀 Database successfully seeded with 100% live academic records!");
+  console.log("🚀 Database successfully seeded with 1 Admin, 1 Tutor, and 1 Student!");
 }
 
 main()

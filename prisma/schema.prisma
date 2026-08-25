@@ -60,6 +60,8 @@ model User {
   badges         BadgeAward[]
   events         Event[]
   passwordResetTokens PasswordResetToken[]
+  tutorTrials    TrialRequest[] @relation("TutorTrials")
+  studentTrials  TrialRequest[] @relation("StudentTrials")
 
   @@map("users")
 }
@@ -86,6 +88,7 @@ model Course {
   reviews       Review[]
   certificates  Certificate[]
   events        Event[]
+  trialRequests TrialRequest[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -243,3 +246,33 @@ model PasswordResetToken {
 
   @@map("password_reset_tokens")
 }
+
+enum TrialStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model TrialRequest {
+  id              String       @id @default(cuid())
+  studentName     String
+  studentEmail    String
+  studentPhone    String?
+  courseId        String?
+  course          Course?      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  tutorId         String?
+  tutor           User?        @relation("TutorTrials", fields: [tutorId], references: [id], onDelete: Cascade)
+  studentId       String?
+  student         User?        @relation("StudentTrials", fields: [studentId], references: [id], onDelete: Cascade)
+  preferredDate   DateTime
+  topic           String?
+  status          TrialStatus  @default(PENDING)
+  meetingLink     String?
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("trial_requests")
+}
+

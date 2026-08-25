@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import {
   GraduationCap,
   Users,
@@ -99,6 +100,7 @@ function TutorDashboardContent() {
   const [courses, setCourses] = useState<TutorCourse[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [events, setEvents] = useState<ScheduledClassEvent[]>([]);
+  const [trials, setTrials] = useState<any[]>([]);
 
   // Search & Filter States
   const [studentSearch, setStudentSearch] = useState("");
@@ -165,6 +167,7 @@ function TutorDashboardContent() {
         setCourses(data.courses || []);
         setStudents(data.students || []);
         setEvents(data.events || []);
+        setTrials(data.trials || []);
 
         // Pre-fill profile state
         if (data.tutor) {
@@ -646,6 +649,22 @@ function TutorDashboardContent() {
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <a
+                            href={buildGoogleCalendarUrl({
+                              title: ev.title,
+                              description: ev.description,
+                              dueDate: ev.dueDate,
+                              courseTitle: ev.course?.title,
+                            })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1.5 rounded-xl border border-sky-200 bg-sky-50/50 hover:bg-sky-100 text-sky-700 font-semibold text-xs flex items-center gap-1 shadow-2xs transition-colors"
+                            title="Add to Google Calendar"
+                          >
+                            <Calendar className="w-3.5 h-3.5 text-sky-600" />
+                            <span className="hidden sm:inline">Google Cal</span>
+                            <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
+                          </a>
                           {ev.description?.includes("http") ? (
                             <a
                               href={
@@ -695,6 +714,112 @@ function TutorDashboardContent() {
                     </Button>
                   </div>
                 )}
+
+                {/* 30-Minute Free Trial Sessions Section */}
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs text-slate-900">
+                          Student 30-Min Free Trial Bookings
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          1-on-1 online consultation and syllabus trial sessions
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
+                      {trials.length} {trials.length === 1 ? "Session" : "Sessions"}
+                    </Badge>
+                  </div>
+
+                  {trials.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {trials.map((tr) => (
+                        <div
+                          key={tr.id}
+                          className="p-3.5 rounded-xl bg-amber-50/40 border border-amber-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-slate-900 text-xs sm:text-sm">{tr.studentName}</span>
+                              <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold">
+                                30-Min Trial
+                              </Badge>
+                              {tr.course && (
+                                <span className="text-blue-700 font-semibold text-xs truncate max-w-[200px]">
+                                  • {tr.course.title}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-slate-600 text-[11px] flex items-center gap-2 flex-wrap">
+                              <span>📧 {tr.studentEmail}</span>
+                              {tr.studentPhone && <span>• 📱 {tr.studentPhone}</span>}
+                            </div>
+                            {tr.topic && (
+                              <p className="text-[11px] text-slate-500 italic">
+                                Focus: "{tr.topic}"
+                              </p>
+                            )}
+                            <div className="text-[11px] text-blue-700 font-bold flex items-center gap-1.5 pt-0.5">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>
+                                {new Date(tr.preferredDate).toLocaleString("en-GB", {
+                                  weekday: "short",
+                                  day: "numeric",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                                {" "}(30 mins)
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <a
+                              href={buildGoogleCalendarUrl({
+                                title: `30-Min Free Trial: ${tr.course?.title || "London A/L Tutorial"} (${tr.studentName})`,
+                                description: `30-Minute 1-on-1 Online Trial Session with Faculty.\nTopic: ${tr.topic}\nStudent: ${tr.studentName} (${tr.studentEmail})\nClassroom: ${tr.meetingLink}`,
+                                dueDate: tr.preferredDate,
+                                courseTitle: tr.course?.title,
+                                location: tr.meetingLink,
+                                durationMinutes: 30,
+                              })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-sky-700 font-semibold text-xs flex items-center gap-1 shadow-2xs transition-colors"
+                              title="Add to Google Calendar"
+                            >
+                              <Calendar className="w-3.5 h-3.5 text-sky-600" />
+                              <span className="hidden sm:inline">Google Cal</span>
+                              <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
+                            </a>
+
+                            {tr.meetingLink && (
+                              <a
+                                href={tr.meetingLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
+                              >
+                                <Video className="w-3.5 h-3.5" />
+                                <span>Start Trial Room</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-xs text-slate-400">
+                      No trial session requests yet. Students can book 30-minute trials from course catalog pages.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Right Column: Faculty Profile Summary & Fast Hub */}
@@ -1022,25 +1147,44 @@ function TutorDashboardContent() {
                         </span>
                       </div>
 
-                      {ev.description?.includes("http") ? (
+                      <div className="flex items-center gap-2">
                         <a
-                          href={ev.description.match(/https?:\/\/[^\s]+/)?.[0] || "#"}
+                          href={buildGoogleCalendarUrl({
+                            title: ev.title,
+                            description: ev.description,
+                            dueDate: ev.dueDate,
+                            courseTitle: ev.course?.title,
+                          })}
                           target="_blank"
-                          rel="noreferrer"
-                          className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 rounded-xl border border-sky-200 bg-sky-50/50 hover:bg-sky-100 text-sky-700 font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all shrink-0"
+                          title="Add to Google Calendar"
                         >
-                          <Video className="w-3.5 h-3.5" />
-                          <span>Start / Join Classroom</span>
+                          <Calendar className="w-3.5 h-3.5 text-sky-600" />
+                          <span>Add to Google Cal</span>
+                          <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
                         </a>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => alert(`Class scheduled for: ${new Date(ev.dueDate).toLocaleString()}`)}
-                          className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl"
-                        >
-                          View Session Details
-                        </Button>
-                      )}
+
+                        {ev.description?.includes("http") ? (
+                          <a
+                            href={ev.description.match(/https?:\/\/[^\s]+/)?.[0] || "#"}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                          >
+                            <Video className="w-3.5 h-3.5" />
+                            <span>Start / Join Classroom</span>
+                          </a>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => alert(`Class scheduled for: ${new Date(ev.dueDate).toLocaleString()}`)}
+                            className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl"
+                          >
+                            View Details
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1120,6 +1264,22 @@ function TutorDashboardContent() {
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={buildGoogleCalendarUrl({
+                            title: ev.title,
+                            description: ev.description,
+                            dueDate: ev.dueDate,
+                            courseTitle: ev.course?.title,
+                          })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1.5 rounded-lg border border-sky-200 bg-sky-50/50 hover:bg-sky-100 text-sky-700 font-semibold text-xs flex items-center gap-1 shadow-2xs transition-colors"
+                          title="Add to Google Calendar"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-sky-600" />
+                          <span className="hidden sm:inline">Google Cal</span>
+                          <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
+                        </a>
                         <Badge className="bg-purple-100 text-purple-800 text-[10px] font-bold">
                           {ev.type}
                         </Badge>

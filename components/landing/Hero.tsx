@@ -12,7 +12,6 @@ import {
   FileCheck2,
   BookOpen,
   ArrowRight,
-  ShieldCheck,
 } from "lucide-react";
 
 export function Hero() {
@@ -187,24 +186,6 @@ export function Hero() {
             )}
           </div>
 
-          {/* Quick CTA Links */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="#courses"
-              className="px-6 py-2.5 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-md shadow-blue-900/20 flex items-center gap-2 transition-all"
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Explore London A/L & O/L Courses</span>
-            </Link>
-
-            <Link
-              href="/admin"
-              className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Open Admin Command Center</span>
-            </Link>
-          </div>
           </div>
         </div>
       </div>

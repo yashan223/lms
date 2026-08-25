@@ -10,6 +10,7 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Home,
   FileText,
   Users,
@@ -36,10 +37,24 @@ import {
   ExternalLink,
   Loader2,
   LogOut,
+  X,
+  Tag,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Button } from "@/components/ui/button";
+import { buildGoogleCalendarUrl } from "@/lib/calendar";
+import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+
+const formatForDateTimeInput = (date: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  return `${y}-${m}-${d}T${hh}:${mm}`;
+};
 
 interface UserProfile {
   id: string;
@@ -108,21 +123,32 @@ function DashboardContent() {
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
   const [navSitePagesOpen, setNavSitePagesOpen] = useState(false);
 
-  // Timeline filters
-  const [timelinePeriod, setTimelinePeriod] = useState("7");
+  // Timeline filters & sorting
+  const [timelinePeriod, setTimelinePeriod] = useState("all");
+  const [timelineSort, setTimelineSort] = useState("date");
   const [timelineSearch, setTimelineSearch] = useState("");
   const [calendarCourseFilter, setCalendarCourseFilter] = useState("all");
+
+  // Monthly Calendar Navigation & Selected Day State
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
 
   // Modals
   const [showManageFilesModal, setShowManageFilesModal] = useState(false);
   const [showNewEventModal, setShowNewEventModal] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
+  const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
 
   // New Event Form State
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventDesc, setNewEventDesc] = useState("");
-  const [newEventDate, setNewEventDate] = useState("2026-08-23T23:55");
+  const [newEventDate, setNewEventDate] = useState("");
   const [newEventType, setNewEventType] = useState("ASSIGNMENT");
   const [newEventCourseId, setNewEventCourseId] = useState("");
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+  const [eventError, setEventError] = useState<string | null>(null);
+  const [eventSuccess, setEventSuccess] = useState<string | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
   // Real File Upload State
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
@@ -160,16 +186,6 @@ function DashboardContent() {
     },
   });
 
-  // Filtered timeline events
-  const filteredTimeline = useMemo(() => {
-    return timelineEvents.filter((ev) => {
-      const matchSearch =
-        ev.title.toLowerCase().includes(timelineSearch.toLowerCase()) ||
-        (ev.description && ev.description.toLowerCase().includes(timelineSearch.toLowerCase()));
-      return matchSearch;
-    });
-  }, [timelineEvents, timelineSearch]);
-
   // Role-specific assigned/enrolled courses
   const myCourses: any[] = useMemo(() => {
     if (userRole === "STUDENT") {
@@ -183,36 +199,316 @@ function DashboardContent() {
     return allCourses;
   }, [userRole, user, allCourses]);
 
+  // Open New Event Modal with prefilled date/time (Instructors and Admins only)
+  const handleOpenNewEventModal = (forDate?: Date) => {
+    if (userRole === "STUDENT") return;
+    const base = forDate || selectedDate || new Date();
+    const d = new Date(base);
+    if (!forDate) {
+      const now = new Date();
+      d.setHours(now.getHours() + 1, 0, 0, 0);
+    } else {
+      d.setHours(9, 0, 0, 0);
+    }
+    setNewEventDate(formatForDateTimeInput(d));
+    setNewEventTitle("");
+    setNewEventDesc("");
+    setNewEventType("ASSIGNMENT");
+    setNewEventCourseId(
+      calendarCourseFilter !== "all" ? calendarCourseFilter : (myCourses[0]?.id || "")
+    );
+    setEventError(null);
+    setEventSuccess(null);
+    setShowNewEventModal(true);
+  };
+
   // Handle Event Creation saved directly to DB
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEventTitle || !user) return;
+    if (userRole === "STUDENT") {
+      setEventError("Only faculty tutors and administrators can schedule academic classes and events.");
+      return;
+    }
+    if (!newEventTitle.trim()) {
+      setEventError("Please enter an event title.");
+      return;
+    }
 
     try {
+      setIsSubmittingEvent(true);
+      setEventError(null);
+      setEventSuccess(null);
+
+      let isoDueDate: string;
+      if (newEventDate) {
+        const parsed = new Date(newEventDate);
+        isoDueDate = !isNaN(parsed.getTime()) ? parsed.toISOString() : new Date().toISOString();
+      } else {
+        isoDueDate = new Date().toISOString();
+      }
+
       const res = await fetch("/api/dashboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "create_event",
-          title: newEventTitle,
-          description: newEventDesc,
-          dueDate: new Date(newEventDate).toISOString(),
+          title: newEventTitle.trim(),
+          description: newEventDesc.trim(),
+          dueDate: isoDueDate,
           type: newEventType,
-          courseId: newEventCourseId || (allCourses[0]?.id ?? null),
-          userId: user.id,
+          courseId: newEventCourseId && newEventCourseId !== "none" ? newEventCourseId : null,
+          userId: user?.id || null,
         }),
       });
 
-      if (res.ok) {
-        await fetchDashboardData();
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to create calendar event");
+      }
+
+      setEventSuccess("Event added to calendar!");
+      await fetchDashboardData();
+      setTimeout(() => {
         setShowNewEventModal(false);
         setNewEventTitle("");
         setNewEventDesc("");
-      }
-    } catch (err) {
+        setEventSuccess(null);
+      }, 500);
+    } catch (err: any) {
       console.error("Error creating event:", err);
+      setEventError(err.message || "Failed to create event. Please try again.");
+    } finally {
+      setIsSubmittingEvent(false);
     }
   };
+
+  // Handle Delete Event from DB
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm("Are you sure you want to delete this event?")) return;
+    try {
+      setDeletingEventId(eventId);
+      const res = await fetch("/api/dashboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete_event",
+          eventId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to delete event");
+      }
+
+      await fetchDashboardData();
+    } catch (err: any) {
+      console.error("Error deleting event:", err);
+      alert(err.message || "Failed to delete event");
+    } finally {
+      setDeletingEventId(null);
+    }
+  };
+
+  // Monthly Calendar Navigation & Calculations
+  const calendarYear = calendarMonth.getFullYear();
+  const calendarMonthIndex = calendarMonth.getMonth();
+
+  const prevMonth = () => {
+    setCalendarMonth(new Date(calendarYear, calendarMonthIndex - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCalendarMonth(new Date(calendarYear, calendarMonthIndex + 1, 1));
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCalendarMonth(today);
+    setSelectedDate(today);
+  };
+
+  // Filter events strictly assigned to the student
+  const studentTimelineEvents = useMemo(() => {
+    if (userRole !== "STUDENT") return timelineEvents;
+    const enrolledCourseIds = new Set(myCourses.map((c) => c.id));
+    return timelineEvents.filter((ev) => {
+      // 1. Directly assigned to this specific student (e.g. 1-on-1 trial session, individual mock assessment)
+      if (ev.userId && user?.id && ev.userId === user.id) return true;
+      // 2. Assigned to a course the student is enrolled in (and not assigned exclusively to another student)
+      const matchesCourse =
+        (ev.courseId && enrolledCourseIds.has(ev.courseId)) ||
+        (ev.course?.id && enrolledCourseIds.has(ev.course.id));
+      if (matchesCourse && (!ev.userId || (user?.id && ev.userId === user.id))) {
+        return true;
+      }
+      return false;
+    });
+  }, [timelineEvents, userRole, myCourses, user]);
+
+  // Calendar Days Grid Generation
+  const calendarDays = useMemo(() => {
+    const daysInMonth = new Date(calendarYear, calendarMonthIndex + 1, 0).getDate();
+    const firstDayOfWeek = new Date(calendarYear, calendarMonthIndex, 1).getDay(); // 0 is Sunday
+    const startOffset = (firstDayOfWeek + 6) % 7; // Monday = 0, Sunday = 6
+
+    const prevMonthDaysCount = new Date(calendarYear, calendarMonthIndex, 0).getDate();
+
+    const cells: Array<{
+      date: Date;
+      dayNumber: number;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+      isSelected: boolean;
+      events: any[];
+    }> = [];
+
+    const todayStr = new Date().toDateString();
+    const selectedStr = selectedDate?.toDateString() || "";
+
+    // Trailing days from previous month
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const d = prevMonthDaysCount - i;
+      const date = new Date(calendarYear, calendarMonthIndex - 1, d);
+      const dateStr = date.toDateString();
+      const events = studentTimelineEvents.filter((ev) => {
+        const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
+        if (!matchDate) return false;
+        if (calendarCourseFilter !== "all") {
+          return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
+        }
+        return true;
+      });
+
+      cells.push({
+        date,
+        dayNumber: d,
+        isCurrentMonth: false,
+        isToday: dateStr === todayStr,
+        isSelected: dateStr === selectedStr,
+        events,
+      });
+    }
+
+    // Days of current month
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(calendarYear, calendarMonthIndex, d);
+      const dateStr = date.toDateString();
+      const events = studentTimelineEvents.filter((ev) => {
+        const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
+        if (!matchDate) return false;
+        if (calendarCourseFilter !== "all") {
+          return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
+        }
+        return true;
+      });
+
+      cells.push({
+        date,
+        dayNumber: d,
+        isCurrentMonth: true,
+        isToday: dateStr === todayStr,
+        isSelected: dateStr === selectedStr,
+        events,
+      });
+    }
+
+    // Leading days of next month
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let d = 1; d <= remaining; d++) {
+      const date = new Date(calendarYear, calendarMonthIndex + 1, d);
+      const dateStr = date.toDateString();
+      const events = studentTimelineEvents.filter((ev) => {
+        const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
+        if (!matchDate) return false;
+        if (calendarCourseFilter !== "all") {
+          return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
+        }
+        return true;
+      });
+
+      cells.push({
+        date,
+        dayNumber: d,
+        isCurrentMonth: false,
+        isToday: dateStr === todayStr,
+        isSelected: dateStr === selectedStr,
+        events,
+      });
+    }
+
+    return cells;
+  }, [calendarYear, calendarMonthIndex, studentTimelineEvents, calendarCourseFilter, selectedDate]);
+
+  // Selected Day's Events
+  const selectedDayEvents = useMemo(() => {
+    if (!selectedDate) return [];
+    const selectedStr = selectedDate.toDateString();
+    return studentTimelineEvents.filter((ev) => {
+      const matchDate = new Date(ev.dueDate).toDateString() === selectedStr;
+      if (!matchDate) return false;
+      if (calendarCourseFilter !== "all") {
+        return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
+      }
+      return true;
+    });
+  }, [selectedDate, studentTimelineEvents, calendarCourseFilter]);
+
+  // Upcoming events
+  const upcomingEvents = useMemo(() => {
+    let list = [...studentTimelineEvents];
+    if (calendarCourseFilter !== "all") {
+      list = list.filter(
+        (ev) => ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter
+      );
+    }
+    const now = new Date().getTime() - 24 * 60 * 60 * 1000;
+    return list
+      .filter((ev) => new Date(ev.dueDate).getTime() >= now)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }, [studentTimelineEvents, calendarCourseFilter]);
+
+  // Filtered timeline events
+  const filteredTimeline = useMemo(() => {
+    let list = [...studentTimelineEvents];
+
+    if (calendarCourseFilter !== "all") {
+      list = list.filter(
+        (ev) => ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter
+      );
+    }
+
+    if (timelinePeriod !== "all") {
+      const days = parseInt(timelinePeriod, 10);
+      if (!isNaN(days)) {
+        const now = Date.now();
+        const futureLimit = now + days * 24 * 60 * 60 * 1000;
+        list = list.filter((ev) => {
+          const t = new Date(ev.dueDate).getTime();
+          return t >= now - 24 * 60 * 60 * 1000 && t <= futureLimit;
+        });
+      }
+    }
+
+    if (timelineSearch.trim()) {
+      const q = timelineSearch.toLowerCase();
+      list = list.filter(
+        (ev) =>
+          ev.title.toLowerCase().includes(q) ||
+          (ev.description && ev.description.toLowerCase().includes(q)) ||
+          (ev.course?.title && ev.course.title.toLowerCase().includes(q)) ||
+          (ev.type && ev.type.toLowerCase().includes(q))
+      );
+    }
+
+    if (timelineSort === "course") {
+      list.sort((a, b) => (a.course?.title || "").localeCompare(b.course?.title || ""));
+    } else {
+      list.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    }
+
+    return list;
+  }, [studentTimelineEvents, calendarCourseFilter, timelinePeriod, timelineSearch, timelineSort]);
 
   // Handle Add Private File - Uploads real file to VPS storage & saves to DB
   const handleAddPrivateFile = async (e: React.FormEvent) => {
@@ -595,11 +891,48 @@ function DashboardContent() {
           {/* CENTER MAIN FEED (Role-Specific Workspaces) */}
           {/* ======================================================== */}
           <section className="lg:col-span-9 space-y-5">
+            {/* Free 30-Minute Trial Session Banner for Students */}
+            {userRole === "STUDENT" && (
+              <div className="rounded-2xl bg-gradient-to-r from-[#0c2461] via-[#103080] to-indigo-900 text-white p-5 shadow-md relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-blue-900/40">
+                <div className="space-y-1.5 z-10 max-w-xl">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/30 text-[11px] font-bold">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Free 30-Minute 1-on-1 Online Consultation</span>
+                  </div>
+                  <h3 className="font-extrabold text-base sm:text-lg text-white">
+                    Need Subject Diagnostic or Past Paper Coaching?
+                  </h3>
+                  <p className="text-xs text-blue-100/90 leading-relaxed">
+                    Request a free 30-minute 1-on-1 online trial session with our Senior London A/L & O/L Faculty via Google Meet. Synced to your calendar.
+                  </p>
+                </div>
+
+                <div className="z-10 shrink-0">
+                  <button
+                    onClick={() => {
+                      setSelectedTrialCourseId(undefined);
+                      setShowTrialModal(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-blue-50 text-[#0c2461] font-bold text-xs shadow-md transition-all inline-flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
+                  >
+                    <Video className="w-4 h-4 text-blue-600" />
+                    <span>Request 30-Min Free Trial</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Block 1: Timeline Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
-                Timeline
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span>Timeline & Deadlines</span>
+                </h3>
+                <span className="text-xs font-semibold text-slate-500">
+                  {filteredTimeline.length} {filteredTimeline.length === 1 ? "Activity" : "Activities"}
+                </span>
+              </div>
 
               {/* Filters */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
@@ -608,60 +941,126 @@ function DashboardContent() {
                   onChange={(e) => setTimelinePeriod(e.target.value)}
                   className="sm:col-span-3 h-8 rounded border border-slate-300 px-2 bg-white font-medium text-slate-700"
                 >
+                  <option value="all">All upcoming & past</option>
                   <option value="7">Next 7 days</option>
                   <option value="14">Next 14 days</option>
                   <option value="30">Next 30 days</option>
-                  <option value="all">All events</option>
                 </select>
 
-                <select className="sm:col-span-3 h-8 rounded border border-slate-300 px-2 bg-white font-medium text-slate-700">
-                  <option>Sort by dates</option>
-                  <option>Sort by courses</option>
+                <select
+                  value={timelineSort}
+                  onChange={(e) => setTimelineSort(e.target.value)}
+                  className="sm:col-span-3 h-8 rounded border border-slate-300 px-2 bg-white font-medium text-slate-700"
+                >
+                  <option value="date">Sort by due date</option>
+                  <option value="course">Sort by course</option>
                 </select>
 
-                <input
-                  type="text"
-                  placeholder="Search by activity type or name"
-                  value={timelineSearch}
-                  onChange={(e) => setTimelineSearch(e.target.value)}
-                  className="sm:col-span-6 h-8 rounded border border-slate-300 px-3 text-xs"
-                />
+                <div className="sm:col-span-6 relative">
+                  <input
+                    type="text"
+                    placeholder="Search activities, titles or courses..."
+                    value={timelineSearch}
+                    onChange={(e) => setTimelineSearch(e.target.value)}
+                    className="w-full h-8 rounded border border-slate-300 pl-8 pr-3 text-xs"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+                </div>
               </div>
 
               {/* Timeline Items */}
-              <div className="pt-2">
+              <div className="pt-1">
                 {filteredTimeline.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {filteredTimeline.map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-blue-50/40 transition-colors"
+                        className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-blue-50/30 transition-colors"
                       >
                         <div className="flex items-start gap-3 min-w-0">
-                          <div className="p-2 rounded-md bg-blue-100 text-blue-800 shrink-0 mt-0.5">
+                          <div className="p-2 rounded-lg bg-blue-100 text-blue-800 shrink-0 mt-0.5">
                             <FileText className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">
-                              {ev.title}
-                            </h4>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-bold text-xs text-slate-900 leading-snug">
+                                {ev.title}
+                              </h4>
+                              {ev.type && (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                                  ev.type === "EXAM_MOCK"
+                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    : ev.type === "LIVE_SEMINAR"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : ev.type === "DEADLINE"
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}>
+                                  {ev.type.replace("_", " ")}
+                                </span>
+                              )}
+                            </div>
                             {ev.description && (
                               <p className="text-[11px] text-slate-500 truncate mt-0.5">
                                 {ev.description}
                               </p>
                             )}
-                            <div className="text-[10px] text-blue-700 font-semibold mt-1">
-                              📅 Due: {new Date(ev.dueDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1 flex-wrap">
+                              <span className="text-blue-700 font-semibold flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-blue-600" />
+                                {new Date(ev.dueDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                              {ev.course && (
+                                <span className="text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[180px]">
+                                  {ev.course.title}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
 
-                        <Link
-                          href={ev.course?.slug ? `/courses/${ev.course.slug}` : "/courses"}
-                          className="px-3 py-1.5 rounded bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all self-end sm:self-center shrink-0"
-                        >
-                          View Study Materials
-                        </Link>
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <a
+                            href={buildGoogleCalendarUrl({
+                              title: ev.title,
+                              description: ev.description,
+                              dueDate: ev.dueDate,
+                              courseTitle: ev.course?.title,
+                            })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded-md bg-white hover:bg-sky-50 text-sky-700 hover:text-sky-800 font-semibold text-xs border border-sky-200 transition-all shadow-2xs inline-flex items-center gap-1"
+                            title="Add this class/deadline to Google Calendar"
+                          >
+                            <Calendar className="w-3 h-3 text-sky-600" />
+                            <span>Google Cal</span>
+                            <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
+                          </a>
+
+                          {ev.course?.slug && (
+                            <Link
+                              href={`/courses/${ev.course.slug}`}
+                              className="px-2.5 py-1 rounded-md bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-semibold text-xs border border-blue-200 transition-all shadow-2xs"
+                            >
+                              Study Materials
+                            </Link>
+                          )}
+
+                          {userRole !== "STUDENT" && (ev.userId === user?.id || userRole === "ADMIN") && (
+                            <button
+                              onClick={() => handleDeleteEvent(ev.id)}
+                              disabled={deletingEventId === ev.id}
+                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Delete event"
+                            >
+                              {deletingEventId === ev.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-red-500" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -671,7 +1070,7 @@ function DashboardContent() {
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
                     <p className="text-xs text-slate-500 font-semibold">
-                      No activities require action
+                      No activities match your current filter
                     </p>
                   </div>
                 )}
@@ -680,45 +1079,119 @@ function DashboardContent() {
 
             {/* Block 2: Upcoming events Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
-                Upcoming events
-              </h3>
-
-              <div className="space-y-3 text-xs">
-                {timelineEvents.slice(0, 2).map((ev) => (
-                  <div key={ev.id} className="flex items-start gap-3">
-                    <FileText className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold text-blue-700 hover:underline cursor-pointer">
-                        {ev.title}
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        {new Date(ev.dueDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                  <span>Upcoming events</span>
+                </h3>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {upcomingEvents.length} scheduled
+                </span>
               </div>
 
-              <div className="pt-2 border-t border-slate-100">
+              <div className="space-y-2.5 text-xs">
+                {upcomingEvents.length > 0 ? (
+                  upcomingEvents.slice(0, 4).map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between gap-2 hover:bg-slate-100/60 transition-colors"
+                    >
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                          ev.type === "EXAM_MOCK"
+                            ? "bg-rose-500"
+                            : ev.type === "LIVE_SEMINAR"
+                            ? "bg-emerald-500"
+                            : ev.type === "DEADLINE"
+                            ? "bg-amber-500"
+                            : "bg-blue-500"
+                        }`} />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-900 truncate">
+                            {ev.title}
+                          </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                            <span>
+                              {new Date(ev.dueDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            {ev.course && (
+                              <span className="text-blue-700 font-medium truncate max-w-[130px]">
+                                • {ev.course.title}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <a
+                          href={buildGoogleCalendarUrl({
+                            title: ev.title,
+                            description: ev.description,
+                            dueDate: ev.dueDate,
+                            courseTitle: ev.course?.title,
+                          })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-1 rounded bg-white hover:bg-sky-50 text-sky-700 text-[11px] font-semibold border border-sky-200 flex items-center gap-1 shadow-2xs transition-colors"
+                          title="Add to Google Calendar"
+                        >
+                          <Calendar className="w-3 h-3 text-sky-600" />
+                          <span className="hidden sm:inline">Google Cal</span>
+                          <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
+                        </a>
+
+                        {userRole !== "STUDENT" && (ev.userId === user?.id || userRole === "ADMIN") && (
+                          <button
+                            onClick={() => handleDeleteEvent(ev.id)}
+                            className="text-slate-300 hover:text-red-600 p-1 transition-colors"
+                            title="Delete event"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic py-2 text-center">
+                    No upcoming events scheduled.
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-blue-600" />
+                  <span>Synced with Faculty Schedule</span>
+                </span>
                 <button
-                  onClick={() => setShowNewEventModal(true)}
-                  className="text-xs font-semibold text-blue-700 hover:underline"
+                  onClick={goToToday}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
                 >
-                  Go to calendar...
+                  Jump to Today
                 </button>
               </div>
             </div>
 
             {/* Block 3: Calendar Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-sm font-bold text-slate-900">Calendar</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <span>Academic Calendar</span>
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                    Faculty Sync
+                  </Badge>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <select
                     value={calendarCourseFilter}
                     onChange={(e) => setCalendarCourseFilter(e.target.value)}
-                    className="h-7 text-xs rounded border border-slate-300 px-2 bg-white font-medium"
+                    className="h-8 text-xs rounded border border-slate-300 px-2 bg-white font-medium text-slate-700 max-w-[160px] truncate"
                   >
                     <option value="all">{userRole === "STUDENT" ? "All my courses" : "All courses"}</option>
                     {myCourses.map((c) => (
@@ -728,21 +1201,58 @@ function DashboardContent() {
                     ))}
                   </select>
 
-                  <button
-                    onClick={() => setShowNewEventModal(true)}
-                    className="px-2.5 py-1 rounded bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold transition-colors"
+                  <a
+                    href="https://calendar.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+                    title="Open Google Calendar"
                   >
-                    New event
+                    <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="hidden sm:inline">Google Cal</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Monthly Calendar Navigation */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={prevMonth}
+                    className="w-7 h-7 rounded border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    title="Previous month"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={nextMonth}
+                    className="w-7 h-7 rounded border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    title="Next month"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={goToToday}
+                    className="px-2 py-1 rounded text-xs font-semibold text-blue-700 hover:bg-blue-50 border border-blue-200 transition-colors cursor-pointer"
+                  >
+                    Today
+                  </button>
+                </div>
+
+                <div className="font-extrabold text-sm text-slate-900">
+                  {calendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                </div>
+
+                <div className="text-[11px] text-slate-400 font-medium hidden sm:block">
+                  Click day to view scheduled sessions
                 </div>
               </div>
 
               {/* Monthly Calendar Grid */}
               <div className="text-xs">
-                <div className="text-center font-bold text-slate-800 mb-2">
-                  August 2026
-                </div>
-                <div className="grid grid-cols-7 gap-1 text-center font-bold text-[10px] text-slate-400 mb-1">
+                {/* Weekday headers */}
+                <div className="grid grid-cols-7 gap-1 text-center font-bold text-[11px] text-slate-500 uppercase tracking-wider mb-1.5 py-1 bg-slate-50 rounded">
                   <div>Mon</div>
                   <div>Tue</div>
                   <div>Wed</div>
@@ -752,30 +1262,171 @@ function DashboardContent() {
                   <div>Sun</div>
                 </div>
 
+                {/* Day cells */}
                 <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                  {[...Array(31)].map((_, i) => {
-                    const day = i + 1;
-                    const isEventDay = day === 23 || day === 18 || day === 28;
-                    const isToday = day === 16;
+                  {calendarDays.map((cell, idx) => {
+                    const hasEvents = cell.events.length > 0;
                     return (
                       <div
-                        key={day}
-                        onClick={() => {
-                          if (isEventDay) alert(`Event on Aug ${day}: London A/L Exam Assessment`);
+                        key={idx}
+                        onClick={() => setSelectedDate(cell.date)}
+                        onDoubleClick={() => {
+                          if (userRole !== "STUDENT") {
+                            handleOpenNewEventModal(cell.date);
+                          }
                         }}
-                        className={`h-8 flex items-center justify-center rounded transition-colors cursor-pointer ${
-                          isToday
-                            ? "bg-blue-700 text-white font-bold"
-                            : isEventDay
-                            ? "bg-amber-100 text-amber-900 font-bold hover:bg-amber-200 border border-amber-300"
-                            : "hover:bg-slate-100 text-slate-700"
+                        className={`min-h-[42px] p-1 flex flex-col items-center justify-between rounded-lg transition-all cursor-pointer relative border ${
+                          cell.isSelected
+                            ? "bg-blue-50/80 border-blue-600 ring-2 ring-blue-500/20 font-bold"
+                            : cell.isToday
+                            ? "bg-blue-600 text-white font-bold border-blue-600"
+                            : hasEvents
+                            ? "bg-amber-50/60 border-amber-200 font-semibold hover:bg-amber-100/70"
+                            : cell.isCurrentMonth
+                            ? "bg-white border-slate-100 hover:bg-slate-100 text-slate-800"
+                            : "bg-slate-50/40 border-transparent text-slate-300 hover:bg-slate-100"
                         }`}
+                        title={`${cell.date.toLocaleDateString("en-GB")}: ${cell.events.length} event(s)`}
                       >
-                        {day}
+                        <span
+                          className={`text-xs leading-none ${
+                            cell.isToday
+                              ? "text-white"
+                              : !cell.isCurrentMonth
+                              ? "text-slate-300"
+                              : "text-slate-800"
+                          }`}
+                        >
+                          {cell.dayNumber}
+                        </span>
+
+                        {/* Event dot indicators */}
+                        {hasEvents && (
+                          <div className="flex items-center justify-center gap-0.5 mt-1 flex-wrap">
+                            {cell.events.slice(0, 3).map((ev, eIdx) => (
+                              <span
+                                key={eIdx}
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  cell.isToday
+                                    ? "bg-white"
+                                    : ev.type === "EXAM_MOCK"
+                                    ? "bg-rose-500"
+                                    : ev.type === "LIVE_SEMINAR"
+                                    ? "bg-emerald-500"
+                                    : ev.type === "DEADLINE"
+                                    ? "bg-amber-500"
+                                    : "bg-blue-600"
+                                }`}
+                              />
+                            ))}
+                            {cell.events.length > 3 && (
+                              <span className={`text-[9px] font-bold ${cell.isToday ? "text-white" : "text-slate-500"}`}>
+                                +{cell.events.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Selected Day Agenda Section */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <span className="font-bold text-xs text-slate-800">
+                      Faculty Schedule for {selectedDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedDayEvents.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedDayEvents.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="p-3 rounded-lg bg-white border border-slate-200/70 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-slate-900">{ev.title}</span>
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded border ${
+                              ev.type === "EXAM_MOCK"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : ev.type === "LIVE_SEMINAR"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : ev.type === "DEADLINE"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-blue-50 text-blue-700 border-blue-200"
+                            }`}>
+                              {ev.type}
+                            </span>
+                          </div>
+                          {ev.description && (
+                            <p className="text-[11px] text-slate-500 mt-0.5">{ev.description}</p>
+                          )}
+                          <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                            <span>⏰ {new Date(ev.dueDate).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                            {ev.course && <span className="text-blue-700 font-semibold">• {ev.course.title}</span>}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <a
+                            href={buildGoogleCalendarUrl({
+                              title: ev.title,
+                              description: ev.description,
+                              dueDate: ev.dueDate,
+                              courseTitle: ev.course?.title,
+                            })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1.5 rounded-lg border border-sky-200 bg-sky-50/50 hover:bg-sky-100 text-sky-700 font-semibold text-xs flex items-center gap-1 shadow-2xs transition-colors"
+                            title="Add to Google Calendar"
+                          >
+                            <Calendar className="w-3.5 h-3.5 text-sky-600" />
+                            <span>Add to Google Cal</span>
+                            <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
+                          </a>
+
+                          {ev.description && (ev.description.includes("http://") || ev.description.includes("https://")) && (
+                            <a
+                              href={ev.description.match(/https?:\/\/[^\s]+/)?.[0] || "#"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>Join Session</span>
+                            </a>
+                          )}
+
+                          {userRole !== "STUDENT" && (ev.userId === user?.id || userRole === "ADMIN") && (
+                            <button
+                              onClick={() => handleDeleteEvent(ev.id)}
+                              disabled={deletingEventId === ev.id}
+                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors shrink-0"
+                              title="Delete this event"
+                            >
+                              {deletingEventId === ev.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-red-500" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between py-1 text-xs text-slate-500">
+                    <span>No faculty sessions or deadlines scheduled for this date.</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1044,54 +1695,88 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* MODAL 2: CREATE NEW CALENDAR EVENT */}
-      {showNewEventModal && (
+      {/* MODAL 2: CREATE NEW CALENDAR EVENT (Instructors & Admins Only) */}
+      {userRole !== "STUDENT" && showNewEventModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-blue-600" />
-                <span>New Calendar Event / Assignment</span>
+                <span>Add Calendar Event / Academic Task</span>
               </h3>
               <button
-                onClick={() => setShowNewEventModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                onClick={() => {
+                  setShowNewEventModal(false);
+                  setEventError(null);
+                  setEventSuccess(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded hover:bg-slate-100"
               >
                 ✕
               </button>
             </div>
 
+            {/* Error & Success Feedback */}
+            {eventSuccess && (
+              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{eventSuccess}</span>
+              </div>
+            )}
+            {eventError && (
+              <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{eventError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCreateEvent} className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Event / Assignment Title</label>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Event / Task Title <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Assignment: Edexcel IAL Pure Maths P4 Mock Script is due"
+                  placeholder="e.g. Edexcel IAL Pure Maths P4 Past Paper Revision"
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
-                  className="w-full h-8 px-3 rounded border border-slate-300 text-xs"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Instructions / Description</label>
-                <textarea
-                  placeholder="e.g. Submit handwritten working for Questions 1-8 in PDF format."
-                  value={newEventDesc}
-                  onChange={(e) => setNewEventDesc(e.target.value)}
-                  className="w-full h-16 p-2 rounded border border-slate-300 text-xs resize-none"
-                />
+                <label className="font-bold text-slate-700 block mb-1">Course Association</label>
+                <select
+                  value={newEventCourseId}
+                  onChange={(e) => setNewEventCourseId(e.target.value)}
+                  className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="">General / Personal (No specific course)</option>
+                  {myCourses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title} {c.subjectCode ? `(${c.subjectCode})` : ""}
+                    </option>
+                  ))}
+                  {myCourses.length === 0 && allCourses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Due Date & Time</label>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Due Date & Time <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="datetime-local"
+                    required
                     value={newEventDate}
                     onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full h-8 px-2 rounded border border-slate-300 text-xs"
+                    className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -1100,28 +1785,54 @@ function DashboardContent() {
                   <select
                     value={newEventType}
                     onChange={(e) => setNewEventType(e.target.value)}
-                    className="w-full h-8 px-2 rounded border border-slate-300 text-xs font-semibold bg-white"
+                    className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="ASSIGNMENT">Assignment</option>
-                    <option value="EXAM_MOCK">Exam Mock</option>
-                    <option value="LIVE_SEMINAR">Live Seminar</option>
+                    <option value="EXAM_MOCK">Exam / Mock Assessment</option>
+                    <option value="LIVE_SEMINAR">Live Seminar / Class</option>
+                    <option value="DEADLINE">Study Deadline / Milestone</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Instructions / Description (Optional)</label>
+                <textarea
+                  placeholder="e.g. Complete questions 1 through 8 in PDF format with handwritten calculations."
+                  value={newEventDesc}
+                  onChange={(e) => setNewEventDesc(e.target.value)}
+                  className="w-full h-16 p-2 rounded-lg border border-slate-300 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowNewEventModal(false)}
-                  className="px-3 py-1.5 rounded border border-slate-300 text-slate-600 font-semibold"
+                  onClick={() => {
+                    setShowNewEventModal(false);
+                    setEventError(null);
+                    setEventSuccess(null);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-[#0c2461] hover:bg-[#103080] text-white font-bold cursor-pointer"
+                  disabled={isSubmittingEvent || !newEventTitle.trim()}
+                  className="px-4 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] disabled:bg-slate-300 text-white font-bold cursor-pointer transition-colors shadow-2xs flex items-center gap-1.5"
                 >
-                  Save Calendar Event
+                  {isSubmittingEvent ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving Event...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Save Calendar Event</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -1129,6 +1840,17 @@ function DashboardContent() {
         </div>
       )}
 
+      {/* MODAL 3: REQUEST 30-MINUTE FREE TRIAL ONLINE SESSION */}
+      <TrialRequestModal
+        isOpen={showTrialModal}
+        onClose={() => setShowTrialModal(false)}
+        initialCourseId={selectedTrialCourseId}
+        allCourses={allCourses}
+        currentUser={user}
+        onSuccess={() => {
+          fetchDashboardData();
+        }}
+      />
 
     </div>
   );

@@ -40,6 +40,7 @@ import {
   Loader2,
   Video,
 } from "lucide-react";
+import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 
 interface CourseMaterial {
   id: string;
@@ -102,6 +103,7 @@ export default function CourseDetailPage({
 
   // Upload Material Modal
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
   const [newMaterialTitle, setNewMaterialTitle] = useState("");
   const [newMaterialCategory, setNewMaterialCategory] = useState("HANDOUT");
   const [newMaterialDesc, setNewMaterialDesc] = useState("");
@@ -412,16 +414,32 @@ export default function CourseDetailPage({
                       <FolderOpen className="w-4 h-4" />
                       <span>Access Study Materials</span>
                     </button>
+                    <button
+                      onClick={() => setShowTrialModal(true)}
+                      className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Book 1-on-1 Faculty Trial (30 Mins)</span>
+                    </button>
                   </div>
                 ) : (
-                  <Button
-                    onClick={handleEnroll}
-                    disabled={enrollLoading}
-                    className="w-full py-3.5 h-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-                  >
-                    <span>{enrollLoading ? "Enrolling..." : "Enroll & Unlock All Materials"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleEnroll}
+                      disabled={enrollLoading}
+                      className="w-full py-3.5 h-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                    >
+                      <span>{enrollLoading ? "Enrolling..." : "Enroll & Unlock All Materials"}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                    <button
+                      onClick={() => setShowTrialModal(true)}
+                      className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Request 30-Min Free Trial Session</span>
+                    </button>
+                  </div>
                 )}
 
                 <div className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
@@ -445,7 +463,7 @@ export default function CourseDetailPage({
         </section>
 
         {/* Navigation Tabs Strip */}
-        <section className="bg-white border-b border-slate-200 sticky top-14 z-20 shadow-xs">
+        <section className="bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto py-2">
               <button
@@ -1013,6 +1031,15 @@ export default function CourseDetailPage({
           </div>
         </div>
       )}
+
+      {/* 30-Minute Free Trial Session Request Modal */}
+      <TrialRequestModal
+        isOpen={showTrialModal}
+        onClose={() => setShowTrialModal(false)}
+        initialCourseId={course?.id}
+        initialTutorId={course?.instructorId}
+        allCourses={course ? [course] : []}
+      />
 
       <Footer />
     </div>

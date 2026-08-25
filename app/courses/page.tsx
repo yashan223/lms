@@ -19,13 +19,18 @@ import {
   Filter,
   GraduationCap,
   Sparkles,
+  Video,
 } from "lucide-react";
+import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedLevel, setSelectedLevel] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showTrialModal, setShowTrialModal] = useState(false);
+  const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
 
   const categories = [
     "All",
@@ -242,21 +247,35 @@ export default function CoursesPage() {
                     </div>
                   </div>
 
-                  {/* Footer Pricing & Enroll Action */}
-                  <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  {/* Footer Pricing & Actions */}
+                  <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-black text-slate-900">
                         £{course.price}
                       </span>
                     </div>
 
-                    <Link
-                      href={`/courses/${course.slug}`}
-                      className="px-4 py-2 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
-                    >
-                      <span>Study Materials & Syllabus</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedTrialCourseId(course.id);
+                          setShowTrialModal(true);
+                        }}
+                        className="px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
+                        title="Book a 30-min free online trial session"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Free Trial</span>
+                      </button>
+
+                      <Link
+                        href={`/courses/${course.slug}`}
+                        className="px-3.5 py-2 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
+                      >
+                        <span>Materials & Syllabus</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -281,6 +300,14 @@ export default function CoursesPage() {
           )}
         </div>
       </main>
+
+      {/* Free Trial Request Modal */}
+      <TrialRequestModal
+        isOpen={showTrialModal}
+        onClose={() => setShowTrialModal(false)}
+        initialCourseId={selectedTrialCourseId}
+        allCourses={courses}
+      />
 
       <Footer />
     </div>

@@ -132,11 +132,48 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 4. Fetch all timeline events
+    // 4. Fetch timeline events strictly assigned to the student or instructor
+    let eventWhere: any = {};
+    if (user?.role === "STUDENT") {
+      const enrolledCourseIds = (user.enrollments || []).map((e) => e.courseId);
+      eventWhere = {
+        OR: [
+          // Directly assigned to this student (e.g. 1-on-1 session, individual assessment)
+          { userId: user.id },
+          // Assigned to one of the student's enrolled courses (and not assigned exclusively to another student)
+          {
+            courseId: { in: enrolledCourseIds },
+            OR: [
+              { userId: null },
+              { userId: user.id },
+            ],
+          },
+        ],
+      };
+    } else if (user?.role === "INSTRUCTOR") {
+      const instructorCourseIds = (user.createdCourses || []).map((c) => c.id);
+      eventWhere = {
+        OR: [
+          { userId: user.id },
+          { courseId: { in: instructorCourseIds } },
+          { course: { instructorId: user.id } },
+        ],
+      };
+    }
+
     const timelineEvents = await prisma.event.findMany({
+      where: eventWhere,
       orderBy: { dueDate: "asc" },
       include: {
         course: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
       },
     });
 
@@ -152,25 +189,88 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action } = body;
 
     if (action === "create_event") {
+      const roleCookie = request.cookies.get("edupulse_user_role")?.value;
+      if (roleCookie === "STUDENT") {
+        return NextResponse.json(
+          { error: "Students cannot create calendar events. Academic events and classes are scheduled by faculty tutors and administrators." },
+          { status: 403 }
+        );
+      }
+
       const { title, description, dueDate, courseId, userId, type } = body;
+
+      if (!title || typeof title !== "string" || !title.trim()) {
+        return NextResponse.json({ error: "Event title is required." }, { status: 400 });
+      }
+
+      let parsedDueDate = new Date(dueDate);
+      if (isNaN(parsedDueDate.getTime())) {
+        parsedDueDate = new Date();
+      }
+
+      const validTypes = ["ASSIGNMENT", "EXAM_MOCK", "LIVE_SEMINAR", "DEADLINE"];
+      const validatedType = validTypes.includes(type) ? type : "ASSIGNMENT";
+
+      let validCourseId: string | null = null;
+      if (courseId && typeof courseId === "string" && courseId.trim() !== "" && courseId !== "none" && courseId !== "all") {
+        const courseExists = await prisma.course.findUnique({ where: { id: courseId.trim() } });
+        if (courseExists) {
+          validCourseId = courseExists.id;
+        }
+      }
+
+      let validUserId: string | null = null;
+      if (userId && typeof userId === "string" && userId.trim() !== "") {
+        const userExists = await prisma.user.findUnique({ where: { id: userId.trim() } });
+        if (userExists) {
+          validUserId = userExists.id;
+        }
+      }
+
       const newEvent = await prisma.event.create({
         data: {
-          title,
-          description,
-          dueDate: new Date(dueDate),
-          courseId: courseId || null,
-          userId: userId || null,
-          type: type || "ASSIGNMENT",
+          title: title.trim(),
+          description: description?.trim() || null,
+          dueDate: parsedDueDate,
+          courseId: validCourseId,
+          userId: validUserId,
+          type: validatedType as any,
+        },
+        include: {
+          course: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
         },
       });
+
       broadcastLMSEvent("EVENTS_CHANGED");
       return NextResponse.json({ success: true, event: newEvent });
+    }
+
+    if (action === "delete_event") {
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
+      }
+
+      await prisma.event.delete({
+        where: { id: eventId },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+      return NextResponse.json({ success: true, message: "Event deleted successfully." });
     }
 
     if (action === "add_private_file") {

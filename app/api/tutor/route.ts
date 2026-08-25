@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
         OR: [
           { userId: tutor.id },
           { courseId: { in: courseIds } },
+          { course: { instructorId: tutor.id } },
         ],
       },
       include: {
@@ -124,6 +125,23 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         dueDate: "asc",
+      },
+    });
+
+    // 5. Fetch 30-min free trial requests for this tutor
+    const trials = await prisma.trialRequest.findMany({
+      where: {
+        OR: [
+          { tutorId: tutor.id },
+          { courseId: { in: courseIds } },
+        ],
+      },
+      include: {
+        course: true,
+        student: true,
+      },
+      orderBy: {
+        preferredDate: "asc",
       },
     });
 
@@ -142,6 +160,7 @@ export async function GET(request: NextRequest) {
       courses,
       students,
       events,
+      trials,
     });
   } catch (error) {
     console.error("Tutor API GET error:", error);

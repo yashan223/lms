@@ -291,6 +291,47 @@ export async function POST(request: NextRequest) {
 
       broadcastLMSEvent("EVENTS_CHANGED");
 
+      // Notify all enrolled students in the associated course
+      if (updated.courseId) {
+        const enrollments = await prisma.enrollment.findMany({
+          where: { courseId: updated.courseId },
+          select: { userId: true },
+        });
+
+        if (enrollments.length > 0) {
+          await prisma.notification.createMany({
+            data: enrollments.map((e) => ({
+              userId: e.userId,
+              title: "🔴 Class is Live Now!",
+              message: `"${updated.title}" has started. Join your live session now.`,
+              type: "INFO",
+              link: meetLink,
+            })),
+          });
+
+          // Broadcast to each student's feed
+          enrollments.forEach((e) => {
+            broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: e.userId });
+          });
+
+          // Also broadcast a CLASS_LIVE event with meeting info
+          broadcastLMSEvent("EVENTS_CHANGED", {
+            classLive: true,
+            eventId: updated.id,
+            title: updated.title,
+            meetingLink: meetLink,
+            courseId: updated.courseId,
+          });
+        }
+      } else {
+        broadcastLMSEvent("EVENTS_CHANGED", {
+          classLive: true,
+          eventId: updated.id,
+          title: updated.title,
+          meetingLink: meetLink,
+        });
+      }
+
       return NextResponse.json({
         success: true,
         message: "Live class session has been started!",

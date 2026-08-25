@@ -171,6 +171,14 @@ function DashboardContent() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
+  // Live Class Banner
+  const [liveClassBanner, setLiveClassBanner] = useState<{
+    title: string;
+    meetingLink: string;
+  } | null>(null);
+  const [bannerVisible, setBannerVisible] = useState(false);
+  const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
+
   // Fetch real records from server
   const fetchDashboardData = async () => {
     try {
@@ -193,6 +201,22 @@ function DashboardContent() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Check for any newly LIVE events after each data sync
+  useEffect(() => {
+    if (!timelineEvents || userRole !== "STUDENT") return;
+    const liveEv = timelineEvents.find(
+      (ev: any) => ev.status === "LIVE" && !seenLiveEventIds.has(ev.id)
+    );
+    if (liveEv) {
+      setSeenLiveEventIds((prev) => new Set(prev).add(liveEv.id));
+      setLiveClassBanner({
+        title: liveEv.title,
+        meetingLink: liveEv.meetingLink || "https://meet.google.com/new",
+      });
+      setBannerVisible(true);
+    }
+  }, [timelineEvents, userRole, seenLiveEventIds]);
 
   // Real-time synchronization across open tabs without page reload
   const { isConnected: realtimeConnected } = useRealtimeSync({
@@ -662,6 +686,50 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#f3f4f6] text-slate-800 font-sans flex flex-col antialiased">
+
+      {/* ── LIVE CLASS BANNER ─────────────────────────────────────────────── */}
+      {liveClassBanner && (
+        <div
+          className={`fixed top-0 left-0 right-0 z-[999] transition-transform duration-500 ease-out ${
+            bannerVisible ? "translate-y-0" : "-translate-y-full"
+          }`}
+        >
+          <div className="bg-red-600 text-white px-4 py-3 flex items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex items-center gap-1.5 shrink-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping inline-block opacity-80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-white inline-block -ml-4" />
+              </span>
+              <div className="min-w-0">
+                <span className="font-bold text-sm">Class is Live Now!</span>
+                <span className="text-white/80 text-xs ml-2 truncate">{liveClassBanner.title}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={liveClassBanner.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-1.5 bg-white text-red-700 font-bold text-xs rounded-lg hover:bg-red-50 transition-colors flex items-center gap-1.5 shadow"
+              >
+                <Video className="w-3.5 h-3.5" />
+                Join Now
+              </a>
+              <button
+                onClick={() => {
+                  setBannerVisible(false);
+                  setTimeout(() => setLiveClassBanner(null), 500);
+                }}
+                className="p-1 rounded hover:bg-red-700 transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. TOP LMS NAVIGATION HEADER */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-[1480px] mx-auto px-4 sm:px-6 flex items-center justify-between h-14">

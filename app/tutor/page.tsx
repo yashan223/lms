@@ -607,46 +607,6 @@ function TutorDashboardContent() {
       {/* ========================================================================= */}
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-6 space-y-5 flex-1">
         
-        {/* Welcome Greeting Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span>Hi, {tutorName.split(" ")[0]}!</span>
-              <span>👋</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {tutor?.headline || "Senior Faculty Lecturer"} • EduPulse Academy #UK-92810
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                setScheduleMode("COURSE");
-                setNewClassTitle("");
-                const d = new Date();
-                d.setDate(d.getDate() + 1);
-                d.setHours(18, 0, 0, 0);
-                setNewClassDate(formatForDateTimeInput(d));
-                setShowScheduleModal(true);
-              }}
-              className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs gap-1.5 h-8 shadow-xs cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Schedule Live Class</span>
-            </Button>
-
-            <button
-              onClick={fetchTutorData}
-              className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all cursor-pointer"
-              title="Refresh Studio Data"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
         {/* 3-Column Grid Workspace */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           

@@ -753,40 +753,6 @@ function DashboardContent() {
 
       {/* 3. MAIN DASHBOARD 3-COLUMN WORKSPACE */}
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-6 space-y-5 flex-1">
-        {/* Welcome Greeting Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span>Hi, {shortGreetingName}!</span>
-              <span>👋</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {currentProfile.title} • EduPulse Academy #UK-92810
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {userRole === "INSTRUCTOR" && (
-              <Button
-                size="sm"
-                onClick={() => setShowNewEventModal(true)}
-                className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs gap-1.5 h-8"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Schedule Live Class</span>
-              </Button>
-            )}
-            {userRole === "ADMIN" && (
-              <Link
-                href="/admin"
-                className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Open Admin Command Console</span>
-              </Link>
-            )}
-          </div>
-        </div>
 
         {/* 3-Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">

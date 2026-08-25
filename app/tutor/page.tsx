@@ -730,55 +730,92 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-            {/* Block 3: Enrolled Scholars Online / Direct Chat */}
+            {/* Block 3: Interactive Calendar Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Scholars Roster ({students.length})
+                  {calDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
                 </h3>
-                <span className="flex items-center gap-1 text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Online</span>
-                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={prevMonth}
+                    className="p-1 rounded hover:bg-slate-100 text-slate-600"
+                    title="Previous month"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={nextMonth}
+                    className="p-1 rounded hover:bg-slate-100 text-slate-600"
+                    title="Next month"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {students.slice(0, 6).map((st) => (
-                  <div
-                    key={st.id}
-                    className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-all text-xs"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-800 font-bold text-[11px] flex items-center justify-center shrink-0">
-                        {st.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-slate-900 truncate">{st.name}</div>
-                        <div className="text-[10px] text-slate-400 truncate">
-                          {st.enrolledCourses[0]?.courseTitle || "London A/L"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => openChatWithStudent(st.id)}
-                      className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                      title="Direct Encrypted Message"
-                    >
-                      <MessageSquareLock className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+              {/* Day names */}
+              <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">
+                {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                  <div key={i} className="py-1">{d}</div>
                 ))}
               </div>
 
-              {students.length > 6 && (
-                <button
-                  onClick={() => setCenterTab("students")}
-                  className="w-full text-center text-xs font-semibold text-blue-600 hover:underline pt-1"
-                >
-                  View all {students.length} scholars...
-                </button>
-              )}
+              {/* Days grid */}
+              <div className="grid grid-cols-7 text-center text-xs">
+                {calendarDays.map((date, idx) => {
+                  if (!date) return <div key={`empty-${idx}`} className="p-1" />;
+                  const isToday =
+                    date.getDate() === new Date().getDate() &&
+                    date.getMonth() === new Date().getMonth() &&
+                    date.getFullYear() === new Date().getFullYear();
+                  const hasEvents = hasEventOnDate(date);
+                  return (
+                    <div
+                      key={date.toISOString()}
+                      className={`p-1 relative flex flex-col items-center justify-center rounded-md ${
+                        isToday
+                          ? "bg-[#0c2461] text-white font-bold"
+                          : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span className="text-[11px] leading-tight">{date.getDate()}</span>
+                      {hasEvents && (
+                        <span
+                          className={`w-1 h-1 rounded-full mt-0.5 ${
+                            isToday ? "bg-amber-300" : "bg-blue-600"
+                          }`}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Block 4: Studio Statistics Summary */}
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-2.5">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Studio Statistics
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{students.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Scholars</div>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{courses.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Courses</div>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{events.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Classes</div>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="font-bold text-slate-900 text-sm">{trials.length}</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Trials</div>
+                </div>
+              </div>
             </div>
 
           </aside>
@@ -1490,97 +1527,7 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-            {/* Block 3: Interactive Calendar Card */}
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  {calDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
-                </h3>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={prevMonth}
-                    className="p-1 rounded hover:bg-slate-100 text-slate-600"
-                    title="Previous month"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={nextMonth}
-                    className="p-1 rounded hover:bg-slate-100 text-slate-600"
-                    title="Next month"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
 
-              {/* Day names */}
-              <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">
-                {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-                  <div key={i} className="py-1">
-                    {d}
-                  </div>
-                ))}
-              </div>
-
-              {/* Days grid */}
-              <div className="grid grid-cols-7 text-center text-xs">
-                {calendarDays.map((date, idx) => {
-                  if (!date) return <div key={`empty-${idx}`} className="p-1" />;
-                  const isToday =
-                    date.getDate() === new Date().getDate() &&
-                    date.getMonth() === new Date().getMonth() &&
-                    date.getFullYear() === new Date().getFullYear();
-
-                  const hasEvents = hasEventOnDate(date);
-
-                  return (
-                    <div
-                      key={date.toISOString()}
-                      className={`p-1 relative flex flex-col items-center justify-center rounded-md ${
-                        isToday
-                          ? "bg-[#0c2461] text-white font-bold"
-                          : "text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      <span className="text-[11px] leading-tight">{date.getDate()}</span>
-                      {hasEvents && (
-                        <span
-                          className={`w-1 h-1 rounded-full mt-0.5 ${
-                            isToday ? "bg-amber-300" : "bg-blue-600"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Block 4: Studio Statistics Summary */}
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-2.5">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Studio Statistics
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{students.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Scholars</div>
-                </div>
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{courses.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Courses</div>
-                </div>
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{events.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Classes</div>
-                </div>
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{trials.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Trials</div>
-                </div>
-              </div>
-            </div>
 
           </aside>
 

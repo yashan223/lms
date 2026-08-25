@@ -672,14 +672,8 @@ function DashboardContent() {
               </div>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
-              <Link
-                href="/dashboard"
-                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
-              >
-                Dashboard
-              </Link>
-              {userRole === "ADMIN" && (
+            {userRole === "ADMIN" && (
+              <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
                 <Link
                   href="/admin"
                   className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1.5"
@@ -687,8 +681,8 @@ function DashboardContent() {
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Admin Console</span>
                 </Link>
-              )}
-            </nav>
+              </nav>
+            )}
           </div>
 
           {/* Right Header Utilities: Role Badge, Search, User Profile, Sign Out */}

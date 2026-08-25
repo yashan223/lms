@@ -543,12 +543,6 @@ function TutorDashboardContent() {
 
             <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
               <Link
-                href="/dashboard"
-                className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-600"
-              >
-                Dashboard
-              </Link>
-              <Link
                 href="/tutor"
                 className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
               >

@@ -517,7 +517,7 @@ function TutorDashboardContent() {
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
         <p className="text-sm font-semibold tracking-wider uppercase text-blue-200">
-          Loading Faculty Studio...
+          Loading Tutor Studio...
         </p>
       </div>
     );
@@ -555,16 +555,16 @@ function TutorDashboardContent() {
                 href="/tutor"
                 className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
               >
-                Faculty Studio
+                Tutor Studio
               </Link>
             </nav>
           </div>
 
           {/* Right Header Utilities */}
           <div className="flex items-center gap-3">
-            {/* Faculty Role Badge */}
+            {/* Tutor Role Badge */}
             <Badge variant="roleInstructor" className="text-[11px] px-2.5 py-1 font-bold">
-              Faculty Educator
+              Tutor
             </Badge>
 
             {/* Notification Center */}
@@ -663,7 +663,7 @@ function TutorDashboardContent() {
               <div className="space-y-2 text-xs font-medium text-slate-700">
                 <div className="flex items-center gap-1.5 text-blue-700 font-bold">
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Faculty Studio</span>
+                  <span>Tutor Studio</span>
                 </div>
 
                 <div className="pl-4 space-y-1.5 text-slate-600">
@@ -1946,7 +1946,7 @@ export default function TutorDashboardPage() {
         <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
           <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
           <p className="text-sm font-semibold tracking-wider uppercase text-blue-200">
-            Initializing Faculty Studio...
+            Initializing Tutor Studio...
           </p>
         </div>
       }

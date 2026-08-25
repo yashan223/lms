@@ -61,7 +61,7 @@ export function RoleTabsShowcase() {
                 className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold"
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Faculty Studio</span>
+                <span>Tutor Studio</span>
               </TabsTrigger>
 
               <TabsTrigger
@@ -192,8 +192,8 @@ export function RoleTabsShowcase() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-6 space-y-6">
                   <div className="flex items-center gap-2">
-                    <Badge variant="roleInstructor">Faculty Studio</Badge>
-                    <span className="text-xs text-slate-500">Educator Workspace</span>
+                    <Badge variant="roleInstructor">Tutor Studio</Badge>
+                    <span className="text-xs text-slate-500">Tutor Workspace</span>
                   </div>
 
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">

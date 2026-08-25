@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     "Accredited Courses",
     "University Education",
     "Academic Governance",
-    "Faculty Studio",
+    "Tutor Studio",
     "Student Learning",
     "Admin Portal",
   ],

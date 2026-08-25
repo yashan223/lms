@@ -70,6 +70,15 @@ const formatForDateTimeInput = (date: Date) => {
   return `${y}-${m}-${d}T${hh}:${mm}`;
 };
 
+const getSafeMeetingLink = (link?: string | null) => {
+  if (!link || !link.trim()) return "https://meet.google.com/new";
+  const trimmed = link.trim();
+  if (trimmed.includes("edupulse-live") || trimmed.includes("xxx-yyyy-zzz")) {
+    return "https://meet.google.com/new";
+  }
+  return trimmed;
+};
+
 interface EnrolledCourseInfo {
   courseId: string;
   courseTitle: string;
@@ -1085,7 +1094,7 @@ function TutorDashboardContent() {
                                 </span>
                                 {ev.meetingLink && (
                                   <a
-                                    href={ev.meetingLink}
+                                    href={getSafeMeetingLink(ev.meetingLink)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:underline truncate max-w-[180px]"
@@ -1100,7 +1109,7 @@ function TutorDashboardContent() {
                               {isLive ? (
                                 <>
                                   <a
-                                    href={ev.meetingLink || "#"}
+                                    href={getSafeMeetingLink(ev.meetingLink)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"

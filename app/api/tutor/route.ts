@@ -229,8 +229,7 @@ export async function POST(request: NextRequest) {
 
       let meetLink = meetingLink?.trim();
       if (!meetLink) {
-        const room = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
-        meetLink = `https://meet.google.com/${room}`;
+        meetLink = "https://meet.google.com/new";
       }
 
       const fullDescription = [
@@ -276,9 +275,8 @@ export async function POST(request: NextRequest) {
       }
 
       let meetLink = meetingLink?.trim() || existing.meetingLink;
-      if (!meetLink) {
-        const room = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
-        meetLink = `https://meet.google.com/${room}`;
+      if (!meetLink || meetLink.includes("edupulse-live")) {
+        meetLink = "https://meet.google.com/new";
       }
 
       const updated = await prisma.event.update({

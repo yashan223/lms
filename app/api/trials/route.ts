@@ -145,9 +145,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Generate instant Google Meet online room code
-      const roomCode = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
-      const meetingLink = `https://meet.google.com/${roomCode}`;
+      // Instant Google Meet online room URL
+      const meetingLink = "https://meet.google.com/new";
 
       // Create trial record
       const trial = await prisma.trialRequest.create({

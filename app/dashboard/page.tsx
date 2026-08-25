@@ -60,6 +60,15 @@ const formatForDateTimeInput = (date: Date) => {
   return `${y}-${m}-${d}T${hh}:${mm}`;
 };
 
+const getSafeMeetingLink = (link?: string | null) => {
+  if (!link || !link.trim()) return "https://meet.google.com/new";
+  const trimmed = link.trim();
+  if (trimmed.includes("edupulse-live") || trimmed.includes("xxx-yyyy-zzz")) {
+    return "https://meet.google.com/new";
+  }
+  return trimmed;
+};
+
 interface UserProfile {
   id: string;
   name: string;
@@ -1033,7 +1042,7 @@ function DashboardContent() {
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                           {ev.status === "LIVE" ? (
                             <a
-                              href={ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0] || "https://meet.google.com"}
+                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
                               target="_blank"
                               rel="noreferrer"
                               className="px-3 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 animate-pulse"
@@ -1041,9 +1050,9 @@ function DashboardContent() {
                               <Video className="w-3.5 h-3.5" />
                               <span>Join Live Meet</span>
                             </a>
-                          ) : ev.description?.includes("http") ? (
+                          ) : ev.description?.includes("http") || ev.meetingLink ? (
                             <a
-                              href={ev.meetingLink || ev.description.match(/https?:\/\/[^\s]+/)?.[0] || "#"}
+                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
                               target="_blank"
                               rel="noreferrer"
                               className="px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-semibold text-xs border border-emerald-200 transition-all shadow-2xs inline-flex items-center gap-1"

@@ -514,7 +514,8 @@ async function main() {
     await prisma.event.create({
       data: {
         title: "Live Masterclass: Pure Mathematics P3 Integration by Parts & Proofs",
-        description: "Interactive live theory masterclass and worked exam proofs.\n\nClassroom Link: https://meet.google.com/pmn-edupulse-live",
+        description: "Interactive live theory masterclass and worked exam proofs.\n\nClassroom Link: https://meet.google.com/new",
+        meetingLink: "https://meet.google.com/new",
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
         courseId: mathCourse.id,
@@ -538,7 +539,8 @@ async function main() {
     await prisma.event.create({
       data: {
         title: "Live Lecture: Physics Unit 4 Circular Motion & Magnetic Fields",
-        description: "Theory walkthrough and virtual experimental calculations.\n\nClassroom Link: https://meet.google.com/phy-edupulse-live",
+        description: "Theory walkthrough and virtual experimental calculations.\n\nClassroom Link: https://meet.google.com/new",
+        meetingLink: "https://meet.google.com/new",
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),
         courseId: physicsCourse.id,

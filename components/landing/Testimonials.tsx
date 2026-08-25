@@ -18,9 +18,6 @@ export function Testimonials() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <Badge variant="secondary" className="mb-3 font-semibold">
-            Social Proof & Endorsements
-          </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             Loved by Students, Instructors & Admins
           </h2>

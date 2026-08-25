@@ -93,10 +93,6 @@ export function CourseGrid() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-bold mb-3 border border-blue-200">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              <span>International Academic Curriculum Specifications</span>
-            </div>
             <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#0c2461] tracking-tight mb-3">
               London A/L & O/L Subject Masterclasses
             </h2>

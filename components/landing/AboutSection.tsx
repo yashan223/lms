@@ -55,11 +55,6 @@ export function AboutSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Column: Academy Narrative & Features */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100/80 text-blue-800 text-xs font-bold border border-blue-200">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <span>About EduPulse Academy</span>
-            </div>
-
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.15]">
               World-Class London A/L & O/L Academic Excellence
             </h2>

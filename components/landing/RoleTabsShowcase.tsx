@@ -28,9 +28,6 @@ export function RoleTabsShowcase() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <Badge variant="secondary" className="mb-3 font-semibold">
-            Architected for Every Stakeholder
-          </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             One Unified Platform.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-600">

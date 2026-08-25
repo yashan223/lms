@@ -18,9 +18,6 @@ export function FaqSection() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <Badge variant="secondary" className="mb-3 font-semibold">
-            Common Questions
-          </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             Frequently Asked Questions
           </h2>

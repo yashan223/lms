@@ -1,28 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { PRICING_PLANS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { RolePreviewModal } from "@/components/landing/RolePreviewModal";
 import { CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
-import { UserRole } from "@/lib/types";
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalRole, setModalRole] = useState<UserRole>("STUDENT");
-
-  const handlePlanClick = (planId: string) => {
-    if (planId === "tier-enterprise") {
-      setModalRole("ADMIN");
-    } else if (planId === "tier-instructor") {
-      setModalRole("INSTRUCTOR");
-    } else {
-      setModalRole("STUDENT");
-    }
-    setIsModalOpen(true);
-  };
 
   return (
     <section id="pricing" className="py-20 bg-white border-t border-blue-100">
@@ -144,31 +129,22 @@ export function PricingSection() {
                 </div>
 
                 {/* Plan CTA */}
-                <Button
-                  size="lg"
-                  variant={plan.popular ? "default" : "outline"}
-                  onClick={() => handlePlanClick(plan.id)}
-                  className={`w-full text-sm font-bold h-12 rounded-xl gap-2 ${
+                <Link
+                  href="/register"
+                  className={`w-full text-sm font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-all ${
                     plan.popular
-                      ? "shadow-lg shadow-blue-600/30"
-                      : "border-blue-200 text-slate-800 hover:bg-blue-50"
+                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30"
+                      : "border border-blue-200 text-slate-800 hover:bg-blue-50 bg-white"
                   }`}
                 >
                   <span>{plan.ctaText}</span>
                   <ArrowRight className="w-4 h-4" />
-                </Button>
+                </Link>
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Role Preview Modal */}
-      <RolePreviewModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        defaultRole={modalRole}
-      />
     </section>
   );
 }

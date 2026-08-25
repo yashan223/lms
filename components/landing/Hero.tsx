@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { RolePreviewModal } from "@/components/landing/RolePreviewModal";
-import { UserRole } from "@/lib/types";
 import {
   GraduationCap,
   Atom,
@@ -13,8 +11,6 @@ import {
 } from "lucide-react";
 
 export function Hero() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [previewRole, setPreviewRole] = useState<UserRole>("ADMIN");
 
   const diamondPrograms = [
     {
@@ -75,11 +71,6 @@ export function Hero() {
     { label: "Economics & Business", color: "bg-amber-700", href: "#courses" },
     { label: "Biology & Life Sciences", color: "bg-indigo-700", href: "#courses" },
   ];
-
-  const openDemoModal = (role: UserRole) => {
-    setPreviewRole(role);
-    setIsModalOpen(false);
-  };
 
   return (
     <section className="relative w-full overflow-hidden bg-white border-b border-slate-200">
@@ -169,13 +160,6 @@ export function Hero() {
           </Link>
         ))}
       </div>
-
-      {/* Role Demo Modal */}
-      <RolePreviewModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        defaultRole={previewRole}
-      />
     </section>
   );
 }

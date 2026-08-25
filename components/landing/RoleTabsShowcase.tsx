@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { RolePreviewModal } from "@/components/landing/RolePreviewModal";
 import { UserRole } from "@/lib/types";
 import {
   GraduationCap,
@@ -24,13 +23,6 @@ import {
 
 export function RoleTabsShowcase() {
   const [activeTab, setActiveTab] = useState<UserRole>("STUDENT");
-  const [modalRole, setModalRole] = useState<UserRole>("STUDENT");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleOpenModal = (role: UserRole) => {
-    setModalRole(role);
-    setIsModalOpen(true);
-  };
 
   return (
     <section id="roles" className="py-20 bg-slate-50/50 border-b border-blue-100">
@@ -136,14 +128,13 @@ export function RoleTabsShowcase() {
                   </div>
 
                   <div className="pt-2 flex items-center gap-3">
-                    <Button
-                      variant="default"
-                      onClick={() => handleOpenModal("STUDENT")}
-                      className="bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/25"
+                    <Link
+                      href="/courses"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-all"
                     >
-                      <span>Explore Student Portal Demo</span>
-                      <ArrowRight className="w-4 h-4 ml-1.5" />
-                    </Button>
+                      <span>Explore Student Courses</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
                   </div>
                 </div>
 
@@ -249,14 +240,13 @@ export function RoleTabsShowcase() {
                   </div>
 
                   <div className="pt-2 flex items-center gap-3">
-                    <Button
-                      variant="default"
-                      onClick={() => handleOpenModal("INSTRUCTOR")}
-                      className="bg-blue-600 hover:bg-blue-700 shadow-blue-500/25"
+                    <Link
+                      href="/courses"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all"
                     >
-                      <span>Explore Faculty Studio Demo</span>
-                      <ArrowRight className="w-4 h-4 ml-1.5" />
-                    </Button>
+                      <span>Explore Academic Curriculum</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
                   </div>
                 </div>
 
@@ -374,14 +364,13 @@ export function RoleTabsShowcase() {
                   </div>
 
                   <div className="pt-2 flex items-center gap-3">
-                    <Button
-                      variant="default"
-                      onClick={() => handleOpenModal("ADMIN")}
-                      className="bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/25"
+                    <Link
+                      href="/register"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all"
                     >
-                      <span>Explore Admin Console Demo</span>
-                      <ArrowRight className="w-4 h-4 ml-1.5" />
-                    </Button>
+                      <span>Join as Institutional Partner</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
                   </div>
                 </div>
 
@@ -450,13 +439,6 @@ export function RoleTabsShowcase() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Role Preview Modal */}
-      <RolePreviewModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        defaultRole={modalRole}
-      />
     </section>
   );
 }

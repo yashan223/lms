@@ -1,21 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import Link from "next/link";
 import { FAQ_ITEMS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { RolePreviewModal } from "@/components/landing/RolePreviewModal";
-import { HelpCircle, ArrowRight, ShieldCheck, Sparkles, GraduationCap } from "lucide-react";
+import { BookOpen, GraduationCap } from "lucide-react";
 
 export function FaqSection() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
   return (
     <section id="faq" className="py-20 bg-slate-50/60 border-t border-blue-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -57,33 +54,31 @@ export function FaqSection() {
 
           <div className="max-w-2xl mx-auto space-y-4">
             <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Ready to experience modern education?
+              Ready to excel in your London A/L & O/L examinations?
             </h3>
             <p className="text-blue-100 text-xs sm:text-sm leading-relaxed">
-              Explore the platform today as an Admin, Instructor, or Student with our interactive live demo environment.
+              Explore syllabus units, download study handbooks, and join live masterclasses led by senior faculty examiners.
             </p>
 
             <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
-              <Button
-                size="lg"
-                variant="white"
-                onClick={() => setIsModalOpen(true)}
-                className="text-blue-700 font-bold gap-2 text-sm h-12 px-6"
+              <Link
+                href="/courses"
+                className="inline-flex items-center justify-center text-blue-700 font-bold gap-2 text-sm h-12 px-6 rounded-xl bg-white hover:bg-blue-50 shadow-md transition-all"
               >
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span>Launch Role Portal Demo</span>
-              </Button>
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <span>Explore Courses & Syllabus</span>
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center text-white font-bold gap-2 text-sm h-12 px-6 rounded-xl bg-blue-800/80 hover:bg-blue-800 border border-white/20 shadow-md transition-all"
+              >
+                <GraduationCap className="w-4 h-4 text-sky-300" />
+                <span>Get Started</span>
+              </Link>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Role Preview Modal */}
-      <RolePreviewModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        defaultRole="ADMIN"
-      />
     </section>
   );
 }

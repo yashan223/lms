@@ -77,7 +77,7 @@ export function RolePreviewModal({
         "Student Comprehension & Progress Matrices",
         "Honorarium & Compensation Dashboard",
       ],
-      statSummary: "38.4k Scholars Enrolled • 4.96 Avg Rating",
+      statSummary: "38.4k Scholars Enrolled Worldwide",
     },
     STUDENT: {
       title: "Scholar & Student Experience",

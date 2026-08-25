@@ -1566,7 +1566,7 @@ function TutorDashboardContent() {
                     </label>
                     <Input
                       required
-                      placeholder="e.g. Dr. Sarah Jenkins, Ph.D."
+                      placeholder="Enter full name and title"
                       value={profileName}
                       onChange={(e) => setProfileName(e.target.value)}
                       className="rounded-xl h-10 text-xs"
@@ -1579,7 +1579,7 @@ function TutorDashboardContent() {
                     </label>
                     <Input
                       required
-                      placeholder="e.g. Senior Faculty Tutor in Pure Mathematics & Mechanics"
+                      placeholder="Professional academic title"
                       value={profileHeadline}
                       onChange={(e) => setProfileHeadline(e.target.value)}
                       className="rounded-xl h-10 text-xs"
@@ -1622,7 +1622,7 @@ function TutorDashboardContent() {
                   <textarea
                     required
                     rows={4}
-                    placeholder="e.g. B.Sc. (Hons) First Class Mathematics (University of London), Ph.D. Applied Mathematical Analysis (Imperial College London). Subject Lead for IAL Pure Mathematics (P1-P4) and Mechanics with 18+ years of academic teaching experience."
+                    placeholder="Enter academic credentials, specializations, and teaching background..."
                     value={profileBio}
                     onChange={(e) => setProfileBio(e.target.value)}
                     className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-600 leading-relaxed resize-none"
@@ -1638,7 +1638,7 @@ function TutorDashboardContent() {
                       Contact Phone / WhatsApp
                     </label>
                     <Input
-                      placeholder="e.g. +44 20 7946 0912"
+                      placeholder="Enter phone number"
                       value={profilePhone}
                       onChange={(e) => setProfilePhone(e.target.value)}
                       className="rounded-xl h-10 text-xs"
@@ -1795,7 +1795,7 @@ function TutorDashboardContent() {
                 </label>
                 <Input
                   required
-                  placeholder="e.g. Pure Mathematics P3: Complex Numbers & Proofs Workshop"
+                  placeholder="Enter class title or topic"
                   value={newClassTitle}
                   onChange={(e) => setNewClassTitle(e.target.value)}
                   className="rounded-xl h-9 text-xs"
@@ -1836,7 +1836,7 @@ function TutorDashboardContent() {
                   Virtual Classroom Link (Zoom / Meet / Teams)
                 </label>
                 <Input
-                  placeholder="e.g. https://meet.google.com/abc-defg-hij"
+                  placeholder="https://meet.google.com/..."
                   value={newClassMeetingLink}
                   onChange={(e) => setNewClassMeetingLink(e.target.value)}
                   className="rounded-xl h-9 text-xs"
@@ -1849,7 +1849,7 @@ function TutorDashboardContent() {
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="e.g. Bring formula sheet and complete unit 4 practice questions before session."
+                  placeholder="Add instructions or preparation notes for students..."
                   value={newClassDesc}
                   onChange={(e) => setNewClassDesc(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none"

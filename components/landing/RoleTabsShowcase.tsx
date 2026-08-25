@@ -316,7 +316,7 @@ export function RoleTabsShowcase() {
                         Active Scholars
                       </div>
                       <div className="text-lg font-black text-slate-900">38,400+</div>
-                      <p className="text-[10px] text-slate-500">4.96 ⭐ student rating</p>
+                      <p className="text-[10px] text-slate-500">Across all qualifications</p>
                     </div>
                   </div>
                 </div>

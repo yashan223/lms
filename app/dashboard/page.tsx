@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -204,6 +204,43 @@ function DashboardContent() {
     }
     return allCourses;
   }, [userRole, user, allCourses]);
+
+  // Pre-fetch course details in background for instant 0ms clicks
+  const prefetchCourse = useCallback((slug?: string) => {
+    if (!slug || typeof window === "undefined") return;
+    const cache = (window as any).__EDU_COURSE_CACHE;
+    if (cache && (cache[slug] || cache[decodeURIComponent(slug)])) return;
+
+    fetch(`/api/courses/${encodeURIComponent(slug)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.course) {
+          const formatted = {
+            ...data.course,
+            instructor: {
+              name: data.course.instructor?.name || "Dr. Sarah Jenkins",
+              avatar: data.course.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+              roleTitle: data.course.instructor?.headline || "Senior Faculty Tutor in Mathematics",
+              bio: data.course.instructor?.bio || "Subject Lead with 18+ years teaching London A/L & O/L specification.",
+            },
+          };
+          (window as any).__EDU_COURSE_CACHE = (window as any).__EDU_COURSE_CACHE || {};
+          (window as any).__EDU_COURSE_CACHE[slug] = formatted;
+          if (data.course.slug) (window as any).__EDU_COURSE_CACHE[data.course.slug] = formatted;
+          if (data.course.id) (window as any).__EDU_COURSE_CACHE[data.course.id] = formatted;
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Background warm cache for assigned/enrolled courses
+  useEffect(() => {
+    if (myCourses && myCourses.length > 0) {
+      myCourses.forEach((c) => {
+        if (c.slug) prefetchCourse(c.slug);
+      });
+    }
+  }, [myCourses, prefetchCourse]);
 
   // Open New Event Modal with prefilled date/time (Instructors and Admins only)
   const handleOpenNewEventModal = (forDate?: Date) => {
@@ -637,12 +674,6 @@ function DashboardContent() {
 
             <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
               <Link
-                href="/courses"
-                className="px-3 py-1.5 rounded-lg hover:bg-slate-100 hover:text-blue-700 transition-colors"
-              >
-                Course Catalog
-              </Link>
-              <Link
                 href="/dashboard"
                 className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
               >
@@ -802,6 +833,8 @@ function DashboardContent() {
                             <Link
                               key={c.id || idx}
                               href={c.slug ? `/courses/${c.slug}` : "/courses"}
+                              prefetch={true}
+                              onMouseEnter={() => prefetchCourse(c.slug)}
                               className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
                               title={c.title}
                             >
@@ -900,37 +933,6 @@ function DashboardContent() {
           {/* CENTER MAIN FEED (Role-Specific Workspaces) */}
           {/* ======================================================== */}
           <section className="lg:col-span-9 space-y-5">
-            {/* Free 30-Minute Trial Session Banner for Students */}
-            {userRole === "STUDENT" && (
-              <div className="rounded-2xl bg-gradient-to-r from-[#0c2461] via-[#103080] to-indigo-900 text-white p-5 shadow-md relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-blue-900/40">
-                <div className="space-y-1.5 z-10 max-w-xl">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/30 text-[11px] font-bold">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Free 30-Minute 1-on-1 Online Consultation</span>
-                  </div>
-                  <h3 className="font-extrabold text-base sm:text-lg text-white">
-                    Need Subject Diagnostic or Past Paper Coaching?
-                  </h3>
-                  <p className="text-xs text-blue-100/90 leading-relaxed">
-                    Request a free 30-minute 1-on-1 online trial session with our Senior London A/L & O/L Faculty via Google Meet. Synced to your calendar.
-                  </p>
-                </div>
-
-                <div className="z-10 shrink-0">
-                  <button
-                    onClick={() => {
-                      setSelectedTrialCourseId(undefined);
-                      setShowTrialModal(true);
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-blue-50 text-[#0c2461] font-bold text-xs shadow-md transition-all inline-flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
-                  >
-                    <Video className="w-4 h-4 text-blue-600" />
-                    <span>Request 30-Min Free Trial</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Block 1: Timeline Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
@@ -1077,6 +1079,8 @@ function DashboardContent() {
                           {ev.course?.slug && (
                             <Link
                               href={`/courses/${ev.course.slug}`}
+                              prefetch={true}
+                              onMouseEnter={() => prefetchCourse(ev.course.slug)}
                               className="px-2.5 py-1 rounded-md bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-semibold text-xs border border-blue-200 transition-all shadow-2xs"
                             >
                               Study Materials
@@ -1531,7 +1535,7 @@ function DashboardContent() {
                     href="/courses"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs"
                   >
-                    <span>Browse Course Catalog</span>
+                    <span>Explore Available Courses</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -1794,7 +1798,7 @@ function DashboardContent() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Edexcel IAL Pure Maths P4 Past Paper Revision"
+                  placeholder="Enter event or task title"
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
                   className="w-full h-8 px-3 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -1854,7 +1858,7 @@ function DashboardContent() {
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Instructions / Description (Optional)</label>
                 <textarea
-                  placeholder="e.g. Complete questions 1 through 8 in PDF format with handwritten calculations."
+                  placeholder="Add instructions or description for this event..."
                   value={newEventDesc}
                   onChange={(e) => setNewEventDesc(e.target.value)}
                   className="w-full h-16 p-2 rounded-lg border border-slate-300 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"

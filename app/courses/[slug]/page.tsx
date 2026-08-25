@@ -13,7 +13,6 @@ import {
   Clock,
   BookOpen,
   Users,
-  Star,
   CheckCircle2,
   PlayCircle,
   FileText,
@@ -81,13 +80,22 @@ export default function CourseDetailPage({
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
 
-  const [course, setCourse] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // Instant in-memory cache retrieval for 0ms transitions
+  const getCachedCourse = () => {
+    if (typeof window !== "undefined" && (window as any).__EDU_COURSE_CACHE) {
+      return (window as any).__EDU_COURSE_CACHE[slug] || (window as any).__EDU_COURSE_CACHE[decodeURIComponent(slug)] || null;
+    }
+    return null;
+  };
+
+  const initialCached = getCachedCourse();
+  const [course, setCourse] = useState<any>(initialCached);
+  const [loading, setLoading] = useState(!initialCached);
   const [activeTab, setActiveTab] = useState<"materials" | "curriculum" | "overview">("materials");
   const [activeModuleIdx, setActiveModuleIdx] = useState<number | null>(0);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(initialCached?.modules?.[0]?.lessons?.[0] || null);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
-  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(Boolean(initialCached?.enrollments?.length));
   const [enrollLoading, setEnrollLoading] = useState(false);
 
   // Role check — only ADMIN / INSTRUCTOR can upload or delete materials
@@ -114,15 +122,17 @@ export default function CourseDetailPage({
   const [uploadingMaterial, setUploadingMaterial] = useState(false);
   const [uploadStatusMsg, setUploadStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Load Course Data
-  const loadCourse = async () => {
+  // Load Course Data (with non-blocking background revalidation)
+  const loadCourse = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!course && !silent) {
+        setLoading(true);
+      }
       const res = await fetch(`/api/courses/${encodeURIComponent(slug)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.course) {
-          setCourse({
+          const formatted = {
             ...data.course,
             instructor: {
               name: data.course.instructor?.name || "Dr. Sarah Jenkins",
@@ -130,15 +140,25 @@ export default function CourseDetailPage({
               roleTitle: data.course.instructor?.headline || "Senior Faculty Tutor in Mathematics",
               bio: data.course.instructor?.bio || "Subject Lead with 18+ years teaching London A/L & O/L specification.",
             },
-          });
+          };
+
+          // Save to global fast cache
+          if (typeof window !== "undefined") {
+            (window as any).__EDU_COURSE_CACHE = (window as any).__EDU_COURSE_CACHE || {};
+            (window as any).__EDU_COURSE_CACHE[slug] = formatted;
+            if (data.course.slug) (window as any).__EDU_COURSE_CACHE[data.course.slug] = formatted;
+            if (data.course.id) (window as any).__EDU_COURSE_CACHE[data.course.id] = formatted;
+          }
+
+          setCourse(formatted);
 
           if (data.course.enrollments && data.course.enrollments.length > 0) {
             setIsEnrolled(true);
           }
 
-          // Select first lesson by default if available
+          // Select first lesson by default if not set
           if (data.course.modules?.[0]?.lessons?.[0]) {
-            setSelectedLesson(data.course.modules[0].lessons[0]);
+            setSelectedLesson((prev) => prev || data.course.modules[0].lessons[0]);
           }
         }
       }
@@ -150,14 +170,21 @@ export default function CourseDetailPage({
   };
 
   useEffect(() => {
-    loadCourse();
+    const cached = getCachedCourse();
+    if (cached) {
+      setCourse(cached);
+      setLoading(false);
+      loadCourse(true); // silent revalidation in background
+    } else {
+      loadCourse(false);
+    }
   }, [slug]);
 
   // Real-time synchronization for study materials & syllabus changes
   useRealtimeSync({
     events: ["MATERIALS_CHANGED", "COURSES_CHANGED", "ENROLLMENTS_CHANGED"],
     onSync: () => {
-      loadCourse();
+      loadCourse(true);
     },
   });
 
@@ -365,11 +392,6 @@ export default function CourseDetailPage({
 
                 {/* Key Course Stats */}
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-2">
-                  <span className="flex items-center gap-1.5">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    <strong>4.98</strong> (1,840 reviews)
-                  </span>
-                  <span>•</span>
                   <span className="flex items-center gap-1.5">
                     <BookOpen className="w-4 h-4 text-sky-400" />
                     {totalLessons} Interactive Lessons
@@ -942,7 +964,7 @@ export default function CourseDetailPage({
                 <label className="text-xs font-bold text-slate-700 block">Document Title</label>
                 <Input
                   required
-                  placeholder="e.g. Pure Mathematics P3 Integration Formulas & Worked Examples"
+                  placeholder="Enter document title"
                   value={newMaterialTitle}
                   onChange={(e) => setNewMaterialTitle(e.target.value)}
                   className="text-xs rounded-xl"

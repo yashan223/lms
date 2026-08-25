@@ -8,7 +8,15 @@ async function findCourseBySlugOrId(rawSlug: string) {
   const decoded = decodeURIComponent(rawSlug).trim();
 
   const includeOptions = {
-    instructor: true,
+    instructor: {
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        headline: true,
+        bio: true,
+      },
+    },
     modules: {
       include: {
         lessons: {
@@ -21,41 +29,26 @@ async function findCourseBySlugOrId(rawSlug: string) {
       orderBy: { createdAt: "desc" as const },
     },
     enrollments: {
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, role: true },
-        },
+      select: {
+        id: true,
+        userId: true,
       },
-    },
-    reviews: {
-      include: { user: true },
     },
   };
 
-  // Try exact slug match first
-  let course = await prisma.course.findUnique({
-    where: { slug: decoded },
+  // Single fast query targeting indexed fields
+  const course = await prisma.course.findFirst({
+    where: {
+      OR: [
+        { slug: decoded },
+        { id: decoded },
+        { slug: rawSlug },
+      ],
+    },
     include: includeOptions,
   });
-  if (course) return course;
 
-  // Try exact ID match
-  course = await prisma.course.findUnique({
-    where: { id: decoded },
-    include: includeOptions,
-  });
-  if (course) return course;
-
-  // Try raw slug (in case encoded differently)
-  if (rawSlug !== decoded) {
-    course = await prisma.course.findUnique({
-      where: { slug: rawSlug },
-      include: includeOptions,
-    });
-    if (course) return course;
-  }
-
-  return null;
+  return course;
 }
 
 export async function GET(
@@ -70,7 +63,14 @@ export async function GET(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ course });
+    return NextResponse.json(
+      { course },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=180",
+        },
+      }
+    );
   } catch (error) {
     console.error("Course Detail API error:", error);
     return NextResponse.json({ error: "Failed to fetch course details" }, { status: 500 });

@@ -129,7 +129,7 @@ export default function LoginPage() {
                   <Input
                     type="email"
                     required
-                    placeholder="e.g. admin@edupulse.uk"
+                    placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"

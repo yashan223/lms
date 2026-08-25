@@ -4,7 +4,7 @@ import React from "react";
 import { ACADEMY_TESTIMONIALS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Star, Quote, CheckCircle2 } from "lucide-react";
+import { Quote, CheckCircle2 } from "lucide-react";
 
 export function Testimonials() {
   const roleBadges = {
@@ -19,7 +19,7 @@ export function Testimonials() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge variant="secondary" className="mb-3 font-semibold">
-            Social Proof & Reviews
+            Social Proof & Endorsements
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             Loved by Students, Instructors & Admins
@@ -39,13 +39,9 @@ export function Testimonials() {
                 className="p-8 rounded-3xl bg-white border border-blue-100/90 shadow-sm hover:shadow-xl hover:border-blue-200/90 transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
-                  {/* Top Quote & Rating */}
+                  {/* Top Quote Icon & Role Badge */}
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex text-amber-400">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400" />
-                      ))}
-                    </div>
+                    <Quote className="w-5 h-5 text-blue-600/70" />
                     <Badge variant={roleInfo.variant} className="text-[10px]">
                       {roleInfo.label}
                     </Badge>

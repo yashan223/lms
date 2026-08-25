@@ -307,7 +307,7 @@ export function TrialRequestModal({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Alex Morgan"
+                    placeholder="Enter full name"
                     value={studentName}
                     onChange={(e) => setStudentName(e.target.value)}
                     className="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -324,7 +324,7 @@ export function TrialRequestModal({
                   <input
                     type="email"
                     required
-                    placeholder="e.g. alex@example.com"
+                    placeholder="Enter email address"
                     value={studentEmail}
                     onChange={(e) => setStudentEmail(e.target.value)}
                     className="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -356,7 +356,7 @@ export function TrialRequestModal({
                 <div className="relative">
                   <input
                     type="tel"
-                    placeholder="e.g. +44 7700 900077"
+                    placeholder="Enter phone number"
                     value={studentPhone}
                     onChange={(e) => setStudentPhone(e.target.value)}
                     className="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -373,7 +373,7 @@ export function TrialRequestModal({
               </label>
               <input
                 type="text"
-                placeholder="e.g. Mechanics M1 Past Papers, Calculus P4, or Exam technique"
+                placeholder="Mention any specific topics, exam boards, or requirements..."
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"

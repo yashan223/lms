@@ -150,7 +150,7 @@ export default function RegisterPage() {
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
                       required
-                      placeholder="e.g. Tariq Al-Mansoor"
+                      placeholder="Enter full name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
@@ -168,7 +168,7 @@ export default function RegisterPage() {
                     <Input
                       type="email"
                       required
-                      placeholder="e.g. student@edupulse.uk"
+                      placeholder="Enter email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
@@ -188,7 +188,7 @@ export default function RegisterPage() {
                     <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
                       type="tel"
-                      placeholder="e.g. +44 7911 123456"
+                      placeholder="Enter phone number"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"

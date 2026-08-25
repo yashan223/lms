@@ -4,12 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RolePreviewModal } from "@/components/landing/RolePreviewModal";
-import { UserRole } from "@/lib/types";
 import {
   GraduationCap,
-  Sparkles,
-  ShieldCheck,
   CheckCircle2,
   ArrowRight,
   Globe,
@@ -18,15 +14,8 @@ import {
 } from "lucide-react";
 
 export function Footer() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalRole, setModalRole] = useState<UserRole>("ADMIN");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-
-  const openModal = (role: UserRole) => {
-    setModalRole(role);
-    setIsModalOpen(true);
-  };
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +31,7 @@ export function Footer() {
       <footer className="bg-slate-50 border-t border-blue-100 text-slate-600">
         {/* Main Footer Links */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {/* Brand Column */}
             <div className="lg:col-span-2 space-y-4">
               <Link href="/" className="flex items-center gap-3">
@@ -92,52 +81,6 @@ export function Footer() {
                   <Video className="w-4 h-4" />
                 </a>
               </div>
-            </div>
-
-            {/* 3 User Roles Column */}
-            <div className="space-y-3 text-xs sm:text-sm">
-              <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-                Role Portals
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <button
-                    onClick={() => openModal("STUDENT")}
-                    className="hover:text-blue-600 transition-colors text-left flex items-center gap-1.5"
-                  >
-                    <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
-                    Student Learning Hub
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => openModal("INSTRUCTOR")}
-                    className="hover:text-blue-600 transition-colors text-left flex items-center gap-1.5"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                    Faculty Studio
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => openModal("ADMIN")}
-                    className="hover:text-blue-600 transition-colors text-left flex items-center gap-1.5"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                    System Admin Console
-                  </button>
-                </li>
-                <li>
-                  <Link href="#courses" className="hover:text-blue-600 transition-colors">
-                    Course Catalog (4.2k+)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#pricing" className="hover:text-blue-600 transition-colors">
-                    Institutional Tiers
-                  </Link>
-                </li>
-              </ul>
             </div>
 
             {/* Academic Disciplines Column */}
@@ -228,13 +171,6 @@ export function Footer() {
           </div>
         </div>
       </footer>
-
-      {/* Role Preview Modal */}
-      <RolePreviewModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        defaultRole={modalRole}
-      />
     </>
   );
 }

@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Search,
-  Star,
   Clock,
   BookOpen,
   Users,
@@ -181,20 +180,16 @@ export function CourseGrid() {
                       )}
                     </div>
 
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
+                    <div className="absolute bottom-3 left-3 flex items-center text-white text-xs">
                       <span className="bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md font-mono text-[11px]">
                         {course.subjectCode}
-                      </span>
-                      <span className="flex items-center gap-1 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md font-semibold text-amber-300">
-                        <Star className="w-3 h-3 fill-amber-300" />
-                        {course.rating} ({course.reviewCount})
                       </span>
                     </div>
                   </div>
 
                   {/* Body Content */}
                   <div className="p-5 sm:p-6 space-y-3.5">
-                    <Link href={`/courses/${course.slug}`}>
+                    <Link href={`/courses/${course.slug}`} prefetch={true}>
                       <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-700 transition-colors leading-snug line-clamp-2">
                         {course.title}
                       </h3>
@@ -258,6 +253,7 @@ export function CourseGrid() {
 
                   <Link
                     href={`/courses/${course.slug}`}
+                    prefetch={true}
                     className="px-4 py-2 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
                   >
                     <span>View Syllabus</span>

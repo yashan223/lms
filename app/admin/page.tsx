@@ -1981,16 +1981,16 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleCreateUser} className="space-y-3 text-xs">
               <div>
                 <label className="font-bold block mb-1">Full Name</label>
-                <Input required placeholder="e.g. Tariq Al-Mansoor" value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                <Input required placeholder="Enter full name" value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="font-bold block mb-1">Email Address</label>
-                  <Input required type="email" placeholder="tariq@student.edupulse.uk" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <Input required type="email" placeholder="Enter email address" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Contact Number</label>
-                  <Input placeholder="+44 7911 123456" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -2004,12 +2004,12 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Initial Password</label>
-                  <Input placeholder="Default: StudentPass123!" value={formUserPassword} onChange={(e) => setFormUserPassword(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <Input placeholder="Enter initial password" value={formUserPassword} onChange={(e) => setFormUserPassword(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
                 </div>
               </div>
               <div>
                 <label className="font-bold block mb-1">Academic Title / Headline</label>
-                <Input placeholder="e.g. London A/L Pure Maths Scholar" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
               <div className="pt-2 flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowAddUserModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
@@ -2117,12 +2117,12 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleCreateCourse} className="space-y-3 text-xs">
               <div>
                 <label className="font-bold block mb-1">Course Title</label>
-                <Input required placeholder="e.g. London A/L Pure Mathematics P1-P4" value={courseFormTitle} onChange={(e) => setCourseFormTitle(e.target.value)} className="rounded-xl" />
+                <Input required placeholder="Enter course title" value={courseFormTitle} onChange={(e) => setCourseFormTitle(e.target.value)} className="rounded-xl" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="font-bold block mb-1">Subject Code</label>
-                  <Input placeholder="e.g. WMA11-14" value={courseFormCode} onChange={(e) => setCourseFormCode(e.target.value)} className="rounded-xl" />
+                  <Input placeholder="Subject code" value={courseFormCode} onChange={(e) => setCourseFormCode(e.target.value)} className="rounded-xl" />
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Tuition Price (£)</label>
@@ -2230,7 +2230,7 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleAddModule} className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200 flex gap-2">
               <Input
                 required
-                placeholder="Enter new module title (e.g. Module 3: Vectors & Matrices)..."
+                placeholder="Enter new module title..."
                 value={newModuleTitle}
                 onChange={(e) => setNewModuleTitle(e.target.value)}
                 className="bg-white text-xs rounded-xl"
@@ -2387,7 +2387,7 @@ export default function AdminDashboardPage() {
                   </label>
                   <Input
                     required
-                    placeholder="e.g. Pure Maths P3 Revision Guide 2026"
+                    placeholder="Enter document title"
                     value={matFormTitle}
                     onChange={(e) => setMatFormTitle(e.target.value)}
                     className="bg-white rounded-xl text-xs h-9"
@@ -2605,7 +2605,7 @@ export default function AdminDashboardPage() {
                 </label>
                 <Input
                   required
-                  placeholder="e.g. Edexcel IAL Pure Maths P3 Integration Workshop"
+                  placeholder="Enter class or session title"
                   value={newClassTitle}
                   onChange={(e) => setNewClassTitle(e.target.value)}
                   className="h-9 text-xs rounded-xl"
@@ -2707,7 +2707,7 @@ export default function AdminDashboardPage() {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Live problem breakdown, past paper revision, and student Q&A."
+                  placeholder="Add class overview and topic objectives..."
                   value={newClassDesc}
                   onChange={(e) => setNewClassDesc(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"

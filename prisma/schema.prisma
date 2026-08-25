@@ -175,7 +175,7 @@ model Event {
   id          String      @id @default(cuid())
   title       String
   description String?
-  type        EventType   @default(ASSIGNMENT)
+  type        EventType   @default(LIVE_SEMINAR)
   status      EventStatus @default(SCHEDULED)
   meetingLink String?
   startedAt   DateTime?

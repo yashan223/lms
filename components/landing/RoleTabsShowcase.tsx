@@ -208,7 +208,7 @@ export function RoleTabsShowcase() {
                     {[
                       {
                         title: "Interactive Syllabus & Curriculum Builder",
-                        desc: "Easily organize lecture modules, reading materials, and homework assignments.",
+                        desc: "Easily organize lecture modules, reading materials, and worked solution packs.",
                       },
                       {
                         title: "Automated Rubrics & Exam Evaluator",

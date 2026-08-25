@@ -1699,10 +1699,10 @@ function TutorDashboardContent() {
             </div>
 
             <form onSubmit={handleScheduleClass} className="space-y-3.5 text-xs">
-              {/* Assignment Mode Toggle */}
+              {/* Session Mode Toggle */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1.5">
-                  Assignment Target
+                  Session Audience
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -1814,7 +1814,7 @@ function TutorDashboardContent() {
                     className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
                   >
                     <option value="LIVE_SEMINAR">Live Virtual Seminar</option>
-                    <option value="ASSIGNMENT">Problem Workshop / Milestone</option>
+                    <option value="DEADLINE">Study Workshop / Milestone</option>
                   </select>
                 </div>
 

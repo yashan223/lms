@@ -149,7 +149,7 @@ function DashboardContent() {
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventDesc, setNewEventDesc] = useState("");
   const [newEventDate, setNewEventDate] = useState("");
-  const [newEventType, setNewEventType] = useState("ASSIGNMENT");
+  const [newEventType, setNewEventType] = useState("LIVE_SEMINAR");
   const [newEventCourseId, setNewEventCourseId] = useState("");
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
@@ -256,7 +256,7 @@ function DashboardContent() {
     setNewEventDate(formatForDateTimeInput(d));
     setNewEventTitle("");
     setNewEventDesc("");
-    setNewEventType("ASSIGNMENT");
+    setNewEventType("LIVE_SEMINAR");
     setNewEventCourseId(
       calendarCourseFilter !== "all" ? calendarCourseFilter : (myCourses[0]?.id || "")
     );
@@ -770,7 +770,7 @@ function DashboardContent() {
                 className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs gap-1.5 h-8"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Schedule Assignment</span>
+                <span>+ Schedule Live Class</span>
               </Button>
             )}
             {userRole === "ADMIN" && (
@@ -1847,9 +1847,8 @@ function DashboardContent() {
                     onChange={(e) => setNewEventType(e.target.value)}
                     className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option value="ASSIGNMENT">Assignment</option>
+                    <option value="LIVE_SEMINAR">Live Virtual Seminar / Class</option>
                     <option value="EXAM_MOCK">Exam / Mock Assessment</option>
-                    <option value="LIVE_SEMINAR">Live Seminar / Class</option>
                     <option value="DEADLINE">Study Deadline / Milestone</option>
                   </select>
                 </div>

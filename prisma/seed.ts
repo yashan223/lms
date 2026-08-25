@@ -524,9 +524,9 @@ async function main() {
 
     await prisma.event.create({
       data: {
-        title: "Assignment: Pure Mathematics P4 Differential Calculus Solution is due",
-        description: "Submit handwritten working for Questions 1-8 in PDF format.",
-        type: EventType.ASSIGNMENT,
+        title: "Mock Exam: Pure Mathematics P4 Differential Calculus Assessment",
+        description: "Timed assessment on pure mathematical methods and calculus proofs.",
+        type: EventType.EXAM_MOCK,
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         courseId: mathCourse.id,
         userId: studentUser.id,

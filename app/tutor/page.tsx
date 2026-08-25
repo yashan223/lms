@@ -600,23 +600,7 @@ function TutorDashboardContent() {
         </div>
       </header>
 
-      {/* ========================================================================= */}
-      {/* 2. BREADCRUMB & TITLE BAR                                                 */}
-      {/* ========================================================================= */}
-      <section className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6">
-        <div className="max-w-[1480px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">
-              Faculty Studio & Academic Hub
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span>Accredited Faculty</span>
-            <span>•</span>
-            <span className="font-mono text-blue-700 font-bold">#UK-92810</span>
-          </div>
-        </div>
-      </section>
+
 
       {/* ========================================================================= */}
       {/* 3. MAIN DASHBOARD 3-COLUMN WORKSPACE                                      */}

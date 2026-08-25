@@ -342,9 +342,9 @@ export async function POST(request: Request) {
       const { title, description, dueDate, courseId, paperCode, durationMins, totalMarks } = body;
       const newMock = await prisma.event.create({
         data: {
-          title: title || `Mock Exam: ${paperCode || "Unit Test"}`,
-          description: description || `Standardized academic assessment (${durationMins || 90} mins, ${totalMarks || 75} marks).`,
-          type: EventType.EXAM_MOCK,
+          title: title || `Workshop: ${paperCode || "Curriculum Unit Practice"}`,
+          description: description || `Interactive academic session (${durationMins || 90} mins).`,
+          type: EventType.DEADLINE,
           dueDate: new Date(dueDate || Date.now() + 7 * 24 * 60 * 60 * 1000),
           courseId: courseId || null,
         },

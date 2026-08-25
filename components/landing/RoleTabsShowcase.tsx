@@ -211,8 +211,8 @@ export function RoleTabsShowcase() {
                         desc: "Easily organize lecture modules, reading materials, and worked solution packs.",
                       },
                       {
-                        title: "Automated Rubrics & Exam Evaluator",
-                        desc: "Save hours of manual grading with instant structured student evaluations.",
+                        title: "Material & Handbook Publisher",
+                        desc: "Easily distribute formula sheets, lecture handouts, and practice sets.",
                       },
                       {
                         title: "Honorarium Tracking & Student Analytics",

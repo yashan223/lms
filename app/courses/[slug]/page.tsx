@@ -768,7 +768,7 @@ export default function CourseDetailPage({
                             <span>Lesson Core Learning Outcomes & Derivations</span>
                           </div>
                           <p className="leading-relaxed text-slate-600">
-                            Master mathematical proofs, identify common marks allocation pitfalls in exam series, and understand standard notation for London Edexcel & Cambridge papers.
+                            Master mathematical proofs, understand rigorous analytical methods, and apply standard notation for London Edexcel & Cambridge syllabi.
                           </p>
                         </div>
                       </div>
@@ -887,7 +887,7 @@ export default function CourseDetailPage({
                     </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Verified Examination Mark Schemes</span>
+                      <span>Verified Curriculum Specification Handbooks</span>
                     </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
                       <Award className="w-4 h-4 text-amber-600" />

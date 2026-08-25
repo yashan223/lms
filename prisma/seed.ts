@@ -395,12 +395,12 @@ async function main() {
             courseId: c.id,
           },
           {
-            title: "IAL Pure Mathematics P1-P4 Worked Past Paper Solutions",
-            description: "Complete exemplar solutions and examiners mark scheme annotations for 2023-2025 series.",
+            title: "IAL Pure Mathematics P1-P4 Worked Practice Solutions",
+            description: "Complete exemplar solutions and comprehensive step-by-step guidance.",
             fileUrl: "/api/files/public/Pure_Maths_Past_Paper_Solutions.pdf",
             fileSize: "5.2 MB",
             fileType: "application/pdf",
-            category: "MOCK_PAPER",
+            category: "HANDOUT",
             courseId: c.id,
           },
           {
@@ -492,7 +492,7 @@ async function main() {
           },
           {
             title: `${c.title} - Essential Formula & Reference Sheet`,
-            description: "Key definitions, formulas, terms, and examiner guidance.",
+            description: "Key definitions, formulas, terms, and faculty guidance.",
             fileUrl: "/api/files/public/Formula_Reference_Sheet.pdf",
             fileSize: "1.5 MB",
             fileType: "application/pdf",
@@ -514,7 +514,7 @@ async function main() {
     await prisma.event.create({
       data: {
         title: "Live Masterclass: Pure Mathematics P3 Integration by Parts & Proofs",
-        description: "Interactive live theory masterclass and worked exam proofs.\n\nClassroom Link: https://meet.google.com/new",
+        description: "Interactive live theory masterclass and worked mathematical proofs.\n\nClassroom Link: https://meet.google.com/new",
         meetingLink: "https://meet.google.com/new",
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
@@ -525,9 +525,9 @@ async function main() {
 
     await prisma.event.create({
       data: {
-        title: "Mock Exam: Pure Mathematics P4 Differential Calculus Assessment",
-        description: "Timed assessment on pure mathematical methods and calculus proofs.",
-        type: EventType.EXAM_MOCK,
+        title: "Virtual Workshop: Pure Mathematics P4 Differential Calculus",
+        description: "Interactive problem-solving workshop on pure mathematical methods.",
+        type: EventType.DEADLINE,
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         courseId: mathCourse.id,
         userId: studentUser.id,

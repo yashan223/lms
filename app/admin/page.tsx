@@ -2404,7 +2404,7 @@ export default function AdminDashboardPage() {
                   >
                     <option value="HANDOUT">Handout & Study Notes</option>
                     <option value="FORMULA_SHEET">Formula Sheet & Tables</option>
-                    <option value="MOCK_PAPER">Mock Exam Paper & Solutions</option>
+                    <option value="PRACTICE_SET">Practice Handbook & Solutions</option>
                     <option value="LAB_GUIDE">Practical Lab Guide</option>
                     <option value="SLIDES">Lecture Slides</option>
                     <option value="OTHER">General Resource File</option>

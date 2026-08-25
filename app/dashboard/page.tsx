@@ -974,8 +974,8 @@ function DashboardContent() {
                               )}
                               {ev.type && (
                                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
-                                  ev.type === "EXAM_MOCK"
-                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  ev.type === "WORKSHOP"
+                                    ? "bg-purple-50 text-purple-700 border-purple-200"
                                     : ev.type === "LIVE_SEMINAR"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                     : ev.type === "DEADLINE"
@@ -1108,8 +1108,8 @@ function DashboardContent() {
                     >
                       <div className="flex items-start gap-2.5 min-w-0">
                         <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                          ev.type === "EXAM_MOCK"
-                            ? "bg-rose-500"
+                          ev.type === "WORKSHOP"
+                            ? "bg-purple-500"
                             : ev.type === "LIVE_SEMINAR"
                             ? "bg-emerald-500"
                             : ev.type === "DEADLINE"
@@ -1321,8 +1321,8 @@ function DashboardContent() {
                                 className={`w-1.5 h-1.5 rounded-full ${
                                   cell.isToday
                                     ? "bg-white"
-                                    : ev.type === "EXAM_MOCK"
-                                    ? "bg-rose-500"
+                                    : ev.type === "WORKSHOP"
+                                    ? "bg-purple-500"
                                     : ev.type === "LIVE_SEMINAR"
                                     ? "bg-emerald-500"
                                     : ev.type === "DEADLINE"
@@ -1366,15 +1366,15 @@ function DashboardContent() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-slate-900">{ev.title}</span>
                             <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded border ${
-                              ev.type === "EXAM_MOCK"
-                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                              ev.type === "WORKSHOP"
+                                ? "bg-purple-50 text-purple-700 border-purple-200"
                                 : ev.type === "LIVE_SEMINAR"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : ev.type === "DEADLINE"
                                 ? "bg-amber-50 text-amber-700 border-amber-200"
                                 : "bg-blue-50 text-blue-700 border-blue-200"
                             }`}>
-                              {ev.type}
+                              {ev.type?.replace("_", " ")}
                             </span>
                           </div>
                           {ev.description && (
@@ -1517,10 +1517,10 @@ function DashboardContent() {
           {/* ======================================================== */}
           {userRole === "INSTRUCTOR" && (
             <aside className="lg:col-span-3 space-y-4">
-              {/* FOR INSTRUCTOR: Honorarium & Evaluator Stats */}
+              {/* FOR INSTRUCTOR: Honorarium & Faculty Stats */}
               <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Examiner Honorarium & Stats
+                  Faculty Honorarium & Stats
                 </h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center justify-between p-2 rounded bg-emerald-50 text-emerald-900 font-bold border border-emerald-200">
@@ -1817,7 +1817,7 @@ function DashboardContent() {
                     className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="LIVE_SEMINAR">Live Virtual Seminar / Class</option>
-                    <option value="EXAM_MOCK">Exam / Mock Assessment</option>
+                    <option value="WORKSHOP">Virtual Workshop / Masterclass</option>
                     <option value="DEADLINE">Study Deadline / Milestone</option>
                   </select>
                 </div>

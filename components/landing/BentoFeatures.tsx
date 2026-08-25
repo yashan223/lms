@@ -67,10 +67,10 @@ export function BentoFeatures() {
                 <FileCheck className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">
-                Automated Rubrics & Exam Evaluations
+                Structured Syllabus & Study Handbooks
               </h3>
               <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
-                Educators configure structured grading rubrics for mock exams, quantitative problem sets, and case studies with instant evaluation feedback.
+                Educators configure structured curriculum modules, formula sheets, quantitative problem sets, and interactive lectures with instant scholar access.
               </p>
             </div>
 

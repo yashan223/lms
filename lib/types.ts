@@ -4,7 +4,7 @@ export type CourseLevel =
   | "London O/L (IGCSE)"
   | "London A/L (AS Level)"
   | "London A/L (A2 Level)"
-  | "Exam Series Revision"
+  | "Curriculum Revision"
   | "Beginner"
   | "Intermediate"
   | "Advanced"

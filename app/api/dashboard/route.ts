@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
         parsedDueDate = new Date();
       }
 
-      const validTypes = ["EXAM_MOCK", "LIVE_SEMINAR", "DEADLINE"];
+      const validTypes = ["LIVE_SEMINAR", "DEADLINE"];
       const validatedType = validTypes.includes(type) ? type : "LIVE_SEMINAR";
 
       let validCourseId: string | null = null;

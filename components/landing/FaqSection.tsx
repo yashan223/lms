@@ -51,10 +51,10 @@ export function FaqSection() {
 
           <div className="max-w-2xl mx-auto space-y-4">
             <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Ready to excel in your London A/L & O/L examinations?
+              Ready to excel in your London A/L & O/L studies?
             </h3>
             <p className="text-blue-100 text-xs sm:text-sm leading-relaxed">
-              Explore syllabus units, download study handbooks, and join live masterclasses led by senior faculty examiners.
+              Explore syllabus units, download study handbooks, and join live masterclasses led by senior faculty educators.
             </p>
 
             <div className="pt-4 flex flex-wrap items-center justify-center gap-3">

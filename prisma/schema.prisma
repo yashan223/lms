@@ -29,10 +29,11 @@ enum CourseStatus {
 }
 
 enum EventType {
-  ASSIGNMENT
-  EXAM_MOCK
   LIVE_SEMINAR
   DEADLINE
+  WORKSHOP
+  EXAM_MOCK
+  ASSIGNMENT
 }
 
 enum EventStatus {

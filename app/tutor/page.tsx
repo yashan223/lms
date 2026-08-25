@@ -40,6 +40,8 @@ import {
   LogOut,
   Download,
   Info,
+  Loader2,
+  PlayCircle,
 } from "lucide-react";
 
 interface EnrolledCourseInfo {
@@ -76,9 +78,11 @@ interface TutorCourse {
 interface ScheduledClassEvent {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   dueDate: string;
   type: string;
+  status?: "SCHEDULED" | "LIVE" | "COMPLETED" | "CANCELLED" | string;
+  meetingLink?: string | null;
   courseId?: string;
   course?: {
     id: string;
@@ -118,6 +122,8 @@ function TutorDashboardContent() {
   const [newClassDesc, setNewClassDesc] = useState("");
   const [newClassType, setNewClassType] = useState("LIVE_SEMINAR");
   const [schedulingClass, setSchedulingClass] = useState(false);
+  const [startingClassId, setStartingClassId] = useState<string | null>(null);
+  const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
   // Selected Student Modal
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<StudentRecord | null>(null);
@@ -283,6 +289,57 @@ function TutorDashboardContent() {
       alert("Error connecting to scheduler service.");
     } finally {
       setSchedulingClass(false);
+    }
+  };
+
+  // Handle Start Live Class (Tutor Action)
+  const handleStartClass = async (event: ScheduledClassEvent) => {
+    try {
+      setStartingClassId(event.id);
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "start_class",
+          eventId: event.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const linkToOpen = data.meetingLink || event.meetingLink || (event.description?.match(/https:\/\/meet\.google\.com\/[^\s]+/i)?.[0]);
+        if (linkToOpen) {
+          window.open(linkToOpen, "_blank");
+        }
+        await fetchTutorData();
+      }
+    } catch (err) {
+      console.error("Error starting class:", err);
+    } finally {
+      setStartingClassId(null);
+    }
+  };
+
+  // Handle End Live Class (Tutor Action)
+  const handleEndClass = async (event: ScheduledClassEvent) => {
+    try {
+      setEndingClassId(event.id);
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "end_class",
+          eventId: event.id,
+        }),
+      });
+
+      if (res.ok) {
+        await fetchTutorData();
+      }
+    } catch (err) {
+      console.error("Error ending class:", err);
+    } finally {
+      setEndingClassId(null);
     }
   };
 
@@ -620,11 +677,16 @@ function TutorDashboardContent() {
                             <Video className="w-5 h-5" />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
                                 {ev.title}
                               </h4>
-                              <Badge className="text-[9px] px-1.5 py-0 bg-purple-100 text-purple-800">
+                              {ev.status === "LIVE" && (
+                                <Badge className="bg-red-600 text-white text-[9px] font-black uppercase animate-pulse">
+                                  🔴 LIVE NOW
+                                </Badge>
+                              )}
+                              <Badge className="text-[9px] px-1.5 py-0 bg-purple-100 text-purple-800 font-bold">
                                 {ev.type === "LIVE_SEMINAR" ? "Live Seminar" : "Class"}
                               </Badge>
                             </div>
@@ -649,6 +711,43 @@ function TutorDashboardContent() {
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          {ev.status === "LIVE" ? (
+                            <>
+                              <a
+                                href={ev.meetingLink || (ev.description?.match(/https?:\/\/[^\s]+/)?.[0]) || "https://meet.google.com"}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs animate-pulse"
+                              >
+                                <Video className="w-3.5 h-3.5" />
+                                <span>In Session</span>
+                              </a>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEndClass(ev)}
+                                disabled={endingClassId === ev.id}
+                                className="text-xs font-bold text-red-600 border-red-200 hover:bg-red-50 rounded-xl h-8"
+                              >
+                                {endingClassId === ev.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "End"}
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleStartClass(ev)}
+                              disabled={startingClassId === ev.id}
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl h-8 gap-1.5 shadow-xs cursor-pointer"
+                            >
+                              {startingClassId === ev.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <PlayCircle className="w-3.5 h-3.5" />
+                              )}
+                              <span>Start Class</span>
+                            </Button>
+                          )}
+
                           <a
                             href={buildGoogleCalendarUrl({
                               title: ev.title,
@@ -665,26 +764,7 @@ function TutorDashboardContent() {
                             <span className="hidden sm:inline">Google Cal</span>
                             <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
                           </a>
-                          {ev.description?.includes("http") ? (
-                            <a
-                              href={
-                                ev.description.match(/https?:\/\/[^\s]+/)?.[0] || "#"
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs"
-                            >
-                              <span>Enter Class</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          ) : (
-                            <button
-                              onClick={() => setActiveTab("classes")}
-                              className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs"
-                            >
-                              View Details
-                            </button>
-                          )}
+
                           <button
                             onClick={() => handleDeleteClass(ev)}
                             className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
@@ -1103,9 +1183,16 @@ function TutorDashboardContent() {
                   >
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <Badge className="bg-purple-100 text-purple-800 text-[10px] font-bold">
-                          {ev.type === "LIVE_SEMINAR" ? "Live Masterclass" : "Class Session"}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          {ev.status === "LIVE" && (
+                            <Badge className="bg-red-600 text-white text-[9px] font-black uppercase animate-pulse">
+                              🔴 LIVE NOW
+                            </Badge>
+                          )}
+                          <Badge className="bg-purple-100 text-purple-800 text-[10px] font-bold">
+                            {ev.type === "LIVE_SEMINAR" ? "Live Masterclass" : "Class Session"}
+                          </Badge>
+                        </div>
                         <button
                           onClick={() => handleDeleteClass(ev)}
                           className="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
@@ -1148,6 +1235,43 @@ function TutorDashboardContent() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {ev.status === "LIVE" ? (
+                          <>
+                            <a
+                              href={ev.meetingLink || (ev.description?.match(/https?:\/\/[^\s]+/)?.[0]) || "https://meet.google.com"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all animate-pulse"
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>In Session (Join)</span>
+                            </a>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEndClass(ev)}
+                              disabled={endingClassId === ev.id}
+                              className="text-xs font-bold text-red-600 border-red-200 hover:bg-red-50 rounded-xl h-9"
+                            >
+                              {endingClassId === ev.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "End"}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleStartClass(ev)}
+                            disabled={startingClassId === ev.id}
+                            className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl h-auto gap-1.5 shadow-xs cursor-pointer"
+                          >
+                            {startingClassId === ev.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <PlayCircle className="w-3.5 h-3.5" />
+                            )}
+                            <span>Start Class</span>
+                          </Button>
+                        )}
+
                         <a
                           href={buildGoogleCalendarUrl({
                             title: ev.title,
@@ -1161,29 +1285,9 @@ function TutorDashboardContent() {
                           title="Add to Google Calendar"
                         >
                           <Calendar className="w-3.5 h-3.5 text-sky-600" />
-                          <span>Add to Google Cal</span>
+                          <span className="hidden sm:inline">Google Cal</span>
                           <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
                         </a>
-
-                        {ev.description?.includes("http") ? (
-                          <a
-                            href={ev.description.match(/https?:\/\/[^\s]+/)?.[0] || "#"}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
-                          >
-                            <Video className="w-3.5 h-3.5" />
-                            <span>Start / Join Classroom</span>
-                          </a>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => alert(`Class scheduled for: ${new Date(ev.dueDate).toLocaleString()}`)}
-                            className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl"
-                          >
-                            View Details
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </div>

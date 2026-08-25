@@ -174,29 +174,6 @@ export function Navbar() {
                 <span className="hidden xl:inline">Sign Out</span>
               </button>
 
-              {/* Vertical divider */}
-              <div className="h-5 w-px bg-slate-200 mx-0.5" />
-
-              {/* Profile Pill (in the corner) */}
-              <Link
-                href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : "/dashboard"}
-                title={`Signed in as ${userEmail || displayName}`}
-                className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50/90 hover:border-slate-300 transition-all shadow-2xs group"
-              >
-                {/* Role-tinted Avatar with active green indicator */}
-                <div className="relative shrink-0">
-                  <div
-                    className={`w-7.5 h-7.5 rounded-xl bg-gradient-to-tr ${roleConfig.avatarGradient} text-white flex items-center justify-center text-xs font-black shadow-xs`}
-                  >
-                    {userEmail ? userEmail.charAt(0).toUpperCase() : (userRole?.charAt(0) || "U")}
-                  </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" />
-                </div>
-
-                <span className="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors max-w-[130px] truncate">
-                  {displayName}
-                </span>
-              </Link>
             </div>
           ) : (
             <>

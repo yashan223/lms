@@ -35,6 +35,13 @@ enum EventType {
   DEADLINE
 }
 
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id            String         @id @default(cuid())
   name          String
@@ -155,16 +162,20 @@ model UserProgress {
 }
 
 model Event {
-  id          String    @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
   description String?
-  type        EventType @default(ASSIGNMENT)
+  type        EventType   @default(ASSIGNMENT)
+  status      EventStatus @default(SCHEDULED)
+  meetingLink String?
+  startedAt   DateTime?
+  endedAt     DateTime?
   dueDate     DateTime
   courseId    String?
-  course      Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course      Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
   userId      String?
-  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
 
   @@map("events")
 }

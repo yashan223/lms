@@ -227,9 +227,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      let meetLink = meetingLink?.trim();
+      if (!meetLink) {
+        const room = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
+        meetLink = `https://meet.google.com/${room}`;
+      }
+
       const fullDescription = [
         description?.trim() || "Live curriculum masterclass with Senior Faculty.",
-        meetingLink?.trim() ? `\n\nClassroom Link: ${meetingLink.trim()}` : "",
+        `\n\nGoogle Meet Classroom: ${meetLink}`,
       ]
         .join("")
         .trim();
@@ -238,7 +244,9 @@ export async function POST(request: NextRequest) {
         data: {
           title: title.trim(),
           description: fullDescription,
+          meetingLink: meetLink,
           dueDate: new Date(scheduledDate),
+          status: "SCHEDULED",
           type: (type as EventType) || EventType.LIVE_SEMINAR,
           courseId: courseId || null,
           userId: studentId || tutorId || null,
@@ -251,10 +259,74 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Live class session scheduled successfully.",
         event: newClassEvent,
+        meetingLink: meetLink,
       });
     }
 
-    // 3. DELETE / CANCEL SCHEDULED CLASS
+    // 3. START LIVE CLASS (TUTOR TRIGGER)
+    if (action === "start_class") {
+      const { eventId, meetingLink } = body;
+      if (!eventId) {
+        return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
+      }
+
+      const existing = await prisma.event.findUnique({ where: { id: eventId } });
+      if (!existing) {
+        return NextResponse.json({ error: "Class event not found" }, { status: 404 });
+      }
+
+      let meetLink = meetingLink?.trim() || existing.meetingLink;
+      if (!meetLink) {
+        const room = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
+        meetLink = `https://meet.google.com/${room}`;
+      }
+
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          status: "LIVE",
+          startedAt: new Date(),
+          meetingLink: meetLink,
+        },
+        include: { course: true, user: true },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Live class session has been started!",
+        event: updated,
+        meetingLink: meetLink,
+      });
+    }
+
+    // 4. END LIVE CLASS
+    if (action === "end_class") {
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
+      }
+
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          status: "COMPLETED",
+          endedAt: new Date(),
+        },
+        include: { course: true, user: true },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Class session ended successfully.",
+        event: updated,
+      });
+    }
+
+    // 5. DELETE / CANCEL SCHEDULED CLASS
     if (action === "delete_class") {
       const { eventId } = body;
 

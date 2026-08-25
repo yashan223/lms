@@ -56,7 +56,14 @@ export async function GET(request: NextRequest) {
     try {
       events = await prisma.event.findMany({
         include: {
-          course: true,
+          course: {
+            include: {
+              instructor: true,
+              enrollments: {
+                include: { user: true },
+              },
+            },
+          },
           user: true,
         },
         orderBy: { dueDate: "asc" },
@@ -388,6 +395,118 @@ export async function POST(request: Request) {
       broadcastLMSEvent("MATERIALS_CHANGED");
       broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
+    }
+
+    // 17. Start Live Class (Admin or Tutor trigger)
+    if (action === "start_class") {
+      const { eventId, meetingLink } = body;
+      const existing = await prisma.event.findUnique({ where: { id: eventId } });
+      if (!existing) {
+        return NextResponse.json({ error: "Class event not found" }, { status: 404 });
+      }
+
+      let meetLink = meetingLink?.trim() || existing.meetingLink;
+      if (!meetLink) {
+        const room = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
+        meetLink = `https://meet.google.com/${room}`;
+      }
+
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          status: "LIVE",
+          startedAt: new Date(),
+          meetingLink: meetLink,
+        },
+        include: {
+          course: {
+            include: { instructor: true },
+          },
+          user: true,
+        },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Live class session has been started!",
+        event: updated,
+        meetingLink: meetLink,
+      });
+    }
+
+    // 18. End Live Class
+    if (action === "end_class") {
+      const { eventId } = body;
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          status: "COMPLETED",
+          endedAt: new Date(),
+        },
+        include: {
+          course: {
+            include: { instructor: true },
+          },
+          user: true,
+        },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Live class session marked as completed.",
+        event: updated,
+      });
+    }
+
+    // 19. Schedule Live Class from Admin
+    if (action === "schedule_class") {
+      const { title, description, meetingLink, scheduledDate, courseId, tutorId, studentId, type } = body;
+      if (!title || !scheduledDate) {
+        return NextResponse.json({ error: "Class title and scheduled date are required." }, { status: 400 });
+      }
+
+      let meetLink = meetingLink?.trim();
+      if (!meetLink) {
+        const room = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
+        meetLink = `https://meet.google.com/${room}`;
+      }
+
+      const fullDescription = [
+        description?.trim() || "Live curriculum masterclass with Faculty.",
+        `\n\nGoogle Meet Classroom: ${meetLink}`,
+      ].join("").trim();
+
+      const newEvent = await prisma.event.create({
+        data: {
+          title: title.trim(),
+          description: fullDescription,
+          meetingLink: meetLink,
+          dueDate: new Date(scheduledDate),
+          status: "SCHEDULED",
+          type: (type as EventType) || EventType.LIVE_SEMINAR,
+          courseId: courseId || null,
+          userId: studentId || tutorId || null,
+        },
+        include: {
+          course: {
+            include: { instructor: true },
+          },
+          user: true,
+        },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Live Google Meet class session scheduled successfully.",
+        event: newEvent,
+        meetingLink: meetLink,
+      });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });

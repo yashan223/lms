@@ -986,6 +986,11 @@ function DashboardContent() {
                               <h4 className="font-bold text-xs text-slate-900 leading-snug">
                                 {ev.title}
                               </h4>
+                              {ev.status === "LIVE" && (
+                                <Badge className="bg-red-600 text-white text-[9px] font-black animate-pulse uppercase">
+                                  🔴 Live Now
+                                </Badge>
+                              )}
                               {ev.type && (
                                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
                                   ev.type === "EXAM_MOCK"
@@ -1020,6 +1025,28 @@ function DashboardContent() {
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          {ev.status === "LIVE" ? (
+                            <a
+                              href={ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0] || "https://meet.google.com"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 animate-pulse"
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>Join Live Meet</span>
+                            </a>
+                          ) : ev.description?.includes("http") ? (
+                            <a
+                              href={ev.meetingLink || ev.description.match(/https?:\/\/[^\s]+/)?.[0] || "#"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-semibold text-xs border border-emerald-200 transition-all shadow-2xs inline-flex items-center gap-1"
+                            >
+                              <Video className="w-3 h-3 text-emerald-600" />
+                              <span>Meet Room</span>
+                            </a>
+                          ) : null}
+
                           <a
                             href={buildGoogleCalendarUrl({
                               title: ev.title,
@@ -1276,12 +1303,12 @@ function DashboardContent() {
                           }
                         }}
                         className={`min-h-[42px] p-1 flex flex-col items-center justify-between rounded-lg transition-all cursor-pointer relative border ${
-                          cell.isSelected
-                            ? "bg-blue-50/80 border-blue-600 ring-2 ring-blue-500/20 font-bold"
-                            : cell.isToday
-                            ? "bg-blue-600 text-white font-bold border-blue-600"
+                          cell.isToday
+                            ? `bg-blue-600 text-white font-bold border-blue-600 shadow-xs ${cell.isSelected ? "ring-2 ring-blue-400 ring-offset-1" : ""}`
+                            : cell.isSelected
+                            ? "bg-blue-50 border-blue-600 ring-2 ring-blue-500/20 font-bold text-blue-900"
                             : hasEvents
-                            ? "bg-amber-50/60 border-amber-200 font-semibold hover:bg-amber-100/70"
+                            ? "bg-amber-50/60 border-amber-200 font-semibold hover:bg-amber-100/70 text-slate-800"
                             : cell.isCurrentMonth
                             ? "bg-white border-slate-100 hover:bg-slate-100 text-slate-800"
                             : "bg-slate-50/40 border-transparent text-slate-300 hover:bg-slate-100"
@@ -1292,6 +1319,8 @@ function DashboardContent() {
                           className={`text-xs leading-none ${
                             cell.isToday
                               ? "text-white"
+                              : cell.isSelected
+                              ? "text-blue-900 font-bold"
                               : !cell.isCurrentMonth
                               ? "text-slate-300"
                               : "text-slate-800"

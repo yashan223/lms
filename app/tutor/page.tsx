@@ -879,8 +879,8 @@ function TutorDashboardContent() {
                 onClick={() => setCenterTab("earnings")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                   centerTab === "earnings"
-                    ? "bg-emerald-700 text-white shadow-2xs"
-                    : "text-emerald-700 hover:bg-emerald-50 border border-emerald-200"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <DollarSign className="w-3.5 h-3.5" />
@@ -891,62 +891,49 @@ function TutorDashboardContent() {
             {/* VIEW 0: EARNINGS & TEACHING HOURS */}
             {centerTab === "earnings" && (
               <div className="space-y-4">
-                {/* Top Hero Stats */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-xl p-5 text-white shadow-lg">
-                    <div className="flex items-center gap-2 mb-1 opacity-80">
-                      <DollarSign className="w-4 h-4" />
-                      <span className="text-xs font-semibold uppercase tracking-wide">Total Earnings</span>
-                    </div>
-                    <div className="text-3xl font-black tracking-tight">
-                      £{tutorShareEarnings.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-xs opacity-70 mt-1">85% tutor payout share</div>
-                    <div className="text-[11px] opacity-60 mt-0.5">
-                      Gross revenue: £{totalEarnings.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                  </div>
 
-                  <div className="bg-gradient-to-br from-blue-600 to-blue-900 rounded-xl p-5 text-white shadow-lg">
-                    <div className="flex items-center gap-2 mb-1 opacity-80">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-xs font-semibold uppercase tracking-wide">Teaching Hours</span>
-                    </div>
-                    <div className="text-3xl font-black tracking-tight">
-                      {totalTeachingHours}h
-                    </div>
-                    <div className="text-xs opacity-70 mt-1">Scheduled class time</div>
-                    <div className="text-[11px] opacity-60 mt-0.5">
-                      Completed: {completedTeachingHours}h delivered
-                    </div>
+                {/* Summary Stats */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
+                    <span>Total earnings (tutor share)</span>
+                    <span>£{tutorShareEarnings.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
+                    <span>Gross course revenue</span>
+                    <span>£{totalEarnings.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
+                    <span>Effective hourly rate</span>
+                    <span>£{effectiveHourlyRate}/h</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
+                    <span>Total scheduled classes</span>
+                    <span>{events.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
+                    <span>Total teaching hours (scheduled)</span>
+                    <span>{totalTeachingHours}h</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
+                    <span>Teaching hours delivered</span>
+                    <span>{completedTeachingHours}h</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
+                    <span>Trial sessions</span>
+                    <span>{trials.length} × 30 min = {((trials.length * 30) / 60).toFixed(1)}h</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-700 py-1">
+                    <span>Total committed time</span>
+                    <span>{totalTeachingHours}h</span>
                   </div>
                 </div>
 
-                {/* Secondary stats row */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs text-center">
-                    <div className="text-xl font-black text-slate-900">£{effectiveHourlyRate}</div>
-                    <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Effective Hourly Rate</div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs text-center">
-                    <div className="text-xl font-black text-slate-900">{events.length}</div>
-                    <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Classes Scheduled</div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs text-center">
-                    <div className="text-xl font-black text-slate-900">{trials.length}</div>
-                    <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Trial Sessions</div>
-                  </div>
-                </div>
-
-                {/* Per-Course Breakdown */}
+                {/* Per-Course Revenue */}
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                    Revenue Breakdown by Course
-                  </h3>
+                  <h3 className="text-xs font-medium text-slate-600 mb-3">Revenue by course</h3>
                   <div className="space-y-3">
                     {courses.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic text-center py-4">No courses assigned yet.</p>
+                      <p className="text-xs text-slate-400 italic">No courses assigned yet.</p>
                     ) : (
                       courses.map((c) => {
                         const price = Number(c.price) || 0;
@@ -954,19 +941,17 @@ function TutorDashboardContent() {
                         const revenue = price * enrolled * 0.85;
                         const pct = totalEarnings > 0 ? ((price * enrolled) / totalEarnings) * 100 : 0;
                         return (
-                          <div key={c.id} className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-semibold text-slate-800 truncate max-w-[60%]">{c.title}</span>
-                              <div className="flex items-center gap-3 shrink-0">
-                                <span className="text-slate-500">{enrolled} scholars</span>
-                                <span className="font-bold text-emerald-700">
-                                  £{revenue.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
+                          <div key={c.id} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs text-slate-700">
+                              <span className="truncate max-w-[65%]">{c.title}</span>
+                              <div className="flex items-center gap-3 shrink-0 text-slate-500">
+                                <span>{enrolled} scholars</span>
+                                <span>£{revenue.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                               </div>
                             </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-700 rounded-full transition-all duration-700"
+                                className="h-full bg-slate-400 rounded-full transition-all duration-500"
                                 style={{ width: `${Math.min(pct, 100)}%` }}
                               />
                             </div>
@@ -977,33 +962,6 @@ function TutorDashboardContent() {
                   </div>
                 </div>
 
-                {/* Teaching Time Breakdown */}
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-blue-600" />
-                    Teaching Time Breakdown
-                  </h3>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100">
-                      <span className="font-semibold text-blue-900 flex items-center gap-2">
-                        <Video className="w-3.5 h-3.5" />
-                        Live Classes ({events.length} sessions × 90 min)
-                      </span>
-                      <span className="font-black text-blue-800">{((events.length * 90) / 60).toFixed(1)}h</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-100">
-                      <span className="font-semibold text-amber-900 flex items-center gap-2">
-                        <UserCheck className="w-3.5 h-3.5" />
-                        1-on-1 Trial Sessions ({trials.length} × 30 min)
-                      </span>
-                      <span className="font-black text-amber-800">{((trials.length * 30) / 60).toFixed(1)}h</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200 mt-1">
-                      <span className="font-bold text-slate-800">Total Committed Hours</span>
-                      <span className="font-black text-slate-900 text-sm">{totalTeachingHours}h</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 

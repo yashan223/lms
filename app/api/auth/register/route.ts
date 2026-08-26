@@ -65,23 +65,6 @@ export async function POST(request: Request) {
       },
     });
 
-    try {
-      const sampleCourse = await prisma.course.findFirst({
-        where: { status: "PUBLISHED" },
-      });
-
-      if (sampleCourse) {
-        await prisma.enrollment.create({
-          data: {
-            userId: newUser.id,
-            courseId: sampleCourse.id,
-          },
-        });
-      }
-    } catch (enrollErr) {
-      console.warn("Non-critical initial enrollment skip:", enrollErr);
-    }
-
     // Generate 32-byte secure verification token (valid for 24 hours)
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);

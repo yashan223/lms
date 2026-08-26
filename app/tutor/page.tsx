@@ -1088,6 +1088,15 @@ function TutorDashboardContent() {
               Instructor
             </Badge>
 
+            <button
+              onClick={() => setIsChatDrawerOpen((prev) => !prev)}
+              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-600 transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+              title="Messages"
+            >
+              <MessageSquareLock className="w-4 h-4 text-blue-600" />
+              <span className="hidden sm:inline">Messages</span>
+            </button>
+
             <NotificationBell userRole="INSTRUCTOR" />
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
@@ -3411,7 +3420,11 @@ function TutorDashboardContent() {
 
       <EncryptedChatDrawer
         isOpen={isChatDrawerOpen}
-        onClose={() => setIsChatDrawerOpen(false)}
+        onOpen={() => setIsChatDrawerOpen(true)}
+        onClose={() => {
+          setIsChatDrawerOpen(false);
+          setActiveChatRecipientId(undefined);
+        }}
         currentUser={
           tutor || {
             id: "instructor",

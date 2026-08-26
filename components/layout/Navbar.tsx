@@ -187,10 +187,10 @@ export function Navbar() {
 
         <div className="flex lg:hidden items-center gap-2">
           <Link
-            href={userRole ? "/dashboard" : "/login"}
+            href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : userRole ? "/dashboard" : "/login"}
             className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs"
           >
-            {userRole ? "Dashboard" : "Sign In"}
+            {userRole === "ADMIN" ? "Admin Console" : userRole === "INSTRUCTOR" ? "Instructor Studio" : userRole ? "Dashboard" : "Sign In"}
           </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -206,7 +206,7 @@ export function Navbar() {
         <div className="lg:hidden bg-white border-t border-slate-200 px-5 py-4 space-y-4 animate-in slide-in-from-top-2 shadow-lg">
           {userRole && (
             <Link
-              href={userRole === "ADMIN" ? "/admin" : "/dashboard"}
+              href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : "/dashboard"}
               onClick={() => setMobileMenuOpen(false)}
               className="p-3 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 border border-slate-200/80 flex items-center gap-3 hover:border-blue-300 transition-colors"
             >
@@ -234,11 +234,11 @@ export function Navbar() {
           <div className="flex flex-col gap-2 text-xs font-bold tracking-wider uppercase">
             {userRole && (
               <Link
-                href={userRole === "ADMIN" ? "/admin" : "/dashboard"}
+                href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : "/dashboard"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-purple-700 hover:text-purple-800 py-1.5 px-2 rounded-lg hover:bg-purple-50/50 font-black"
               >
-                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : "MY DASHBOARD"}
+                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : userRole === "INSTRUCTOR" ? "FACULTY INSTRUCTOR STUDIO" : "MY DASHBOARD"}
               </Link>
             )}
             <Link

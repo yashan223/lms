@@ -133,10 +133,10 @@ export function EncryptedChatDrawer({
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen && initialRecipientId && contacts.length > 0) {
+    if (isOpen && initialRecipientId) {
       handleStartConversationWith(initialRecipientId);
     }
-  }, [isOpen, initialRecipientId, contacts]);
+  }, [isOpen, initialRecipientId]);
 
   useRealtimeSync({
     events: ["CHAT_MESSAGE"],
@@ -157,18 +157,26 @@ export function EncryptedChatDrawer({
         const rawMessages = data.messages || [];
         setMessages(rawMessages);
 
-        const key = await deriveConversationKey(currentUser.id, otherUser.id);
-        setActiveCryptoKey(key);
+        const myId = currentUser?.id;
+        const theirId = otherUser?.id;
+        if (myId && theirId) {
+          try {
+            const key = await deriveConversationKey(myId, theirId);
+            setActiveCryptoKey(key);
 
-        const decMap: { [msgId: string]: string } = {};
-        for (const msg of rawMessages) {
-          if (msg.encryptedContent && msg.iv) {
-            decMap[msg.id] = await decryptMessage(msg.encryptedContent, msg.iv, key);
-          } else {
-            decMap[msg.id] = "[Encrypted Payload]";
+            const decMap: { [msgId: string]: string } = {};
+            for (const msg of rawMessages) {
+              if (msg.encryptedContent && msg.iv) {
+                decMap[msg.id] = await decryptMessage(msg.encryptedContent, msg.iv, key);
+              } else {
+                decMap[msg.id] = "[Encrypted Payload]";
+              }
+            }
+            setDecryptedMap(decMap);
+          } catch (cryptoErr) {
+            console.error("Error deriving crypto key or decrypting messages:", cryptoErr);
           }
         }
-        setDecryptedMap(decMap);
         setTimeout(scrollToBottom, 50);
       }
     } catch (err) {
@@ -267,7 +275,7 @@ export function EncryptedChatDrawer({
         <button
           onClick={handleToggleOpen}
           aria-label={isOpen ? "Close Messages" : "Open Messages"}
-          title={isOpen ? "Close Messages" : "End-to-End Encrypted Messages"}
+          title={isOpen ? "Close Messages" : "Messages"}
           className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform active:scale-95 cursor-pointer relative group ${
             isOpen
               ? "bg-slate-900 text-white rotate-90 scale-100 hover:bg-slate-800"
@@ -277,10 +285,7 @@ export function EncryptedChatDrawer({
           {isOpen ? (
             <X className="w-6 h-6 transition-transform" />
           ) : (
-            <div className="relative flex items-center justify-center">
-              <MessageSquare className="w-6 h-6" />
-              <Lock className="w-2.5 h-2.5 absolute -bottom-1 -right-1 text-emerald-300" />
-            </div>
+            <MessageSquare className="w-6 h-6" />
           )}
 
           {!isOpen && totalUnreadCount > 0 && (
@@ -291,7 +296,6 @@ export function EncryptedChatDrawer({
 
           {!isOpen && (
             <div className="absolute right-full mr-3 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg hidden sm:flex items-center gap-1.5">
-              <Lock className="w-3 h-3 text-emerald-400" />
               <span>Messages</span>
             </div>
           )}
@@ -318,19 +322,13 @@ export function EncryptedChatDrawer({
               )}
 
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-xs sm:text-sm text-white truncate">
-                    {activeConversation ? activeConversation.otherUser?.name : "Academic Messages"}
-                  </h3>
-                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[9px] px-1.5 py-0 font-bold gap-0.5 flex items-center shrink-0">
-                    <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
-                    <span>E2EE</span>
-                  </Badge>
-                </div>
+                <h3 className="font-extrabold text-xs sm:text-sm text-white truncate">
+                  {activeConversation ? activeConversation.otherUser?.name : "Academic Messages"}
+                </h3>
                 <p className="text-[10px] text-slate-300 truncate">
                   {activeConversation
                     ? (activeConversation.otherUser?.role === "INSTRUCTOR" ? "Faculty Instructor" : "Student")
-                    : "Zero-knowledge 256-bit encrypted"}
+                    : "Direct messaging"}
                 </p>
               </div>
             </div>
@@ -359,23 +357,16 @@ export function EncryptedChatDrawer({
             {activeConversation ? (
 
               <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="bg-emerald-50/80 border-b border-emerald-200/60 px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-emerald-900">
-                  <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
-                  <span className="truncate">
-                    Encrypted on-device with AES-256 GCM.
-                  </span>
-                </div>
-
                 <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 bg-slate-50/60">
                   {loadingMessages ? (
                     <div className="py-16 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                      <span>Decrypting messages...</span>
+                      <span>Loading messages...</span>
                     </div>
                   ) : messages.length > 0 ? (
                     messages.map((msg) => {
                       const isMe = msg.senderId === currentUser.id;
-                      const plainText = decryptedMap[msg.id] || "Decrypting...";
+                      const plainText = decryptedMap[msg.id] || "...";
 
                       return (
                         <div
@@ -412,12 +403,12 @@ export function EncryptedChatDrawer({
                     })
                   ) : (
                     <div className="py-12 text-center space-y-2">
-                      <Lock className="w-7 h-7 text-emerald-500 mx-auto" />
+                      <MessageSquare className="w-7 h-7 text-blue-500 mx-auto" />
                       <h4 className="font-bold text-xs text-slate-800">
-                        Secure Conversation Started
+                        Direct Conversation
                       </h4>
                       <p className="text-[11px] text-slate-500 max-w-[240px] mx-auto">
-                        Send a message to {activeConversation.otherUser?.name}. All messages are encrypted with AES-256.
+                        Send a message to {activeConversation.otherUser?.name}.
                       </p>
                     </div>
                   )}
@@ -435,9 +426,8 @@ export function EncryptedChatDrawer({
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       disabled={isSending}
-                      className="pr-8 h-9 text-xs rounded-xl border-slate-200 focus-visible:ring-blue-500 bg-slate-50"
+                      className="h-9 text-xs rounded-xl border-slate-200 focus-visible:ring-blue-500 bg-slate-50"
                     />
-                    <Lock className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2" />
                   </div>
 
                   <Button
@@ -541,9 +531,8 @@ export function EncryptedChatDrawer({
                                 <h4 className="font-bold text-xs text-slate-900 truncate">
                                   {conv.otherUser?.name}
                                 </h4>
-                                <p className="text-[10px] text-slate-500 truncate flex items-center gap-1">
-                                  <Lock className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
-                                  <span>End-to-End Encrypted</span>
+                                <p className="text-[10px] text-slate-500 truncate">
+                                  {conv.otherUser?.headline || (conv.otherUser?.role === "INSTRUCTOR" ? "Faculty Instructor" : "Student")}
                                 </p>
                               </div>
                             </div>

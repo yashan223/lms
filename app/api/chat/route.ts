@@ -6,9 +6,17 @@ export const dynamic = "force-dynamic";
 
 async function getAuthUser(request: NextRequest) {
   const emailCookie = request.cookies.get("edupulse_user_email")?.value;
+  const roleCookie = request.cookies.get("edupulse_user_role")?.value;
   if (emailCookie) {
     const user = await prisma.user.findUnique({
       where: { email: emailCookie.toLowerCase() },
+      select: { id: true, name: true, email: true, role: true, avatar: true },
+    });
+    if (user) return user;
+  }
+  if (roleCookie) {
+    const user = await prisma.user.findFirst({
+      where: { role: roleCookie as any },
       select: { id: true, name: true, email: true, role: true, avatar: true },
     });
     if (user) return user;
@@ -130,7 +138,6 @@ export async function GET(req: NextRequest) {
       let contacts: any[] = [];
 
       if (userRole === "STUDENT") {
-
         const tutors = await prisma.user.findMany({
           where: {
             role: "INSTRUCTOR",
@@ -140,11 +147,7 @@ export async function GET(req: NextRequest) {
         });
         contacts = tutors;
       } else if (userRole === "INSTRUCTOR") {
-
         const enrollments = await prisma.enrollment.findMany({
-          where: {
-            course: { instructorId: currentUserId },
-          },
           include: {
             user: {
               select: { id: true, name: true, email: true, role: true, avatar: true, headline: true },
@@ -154,8 +157,22 @@ export async function GET(req: NextRequest) {
 
         const uniqueStudentsMap = new Map();
         enrollments.forEach((e) => {
-          if (e.user && !uniqueStudentsMap.has(e.user.id)) {
+          if (e.user && e.user.id !== currentUserId && !uniqueStudentsMap.has(e.user.id)) {
             uniqueStudentsMap.set(e.user.id, e.user);
+          }
+        });
+
+        const allStudents = await prisma.user.findMany({
+          where: {
+            role: "STUDENT",
+            id: { not: currentUserId },
+          },
+          select: { id: true, name: true, email: true, role: true, avatar: true, headline: true },
+          take: 50,
+        });
+        allStudents.forEach((st) => {
+          if (!uniqueStudentsMap.has(st.id)) {
+            uniqueStudentsMap.set(st.id, st);
           }
         });
 
@@ -169,7 +186,6 @@ export async function GET(req: NextRequest) {
 
         contacts = [...Array.from(uniqueStudentsMap.values()), ...peers];
       } else {
-
         contacts = await prisma.user.findMany({
           where: { id: { not: currentUserId } },
           select: { id: true, name: true, email: true, role: true, avatar: true, headline: true },
@@ -283,13 +299,19 @@ export async function POST(req: NextRequest) {
         data: { lastMessageAt: new Date() },
       });
 
+      const receiverUser = await prisma.user.findUnique({
+        where: { id: receiverId },
+        select: { role: true },
+      });
+      const receiverLink = receiverUser?.role === "ADMIN" ? "/admin" : receiverUser?.role === "INSTRUCTOR" ? "/tutor" : "/dashboard";
+
       await prisma.notification.create({
         data: {
           userId: receiverId,
-          title: `New Encrypted Message from ${currentUserName}`,
-          message: "You have a new end-to-end encrypted message in your academic chat.",
+          title: `New Message from ${currentUserName}`,
+          message: "You have a new message in your academic chat.",
           type: "CHAT_MESSAGE",
-          link: "/dashboard",
+          link: receiverLink,
         },
       });
 

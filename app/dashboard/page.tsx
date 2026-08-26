@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   GraduationCap,
   Search,
@@ -115,11 +115,27 @@ interface UserProfile {
 }
 
 function DashboardContent() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      const roleCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("edupulse_user_role="))
+        ?.split("=")[1];
+
+      if (roleCookie === "INSTRUCTOR") {
+        router.replace("/tutor");
+      } else if (roleCookie === "ADMIN") {
+        router.replace("/admin");
+      }
+    }
+  }, [router]);
 
   const userRole: "STUDENT" | "INSTRUCTOR" | "ADMIN" = user?.role || "STUDENT";
 
@@ -229,13 +245,27 @@ function DashboardContent() {
     try {
       setLoading(true);
       const res = await fetch("/api/dashboard");
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        setAllCourses(data.allCourses || []);
-        setOnlineUsers(data.onlineUsers || []);
-        setTimelineEvents(data.timelineEvents || []);
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          router.push("/login");
+          return;
+        }
       }
+      const data = await res.json();
+      if (data.user) {
+        if (data.user.role === "INSTRUCTOR") {
+          router.replace("/tutor");
+          return;
+        }
+        if (data.user.role === "ADMIN") {
+          router.replace("/admin");
+          return;
+        }
+        setUser(data.user);
+      }
+      setAllCourses(data.allCourses || []);
+      setOnlineUsers(data.onlineUsers || []);
+      setTimelineEvents(data.timelineEvents || []);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
@@ -269,16 +299,8 @@ function DashboardContent() {
   });
 
   const myCourses: any[] = useMemo(() => {
-    if (userRole === "STUDENT") {
-      return (user?.enrollments || []).map((e) => e.course).filter(Boolean);
-    }
-    if (userRole === "INSTRUCTOR") {
-      return user?.createdCourses && user.createdCourses.length > 0
-        ? user.createdCourses
-        : allCourses;
-    }
-    return allCourses;
-  }, [userRole, user, allCourses]);
+    return (user?.enrollments || []).map((e) => e.course).filter(Boolean);
+  }, [user]);
 
   const prefetchCourse = useCallback((slug?: string) => {
     if (!slug || typeof window === "undefined") return;
@@ -697,29 +719,28 @@ function DashboardContent() {
   };
 
   const getRoleUserHeader = () => {
-    if (userRole === "INSTRUCTOR") {
-      return {
-        name: user?.name || "Dr. Sarah Jenkins",
-        title: user?.headline || "Senior Faculty Tutor in Pure Mathematics",
-        badge: "Faculty Tutor",
-        avatar: user?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-      };
-    } else if (userRole === "ADMIN") {
-      return {
-        name: user?.name || "Dr. Alastair Vance",
-        title: user?.headline || "System Administrator",
-        badge: "System Admin",
-        avatar: user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      };
-    } else {
-      return {
-        name: user?.name || "S.Y.T. Perera",
-        title: user?.headline || "London A/L Student",
-        badge: "Student",
-        avatar: user?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-      };
-    }
+    return {
+      name: user?.name || "Student",
+      title: user?.headline || "London A/L Student",
+      badge: "Student",
+      avatar: user?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+    };
   };
+
+  if (loading || !user || user.role === "INSTRUCTOR" || user.role === "ADMIN") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-800 space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <p className="text-sm font-semibold tracking-wider uppercase text-slate-500">
+          {user?.role === "INSTRUCTOR"
+            ? "Redirecting to Faculty Instructor Studio..."
+            : user?.role === "ADMIN"
+            ? "Redirecting to Admin Console..."
+            : "Loading Student Portal..."}
+        </p>
+      </div>
+    );
+  }
 
   const currentProfile = getRoleUserHeader();
   const shortGreetingName = currentProfile.name.split(" ")[0];
@@ -862,9 +883,7 @@ function DashboardContent() {
                       ) : (
                         <ChevronRight className="w-3 h-3 text-slate-400" />
                       )}
-                      <span>
-                        {userRole === "INSTRUCTOR" ? "My Assigned Units" : "My courses"}
-                      </span>
+                      <span>My courses</span>
                     </div>
 
                     {navCoursesOpen && (
@@ -1349,7 +1368,7 @@ function DashboardContent() {
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-sm font-bold text-slate-900">
-                  {userRole === "INSTRUCTOR" ? "My Syllabus Courses" : "Enrolled Course Overview"}
+                  Enrolled Course Overview
                 </h3>
                 <span className="text-xs font-semibold text-slate-500">
                   {myCourses.length} {myCourses.length === 1 ? "Unit" : "Units"} Active
@@ -1376,7 +1395,7 @@ function DashboardContent() {
                       </div>
 
                       <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                        {userRole === "STUDENT" && (course.instructorId || course.instructor?.id) && (
+                        {(course.instructorId || course.instructor?.id) && (
                           <button
                             onClick={() => {
                               setActiveChatRecipientId(course.instructorId || course.instructor?.id);
@@ -1393,7 +1412,7 @@ function DashboardContent() {
                           href={`/courses/${course.slug}`}
                           className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5"
                         >
-                          <span>{userRole === "INSTRUCTOR" ? "Manage Syllabus & Materials" : "Study Materials & Notes"}</span>
+                          <span>Study Materials & Notes</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
@@ -1414,30 +1433,6 @@ function DashboardContent() {
               )}
             </div>
           </section>
-
-          {userRole === "INSTRUCTOR" && (
-            <aside className="lg:col-span-3 space-y-4">
-              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Faculty Honorarium & Stats
-                </h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2 rounded bg-emerald-50 text-emerald-900 font-bold border border-emerald-200">
-                    <span>Monthly Clearance:</span>
-                    <span>$1,840.00</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>Scripts Graded:</span>
-                    <span className="font-bold text-slate-900">94 Papers</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>Avg Evaluation Turnaround:</span>
-                    <span className="font-bold text-slate-900">4.2 Hours</span>
-                  </div>
-                </div>
-              </div>
-            </aside>
-          )}
         </div>
       </main>
 

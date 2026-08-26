@@ -4,7 +4,7 @@ EduPulse is a unified, multi-role Learning Management System (LMS) designed for 
 
 ---
 
-## 👥 User Roles & Core Capabilities
+## 👥 User Roles & Portals
 
 | Role | Access URL | Core Capabilities |
 | :--- | :--- | :--- |
@@ -14,88 +14,11 @@ EduPulse is a unified, multi-role Learning Management System (LMS) designed for 
 
 ---
 
-## 📊 Full System Use Case Diagram
+## 📊 System Architecture & Use Cases
 
-```mermaid
-flowchart TB
-    %% Actors
-    subgraph Actors [System Actors]
-        Student["🎓 Student"]
-        Instructor["👨‍🏫 Faculty Instructor"]
-        Admin["🛡️ System Admin"]
-    end
+Detailed use case flows, system boundaries, and the full interactive **Mermaid Use Case Diagram** are documented on the dedicated use cases page:
 
-    %% System Boundary
-    subgraph SystemBoundary ["EduPulse LMS Platform"]
-        
-        %% Authentication & Profile
-        subgraph AuthModule ["🔐 Authentication & Profile Management"]
-            UC_Auth(["Sign In / Sign Up / Password Reset"])
-            UC_Profile(["Manage Academic Profile & Credentials"])
-            UC_Notif(["Receive Real-Time Notifications"])
-            UC_Chat(["Direct Academic Messaging"])
-        end
-
-        %% Student Use Cases
-        subgraph StudentModule ["🎓 Student Learning & Activities"]
-            UC_BrowseCourses(["Browse & Enroll in Courses"])
-            UC_ViewMaterials(["Access Study Materials & Syllabus"])
-            UC_JoinLive(["Join Live Class / Observation Room"])
-            UC_Calendar(["Manage Schedule & Reschedule Sessions"])
-            UC_RequestTrial(["Book 1-on-1 Consultation / Trial"])
-            UC_PrivateFiles(["Upload & Manage Private Study Files"])
-        end
-
-        %% Instructor Use Cases
-        subgraph InstructorModule ["👨‍🏫 Faculty Studio Management"]
-            UC_ScheduleClass(["Schedule & Start Live Classes"])
-            UC_ManageSyllabus(["Organize Modules & Course Materials"])
-            UC_ViewStudents(["View Enrolled Students & Profiles"])
-            UC_HandleTrials(["Approve & Conduct 1-on-1 Sessions"])
-        end
-
-        %% Admin Use Cases
-        subgraph AdminModule ["🛡️ Administrator Command Console"]
-            UC_ManageCourses(["Create, Edit & Publish Courses"])
-            UC_ManageUsers(["Manage Users, Roles & Passwords"])
-            UC_ObserveLive(["Monitor & Terminate Live Sessions"])
-            UC_ViewAnalytics(["Review System Metrics & Revenue Clearance"])
-        end
-    end
-
-    %% Student Relationships
-    Student --> UC_Auth
-    Student --> UC_Profile
-    Student --> UC_Notif
-    Student --> UC_Chat
-    Student --> UC_BrowseCourses
-    Student --> UC_ViewMaterials
-    Student --> UC_JoinLive
-    Student --> UC_Calendar
-    Student --> UC_RequestTrial
-    Student --> UC_PrivateFiles
-
-    %% Instructor Relationships
-    Instructor --> UC_Auth
-    Instructor --> UC_Profile
-    Instructor --> UC_Notif
-    Instructor --> UC_Chat
-    Instructor --> UC_ScheduleClass
-    Instructor --> UC_ManageSyllabus
-    Instructor --> UC_ViewStudents
-    Instructor --> UC_HandleTrials
-    Instructor --> UC_JoinLive
-
-    %% Admin Relationships
-    Admin --> UC_Auth
-    Admin --> UC_Profile
-    Admin --> UC_Notif
-    Admin --> UC_ManageCourses
-    Admin --> UC_ManageUsers
-    Admin --> UC_ObserveLive
-    Admin --> UC_ViewAnalytics
-    Admin --> UC_ScheduleClass
-```
+👉 **[View Full Use Case Architecture & Diagram (USE_CASES.md)](./USE_CASES.md)**
 
 ---
 
@@ -139,7 +62,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 📁 Key Directory Structure
+## 📁 Project Structure
 
 ```
 edu-lms/

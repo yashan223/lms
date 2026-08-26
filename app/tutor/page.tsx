@@ -1295,7 +1295,7 @@ function TutorDashboardContent() {
                                       ? "bg-red-500 text-white animate-pulse"
                                       : "bg-blue-500/20 text-blue-300 border border-blue-400/30"
                                   }`}>
-                                    {ev.isLive ? "● LIVE" : ev.type === "TRIAL" ? "1-on-1 Trial" : ev.type === "LIVE_SEMINAR" ? "Live Seminar" : ev.type?.replace("_", " ") || "Class"}
+                                    {ev.isLive ? "● LIVE" : ev.type === "TRIAL" ? "1-on-1 Trial" : "Online Session"}
                                   </span>
                                 </div>
                                 {ev.courseTitle && (
@@ -2898,33 +2898,17 @@ function TutorDashboardContent() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Session Format
-                  </label>
-                  <select
-                    value={newClassType}
-                    onChange={(e) => setNewClassType(e.target.value)}
-                    className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
-                  >
-                    <option value="LIVE_SEMINAR">Live Virtual Seminar</option>
-                    <option value="DEADLINE">Study Workshop / Milestone</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Date & Time <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    type="datetime-local"
-                    required
-                    value={newClassDate}
-                    onChange={(e) => setNewClassDate(e.target.value)}
-                    className="rounded-xl h-9 text-xs"
-                  />
-                </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Scheduled Date & Time <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="datetime-local"
+                  required
+                  value={newClassDate}
+                  onChange={(e) => setNewClassDate(e.target.value)}
+                  className="rounded-xl h-9 text-xs"
+                />
               </div>
 
               <div>

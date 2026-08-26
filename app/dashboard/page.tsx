@@ -1126,7 +1126,7 @@ function DashboardContent() {
                                       ? "bg-red-500 text-white animate-pulse"
                                       : "bg-blue-500/20 text-blue-300 border border-blue-400/30"
                                   }`}>
-                                    {ev.status === "LIVE" ? "● LIVE" : ev.type === "LIVE_SEMINAR" ? "Live Seminar" : ev.type?.replace("_", " ") || "Class"}
+                                    {ev.status === "LIVE" ? "● LIVE" : "Online Session"}
                                   </span>
                                 </div>
                                 {ev.course?.title && (
@@ -1228,19 +1228,9 @@ function DashboardContent() {
                                   Ended
                                 </Badge>
                               )}
-                              {ev.type && (
-                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
-                                  ev.type === "WORKSHOP"
-                                    ? "bg-purple-50 text-purple-700 border-purple-200"
-                                    : ev.type === "LIVE_SEMINAR"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : ev.type === "DEADLINE"
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : "bg-blue-50 text-blue-700 border-blue-200"
-                                }`}>
-                                  {ev.type.replace("_", " ")}
-                                </span>
-                              )}
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-50 text-blue-700 border-blue-200">
+                                Online Session
+                              </span>
                             </div>
                             {ev.description && (
                               <p className="text-[11px] text-slate-500 truncate mt-0.5">
@@ -1400,13 +1390,7 @@ function DashboardContent() {
                           </button>
                           <span className="text-slate-400">•</span>
                           <span className="text-slate-600 font-semibold">
-                            {ev.type === "LIVE_SEMINAR"
-                              ? "Live Seminar"
-                              : ev.type === "DEADLINE"
-                              ? "Deadline"
-                              : ev.type === "WORKSHOP"
-                              ? "Workshop"
-                              : ev.type?.replace("_", " ")}
+                            Online Session
                           </span>
                         </div>
                       </div>
@@ -1782,32 +1766,17 @@ function DashboardContent() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Due Date & Time <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={newEventDate}
-                    onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Event Type</label>
-                  <select
-                    value={newEventType}
-                    onChange={(e) => setNewEventType(e.target.value)}
-                    className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="LIVE_SEMINAR">Live Virtual Seminar / Class</option>
-                    <option value="WORKSHOP">Virtual Workshop / Masterclass</option>
-                    <option value="DEADLINE">Study Deadline / Milestone</option>
-                  </select>
-                </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Scheduled Date & Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={newEventDate}
+                  onChange={(e) => setNewEventDate(e.target.value)}
+                  className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
               </div>
 
               <div>

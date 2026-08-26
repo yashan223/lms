@@ -94,18 +94,12 @@ export function Navbar() {
     <header className="w-full z-40 bg-white/95 backdrop-blur-md text-slate-800 shadow-2xs relative border-b border-slate-200">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between min-h-[72px] px-4 sm:px-6 lg:px-8">
         {/* Left Brand */}
-        <Link href="/" className="flex items-center gap-2.5 group py-2">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-black text-base tracking-tight text-slate-900 leading-none">
-              EduPulse
-            </span>
-            <span className="text-[9px] font-bold tracking-wider text-blue-600 uppercase">
-              London A/L & O/L Academy
-            </span>
-          </div>
+        <Link href="/" className="flex items-center gap-2.5 group py-1.5">
+          <img
+            src="/logo-wide.jpg"
+            alt="EduPulse London A/L & O/L Academy"
+            className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+          />
         </Link>
 
         {/* Center Navigation Links */}

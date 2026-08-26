@@ -816,18 +816,12 @@ function DashboardContent() {
         <div className="max-w-[1480px] mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           {/* Left: Brand Logo & Dropdown Services Menu */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-lg bg-[#0c2461] text-white flex items-center justify-center font-black text-sm shadow-xs">
-                <GraduationCap className="w-5 h-5 text-sky-400" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-sm tracking-wider text-[#0c2461] leading-none">
-                  ACADEMY
-                </span>
-                <span className="text-[8px] font-bold tracking-widest text-sky-600">
-                  LONDON A/L & O/L
-                </span>
-              </div>
+            <Link href="/" className="flex items-center gap-2 group py-1">
+              <img
+                src="/logo-wide.jpg"
+                alt="EduPulse London A/L & O/L Academy"
+                className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+              />
             </Link>
 
             {userRole === "ADMIN" && (

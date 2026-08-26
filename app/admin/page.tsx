@@ -887,19 +887,13 @@ export default function AdminDashboardPage() {
         }`}
       >
         {/* Sidebar Header */}
-        <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center font-black text-sm shadow-xs shadow-blue-500/30 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight leading-none text-slate-900">
-                EduPulse Admin
-              </span>
-              <span className="text-[9px] font-bold tracking-wider text-blue-500 uppercase">
-                Academy #EDU-92810
-              </span>
-            </div>
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <img
+              src="/logo-wide.jpg"
+              alt="EduPulse London A/L & O/L Academy"
+              className="h-9 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+            />
           </Link>
 
           <button

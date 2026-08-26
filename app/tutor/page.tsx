@@ -1041,18 +1041,12 @@ function TutorDashboardContent() {
           
           {/* Left Brand & Logo */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#0c2461] text-white flex items-center justify-center shadow-sm">
-                <ShieldCheck className="w-5 h-5 text-blue-300" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-serif font-black text-sm text-[#0c2461] tracking-tight leading-none">
-                  EDUPULSE ACADEMY
-                </span>
-                <span className="text-[10px] text-blue-600 font-bold tracking-widest leading-tight">
-                  LONDON A/L & O/L
-                </span>
-              </div>
+            <Link href="/" className="flex items-center gap-2.5 py-1">
+              <img
+                src="/logo-wide.jpg"
+                alt="EduPulse London A/L & O/L Academy"
+                className="h-9 sm:h-10 w-auto object-contain transition-transform hover:scale-[1.02]"
+              />
             </Link>
 
             <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">

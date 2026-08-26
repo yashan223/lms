@@ -88,20 +88,14 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-8 shadow-xs">
+      <header className="bg-white border-b border-slate-200 py-2.5 px-4 sm:px-8 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight leading-none text-slate-900">
-                EduPulse
-              </span>
-              <span className="text-[9px] font-bold tracking-wider text-blue-600 uppercase">
-                London A/L & O/L Academy
-              </span>
-            </div>
+          <Link href="/" className="flex items-center gap-2 group">
+            <img
+              src="/logo-wide.jpg"
+              alt="EduPulse London A/L & O/L Academy"
+              className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+            />
           </Link>
 
           <Link
@@ -119,8 +113,12 @@ export default function RegisterPage() {
           <div className="p-6 sm:p-10 space-y-6">
             {/* Title & Subtitle */}
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2 shadow-2xs">
-                <GraduationCap className="w-6 h-6" />
+              <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-1 overflow-hidden shadow-sm border border-slate-100">
+                <img
+                  src="/logo-square.jpg"
+                  alt="EduPulse Emblem"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
                 Student Registration

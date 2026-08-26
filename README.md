@@ -1,36 +1,167 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎓 EduPulse | London A/L & O/L Academy LMS
 
-## Getting Started
+EduPulse is a unified, multi-role Learning Management System (LMS) designed for London GCE Advanced Level (A/L) and Ordinary Level (O/L) education (Pearson Edexcel & Cambridge International specifications). It integrates student learning portals, faculty instruction studios, and administrative command consoles.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 👥 User Roles & Core Capabilities
+
+| Role | Access URL | Core Capabilities |
+| :--- | :--- | :--- |
+| **🎓 Student** | `/dashboard` | Enrolls in syllabus courses, accesses lesson modules & study guides, joins live classes, manages personal calendar, uploads private study files, and chats with faculty tutors. |
+| **👨‍🏫 Faculty Instructor** | `/tutor` | Schedules and launches live interactive masterclasses, manages syllabus content, reviews enrolled student rosters, conducts 1-on-1 consultations, and communicates with students. |
+| **🛡️ System Administrator** | `/admin` | Curates courses and syllabus units, assigns faculty, manages user accounts and roles, monitors live classes, and oversees platform analytics & honors clearances. |
+
+---
+
+## 📊 Full System Use Case Diagram
+
+```mermaid
+flowchart TB
+    %% Actors
+    subgraph Actors [System Actors]
+        Student["🎓 Student"]
+        Instructor["👨‍🏫 Faculty Instructor"]
+        Admin["🛡️ System Admin"]
+    end
+
+    %% System Boundary
+    subgraph SystemBoundary ["EduPulse LMS Platform"]
+        
+        %% Authentication & Profile
+        subgraph AuthModule ["🔐 Authentication & Profile Management"]
+            UC_Auth(["Sign In / Sign Up / Password Reset"])
+            UC_Profile(["Manage Academic Profile & Credentials"])
+            UC_Notif(["Receive Real-Time Notifications"])
+            UC_Chat(["Direct Academic Messaging"])
+        end
+
+        %% Student Use Cases
+        subgraph StudentModule ["🎓 Student Learning & Activities"]
+            UC_BrowseCourses(["Browse & Enroll in Courses"])
+            UC_ViewMaterials(["Access Study Materials & Syllabus"])
+            UC_JoinLive(["Join Live Class / Observation Room"])
+            UC_Calendar(["Manage Schedule & Reschedule Sessions"])
+            UC_RequestTrial(["Book 1-on-1 Consultation / Trial"])
+            UC_PrivateFiles(["Upload & Manage Private Study Files"])
+        end
+
+        %% Instructor Use Cases
+        subgraph InstructorModule ["👨‍🏫 Faculty Studio Management"]
+            UC_ScheduleClass(["Schedule & Start Live Classes"])
+            UC_ManageSyllabus(["Organize Modules & Course Materials"])
+            UC_ViewStudents(["View Enrolled Students & Profiles"])
+            UC_HandleTrials(["Approve & Conduct 1-on-1 Sessions"])
+        end
+
+        %% Admin Use Cases
+        subgraph AdminModule ["🛡️ Administrator Command Console"]
+            UC_ManageCourses(["Create, Edit & Publish Courses"])
+            UC_ManageUsers(["Manage Users, Roles & Passwords"])
+            UC_ObserveLive(["Monitor & Terminate Live Sessions"])
+            UC_ViewAnalytics(["Review System Metrics & Revenue Clearance"])
+        end
+    end
+
+    %% Student Relationships
+    Student --> UC_Auth
+    Student --> UC_Profile
+    Student --> UC_Notif
+    Student --> UC_Chat
+    Student --> UC_BrowseCourses
+    Student --> UC_ViewMaterials
+    Student --> UC_JoinLive
+    Student --> UC_Calendar
+    Student --> UC_RequestTrial
+    Student --> UC_PrivateFiles
+
+    %% Instructor Relationships
+    Instructor --> UC_Auth
+    Instructor --> UC_Profile
+    Instructor --> UC_Notif
+    Instructor --> UC_Chat
+    Instructor --> UC_ScheduleClass
+    Instructor --> UC_ManageSyllabus
+    Instructor --> UC_ViewStudents
+    Instructor --> UC_HandleTrials
+    Instructor --> UC_JoinLive
+
+    %% Admin Relationships
+    Admin --> UC_Auth
+    Admin --> UC_Profile
+    Admin --> UC_Notif
+    Admin --> UC_ManageCourses
+    Admin --> UC_ManageUsers
+    Admin --> UC_ObserveLive
+    Admin --> UC_ViewAnalytics
+    Admin --> UC_ScheduleClass
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Technology Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: [Next.js](https://nextjs.org/) (App Router, Server Actions, API Routes)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)
+- **Database & ORM**: [Prisma ORM](https://www.prisma.io/) with SQLite / PostgreSQL
+- **Real-Time Sync**: Server-Sent Events (SSE)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Getting Started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/yashan223/lms.git
+cd edu-lms
+npm install
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory:
+```env
+DATABASE_URL="file:./dev.db"
+```
 
-## Deploy on Vercel
+### 3. Initialize the Database
+```bash
+npx prisma db push
+npx prisma db seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Run the Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📁 Key Directory Structure
+
+```
+edu-lms/
+├── app/
+│   ├── admin/          # Admin command console
+│   ├── tutor/          # Faculty instructor studio
+│   ├── dashboard/      # Student learning portal
+│   ├── courses/        # Course catalog and course detail pages
+│   ├── api/            # REST API endpoints (auth, chat, courses, events, tutor, etc.)
+│   ├── login/          # User authentication
+│   └── register/       # User registration
+├── components/
+│   ├── chat/           # Direct academic messaging drawer
+│   ├── layout/         # Header, Navbar, Footer
+│   ├── landing/        # Showcase, Hero, Testimonials
+│   ├── notifications/  # Real-time notification bell
+│   └── ui/             # Reusable UI primitives (Buttons, Modals, Badges)
+├── prisma/             # Schema definition & database seeding scripts
+└── public/             # Branding logos, imagery, and static assets
+```
+
+---
+
+## 📄 License
+MIT License. Developed for EduPulse London A/L & O/L Academy.

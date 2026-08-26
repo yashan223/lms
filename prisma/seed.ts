@@ -2,7 +2,7 @@ import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
 async function main() {
-  console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
+  console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Instructor, and 1 Student...");
 
   // Delete all users EXCEPT the 3 primary test accounts (and their dependent records)
   const allowedEmails = [
@@ -51,7 +51,7 @@ async function main() {
       name: "Dr. Sarah Jenkins",
       passwordHash: "InstructorPass123!",
       role: Role.INSTRUCTOR,
-      headline: "Senior Faculty Tutor in Pure Mathematics & Sciences",
+      headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
@@ -60,7 +60,7 @@ async function main() {
       name: "Dr. Sarah Jenkins",
       passwordHash: "InstructorPass123!",
       role: Role.INSTRUCTOR,
-      headline: "Senior Faculty Tutor in Pure Mathematics & Sciences",
+      headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
@@ -91,9 +91,9 @@ async function main() {
   });
 
   console.log("✅ Exactly 3 Test Users Initialized:");
-  console.log("   👑 Admin:   admin@edupulse.uk   / AdminPass123!");
-  console.log("   🎓 Tutor:   tutor@edupulse.uk   / InstructorPass123!");
-  console.log("   📚 Student: student@edupulse.uk / StudentPass123!");
+  console.log("   👑 Admin:      admin@edupulse.uk   / AdminPass123!");
+  console.log("   🎓 Instructor: tutor@edupulse.uk   / InstructorPass123!");
+  console.log("   📚 Student:    student@edupulse.uk / StudentPass123!");
 
   // 4. Update all courses to belong to the single Tutor
   await prisma.course.updateMany({
@@ -585,7 +585,7 @@ async function main() {
     ],
   });
 
-  console.log("🚀 Database successfully seeded with 1 Admin, 1 Tutor, and 1 Student!");
+  console.log("🚀 Database successfully seeded with 1 Admin, 1 Instructor, and 1 Student!");
 }
 
 main()

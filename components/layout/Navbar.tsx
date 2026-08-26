@@ -147,11 +147,11 @@ export function Navbar() {
               ) : userRole === "INSTRUCTOR" ? (
                 <Link
                   href="/tutor"
-                  title="Faculty Tutor Studio"
+                  title="Faculty Instructor Studio"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
                 >
                   <GraduationCap className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
-                  <span>Tutor Studio</span>
+                  <span>Instructor Studio</span>
                 </Link>
               ) : (
                 <Link

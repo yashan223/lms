@@ -194,7 +194,7 @@ export function TrialRequestModal({
                 Free Trial Session Reserved!
               </h4>
               <p className="text-xs text-slate-600 max-w-sm mx-auto">
-                Your 30-minute 1-on-1 online session has been scheduled and added to both your Academic Calendar and your tutor’s schedule.
+                Your 30-minute 1-on-1 online session has been scheduled and added to both your Academic Calendar and your instructor’s schedule.
               </p>
             </div>
 

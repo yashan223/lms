@@ -226,7 +226,7 @@ export default function LoginPage() {
                   className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
                   <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span>Tutor</span>
+                  <span>Instructor</span>
                 </button>
                 <button
                   type="button"

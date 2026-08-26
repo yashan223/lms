@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function TutorProfileRedirectPage() {
+export default function InstructorProfileRedirectPage() {
   redirect("/tutor?tab=profile");
 }

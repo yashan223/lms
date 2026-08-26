@@ -903,7 +903,7 @@ function TutorDashboardContent() {
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
         <p className="text-sm font-semibold tracking-wider uppercase text-blue-200">
-          Loading Tutor Studio...
+          Loading Instructor Studio...
         </p>
       </div>
     );
@@ -941,16 +941,16 @@ function TutorDashboardContent() {
                 href="/tutor"
                 className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
               >
-                Tutor Studio
+                Instructor Studio
               </Link>
             </nav>
           </div>
 
           {/* Right Header Utilities */}
           <div className="flex items-center gap-3">
-            {/* Tutor Role Badge */}
+            {/* Instructor Role Badge */}
             <Badge variant="roleInstructor" className="text-[11px] px-2.5 py-1 font-bold">
-              Tutor
+              Instructor
             </Badge>
 
             {/* Notification Center */}
@@ -1087,7 +1087,7 @@ function TutorDashboardContent() {
                 >
                   <span className="flex items-center gap-2">
                     <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Tutor Profile & Credentials</span>
+                    <span>Instructor Profile & Credentials</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 font-bold">
                     Edit
@@ -1314,7 +1314,7 @@ function TutorDashboardContent() {
                 }`}
               >
                 <UserCheck className="w-3.5 h-3.5" />
-                <span>Tutor Profile</span>
+                <span>Instructor Profile</span>
               </button>
             </div>
 
@@ -1325,7 +1325,7 @@ function TutorDashboardContent() {
                 {/* Summary Stats */}
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-3">
                   <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
-                    <span>Total earnings (tutor share)</span>
+                    <span>Total earnings (instructor share)</span>
                     <span>${tutorShareEarnings.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
@@ -1832,7 +1832,7 @@ function TutorDashboardContent() {
               </div>
             )}
 
-            {/* VIEW 5: FULL-PAGE TUTOR PROFILE & CREDENTIALS STUDIO */}
+            {/* VIEW 5: FULL-PAGE INSTRUCTOR PROFILE & CREDENTIALS STUDIO */}
             {centerTab === "profile" && (
               <div className="space-y-6 animate-in fade-in duration-300">
                 {/* Header Banner */}
@@ -1844,7 +1844,7 @@ function TutorDashboardContent() {
                       </div>
                       <div>
                         <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                          Tutor Profile & Studio Customization
+                          Instructor Profile & Studio Customization
                         </h2>
                         <p className="text-xs text-slate-500">
                           Personalize your public instructor identity, verified academic degrees, examiner accreditations, and bio.
@@ -1998,7 +1998,7 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {/* CARD 2: BASIC TUTOR IDENTITY & HEADLINE */}
+                  {/* CARD 2: BASIC INSTRUCTOR IDENTITY & HEADLINE */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
                     <div className="border-b border-slate-100 pb-3">
                       <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -2006,7 +2006,7 @@ function TutorDashboardContent() {
                         <span>Basic Identity & Designation</span>
                       </h3>
                       <p className="text-xs text-slate-500">
-                        Official tutor name, headline, and direct student contact numbers.
+                        Official instructor name, headline, and direct student contact numbers.
                       </p>
                     </div>
 
@@ -2528,11 +2528,11 @@ function TutorDashboardContent() {
           {/* ===================================================================== */}
           <aside className="lg:col-span-3 space-y-4">
             
-            {/* Block 1: Tutor Profile Card */}
+            {/* Block 1: Instructor Profile Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Tutor Profile
+                  Instructor Profile
                 </h3>
                 <button
                   onClick={() => setCenterTab("profile")}
@@ -2970,7 +2970,7 @@ export default function TutorDashboardPage() {
         <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
           <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
           <p className="text-sm font-semibold tracking-wider uppercase text-blue-200">
-            Initializing Tutor Studio...
+            Initializing Instructor Studio...
           </p>
         </div>
       }

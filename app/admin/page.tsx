@@ -828,8 +828,10 @@ export default function AdminDashboardPage() {
 
       let matchFilter = true;
       const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
-      if (liveClassFilter === "LIVE") {
-        matchFilter = ev.status === "LIVE";
+      if (liveClassFilter === "ALL") {
+        matchFilter = !isEnded;
+      } else if (liveClassFilter === "LIVE") {
+        matchFilter = ev.status === "LIVE" && !isEnded;
       } else if (liveClassFilter === "SCHEDULED") {
         matchFilter = !isEnded && (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate) >= new Date();
       } else if (liveClassFilter === "COMPLETED") {
@@ -840,7 +842,8 @@ export default function AdminDashboardPage() {
     });
   }, [eventsList, liveClassSearch, liveClassFilter]);
 
-  const liveNowCount = eventsList.filter((e) => e.status === "LIVE").length;
+  const activeLiveClassesCount = eventsList.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length;
+  const liveNowCount = eventsList.filter((e) => e.status === "LIVE" && !e.endedAt).length;
   const upcomingCount = eventsList.filter((e) => {
     const isEnded = e.status === "COMPLETED" || e.status === "CANCELLED" || !!e.endedAt;
     return !isEnded && (e.status === "SCHEDULED" || !e.status) && new Date(e.dueDate) >= new Date();
@@ -853,7 +856,7 @@ export default function AdminDashboardPage() {
       id: "live_classes",
       label: "Live Classes & Meets",
       icon: Video,
-      badge: liveNowCount > 0 ? `${liveNowCount} LIVE` : eventsList.length,
+      badge: liveNowCount > 0 ? `${liveNowCount} LIVE` : activeLiveClassesCount,
       badgeColor: liveNowCount > 0 ? "bg-red-500 text-white animate-pulse" : undefined,
     },
     { id: "users", label: "User Management", icon: Users, badge: allUsersList.length },
@@ -1241,7 +1244,7 @@ export default function AdminDashboardPage() {
 
                   <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
                     {[
-                      { id: "ALL", label: `All Classes (${eventsList.length})`, icon: Video },
+                      { id: "ALL", label: `All Active (${activeLiveClassesCount})`, icon: Video },
                       { id: "LIVE", label: `Live Now (${liveNowCount})`, icon: Radio },
                       { id: "SCHEDULED", label: `Scheduled (${upcomingCount})`, icon: Calendar },
                       { id: "COMPLETED", label: `Completed (${completedCount})`, icon: CheckCircle2 },

@@ -418,18 +418,18 @@ function TutorDashboardContent() {
     });
   }, [students, studentSearch, selectedCourseFilter]);
 
-  // Filtered Events
+  // Filtered Events (strictly exclude ended classes from 'ALL' view)
   const filteredEvents = useMemo(() => {
     const now = Date.now();
     return events.filter((ev) => {
       const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
-      if (classFilter === "ALL") return true;
-      if (classFilter === "LIVE") return ev.status === "LIVE";
+      if (classFilter === "ALL") return !isEnded;
+      if (classFilter === "LIVE") return ev.status === "LIVE" && !isEnded;
       if (classFilter === "SCHEDULED") {
         return !isEnded && (ev.status === "SCHEDULED" || !ev.status || ev.status === "LIVE") && (ev.status === "LIVE" || new Date(ev.dueDate).getTime() >= now);
       }
       if (classFilter === "COMPLETED") return isEnded;
-      return true;
+      return !isEnded;
     });
   }, [events, classFilter]);
 
@@ -774,7 +774,7 @@ function TutorDashboardContent() {
                     <span>Live Classes</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
-                    {events.length}
+                    {events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length}
                   </span>
                 </button>
 
@@ -984,7 +984,7 @@ function TutorDashboardContent() {
                 }`}
               >
                 <Video className="w-3.5 h-3.5" />
-                <span>Live Classes ({events.length})</span>
+                <span>Live Classes ({events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length})</span>
               </button>
 
               <button
@@ -1204,22 +1204,29 @@ function TutorDashboardContent() {
 
                     {/* Filter Pills */}
                     <div className="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs">
-                      {(["ALL", "LIVE", "SCHEDULED", "COMPLETED"] as const).map((f) => (
-                        <button
-                          key={f}
-                          onClick={() => setClassFilter(f)}
-                          className={`px-2.5 py-1 font-bold rounded-md transition-all ${
-                            classFilter === f
-                              ? "bg-white text-blue-700 shadow-2xs"
-                              : "text-slate-600 hover:text-slate-900"
-                          }`}
-                        >
-                          {f === "ALL" && `All (${events.length})`}
-                          {f === "LIVE" && `Live Now (${events.filter((e) => e.status === "LIVE").length})`}
-                          {f === "SCHEDULED" && `Upcoming (${upcomingEvents.length})`}
-                          {f === "COMPLETED" && `Past / Ended (${events.filter((e) => e.status === "COMPLETED" || !!e.endedAt).length})`}
-                        </button>
-                      ))}
+                      {(["ALL", "LIVE", "SCHEDULED", "COMPLETED"] as const).map((f) => {
+                        const activeCount = events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length;
+                        const liveCount = events.filter((e) => e.status === "LIVE" && !e.endedAt).length;
+                        const upcomingCount = upcomingEvents.length;
+                        const endedCount = events.filter((e) => e.status === "COMPLETED" || e.status === "CANCELLED" || !!e.endedAt).length;
+
+                        return (
+                          <button
+                            key={f}
+                            onClick={() => setClassFilter(f)}
+                            className={`px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${
+                              classFilter === f
+                                ? "bg-white text-blue-700 shadow-2xs"
+                                : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            {f === "ALL" && `All (${activeCount})`}
+                            {f === "LIVE" && `Live Now (${liveCount})`}
+                            {f === "SCHEDULED" && `Upcoming (${upcomingCount})`}
+                            {f === "COMPLETED" && `Past / Ended (${endedCount})`}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1301,7 +1308,15 @@ function TutorDashboardContent() {
                                     End
                                   </button>
                                 </>
-                              ) : isCompleted ? null : (
+                              ) : isCompleted ? (
+                                <button
+                                  onClick={() => handleDeleteClass(ev.id)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                  title="Delete Ended Session"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
                                 <>
                                   <button
                                     onClick={() => handleStartClass(ev.id, ev.meetingLink)}
@@ -1326,7 +1341,7 @@ function TutorDashboardContent() {
                                   </a>
                                   <button
                                     onClick={() => handleDeleteClass(ev.id)}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
                                     title="Delete Class"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />

@@ -271,21 +271,21 @@ export function EncryptedChatDrawer({
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-3">
         <button
           onClick={handleToggleOpen}
           aria-label={isOpen ? "Close Messages" : "Open Messages"}
           title={isOpen ? "Close Messages" : "Messages"}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform active:scale-95 cursor-pointer relative group ${
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform active:scale-95 cursor-pointer relative group ${
             isOpen
               ? "bg-slate-900 text-white rotate-90 scale-100 hover:bg-slate-800"
               : "bg-gradient-to-tr from-[#0c2461] via-blue-600 to-indigo-600 text-white hover:scale-105 ring-4 ring-blue-500/20"
           }`}
         >
           {isOpen ? (
-            <X className="w-6 h-6 transition-transform" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6 transition-transform" />
           ) : (
-            <MessageSquare className="w-6 h-6" />
+            <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
           )}
 
           {!isOpen && totalUnreadCount > 0 && (
@@ -303,7 +303,7 @@ export function EncryptedChatDrawer({
       </div>
 
       {isOpen && (
-        <div className="fixed bottom-22 right-4 sm:right-6 z-50 w-[92vw] sm:w-[420px] max-w-[440px] h-[580px] max-h-[calc(100vh-7rem)] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed inset-x-2 bottom-18 sm:inset-x-auto sm:bottom-22 sm:right-6 z-50 w-auto sm:w-[420px] max-w-[440px] h-[580px] max-h-[calc(100dvh-5.5rem)] bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
 
           <div className="px-4 py-3.5 bg-[#0c2461] text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -316,7 +316,7 @@ export function EncryptedChatDrawer({
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               ) : (
-                <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center shrink-0">
                   <MessageSquareLock className="w-3.5 h-3.5 text-blue-300" />
                 </div>
               )}

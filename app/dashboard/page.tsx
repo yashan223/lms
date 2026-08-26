@@ -791,13 +791,13 @@ function DashboardContent() {
       )}
 
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-[1480px] mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+        <div className="max-w-[1480px] mx-auto px-4 sm:px-6 flex items-center justify-between h-16 gap-2 sm:gap-4">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group py-1">
               <img
                 src="/logo-wide.png"
                 alt="EduPulse London A/L & O/L Academy"
-                className="h-11 sm:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+                className="h-9 sm:h-11 md:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
               />
             </Link>
 
@@ -814,7 +814,7 @@ function DashboardContent() {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Badge
               variant={
                 userRole === "INSTRUCTOR"
@@ -823,7 +823,7 @@ function DashboardContent() {
                   ? "roleAdmin"
                   : "roleStudent"
               }
-              className="text-[11px] px-2.5 py-1 font-bold"
+              className="text-[10px] sm:text-[11px] px-2 sm:px-2.5 py-0.5 sm:py-1 font-bold"
             >
               {currentProfile.badge}
             </Badge>
@@ -844,7 +844,7 @@ function DashboardContent() {
             <button
               onClick={handleLogout}
               title="Sign Out"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-600 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-600 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Sign Out</span>
@@ -853,10 +853,10 @@ function DashboardContent() {
         </div>
       </header>
 
-      <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-6 space-y-5 flex-1">
+      <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1">
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          <aside className="lg:col-span-3 space-y-4">
+          <aside className="lg:col-span-3 space-y-4 order-2 lg:order-1">
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
                 Navigation
@@ -1096,7 +1096,7 @@ function DashboardContent() {
 
           </aside>
 
-          <section className="lg:col-span-9 space-y-5">
+          <section className="lg:col-span-9 space-y-5 order-1 lg:order-2">
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">

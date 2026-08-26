@@ -102,13 +102,13 @@ export function ConfirmationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isLoading && onClose()}>
-      <DialogContent className="max-w-md p-0 overflow-hidden rounded-3xl border border-slate-200 shadow-2xl bg-white animate-in zoom-in-95 duration-200">
-        <div className="p-6 space-y-4">
-          <div className="flex items-start gap-3.5">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl bg-white animate-in zoom-in-95 duration-200">
+        <div className="p-4 sm:p-6 space-y-4">
+          <div className="flex items-start gap-3 sm:gap-3.5">
             <div
-              className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-xs shrink-0 ${config.iconBg} ${config.iconColor}`}
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center border shadow-xs shrink-0 ${config.iconBg} ${config.iconColor}`}
             >
-              <IconComponent className="w-6 h-6" />
+              <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
 
             <div className="flex-1 min-w-0">

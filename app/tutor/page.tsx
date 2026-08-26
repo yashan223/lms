@@ -1127,11 +1127,47 @@ function TutorDashboardContent() {
         </div>
       </header>
 
-      <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-6 space-y-5 flex-1">
+      <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1">
+
+        {/* Mobile Horizontal Quick Tab Bar */}
+        <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+          {[
+            { id: "courses", label: "Courses", icon: BookOpen, count: courses.length },
+            { id: "classes", label: "Live Classes", icon: Video, count: events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length },
+            { id: "history", label: "History", icon: History, count: completedSessions.length },
+            { id: "students", label: "Students", icon: Users, count: students.length },
+            { id: "trials", label: "Trials", icon: CalendarCheck, count: trials.length },
+            { id: "profile", label: "Profile", icon: UserCheck },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = centerTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setCenterTab(tab.id as any)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                  isActive
+                    ? "bg-[#0c2461] text-white shadow-xs"
+                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-blue-600"}`} />
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-          <aside className="lg:col-span-3 space-y-4">
+          <aside className="lg:col-span-3 space-y-4 order-2 lg:order-1">
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -1379,7 +1415,7 @@ function TutorDashboardContent() {
 
           </aside>
 
-          <div className="lg:col-span-6 space-y-4">
+          <div className="lg:col-span-6 space-y-4 order-1 lg:order-2">
 
             <div className="bg-white rounded-lg border border-slate-200 p-2 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <button
@@ -2821,7 +2857,7 @@ function TutorDashboardContent() {
 
           </div>
 
-          <aside className="lg:col-span-3 space-y-4">
+          <aside className="lg:col-span-3 space-y-4 order-3 lg:order-3">
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">

@@ -55,6 +55,7 @@ import {
   School,
   Briefcase,
   Share2,
+  History,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -147,13 +148,20 @@ interface ScheduledClassEvent {
   meetingLink?: string | null;
   startedAt?: string | Date | null;
   endedAt?: string | Date | null;
-  courseId?: string;
+  courseId?: string | null;
+  userId?: string | null;
   course?: {
     id: string;
     title: string;
     slug: string;
     subjectCode?: string;
-  };
+  } | null;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  } | null;
 }
 
 function TutorDashboardContent() {
@@ -174,11 +182,23 @@ function TutorDashboardContent() {
   const [selectedCourseFilter, setSelectedCourseFilter] = useState("ALL");
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
 
-  const [centerTab, setCenterTab] = useState<"courses" | "classes" | "students" | "trials" | "earnings" | "profile">("courses");
+  const [centerTab, setCenterTab] = useState<
+    "courses" | "classes" | "history" | "students" | "trials" | "earnings" | "profile"
+  >("courses");
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyFilter, setHistoryFilter] = useState<"ALL" | "CLASSES" | "STUDENTS">("ALL");
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab === "profile" || tab === "courses" || tab === "classes" || tab === "students" || tab === "trials" || tab === "earnings") {
+    if (
+      tab === "profile" ||
+      tab === "courses" ||
+      tab === "classes" ||
+      tab === "history" ||
+      tab === "students" ||
+      tab === "trials" ||
+      tab === "earnings"
+    ) {
       setCenterTab(tab);
     }
   }, [searchParams]);
@@ -207,9 +227,29 @@ function TutorDashboardContent() {
   }, [totalTeachingMinutes]);
 
   const completedTeachingHours = useMemo(() => {
-    const completedClasses = events.filter((e) => e.status === "COMPLETED").length;
+    const completedClasses = events.filter((e) => e.status === "COMPLETED" || Boolean(e.endedAt)).length;
     return ((completedClasses * 90) / 60).toFixed(1);
   }, [events]);
+
+  const completedSessions = useMemo(() => {
+    return events.filter((e) => e.status === "COMPLETED" || Boolean(e.endedAt));
+  }, [events]);
+
+  const filteredHistory = useMemo(() => {
+    return completedSessions.filter((ev) => {
+      if (historyFilter === "CLASSES" && !ev.courseId) return false;
+      if (historyFilter === "STUDENTS" && !ev.userId) return false;
+
+      if (historySearch.trim()) {
+        const q = historySearch.toLowerCase();
+        const matchesTitle = ev.title?.toLowerCase().includes(q);
+        const matchesCourse = ev.course?.title?.toLowerCase().includes(q);
+        const matchesDesc = ev.description?.toLowerCase().includes(q);
+        if (!matchesTitle && !matchesCourse && !matchesDesc) return false;
+      }
+      return true;
+    });
+  }, [completedSessions, historyFilter, historySearch]);
 
   const effectiveHourlyRate = useMemo(() => {
     const hrs = Number(totalTeachingHours);
@@ -1102,6 +1142,23 @@ function TutorDashboardContent() {
                 </button>
 
                 <button
+                  onClick={() => setCenterTab("history")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "history"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <History className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Session History & Logs</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
+                    {completedSessions.length}
+                  </span>
+                </button>
+
+                <button
                   onClick={() => setCenterTab("students")}
                   className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
                     centerTab === "students"
@@ -1315,6 +1372,18 @@ function TutorDashboardContent() {
               >
                 <Video className="w-3.5 h-3.5" />
                 <span>Live Classes ({events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length})</span>
+              </button>
+
+              <button
+                onClick={() => setCenterTab("history")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  centerTab === "history"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <History className="w-3.5 h-3.5" />
+                <span>Session History ({completedSessions.length})</span>
               </button>
 
               <button
@@ -1722,6 +1791,170 @@ function TutorDashboardContent() {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {centerTab === "history" && (
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <History className="w-4 h-4 text-indigo-600" />
+                        <span>Online Session History & Duration Logs</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Comprehensive faculty audit log of all completed online classes, recorded start & end times, and duration analytics.
+                      </p>
+                    </div>
+
+                    <div className="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs">
+                      {(["ALL", "CLASSES", "STUDENTS"] as const).map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => setHistoryFilter(f)}
+                          className={`px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${
+                            historyFilter === f
+                              ? "bg-white text-indigo-700 shadow-2xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          {f === "ALL" && `All Ended (${completedSessions.length})`}
+                          {f === "CLASSES" && `Courses (${completedSessions.filter((e) => Boolean(e.courseId)).length})`}
+                          {f === "STUDENTS" && `1-on-1 (${completedSessions.filter((e) => Boolean(e.userId)).length})`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Sessions Completed</span>
+                      <span className="text-lg font-black text-slate-900">{completedSessions.length}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-indigo-50/60 border border-indigo-100">
+                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">Logged Teaching Hours</span>
+                      <span className="text-lg font-black text-indigo-950">{completedTeachingHours} hrs</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Completed 1-on-1 Sessions</span>
+                      <span className="text-lg font-black text-emerald-950">{completedSessions.filter((e) => Boolean(e.userId)).length}</span>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search session history by title, course, or topic..."
+                      value={historySearch}
+                      onChange={(e) => setHistorySearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {filteredHistory.length === 0 ? (
+                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-xs font-semibold text-slate-600">No completed sessions in history</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        When you start and end live online sessions, their full timing and duration history will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredHistory.map((ev) => (
+                        <div
+                          key={ev.id}
+                          className="p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-200 transition-all space-y-3 shadow-2xs"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-xs sm:text-sm text-slate-900">
+                                  {ev.title}
+                                </span>
+                                <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                  ✓ Completed
+                                </Badge>
+                                {ev.course?.subjectCode && (
+                                  <Badge className="bg-blue-100 text-blue-800 text-[10px] font-bold">
+                                    {ev.course.subjectCode}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-slate-500 flex items-center gap-2">
+                                <Calendar className="w-3 h-3 text-slate-400" />
+                                <span>
+                                  Scheduled: {new Date(ev.dueDate).toLocaleDateString("en-US", {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+
+                            {ev.meetingLink && (
+                              <a
+                                href={getSafeMeetingLink(ev.meetingLink, ev.id)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+                              >
+                                <Video className="w-3 h-3 text-slate-500" />
+                                <span className="truncate max-w-[140px]">{ev.meetingLink.replace(/^https?:\/\//, "")}</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
+                              </a>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-slate-100 text-xs">
+                            <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-100">
+                              <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider block">Session Started</span>
+                              <span className="font-bold text-emerald-950 font-mono text-xs">
+                                {ev.startedAt
+                                  ? new Date(ev.startedAt).toLocaleString("en-US", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      second: "2-digit",
+                                      month: "short",
+                                      day: "numeric",
+                                    })
+                                  : "Not recorded"}
+                              </span>
+                            </div>
+
+                            <div className="p-2 rounded-lg bg-blue-50/70 border border-blue-100">
+                              <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wider block">Session Ended</span>
+                              <span className="font-bold text-blue-950 font-mono text-xs">
+                                {ev.endedAt
+                                  ? new Date(ev.endedAt).toLocaleString("en-US", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      second: "2-digit",
+                                      month: "short",
+                                      day: "numeric",
+                                    })
+                                  : "Completed"}
+                              </span>
+                            </div>
+
+                            <div className="p-2 rounded-lg bg-indigo-50/70 border border-indigo-100">
+                              <span className="text-[10px] text-indigo-700 font-bold uppercase tracking-wider block">Recorded Duration</span>
+                              <span className="font-bold text-indigo-950 font-mono text-xs">
+                                {formatSessionDuration(ev.startedAt, ev.endedAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

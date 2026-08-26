@@ -1,8 +1,27 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  verifyPassword,
+  hashPassword,
+  isLegacyPasswordHash,
+  attachSessionCookies,
+} from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`login:${ip}`, 10, 60);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many login attempts. Please try again in ${rateLimit.resetSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -12,8 +31,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+      where: { email: normalizedEmail },
       include: {
         enrollments: {
           include: {
@@ -30,11 +51,26 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.passwordHash !== password && !user.passwordHash.includes(password)) {
+    const isValid = verifyPassword(password, user.passwordHash);
+
+    if (!isValid) {
       return NextResponse.json(
         { error: "Invalid password entered" },
         { status: 401 }
       );
+    }
+
+    // Seamlessly upgrade legacy/plaintext password hashes to cryptographic scrypt
+    if (isLegacyPasswordHash(user.passwordHash)) {
+      try {
+        const upgradedHash = hashPassword(password);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash: upgradedHash },
+        });
+      } catch (upgradeErr) {
+        console.error("Non-fatal password upgrade error:", upgradeErr);
+      }
     }
 
     const safeUser = {
@@ -60,17 +96,8 @@ export async function POST(request: Request) {
       redirectTo: redirectPath,
     });
 
-    response.cookies.set("edupulse_user_role", user.role, {
-      path: "/",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    response.cookies.set("edupulse_user_email", user.email, {
-      path: "/",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    // Attach HMAC-signed HttpOnly session token + client UI sync cookies
+    attachSessionCookies(response, user);
 
     return response;
   } catch (error) {

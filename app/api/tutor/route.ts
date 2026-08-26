@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { EventType, Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -9,30 +10,12 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    const emailCookie = request.cookies.get("edupulse_user_email")?.value;
-
-    let tutor = null;
-    if (emailCookie) {
-      tutor = await prisma.user.findFirst({
-        where: {
-          email: emailCookie.toLowerCase(),
-          role: Role.INSTRUCTOR,
-        },
-      });
+    const auth = await getAuthenticatedUser(request, [Role.INSTRUCTOR, Role.ADMIN]);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
     }
 
-    if (!tutor) {
-      tutor = await prisma.user.findFirst({
-        where: { role: Role.INSTRUCTOR },
-      });
-    }
-
-    if (!tutor) {
-      return NextResponse.json(
-        { error: "No instructor account found." },
-        { status: 404 }
-      );
-    }
+    const tutor = auth.user;
 
     let courses: any[] = await prisma.course.findMany({
       where: { instructorId: tutor.id },
@@ -167,6 +150,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await getAuthenticatedUser(request, [Role.INSTRUCTOR, Role.ADMIN]);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+    }
+
     const body = await request.json();
     const { action } = body;
 

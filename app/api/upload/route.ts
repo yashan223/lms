@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { saveUploadedFile, SaveFileOptions } from "@/lib/storage";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await getAuthenticatedUser(request);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
@@ -19,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const category = (formData.get("category") as any) || "general";
     const isPrivate = formData.get("isPrivate") === "true";
-    const userId = formData.get("userId") as string | null;
+    const userId = auth.user.id;
     const saveToDb = formData.get("saveToDb") === "true" || formData.get("saveToPrivateFiles") === "true";
     const customPrefix = formData.get("prefix") as string | null;
 
@@ -41,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     let dbRecord = null;
 
-    if (saveToDb && userId) {
+    if (saveToDb) {
       dbRecord = await prisma.privateFile.create({
         data: {
           fileName: savedFile.fileName,

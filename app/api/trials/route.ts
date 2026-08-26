@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
-import { EventType, TrialStatus } from "@prisma/client";
+import { getAuthenticatedUser } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { EventType, Role, TrialStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {
@@ -102,6 +104,18 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     if (action === "request_trial") {
+      const ip = getClientIp(request);
+      const rateLimit = checkRateLimit(`trial:${ip}`, 5, 60);
+
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            error: `Too many booking requests. Please try again in ${rateLimit.resetSeconds} seconds.`,
+          },
+          { status: 429 }
+        );
+      }
+
       const {
         studentName,
         studentEmail,
@@ -203,6 +217,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_trial_status") {
+      const auth = await getAuthenticatedUser(request, [Role.INSTRUCTOR, Role.ADMIN]);
+      if (!auth.user) {
+        return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+      }
+
       const { trialId, status, meetingLink, notes } = body;
 
       if (!trialId) {

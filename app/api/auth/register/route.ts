@@ -1,14 +1,35 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { hashPassword, attachSessionCookies } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`register:${ip}`, 5, 60);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many registration attempts. Please try again in ${rateLimit.resetSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const { name, email, password, phone, qualification, examBoard, targetSeries } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, email, and password are required" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters long" },
         { status: 400 }
       );
     }
@@ -26,11 +47,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const hashedPassword = hashPassword(password);
+
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
         email: normalizedEmail,
-        passwordHash: password,
+        passwordHash: hashedPassword,
         phone: phone ? phone.trim() : null,
         role: Role.STUDENT,
         headline: `${qualification || "London A/L"} Student (${targetSeries || "Spring / Summer 2026"})`,
@@ -66,17 +89,8 @@ export async function POST(request: Request) {
       redirectTo: "/dashboard",
     });
 
-    response.cookies.set("edupulse_user_role", newUser.role, {
-      path: "/",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    response.cookies.set("edupulse_user_email", newUser.email, {
-      path: "/",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    // Attach HMAC-signed HttpOnly session token + client UI sync cookies
+    attachSessionCookies(response, newUser);
 
     return response;
   } catch (error) {

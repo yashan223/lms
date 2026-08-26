@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
+import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,11 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getAuthenticatedUser(request, [Role.ADMIN]);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+    }
+
     let allUsers: any[] = [];
     let courses: any[] = [];
     let events: any[] = [];
@@ -58,12 +64,7 @@ export async function GET(request: NextRequest) {
       events = await prisma.event.findMany({
         include: {
           course: {
-            include: {
-              instructor: true,
-              enrollments: {
-                include: { user: true },
-              },
-            },
+            include: { instructor: true },
           },
           user: true,
         },
@@ -71,16 +72,20 @@ export async function GET(request: NextRequest) {
       });
     } catch (eErr) {
       console.error("Error fetching events:", eErr);
-      events = [];
+      events = await prisma.event.findMany().catch(() => []);
     }
 
     try {
       privateFiles = await prisma.privateFile.findMany({
-        include: { user: true },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, role: true },
+          },
+        },
         orderBy: { createdAt: "desc" },
       });
     } catch (fErr) {
-      console.error("Error fetching privateFiles:", fErr);
+      console.error("Error fetching private files in admin:", fErr);
       privateFiles = [];
     }
 
@@ -106,8 +111,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const auth = await getAuthenticatedUser(request, [Role.ADMIN]);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+    }
+
     const body = await request.json();
     const { action } = body;
 
@@ -115,11 +125,14 @@ export async function POST(request: Request) {
       const { name, email, password, phone, role, headline, bio, initialCourseId } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
+      const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.INSTRUCTOR ? "InstructorPass123!" : "StudentPass123!");
+      const hashedPassword = hashPassword(rawPassword);
+
       const newUser = await prisma.user.create({
         data: {
           name,
           email: email.trim().toLowerCase(),
-          passwordHash: password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.INSTRUCTOR ? "InstructorPass123!" : "StudentPass123!"),
+          passwordHash: hashedPassword,
           role: assignedRole,
           phone: phone ? phone.trim() : null,
           headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.INSTRUCTOR ? "Senior Faculty Lecturer" : "London A/L Student"),

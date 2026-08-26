@@ -1,38 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-async function getAuthUser(request: NextRequest) {
-  const emailCookie = request.cookies.get("edupulse_user_email")?.value;
-  const roleCookie = request.cookies.get("edupulse_user_role")?.value;
-  if (emailCookie) {
-    const user = await prisma.user.findUnique({
-      where: { email: emailCookie.toLowerCase() },
-      select: { id: true, name: true, email: true, role: true, avatar: true },
-    });
-    if (user) return user;
-  }
-  if (roleCookie) {
-    const user = await prisma.user.findFirst({
-      where: { role: roleCookie as any },
-      select: { id: true, name: true, email: true, role: true, avatar: true },
-    });
-    if (user) return user;
-  }
-  return await prisma.user.findFirst({
-    select: { id: true, name: true, email: true, role: true, avatar: true },
-  });
-}
-
 export async function GET(req: NextRequest) {
   try {
-    const user = await getAuthUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await getAuthenticatedUser(req);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
     }
 
+    const user = auth.user;
     const currentUserId = user.id;
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action") || "conversations";
@@ -205,11 +185,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getAuthUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await getAuthenticatedUser(req);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
     }
 
+    const user = auth.user;
     const currentUserId = user.id;
     const currentUserName = user.name || "Academic Contact";
     const body = await req.json();

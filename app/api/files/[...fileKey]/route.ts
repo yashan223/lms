@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFileStream } from "@/lib/storage";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { Readable } from "stream";
 import path from "path";
 
@@ -48,6 +49,13 @@ export async function GET(
       };
 
     const isPrivate = fileKey.startsWith("private/");
+    if (isPrivate) {
+      const auth = await getAuthenticatedUser(request);
+      if (auth.error) {
+        return new NextResponse("Unauthorized to access private file", { status: 401 });
+      }
+    }
+
     const filename = path.basename(safePath);
 
     const webStream = Readable.toWeb(stream) as ReadableStream<Uint8Array>;

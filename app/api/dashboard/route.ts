@@ -2,19 +2,23 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getAuthenticatedUser(request);
     const searchParams = request.nextUrl.searchParams;
     const roleParam = searchParams.get("role");
     const emailCookie = request.cookies.get("edupulse_user_email")?.value;
     const roleCookie = request.cookies.get("edupulse_user_role")?.value;
 
     let targetWhere: any = {};
-    if (emailCookie) {
+    if (auth.user) {
+      targetWhere = { id: auth.user.id };
+    } else if (emailCookie) {
       targetWhere = { email: emailCookie.toLowerCase() };
     } else if (roleParam) {
       targetWhere = { role: roleParam };
@@ -270,14 +274,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "add_private_file") {
+      const auth = await getAuthenticatedUser(request);
       const { fileName, fileSize, fileType, fileUrl, userId } = body;
+      const targetUserId = auth.user ? auth.user.id : userId;
+
+      if (!targetUserId) {
+        return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+      }
+
       const newFile = await prisma.privateFile.create({
         data: {
           fileName,
           fileSize: fileSize || "1.2 MB",
           fileType: fileType || "application/pdf",
           fileUrl: fileUrl || null,
-          userId,
+          userId: targetUserId,
         },
       });
       broadcastLMSEvent("MATERIALS_CHANGED");
@@ -285,15 +296,22 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "delete_private_file") {
+      const auth = await getAuthenticatedUser(request);
       const { fileId } = body;
 
       const existing = await prisma.privateFile.findUnique({ where: { id: fileId } });
-      if (existing && existing.fileUrl && existing.fileUrl.startsWith("/api/files/")) {
-        const fileKey = existing.fileUrl.replace("/api/files/", "");
-        await deleteStorageFile(fileKey);
+      if (existing) {
+        if (auth.user && auth.user.role !== "ADMIN" && existing.userId !== auth.user.id) {
+          return NextResponse.json({ error: "Forbidden: You cannot delete another user's file" }, { status: 403 });
+        }
+
+        if (existing.fileUrl && existing.fileUrl.startsWith("/api/files/")) {
+          const fileKey = existing.fileUrl.replace("/api/files/", "");
+          await deleteStorageFile(fileKey);
+        }
+        await prisma.privateFile.delete({ where: { id: fileId } });
+        broadcastLMSEvent("MATERIALS_CHANGED");
       }
-      await prisma.privateFile.delete({ where: { id: fileId } });
-      broadcastLMSEvent("MATERIALS_CHANGED");
       return NextResponse.json({ success: true });
     }
 

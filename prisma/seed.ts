@@ -1,5 +1,6 @@
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
+import { hashPassword } from "../lib/auth";
 
 async function main() {
   console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Instructor, and 1 Student...");
@@ -22,12 +23,16 @@ async function main() {
     console.log(`🧹 Removed ${deletedUsers.count} extra test user(s) and their records.`);
   }
 
+  const adminPassHash = hashPassword("AdminPass123!");
+  const instructorPassHash = hashPassword("InstructorPass123!");
+  const studentPassHash = hashPassword("StudentPass123!");
+
   // 1. Single Admin Account
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@edupulse.uk" },
     update: {
       name: "Dr. Alastair Vance",
-      passwordHash: "AdminPass123!",
+      passwordHash: adminPassHash,
       role: Role.ADMIN,
       headline: "System Administrator",
       bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
@@ -36,7 +41,7 @@ async function main() {
     create: {
       email: "admin@edupulse.uk",
       name: "Dr. Alastair Vance",
-      passwordHash: "AdminPass123!",
+      passwordHash: adminPassHash,
       role: Role.ADMIN,
       headline: "System Administrator",
       bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
@@ -49,7 +54,7 @@ async function main() {
     where: { email: "tutor@edupulse.uk" },
     update: {
       name: "Dr. Sarah Jenkins",
-      passwordHash: "InstructorPass123!",
+      passwordHash: instructorPassHash,
       role: Role.INSTRUCTOR,
       headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
@@ -58,7 +63,7 @@ async function main() {
     create: {
       email: "tutor@edupulse.uk",
       name: "Dr. Sarah Jenkins",
-      passwordHash: "InstructorPass123!",
+      passwordHash: instructorPassHash,
       role: Role.INSTRUCTOR,
       headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
@@ -71,7 +76,7 @@ async function main() {
     where: { email: "student@edupulse.uk" },
     update: {
       name: "S.Y.T. Perera",
-      passwordHash: "StudentPass123!",
+      passwordHash: studentPassHash,
       role: Role.STUDENT,
       phone: "+44 7700 900142",
       headline: "London A/L Mathematics & Science Student",
@@ -81,7 +86,7 @@ async function main() {
     create: {
       email: "student@edupulse.uk",
       name: "S.Y.T. Perera",
-      passwordHash: "StudentPass123!",
+      passwordHash: studentPassHash,
       role: Role.STUDENT,
       phone: "+44 7700 900142",
       headline: "London A/L Mathematics & Science Student",

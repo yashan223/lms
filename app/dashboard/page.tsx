@@ -1257,12 +1257,24 @@ function DashboardContent() {
                               href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-3 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 animate-pulse"
+                              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/25 inline-flex items-center gap-1.5 animate-pulse"
                             >
                               <Video className="w-3.5 h-3.5" />
                               <span>Join Live Meet</span>
                             </a>
-                          ) : ev.description?.includes("http") || ev.meetingLink ? (
+                          ) : (ev.status === "COMPLETED" || ev.endedAt) ? (
+                            <span className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-400 text-xs font-semibold inline-flex items-center gap-1">
+                              <span>Ended</span>
+                            </span>
+                          ) : userRole === "STUDENT" ? (
+                            <span
+                              className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold inline-flex items-center gap-1 cursor-default select-none"
+                              title="The meeting room will automatically unlock when your instructor starts the session"
+                            >
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Waiting for Instructor</span>
+                            </span>
+                          ) : (ev.description?.includes("http") || ev.meetingLink) ? (
                             <a
                               href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
                               target="_blank"

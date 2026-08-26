@@ -389,7 +389,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Class event not found" }, { status: 404 });
       }
 
-      const meetLink = getSafeMeetingLink(meetingLink || existing.meetingLink, existing.id);
+      const meetLink = getSafeMeetingLink(meetingLink || existing.meetingLink);
 
       const updated = await prisma.event.update({
         where: { id: eventId },
@@ -447,10 +447,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Class title and scheduled date are required." }, { status: 400 });
       }
 
-      const meetLink = getSafeMeetingLink(
-        meetingLink,
-        `admin-class-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-      );
+      const meetLink = getSafeMeetingLink(meetingLink);
 
       const fullDescription = [
         description?.trim() || "Live curriculum masterclass with Faculty.",

@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const meetingLink = getSafeMeetingLink(null, `trial-${studentEmail.trim()}-${Date.now()}`);
+      const meetingLink = getSafeMeetingLink(null);
 
       const trial = await prisma.trialRequest.create({
         data: {
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Trial session not found." }, { status: 404 });
       }
 
-      const link = getSafeMeetingLink(meetingLink || existingTrial.meetingLink, existingTrial.id);
+      const link = getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Trial not found." }, { status: 404 });
       }
 
-      const link = getSafeMeetingLink(meetingLink || existing.meetingLink, existing.id);
+      const link = getSafeMeetingLink(meetingLink || existing.meetingLink);
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },

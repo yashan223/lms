@@ -5,25 +5,23 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function generatePersistentMeetingLink(seed: string): string {
-  if (!seed) return "https://meet.jit.si/EduPulseAcademy-LiveRoom";
-
-  const clean = seed.replace(/[^a-zA-Z0-9]/g, "").slice(0, 20);
-  return `https://meet.jit.si/EduPulseAcademy-${clean || "LiveRoom"}`;
+export function normalizeGoogleMeetLink(link?: string | null): string {
+  if (!link || typeof link !== "string" || !link.trim()) {
+    return "https://meet.google.com/new";
+  }
+  const trimmed = link.trim();
+  if (trimmed.startsWith("https://meet.google.com/") || trimmed.startsWith("http://meet.google.com/")) {
+    return trimmed;
+  }
+  if (/^[a-z]{3}-[a-z]{4}-[a-z]{3}$/i.test(trimmed)) {
+    return `https://meet.google.com/${trimmed.toLowerCase()}`;
+  }
+  if (trimmed.startsWith("http")) {
+    return trimmed;
+  }
+  return `https://meet.google.com/${trimmed}`;
 }
 
-export function getSafeMeetingLink(link?: string | null, seed?: string | null): string {
-  if (link && typeof link === "string") {
-    const trimmed = link.trim();
-    if (
-      trimmed.startsWith("http") &&
-      !trimmed.endsWith("/new") &&
-      !trimmed.includes("edupulse-live") &&
-      !trimmed.includes("xxx-yyyy-zzz") &&
-      !trimmed.includes("meet.google.com/edp-")
-    ) {
-      return trimmed;
-    }
-  }
-  return generatePersistentMeetingLink(seed || "GlobalHall");
+export function getSafeMeetingLink(link?: string | null): string {
+  return normalizeGoogleMeetLink(link);
 }

@@ -66,7 +66,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
-import { getSafeMeetingLink } from "@/lib/utils";
+import { getSafeMeetingLink, normalizeGoogleMeetLink } from "@/lib/utils";
 
 const formatForDateTimeInput = (date: Date) => {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -271,6 +271,10 @@ function TutorDashboardContent() {
   const [schedulingClass, setSchedulingClass] = useState(false);
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
+
+  const [showStartClassModal, setShowStartClassModal] = useState(false);
+  const [startClassTargetEvent, setStartClassTargetEvent] = useState<ScheduledClassEvent | null>(null);
+  const [startClassMeetLink, setStartClassMeetLink] = useState("");
 
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleTargetEvent, setRescheduleTargetEvent] = useState<ScheduledClassEvent | null>(null);
@@ -695,6 +699,25 @@ function TutorDashboardContent() {
     } finally {
       setSchedulingClass(false);
     }
+  };
+
+  const triggerStartClassFlow = (ev: ScheduledClassEvent) => {
+    const rawLink = ev.meetingLink?.trim() || "";
+    if (rawLink && rawLink.startsWith("https://meet.google.com/") && !rawLink.endsWith("/new") && !rawLink.includes("edp-")) {
+      handleStartClass(ev.id, rawLink);
+    } else {
+      setStartClassTargetEvent(ev);
+      setStartClassMeetLink(rawLink && !rawLink.endsWith("/new") && !rawLink.includes("edp-") ? rawLink : "");
+      setShowStartClassModal(true);
+    }
+  };
+
+  const handleStartClassSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!startClassTargetEvent) return;
+    const finalLink = normalizeGoogleMeetLink(startClassMeetLink);
+    setShowStartClassModal(false);
+    await handleStartClass(startClassTargetEvent.id, finalLink);
   };
 
   const handleStartClass = async (eventId: string, existingMeetingLink?: string | null) => {
@@ -1682,7 +1705,7 @@ function TutorDashboardContent() {
                                 </span>
                                 {ev.meetingLink && (
                                   <a
-                                    href={getSafeMeetingLink(ev.meetingLink, ev.id)}
+                                    href={getSafeMeetingLink(ev.meetingLink)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:underline truncate max-w-[180px]"
@@ -1724,7 +1747,7 @@ function TutorDashboardContent() {
                               {isLive ? (
                                 <>
                                   <a
-                                    href={getSafeMeetingLink(ev.meetingLink, ev.id)}
+                                    href={getSafeMeetingLink(ev.meetingLink)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
@@ -1750,7 +1773,7 @@ function TutorDashboardContent() {
                               ) : (
                                 <>
                                   <button
-                                    onClick={() => handleStartClass(ev.id, ev.meetingLink)}
+                                    onClick={() => triggerStartClassFlow(ev)}
                                     disabled={startingClassId === ev.id}
                                     className="px-3 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold cursor-pointer"
                                   >
@@ -1903,7 +1926,7 @@ function TutorDashboardContent() {
 
                             {ev.meetingLink && (
                               <a
-                                href={getSafeMeetingLink(ev.meetingLink, ev.id)}
+                                href={getSafeMeetingLink(ev.meetingLink)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5 self-start sm:self-auto shrink-0"
@@ -2946,6 +2969,82 @@ function TutorDashboardContent() {
 
       </main>
 
+      {showStartClassModal && startClassTargetEvent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                  <Video className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Start Google Meet Session</h3>
+                  <p className="text-xs text-slate-500 truncate max-w-[240px]">{startClassTargetEvent.title}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowStartClassModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs text-slate-600">
+              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 space-y-2">
+                <span className="font-bold text-blue-950 block">Step 1: Open Google Meet to create room</span>
+                <button
+                  type="button"
+                  onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
+                  className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Open meet.google.com/new</span>
+                </button>
+                <p className="text-[11px] text-blue-800 leading-snug">
+                  Google will create your meeting room. Copy the room link from your browser address bar.
+                </p>
+              </div>
+
+              <form onSubmit={handleStartClassSubmit} className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-800 block">
+                    Step 2: Paste Google Meet Link <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    required
+                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    value={startClassMeetLink}
+                    onChange={(e) => setStartClassMeetLink(e.target.value)}
+                    className="rounded-xl h-9 text-xs font-mono"
+                  />
+                  <p className="text-[10px] text-slate-400">
+                    All students will immediately receive this exact Google Meet link to join together.
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowStartClassModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!startClassMeetLink.trim() || startingClassId === startClassTargetEvent.id}
+                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
+                  >
+                    {startingClassId === startClassTargetEvent.id ? "Starting..." : "Start & Notify Students"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -3071,11 +3170,21 @@ function TutorDashboardContent() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Google Meet / Zoom URL (Optional)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-700 block">
+                    Google Meet URL (Optional)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Open meet.google.com/new</span>
+                  </button>
+                </div>
                 <Input
-                  placeholder="Leave blank to automatically generate room"
+                  placeholder="https://meet.google.com/xxx-yyyy-zzz"
                   value={newClassMeetingLink}
                   onChange={(e) => setNewClassMeetingLink(e.target.value)}
                   className="rounded-xl h-9 text-xs font-mono"

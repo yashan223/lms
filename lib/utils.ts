@@ -6,30 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generatePersistentMeetingLink(seed: string): string {
-  if (!seed) return "https://meet.google.com/edp-live-lon";
+  if (!seed) return "https://meet.jit.si/EduPulseAcademy-LiveRoom";
 
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
-  let hash1 = 5381;
-  let hash2 = 0;
-  for (let i = 0; i < seed.length; i++) {
-    const code = seed.charCodeAt(i);
-    hash1 = ((hash1 << 5) + hash1 + code) >>> 0;
-    hash2 = (hash2 * 31 + code) >>> 0;
-  }
-
-  const chars: string[] = [];
-  let combined = (BigInt(hash1) << BigInt(32)) | BigInt(hash2);
-  for (let i = 0; i < 10; i++) {
-    const idx = Number(combined % BigInt(26));
-    chars.push(alphabet[idx]);
-    combined = combined / BigInt(26) + BigInt(hash1 + i);
-  }
-
-  const p1 = "edp";
-  const p2 = chars.slice(3, 7).join("");
-  const p3 = chars.slice(7, 10).join("");
-
-  return `https://meet.google.com/${p1}-${p2}-${p3}`;
+  const clean = seed.replace(/[^a-zA-Z0-9]/g, "").slice(0, 20);
+  return `https://meet.jit.si/EduPulseAcademy-${clean || "LiveRoom"}`;
 }
 
 export function getSafeMeetingLink(link?: string | null, seed?: string | null): string {
@@ -39,10 +19,11 @@ export function getSafeMeetingLink(link?: string | null, seed?: string | null): 
       trimmed.startsWith("http") &&
       !trimmed.endsWith("/new") &&
       !trimmed.includes("edupulse-live") &&
-      !trimmed.includes("xxx-yyyy-zzz")
+      !trimmed.includes("xxx-yyyy-zzz") &&
+      !trimmed.includes("meet.google.com/edp-")
     ) {
       return trimmed;
     }
   }
-  return generatePersistentMeetingLink(seed || "edupulse-global-session");
+  return generatePersistentMeetingLink(seed || "GlobalHall");
 }

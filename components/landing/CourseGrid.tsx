@@ -29,7 +29,6 @@ export function CourseGrid() {
     "School of Economics & Commerce",
   ];
 
-  // Fetch live courses 100% from PostgreSQL database
   useEffect(() => {
     async function loadCourses() {
       try {
@@ -90,7 +89,6 @@ export function CourseGrid() {
   return (
     <section id="courses" className="py-20 bg-white border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#0c2461] tracking-tight mb-3">
@@ -101,7 +99,6 @@ export function CourseGrid() {
             </p>
           </div>
 
-          {/* Search bar & All Courses Link */}
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative w-full md:w-72">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -123,7 +120,6 @@ export function CourseGrid() {
           </div>
         </div>
 
-        {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scrollbar-none">
           {categories.map((cat) => (
             <button
@@ -140,7 +136,6 @@ export function CourseGrid() {
           ))}
         </div>
 
-        {/* Course Cards Grid */}
         {filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {filteredCourses.map((course) => (
@@ -149,7 +144,6 @@ export function CourseGrid() {
                 className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
-                  {/* Thumbnail Banner */}
                   <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
                     <img
                       src={course.thumbnail}
@@ -158,7 +152,6 @@ export function CourseGrid() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 
-                    {/* Level & Board Badges */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <Badge
                         variant="default"
@@ -183,7 +176,6 @@ export function CourseGrid() {
                     </div>
                   </div>
 
-                  {/* Body Content */}
                   <div className="p-5 sm:p-6 space-y-3.5">
                     <Link href={`/courses/${course.slug}`} prefetch={true}>
                       <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-700 transition-colors leading-snug line-clamp-2">
@@ -195,7 +187,6 @@ export function CourseGrid() {
                       {course.subtitle}
                     </p>
 
-                    {/* Course metadata */}
                     <div className="flex items-center gap-4 text-xs text-slate-500 py-1 border-y border-slate-100">
                       <span className="flex items-center gap-1 font-medium">
                         <Clock className="w-3.5 h-3.5 text-blue-600" />
@@ -211,7 +202,6 @@ export function CourseGrid() {
                       </span>
                     </div>
 
-                    {/* Examiner Info */}
                     <div className="flex items-center gap-2.5 pt-1">
                       <Avatar className="w-8 h-8">
                         <AvatarImage
@@ -234,7 +224,6 @@ export function CourseGrid() {
                   </div>
                 </div>
 
-                {/* Footer Pricing & View Syllabus Action */}
                 <div className="px-5 sm:px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-2xl font-black text-slate-900">

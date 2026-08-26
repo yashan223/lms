@@ -32,7 +32,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Confirmation Modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handlePreSubmit = (e: React.FormEvent) => {
@@ -49,7 +48,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Open confirmation modal
     setShowConfirmModal(true);
   };
 
@@ -87,7 +85,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Top Header */}
       <header className="bg-white border-b border-slate-200 py-3 px-4 sm:px-8 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
@@ -107,11 +104,9 @@ export default function RegisterPage() {
         </div>
       </header>
 
-      {/* Main Registration Workspace - Matches Login Form Theme with Wider Layout */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
           <div className="p-6 sm:p-10 space-y-6">
-            {/* Title & Subtitle */}
             <div className="text-center space-y-2">
               <div className="w-20 h-20 rounded-2xl bg-transparent flex items-center justify-center mx-auto mb-1 overflow-hidden">
                 <img
@@ -128,7 +123,6 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* Error Alert */}
             {errorMsg && (
               <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -136,10 +130,8 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handlePreSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Full Name */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
                     Student Full Name
@@ -156,7 +148,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Email */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
                     Email Address
@@ -175,9 +166,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Contact Number & Qualification */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Contact Number */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
                     Contact / WhatsApp Number
@@ -194,7 +183,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Qualification */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
                     Qualification Program
@@ -210,7 +198,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Password & Confirm Password */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
@@ -254,7 +241,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Submit Button - Identical to Login Theme */}
               <Button
                 type="submit"
                 disabled={loading}
@@ -284,12 +270,10 @@ export default function RegisterPage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
         EduPulse London A/L & O/L Academy • Authorized Assessment Center #EDU-92810
       </footer>
 
-      {/* CONFIRMATION MODAL BEFORE REGISTRATION */}
       <ConfirmationModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}

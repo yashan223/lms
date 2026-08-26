@@ -12,7 +12,6 @@ export function PricingSection() {
   return (
     <section id="pricing" className="py-20 bg-white border-t border-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             Invest in Your Future with{" "}
@@ -24,7 +23,6 @@ export function PricingSection() {
             Tailored tiers for solo learners, independent educators, and university campuses.
           </p>
 
-          {/* Monthly / Annual Billing Toggle */}
           <div className="inline-flex items-center gap-3 p-1.5 rounded-2xl bg-blue-50/80 border border-blue-100 shadow-sm">
             <button
               onClick={() => setIsAnnual(false)}
@@ -53,7 +51,6 @@ export function PricingSection() {
           </div>
         </div>
 
-        {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           {PRICING_PLANS.map((plan) => {
             const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
@@ -66,7 +63,6 @@ export function PricingSection() {
                     : "bg-white border border-blue-100/90 shadow-sm hover:shadow-lg hover:border-blue-200"
                 }`}
               >
-                {/* Popular Pill */}
                 {plan.popular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                     <Badge
@@ -99,7 +95,6 @@ export function PricingSection() {
                     {plan.description}
                   </p>
 
-                  {/* Price */}
                   <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-slate-100">
                     <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
                       ${price}
@@ -109,7 +104,6 @@ export function PricingSection() {
                     </span>
                   </div>
 
-                  {/* Feature Checklist */}
                   <div className="space-y-3 mb-8">
                     <div className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                       Included in this plan:
@@ -125,7 +119,6 @@ export function PricingSection() {
                   </div>
                 </div>
 
-                {/* Plan CTA */}
                 <Link
                   href="/register"
                   className={`w-full text-sm font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-all ${

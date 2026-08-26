@@ -29,10 +29,8 @@ export function Footer() {
   return (
     <>
       <footer className="bg-slate-50 border-t border-blue-100 text-slate-600">
-        {/* Main Footer Links */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-            {/* Brand Column */}
             <div className="lg:col-span-2 space-y-4">
               <Link href="/" className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-sky-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30">
@@ -52,7 +50,6 @@ export function Footer() {
                 Empowering students, faculty educators, and system administrators with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
               </p>
 
-              {/* Social Icons */}
               <div className="flex items-center gap-2 pt-2 text-slate-400">
                 <a
                   href="https://edupulse.uk"
@@ -83,7 +80,6 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Academic Subjects Column */}
             <div className="space-y-3 text-xs sm:text-sm">
               <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
                 Subjects
@@ -117,7 +113,6 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* Newsletter Column */}
             <div className="space-y-3 text-xs sm:text-sm">
               <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
                 Academic Newsletter
@@ -154,7 +149,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Bottom Bar */}
           <div className="mt-12 pt-8 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <p>© {new Date().getFullYear()} EduPulse LMS Inc. All rights reserved.</p>
             <div className="flex items-center gap-6">

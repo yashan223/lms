@@ -3,20 +3,18 @@ import { promises as fsPromises } from "fs";
 import path from "path";
 import crypto from "crypto";
 
-// Base directory for all uploaded files on the VPS
 export const STORAGE_ROOT =
   process.env.STORAGE_DIR || path.join(process.cwd(), "storage", "uploads");
 
-// Allowed MIME types and their extensions
 export const MIME_MAP: Record<string, string> = {
-  // Images
+
   "image/jpeg": ".jpg",
   "image/jpg": ".jpg",
   "image/png": ".png",
   "image/webp": ".webp",
   "image/gif": ".gif",
   "image/svg+xml": ".svg",
-  // Documents
+
   "application/pdf": ".pdf",
   "application/msword": ".doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
@@ -27,7 +25,7 @@ export const MIME_MAP: Record<string, string> = {
   "text/plain": ".txt",
   "application/zip": ".zip",
   "application/x-zip-compressed": ".zip",
-  // Media / Videos / Audios
+
   "video/mp4": ".mp4",
   "video/webm": ".webm",
   "video/x-matroska": ".mkv",
@@ -38,7 +36,6 @@ export const MIME_MAP: Record<string, string> = {
   "audio/ogg": ".ogg",
 };
 
-// Extension to MIME type mapping for serving files
 export const EXTENSION_TO_MIME: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -64,18 +61,14 @@ export const EXTENSION_TO_MIME: Record<string, string> = {
   ".ogg": "audio/ogg",
 };
 
-// Size limits per category
 export const SIZE_LIMITS: Record<string, number> = {
-  avatar: 10 * 1024 * 1024, // 10MB
-  thumbnail: 15 * 1024 * 1024, // 15MB
-  document: 100 * 1024 * 1024, // 100MB
-  video: 1024 * 1024 * 1024, // 1GB
-  default: 50 * 1024 * 1024, // 50MB
+  avatar: 10 * 1024 * 1024,
+  thumbnail: 15 * 1024 * 1024,
+  document: 100 * 1024 * 1024,
+  video: 1024 * 1024 * 1024,
+  default: 50 * 1024 * 1024,
 };
 
-/**
- * Format bytes to readable string (e.g. "2.4 MB")
- */
 export function formatBytes(bytes: number, decimals = 1): string {
   if (!bytes || bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -85,9 +78,6 @@ export function formatBytes(bytes: number, decimals = 1): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
-/**
- * Ensure storage directories exist
- */
 export async function ensureStorageDirectories(): Promise<void> {
   const publicDir = path.join(STORAGE_ROOT, "public");
   const privateDir = path.join(STORAGE_ROOT, "private");
@@ -95,19 +85,13 @@ export async function ensureStorageDirectories(): Promise<void> {
   await fsPromises.mkdir(privateDir, { recursive: true });
 }
 
-/**
- * Resolves and verifies that a relative file key stays inside the storage root
- * (Strict Path Traversal Protection)
- */
 export function resolveSafeStoragePath(fileKey: string): string | null {
   if (!fileKey || typeof fileKey !== "string") return null;
 
-  // Remove any leading slashes or null bytes
   const sanitizedKey = fileKey.replace(/\0/g, "").replace(/^[\/\\]+/, "");
   const normalizedRoot = path.resolve(STORAGE_ROOT);
   const resolvedPath = path.resolve(STORAGE_ROOT, sanitizedKey);
 
-  // Must start with normalized storage root path
   if (!resolvedPath.startsWith(normalizedRoot + path.sep) && resolvedPath !== normalizedRoot) {
     return null;
   }
@@ -132,9 +116,6 @@ export interface SavedFileResult {
   isPrivate: boolean;
 }
 
-/**
- * Save an uploaded file securely to the VPS disk
- */
 export async function saveUploadedFile(
   fileBuffer: Buffer,
   originalFileName: string,
@@ -145,7 +126,6 @@ export async function saveUploadedFile(
 
   const { category = "general", isPrivate = false, customPrefix } = options;
 
-  // 1. Validate File Size
   const maxLimit = SIZE_LIMITS[category] || SIZE_LIMITS.default;
   if (fileBuffer.length > maxLimit) {
     throw new Error(
@@ -153,7 +133,6 @@ export async function saveUploadedFile(
     );
   }
 
-  // 2. Validate MIME Type & determine extension
   const detectedExt =
     MIME_MAP[mimeType.toLowerCase()] ||
     path.extname(originalFileName).toLowerCase() ||
@@ -163,12 +142,10 @@ export async function saveUploadedFile(
     .basename(originalFileName)
     .replace(/[^a-zA-Z0-9._-]/g, "_");
 
-  // 3. Generate safe unique filename
   const uniqueId = crypto.randomBytes(16).toString("hex");
   const prefix = customPrefix ? `${customPrefix}_` : "";
   const storedFileName = `${prefix}${Date.now()}_${uniqueId}${detectedExt}`;
 
-  // 4. Determine directory (public or private)
   const folder = isPrivate ? "private" : "public";
   const targetDir = path.join(STORAGE_ROOT, folder);
   await fsPromises.mkdir(targetDir, { recursive: true });
@@ -191,9 +168,6 @@ export async function saveUploadedFile(
   };
 }
 
-/**
- * Delete a file securely from VPS storage
- */
 export async function deleteStorageFile(fileKey: string): Promise<boolean> {
   const safePath = resolveSafeStoragePath(fileKey);
   if (!safePath) return false;
@@ -210,9 +184,6 @@ export async function deleteStorageFile(fileKey: string): Promise<boolean> {
   }
 }
 
-/**
- * Get File Metadata and stream range support for video / audio playback
- */
 export function getFileStream(fileKey: string, rangeHeader: string | null = null) {
   const safePath = resolveSafeStoragePath(fileKey);
   if (!safePath || !fs.existsSync(safePath)) {
@@ -228,7 +199,6 @@ export function getFileStream(fileKey: string, rangeHeader: string | null = null
   const ext = path.extname(safePath).toLowerCase();
   const mimeType = EXTENSION_TO_MIME[ext] || "application/octet-stream";
 
-  // If HTTP Range request (e.g. for streaming video/audio)
   if (rangeHeader) {
     const parts = rangeHeader.replace(/bytes=/, "").split("-");
     const start = parseInt(parts[0], 10);
@@ -256,7 +226,6 @@ export function getFileStream(fileKey: string, rangeHeader: string | null = null
     };
   }
 
-  // Full file stream
   const stream = fs.createReadStream(safePath);
   return {
     stream,

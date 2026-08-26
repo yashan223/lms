@@ -77,7 +77,6 @@ export function TrialRequestModal({
   const [error, setError] = useState<string | null>(null);
   const [createdTrial, setCreatedTrial] = useState<any | null>(null);
 
-  // Initialize form defaults
   useEffect(() => {
     if (isOpen) {
       if (currentUser) {
@@ -91,7 +90,6 @@ export function TrialRequestModal({
         setCourseId(allCourses[0].id);
       }
 
-      // Default date to tomorrow at 10:00 AM
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(10, 0, 0, 0);
@@ -154,7 +152,6 @@ export function TrialRequestModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
@@ -182,7 +179,6 @@ export function TrialRequestModal({
           </button>
         </div>
 
-        {/* Success Confirmation View */}
         {createdTrial ? (
           <div className="space-y-4 py-2 text-center animate-in fade-in duration-200">
             <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
@@ -198,7 +194,6 @@ export function TrialRequestModal({
               </p>
             </div>
 
-            {/* Session Details Card */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Subject / Course:</span>
@@ -236,7 +231,6 @@ export function TrialRequestModal({
               )}
             </div>
 
-            {/* Action Buttons */}
             <div className="space-y-2 pt-2">
               <a
                 href={buildGoogleCalendarUrl({
@@ -266,7 +260,7 @@ export function TrialRequestModal({
             </div>
           </div>
         ) : (
-          /* Form View */
+
           <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
             {error && (
               <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
@@ -275,7 +269,6 @@ export function TrialRequestModal({
               </div>
             )}
 
-            {/* Course Selector */}
             <div>
               <label className="font-bold text-slate-700 block mb-1">
                 Select Subject / Course <span className="text-red-500">*</span>
@@ -297,7 +290,6 @@ export function TrialRequestModal({
               </select>
             </div>
 
-            {/* Student Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
@@ -334,7 +326,6 @@ export function TrialRequestModal({
               </div>
             </div>
 
-            {/* Preferred Date & Phone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
@@ -366,7 +357,6 @@ export function TrialRequestModal({
               </div>
             </div>
 
-            {/* Topic / Focus */}
             <div>
               <label className="font-bold text-slate-700 block mb-1">
                 Topic or Questions of Interest
@@ -380,7 +370,6 @@ export function TrialRequestModal({
               />
             </div>
 
-            {/* Feature Note Banner */}
             <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/80 text-[11px] text-blue-900 space-y-1">
               <div className="font-bold flex items-center gap-1.5">
                 <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
@@ -391,7 +380,6 @@ export function TrialRequestModal({
               </p>
             </div>
 
-            {/* Form Actions */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
               <Button
                 type="button"

@@ -29,7 +29,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This reset link has expired. Please request a new one" }, { status: 400 });
     }
 
-    // Update password and mark token as used
     await prisma.$transaction([
       prisma.user.update({
         where: { id: resetToken.userId },

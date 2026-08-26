@@ -28,7 +28,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Handle Login Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -52,7 +51,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Automatically route directly to the user's role-based dashboard
       if (data.redirectTo) {
         router.push(data.redirectTo);
       } else {
@@ -67,7 +65,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Top Header */}
       <header className="bg-white border-b border-slate-200 py-3 px-4 sm:px-8 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
@@ -87,11 +84,9 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* Main Login Workspace */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
           <div className="p-6 sm:p-8 space-y-6">
-            {/* Title & Subtitle */}
             <div className="text-center space-y-2">
               <div className="w-20 h-20 rounded-2xl bg-transparent flex items-center justify-center mx-auto mb-1 overflow-hidden">
                 <img
@@ -108,7 +103,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Error Alert */}
             {errorMsg && (
               <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -116,7 +110,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 block">
@@ -198,7 +191,6 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Quick Demo Credentials for Manual Role Testing */}
             <div className="pt-4 border-t border-slate-100 space-y-2.5">
               <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
                 Select Account to Log In:
@@ -243,7 +235,6 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
         EduPulse London A/L & O/L Academy • Authorized Assessment Center #EDU-92810
       </footer>

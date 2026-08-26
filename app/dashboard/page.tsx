@@ -129,24 +129,19 @@ function DashboardContent() {
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
 
-  // Authentic Database User Role
   const userRole: "STUDENT" | "INSTRUCTOR" | "ADMIN" = user?.role || "STUDENT";
 
-  // Navigation tree expansion
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
   const [navSitePagesOpen, setNavSitePagesOpen] = useState(false);
 
-  // Timeline filters & sorting
   const [timelinePeriod, setTimelinePeriod] = useState("all");
   const [timelineSort, setTimelineSort] = useState("date");
   const [timelineSearch, setTimelineSearch] = useState("");
   const [calendarCourseFilter, setCalendarCourseFilter] = useState("all");
 
-  // Monthly Calendar Navigation & Selected Day State
   const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
 
-  // Modals
   const [showManageFilesModal, setShowManageFilesModal] = useState(false);
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
@@ -154,7 +149,6 @@ function DashboardContent() {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
-  // New Event Form State
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventDesc, setNewEventDesc] = useState("");
   const [newEventDate, setNewEventDate] = useState("");
@@ -165,7 +159,6 @@ function DashboardContent() {
   const [eventSuccess, setEventSuccess] = useState<string | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
-  // Student Reschedule Modal State
   const [showStudentRescheduleModal, setShowStudentRescheduleModal] = useState(false);
   const [rescheduleTargetEvent, setRescheduleTargetEvent] = useState<any | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
@@ -176,13 +169,11 @@ function DashboardContent() {
     text: string;
   } | null>(null);
 
-  // Real File Upload State
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  // Live Class Banner
   const [liveClassBanner, setLiveClassBanner] = useState<{
     title: string;
     meetingLink: string;
@@ -190,7 +181,6 @@ function DashboardContent() {
   const [bannerVisible, setBannerVisible] = useState(false);
   const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
 
-  // Open Student Reschedule Modal
   const openStudentReschedule = (event: any) => {
     setRescheduleTargetEvent(event);
     const d = new Date(event.dueDate);
@@ -200,7 +190,6 @@ function DashboardContent() {
     setShowStudentRescheduleModal(true);
   };
 
-  // Submit Student Reschedule
   const handleStudentConfirmReschedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rescheduleDate || !rescheduleTargetEvent) return;
@@ -244,7 +233,6 @@ function DashboardContent() {
     }
   };
 
-  // Fetch real records from server
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -267,7 +255,6 @@ function DashboardContent() {
     fetchDashboardData();
   }, []);
 
-  // Check for any newly LIVE events after each data sync
   useEffect(() => {
     if (!timelineEvents || userRole !== "STUDENT") return;
     const liveEv = timelineEvents.find(
@@ -283,14 +270,12 @@ function DashboardContent() {
     }
   }, [timelineEvents, userRole, seenLiveEventIds]);
 
-  // Real-time synchronization across open tabs without page reload
   const { isConnected: realtimeConnected } = useRealtimeSync({
     onSync: () => {
       fetchDashboardData();
     },
   });
 
-  // Role-specific assigned/enrolled courses
   const myCourses: any[] = useMemo(() => {
     if (userRole === "STUDENT") {
       return (user?.enrollments || []).map((e) => e.course).filter(Boolean);
@@ -303,7 +288,6 @@ function DashboardContent() {
     return allCourses;
   }, [userRole, user, allCourses]);
 
-  // Pre-fetch course details in background for instant 0ms clicks
   const prefetchCourse = useCallback((slug?: string) => {
     if (!slug || typeof window === "undefined") return;
     const cache = (window as any).__EDU_COURSE_CACHE;
@@ -331,7 +315,6 @@ function DashboardContent() {
       .catch(() => {});
   }, []);
 
-  // Background warm cache for assigned/enrolled courses
   useEffect(() => {
     if (myCourses && myCourses.length > 0) {
       myCourses.forEach((c) => {
@@ -340,7 +323,6 @@ function DashboardContent() {
     }
   }, [myCourses, prefetchCourse]);
 
-  // Open New Event Modal with prefilled date/time (Instructors and Admins only)
   const handleOpenNewEventModal = (forDate?: Date) => {
     if (userRole === "STUDENT") return;
     const base = forDate || selectedDate || new Date();
@@ -363,7 +345,6 @@ function DashboardContent() {
     setShowNewEventModal(true);
   };
 
-  // Handle Event Creation saved directly to DB
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (userRole === "STUDENT") {
@@ -423,7 +404,6 @@ function DashboardContent() {
     }
   };
 
-  // Handle Delete Event from DB
   const handleDeleteEvent = async (eventId: string) => {
     if (!confirm("Are you sure you want to delete this event?")) return;
     try {
@@ -451,7 +431,6 @@ function DashboardContent() {
     }
   };
 
-  // Monthly Calendar Navigation & Calculations
   const calendarYear = calendarMonth.getFullYear();
   const calendarMonthIndex = calendarMonth.getMonth();
 
@@ -469,14 +448,13 @@ function DashboardContent() {
     setSelectedDate(today);
   };
 
-  // Filter events strictly assigned to the student
   const studentTimelineEvents = useMemo(() => {
     if (userRole !== "STUDENT") return timelineEvents;
     const enrolledCourseIds = new Set(myCourses.map((c) => c.id));
     return timelineEvents.filter((ev) => {
-      // 1. Directly assigned to this specific student (e.g. 1-on-1 trial session, individual mock assessment)
+
       if (ev.userId && user?.id && ev.userId === user.id) return true;
-      // 2. Assigned to a course the student is enrolled in (and not assigned exclusively to another student)
+
       const matchesCourse =
         (ev.courseId && enrolledCourseIds.has(ev.courseId)) ||
         (ev.course?.id && enrolledCourseIds.has(ev.course.id));
@@ -487,11 +465,10 @@ function DashboardContent() {
     });
   }, [timelineEvents, userRole, myCourses, user]);
 
-  // Calendar Days Grid Generation
   const calendarDays = useMemo(() => {
     const daysInMonth = new Date(calendarYear, calendarMonthIndex + 1, 0).getDate();
-    const firstDayOfWeek = new Date(calendarYear, calendarMonthIndex, 1).getDay(); // 0 is Sunday
-    const startOffset = (firstDayOfWeek + 6) % 7; // Monday = 0, Sunday = 6
+    const firstDayOfWeek = new Date(calendarYear, calendarMonthIndex, 1).getDay();
+    const startOffset = (firstDayOfWeek + 6) % 7;
 
     const prevMonthDaysCount = new Date(calendarYear, calendarMonthIndex, 0).getDate();
 
@@ -507,7 +484,6 @@ function DashboardContent() {
     const todayStr = new Date().toDateString();
     const selectedStr = selectedDate?.toDateString() || "";
 
-    // Trailing days from previous month
     for (let i = startOffset - 1; i >= 0; i--) {
       const d = prevMonthDaysCount - i;
       const date = new Date(calendarYear, calendarMonthIndex - 1, d);
@@ -533,7 +509,6 @@ function DashboardContent() {
       });
     }
 
-    // Days of current month
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(calendarYear, calendarMonthIndex, d);
       const dateStr = date.toDateString();
@@ -558,7 +533,6 @@ function DashboardContent() {
       });
     }
 
-    // Leading days of next month
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let d = 1; d <= remaining; d++) {
       const date = new Date(calendarYear, calendarMonthIndex + 1, d);
@@ -587,7 +561,6 @@ function DashboardContent() {
     return cells;
   }, [calendarYear, calendarMonthIndex, studentTimelineEvents, calendarCourseFilter, selectedDate]);
 
-  // Selected Day's Events (excluding ended classes)
   const selectedDayEvents = useMemo(() => {
     if (!selectedDate) return [];
     const selectedStr = selectedDate.toDateString();
@@ -603,7 +576,6 @@ function DashboardContent() {
     });
   }, [selectedDate, studentTimelineEvents, calendarCourseFilter]);
 
-  // Upcoming events
   const upcomingEvents = useMemo(() => {
     let list = [...studentTimelineEvents];
     if (calendarCourseFilter !== "all") {
@@ -614,17 +586,16 @@ function DashboardContent() {
     const now = Date.now();
     return list
       .filter((ev) => {
-        // Exclude completed, cancelled, or ended classes
+
         if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || ev.endedAt) return false;
-        // Include if currently LIVE
+
         if (ev.status === "LIVE") return true;
-        // Include if scheduled in the future
+
         return (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate).getTime() >= now;
       })
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [studentTimelineEvents, calendarCourseFilter]);
 
-  // Filtered timeline events
   const filteredTimeline = useMemo(() => {
     let list = [...studentTimelineEvents];
 
@@ -667,7 +638,6 @@ function DashboardContent() {
     return list;
   }, [studentTimelineEvents, calendarCourseFilter, timelinePeriod, timelineSearch, timelineSort]);
 
-  // Handle Add Private File - Uploads real file to VPS storage & saves to DB
   const handleAddPrivateFile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUploadFile || !user) return;
@@ -705,7 +675,6 @@ function DashboardContent() {
     }
   };
 
-  // Handle Delete Private File from DB
   const handleDeletePrivateFile = async (fileId: string) => {
     try {
       const res = await fetch("/api/dashboard", {
@@ -725,7 +694,6 @@ function DashboardContent() {
     }
   };
 
-  // Handle Logout
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -736,7 +704,6 @@ function DashboardContent() {
     }
   };
 
-  // Dynamic user naming based on authentic database user
   const getRoleUserHeader = () => {
     if (userRole === "INSTRUCTOR") {
       return {
@@ -768,7 +735,6 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-[#f3f4f6] text-slate-800 font-sans flex flex-col antialiased">
 
-      {/* ── LIVE CLASS BANNER ─────────────────────────────────────────────── */}
       {liveClassBanner && (
         <div
           className={`fixed top-0 left-0 right-0 z-[999] transition-transform duration-500 ease-out ${
@@ -811,10 +777,8 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* 1. TOP LMS NAVIGATION HEADER */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-[1480px] mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-          {/* Left: Brand Logo & Dropdown Services Menu */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group py-1">
               <img
@@ -837,9 +801,7 @@ function DashboardContent() {
             )}
           </div>
 
-          {/* Right Header Utilities: Role Badge, Search, User Profile, Sign Out */}
           <div className="flex items-center gap-3">
-            {/* User Role Badge */}
             <Badge
               variant={
                 userRole === "INSTRUCTOR"
@@ -853,12 +815,10 @@ function DashboardContent() {
               {currentProfile.badge}
             </Badge>
 
-            {/* Notification Center */}
             <NotificationBell userRole={userRole} />
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
-            {/* User Profile */}
             <div className="flex items-center gap-2 pl-1">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wide hidden md:block">
                 {currentProfile.name}
@@ -868,7 +828,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Sign Out Button */}
             <button
               onClick={handleLogout}
               title="Sign Out"
@@ -881,18 +840,10 @@ function DashboardContent() {
         </div>
       </header>
 
-
-
-      {/* 3. MAIN DASHBOARD 3-COLUMN WORKSPACE */}
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-6 space-y-5 flex-1">
 
-        {/* 3-Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* ======================================================== */}
-          {/* LEFT SIDEBAR (Navigation, Private Files, Online Users) */}
-          {/* ======================================================== */}
           <aside className="lg:col-span-3 space-y-4">
-            {/* Block 1: Navigation Tree */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
                 Navigation
@@ -909,9 +860,6 @@ function DashboardContent() {
                     <span>Site home</span>
                   </Link>
 
-
-
-                  {/* My Courses Navigation Tree */}
                   <div>
                     <div
                       onClick={() => setNavCoursesOpen(!navCoursesOpen)}
@@ -960,7 +908,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Block 2: Private Files */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -1027,7 +974,6 @@ function DashboardContent() {
               </button>
             </div>
 
-            {/* Block 3: Academic Calendar */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -1051,14 +997,12 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Day names */}
               <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">
                 {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
                   <div key={i} className="py-1">{d}</div>
                 ))}
               </div>
 
-              {/* Days grid */}
               <div className="grid grid-cols-7 text-center text-xs">
                 {calendarDays.map((cell, idx) => {
                   const hasEvents = cell.events.length > 0;
@@ -1098,7 +1042,6 @@ function DashboardContent() {
                         />
                       )}
 
-                      {/* Hover Popup Tooltip showing class details */}
                       {hasEvents && (
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col z-50 w-48 sm:w-56 p-2.5 bg-slate-900/95 text-white rounded-xl shadow-xl border border-slate-700/70 backdrop-blur-md pointer-events-none text-left animate-in fade-in zoom-in-95 duration-150">
                           <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider border-b border-slate-700/60 pb-1 flex items-center justify-between">
@@ -1131,7 +1074,6 @@ function DashboardContent() {
                               </div>
                             ))}
                           </div>
-                          {/* Arrow pointer */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-slate-900" />
                         </div>
                       )}
@@ -1143,11 +1085,7 @@ function DashboardContent() {
 
           </aside>
 
-          {/* ======================================================== */}
-          {/* CENTER MAIN FEED (Role-Specific Workspaces) */}
-          {/* ======================================================== */}
           <section className="lg:col-span-9 space-y-5">
-            {/* Block 1: Timeline Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -1159,7 +1097,6 @@ function DashboardContent() {
                 </span>
               </div>
 
-              {/* Filters */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
                 <select
                   value={timelinePeriod}
@@ -1193,7 +1130,6 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Timeline Items */}
               <div className="pt-1">
                 {filteredTimeline.length > 0 ? (
                   <div className="space-y-2.5">
@@ -1348,7 +1284,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Block 2: Upcoming Classes Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -1419,7 +1354,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Block 4: Enrolled Course Cards (Course Overview) */}
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-sm font-bold text-slate-900">
@@ -1489,12 +1423,8 @@ function DashboardContent() {
             </div>
           </section>
 
-          {/* ======================================================== */}
-          {/* RIGHT SIDEBAR (For Instructor Stats) */}
-          {/* ======================================================== */}
           {userRole === "INSTRUCTOR" && (
             <aside className="lg:col-span-3 space-y-4">
-              {/* FOR INSTRUCTOR: Honorarium & Faculty Stats */}
               <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Faculty Honorarium & Stats
@@ -1519,7 +1449,6 @@ function DashboardContent() {
         </div>
       </main>
 
-      {/* MODAL 1: MANAGE PRIVATE FILES (VPS LOCAL STORAGE) */}
       {showManageFilesModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
@@ -1547,7 +1476,6 @@ function DashboardContent() {
               </button>
             </div>
 
-            {/* Upload Feedback */}
             {uploadSuccess && (
               <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -1561,7 +1489,6 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* Upload Box */}
             <form onSubmit={handleAddPrivateFile} className="space-y-3 text-xs">
               <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-blue-500 hover:bg-blue-50/30 transition-all cursor-pointer relative group">
                 <input
@@ -1634,7 +1561,6 @@ function DashboardContent() {
               </div>
             </form>
 
-            {/* List of Stored Files */}
             <div className="space-y-2 pt-3 border-t border-slate-100 max-h-56 overflow-y-auto">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase">
                 <span>Stored Private Files ({user?.privateFiles?.length || 0})</span>
@@ -1700,7 +1626,6 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* MODAL 2: CREATE NEW CALENDAR EVENT (Instructors & Admins Only) */}
       {userRole !== "STUDENT" && showNewEventModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
@@ -1722,7 +1647,6 @@ function DashboardContent() {
               </button>
             </div>
 
-            {/* Error & Success Feedback */}
             {eventSuccess && (
               <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -1830,7 +1754,6 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* MODAL 3: REQUEST 30-MINUTE FREE TRIAL ONLINE SESSION */}
       <TrialRequestModal
         isOpen={showTrialModal}
         onClose={() => setShowTrialModal(false)}
@@ -1842,7 +1765,6 @@ function DashboardContent() {
         }}
       />
 
-      {/* MODAL 4: STUDENT RESCHEDULE SESSION MODAL */}
       {showStudentRescheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
@@ -1886,7 +1808,6 @@ function DashboardContent() {
             )}
 
             <form onSubmit={handleStudentConfirmReschedule} className="space-y-4 text-xs">
-              {/* Target event details */}
               <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 space-y-1">
                 <div className="font-bold text-blue-950 text-xs">
                   {rescheduleTargetEvent?.title || "Live Academic Session"}
@@ -1965,7 +1886,6 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* End-to-End Encrypted Chat Drawer */}
       {user && (
         <EncryptedChatDrawer
           currentUser={user}

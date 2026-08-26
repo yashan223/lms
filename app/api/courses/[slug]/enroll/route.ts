@@ -36,14 +36,12 @@ export async function POST(
     const cookieStore = await cookies();
     const userRoleCookie = cookieStore.get("edupulse_user_role")?.value;
 
-    // Find course
     const course = await findCourseBySlugOrId(slug);
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    // Find active user (or default student)
     let user = await prisma.user.findFirst({
       where: { role: "STUDENT" },
     });
@@ -56,7 +54,6 @@ export async function POST(
       return NextResponse.json({ error: "No student account available for enrollment" }, { status: 400 });
     }
 
-    // Check if already enrolled
     const existingEnrollment = await prisma.enrollment.findUnique({
       where: {
         userId_courseId: {
@@ -75,7 +72,6 @@ export async function POST(
       });
     }
 
-    // Create enrollment
     const newEnrollment = await prisma.enrollment.create({
       data: {
         userId: user.id,
@@ -83,7 +79,6 @@ export async function POST(
       },
     });
 
-    // Create timeline event for the course enrollment
     await prisma.event.create({
       data: {
         title: `Welcome to ${course.title}`,

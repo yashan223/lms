@@ -16,7 +16,6 @@ export function FaqSection() {
   return (
     <section id="faq" className="py-20 bg-slate-50/60 border-t border-blue-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             Frequently Asked Questions
@@ -26,7 +25,6 @@ export function FaqSection() {
           </p>
         </div>
 
-        {/* Accordion List */}
         <Accordion type="single" collapsible defaultValue="faq-1" className="w-full">
           {FAQ_ITEMS.map((faq) => (
             <AccordionItem key={faq.id} value={faq.id}>
@@ -45,7 +43,6 @@ export function FaqSection() {
           ))}
         </Accordion>
 
-        {/* Bottom CTA Card */}
         <div className="mt-16 rounded-3xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 p-8 sm:p-12 text-white shadow-xl shadow-blue-600/20 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 blur-3xl rounded-full pointer-events-none" />
 

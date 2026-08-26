@@ -17,19 +17,16 @@ export async function POST(request: Request) {
       where: { email: email.trim().toLowerCase() },
     });
 
-    // Always return success to prevent email enumeration attacks
     if (!user || user.role === "ADMIN") {
       return NextResponse.json({ success: true });
     }
 
-    // Delete any existing unused tokens for this user
     await prisma.passwordResetToken.deleteMany({
       where: { userId: user.id, used: false },
     });
 
-    // Generate a secure random token
     const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60);
 
     await prisma.passwordResetToken.create({
       data: { token, userId: user.id, expiresAt },

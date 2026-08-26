@@ -110,7 +110,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { action } = body;
 
-    // 1. Create User (Any Role: Student, Instructor, Admin)
     if (action === "create_user" || action === "create_candidate") {
       const { name, email, password, phone, role, headline, bio, initialCourseId } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
@@ -149,7 +148,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, user: newUser });
     }
 
-    // 2. Update User Details
     if (action === "update_user") {
       const { userId, name, email, phone, role, headline, bio, password } = body;
       const updateData: any = {
@@ -173,7 +171,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, user: updatedUser });
     }
 
-    // 3. Delete User
     if (action === "delete_user" || action === "delete_candidate") {
       const { userId, candidateId } = body;
       const targetId = userId || candidateId;
@@ -183,7 +180,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 4. Enroll User in Course
     if (action === "enroll_user") {
       const { userId, courseId } = body;
       const existing = await prisma.enrollment.findUnique({
@@ -206,7 +202,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 5. Unenroll User
     if (action === "unenroll_user") {
       const { enrollmentId } = body;
       await prisma.enrollment.delete({ where: { id: enrollmentId } });
@@ -216,10 +211,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 6. Create Course
     if (action === "create_course") {
       const { title, slug, subtitle, description, category, subjectCode, price, instructorId, level, status } = body;
-      
+
       let finalInstructorId = instructorId;
       if (!finalInstructorId) {
         const firstInst = await prisma.user.findFirst({ where: { role: Role.INSTRUCTOR } });
@@ -260,7 +254,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, course: newCourse });
     }
 
-    // 7. Update Course Details
     if (action === "update_course") {
       const { courseId, title, subtitle, description, category, subjectCode, price, level, status, instructorId } = body;
       const updatedCourse = await prisma.course.update({
@@ -281,7 +274,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, course: updatedCourse });
     }
 
-    // 8. Delete Course
     if (action === "delete_course") {
       const { courseId } = body;
       await prisma.course.delete({ where: { id: courseId } });
@@ -289,7 +281,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 9. Add Module to Course
     if (action === "add_module") {
       const { courseId, title, position } = body;
       const newModule = await prisma.module.create({
@@ -303,7 +294,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, module: newModule });
     }
 
-    // 10. Delete Module
     if (action === "delete_module") {
       const { moduleId } = body;
       await prisma.module.delete({ where: { id: moduleId } });
@@ -311,7 +301,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 11. Add Lesson to Module
     if (action === "add_lesson") {
       const { moduleId, title, durationMin, isFreePreview, videoUrl } = body;
       const count = await prisma.lesson.count({ where: { moduleId } });
@@ -329,7 +318,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, lesson: newLesson });
     }
 
-    // 12. Delete Lesson
     if (action === "delete_lesson") {
       const { lessonId } = body;
       await prisma.lesson.delete({ where: { id: lessonId } });
@@ -337,7 +325,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 13. Create Coursework Assessment Event
     if (action === "create_mock_paper" || action === "create_assessment") {
       const { title, description, dueDate, courseId, paperCode, durationMins, totalMarks } = body;
       const newMock = await prisma.event.create({
@@ -353,7 +340,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, mock: newMock });
     }
 
-    // 14. Delete Coursework Assessment Event
     if (action === "delete_assessment" || action === "delete_event") {
       const { eventId } = body;
       await prisma.event.delete({ where: { id: eventId } });
@@ -361,7 +347,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 15. Add Course Material File
     if (action === "add_course_material") {
       const { courseId, title, description, fileUrl, fileSize, fileType, category } = body;
       if (!courseId || !title || !fileUrl) {
@@ -383,7 +368,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, material });
     }
 
-    // 16. Delete Course Material File
     if (action === "delete_course_material") {
       const { materialId } = body;
       const existing = await prisma.courseMaterial.findUnique({ where: { id: materialId } });
@@ -397,7 +381,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // 17. Start Live Class (Admin or Tutor trigger)
     if (action === "start_class") {
       const { eventId, meetingLink } = body;
       const existing = await prisma.event.findUnique({ where: { id: eventId } });
@@ -435,7 +418,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // 18. End Live Class
     if (action === "end_class") {
       const { eventId } = body;
       const updated = await prisma.event.update({
@@ -461,7 +443,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // 19. Schedule Live Class from Admin
     if (action === "schedule_class") {
       const { title, description, meetingLink, scheduledDate, courseId, tutorId, studentId, type } = body;
       if (!title || !scheduledDate) {

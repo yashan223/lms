@@ -53,7 +53,6 @@ export function AboutSection() {
     <section id="about" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left Column: Academy Narrative & Features */}
           <div className="lg:col-span-7 space-y-6">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.15]">
               World-Class London A/L & O/L Academic Excellence
@@ -63,7 +62,6 @@ export function AboutSection() {
               EduPulse is a premier international learning platform dedicated to London A/L and London O/L students. We bridge digital interactive lectures, comprehensive topic walkthroughs, and certified lecturer evaluations to ensure students achieve academic mastery.
             </p>
 
-            {/* Checklist items */}
             <div className="space-y-2.5 pt-2">
               {highlights.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 font-medium">
@@ -73,7 +71,6 @@ export function AboutSection() {
               ))}
             </div>
 
-            {/* CTA row */}
             <div className="pt-4 flex flex-wrap items-center gap-3">
               <Link
                 href="#courses"
@@ -93,9 +90,7 @@ export function AboutSection() {
             </div>
           </div>
 
-          {/* Right Column: Visual Photo & Academic Stats Cards */}
           <div className="lg:col-span-5 space-y-4">
-            {/* Campus Visual Card */}
             <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-slate-900 aspect-[4/3]">
               <img
                 src="/images/campus_library_study.jpg"
@@ -113,7 +108,6 @@ export function AboutSection() {
               </div>
             </div>
 
-            {/* 3 Pillar Feature Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {pillars.map((p, idx) => {
                 const Icon = p.icon;

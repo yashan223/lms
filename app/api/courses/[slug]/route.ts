@@ -36,7 +36,6 @@ async function findCourseBySlugOrId(rawSlug: string) {
     },
   };
 
-  // Single fast query targeting indexed fields
   const course = await prisma.course.findFirst({
     where: {
       OR: [
@@ -124,7 +123,7 @@ export async function POST(
         await deleteStorageFile(fileKey);
       }
       await prisma.courseMaterial.delete({ where: { id: materialId } });
-      
+
       broadcastLMSEvent("MATERIALS_CHANGED");
       broadcastLMSEvent("COURSES_CHANGED");
 
@@ -137,4 +136,3 @@ export async function POST(
     return NextResponse.json({ error: "Failed to update course data" }, { status: 500 });
   }
 }
-

@@ -1,11 +1,3 @@
-/**
- * End-to-End Encryption (E2EE) Library for EduPulse LMS
- * Uses the Web Cryptography API (AES-GCM 256-bit + PBKDF2 / ECDH)
- * All encryption and decryption occurs purely on the client's browser.
- * The server only ever stores ciphertext and IVs (Zero-Knowledge Architecture).
- */
-
-// Helper to convert ArrayBuffer to Base64 string
 export function bufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = "";
@@ -15,7 +7,6 @@ export function bufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
   return btoa(binary);
 }
 
-// Helper to convert Base64 string to Uint8Array
 export function base64ToBuffer(base64: string): Uint8Array {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -25,7 +16,6 @@ export function base64ToBuffer(base64: string): Uint8Array {
   return bytes;
 }
 
-// Derive a 256-bit AES-GCM CryptoKey from two participant IDs and a salt
 export async function deriveConversationKey(
   userAId: string,
   userBId: string,
@@ -35,13 +25,11 @@ export async function deriveConversationKey(
     throw new Error("Web Cryptography API is not supported in this environment");
   }
 
-  // Sort participant IDs so key derivation is symmetric for both users
   const sortedIds = [userAId, userBId].sort().join("::");
   const enc = new TextEncoder();
   const rawKeyMaterial = enc.encode(sortedIds);
   const salt = enc.encode(customSalt);
 
-  // Import raw key material
   const baseKey = await window.crypto.subtle.importKey(
     "raw",
     rawKeyMaterial,
@@ -50,7 +38,6 @@ export async function deriveConversationKey(
     ["deriveKey"]
   );
 
-  // Derive AES-GCM 256-bit key
   return await window.crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
@@ -65,10 +52,6 @@ export async function deriveConversationKey(
   );
 }
 
-/**
- * Encrypt a plaintext message using AES-GCM 256-bit
- * Returns Base64-encoded encryptedContent and initialization vector (iv)
- */
 export async function encryptMessage(
   plainText: string,
   cryptoKey: CryptoKey
@@ -80,7 +63,6 @@ export async function encryptMessage(
   const enc = new TextEncoder();
   const encodedText = enc.encode(plainText);
 
-  // Generate a cryptographically secure 12-byte IV for AES-GCM
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
 
   const cipherBuffer = await window.crypto.subtle.encrypt(
@@ -98,10 +80,6 @@ export async function encryptMessage(
   };
 }
 
-/**
- * Decrypt a ciphertext message using AES-GCM 256-bit
- * Returns the original plaintext string
- */
 export async function decryptMessage(
   encryptedContent: string,
   ivBase64: string,

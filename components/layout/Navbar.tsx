@@ -25,7 +25,7 @@ export function Navbar() {
   const [confirmLogoutModalOpen, setConfirmLogoutModalOpen] = useState(false);
 
   useEffect(() => {
-    // Read session cookies
+
     if (typeof document !== "undefined") {
       const matchRole = document.cookie.match(/edupulse_user_role=([^;]+)/);
       const matchEmail = document.cookie.match(/edupulse_user_email=([^;]+)/);
@@ -93,7 +93,6 @@ export function Navbar() {
   return (
     <header className="w-full z-40 bg-white/95 backdrop-blur-md text-slate-800 shadow-2xs relative border-b border-slate-200">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between min-h-[76px] px-4 sm:px-6 lg:px-8">
-        {/* Left Brand */}
         <Link href="/" className="flex items-center gap-2.5 group py-2">
           <img
             src="/logo-wide.png"
@@ -102,7 +101,6 @@ export function Navbar() {
           />
         </Link>
 
-        {/* Center Navigation Links */}
         <nav className="hidden lg:flex items-center gap-8 text-xs font-bold tracking-widest uppercase">
           <Link
             href="/courses"
@@ -124,11 +122,9 @@ export function Navbar() {
           </Link>
         </nav>
 
-        {/* Right Action Portal Buttons */}
         <div className="hidden md:flex items-center gap-2.5">
           {userRole ? (
             <div className="flex items-center gap-2">
-              {/* Quick Action Icons */}
               {userRole === "ADMIN" ? (
                 <Link
                   href="/admin"
@@ -158,7 +154,6 @@ export function Navbar() {
                 </Link>
               )}
 
-              {/* Sign Out Icon Button */}
               <button
                 onClick={() => setConfirmLogoutModalOpen(true)}
                 title="Sign Out"
@@ -190,7 +185,6 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile Hamburger Toggle */}
         <div className="flex lg:hidden items-center gap-2">
           <Link
             href={userRole ? "/dashboard" : "/login"}
@@ -208,10 +202,8 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-t border-slate-200 px-5 py-4 space-y-4 animate-in slide-in-from-top-2 shadow-lg">
-          {/* Mobile User Profile Header if logged in */}
           {userRole && (
             <Link
               href={userRole === "ADMIN" ? "/admin" : "/dashboard"}
@@ -308,7 +300,6 @@ export function Navbar() {
         </div>
       )}
 
-      {/* Sign Out Confirmation Modal */}
       <ConfirmationModal
         isOpen={confirmLogoutModalOpen}
         onClose={() => setConfirmLogoutModalOpen(false)}

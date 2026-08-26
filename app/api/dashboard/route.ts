@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
       targetWhere = { role: "STUDENT" };
     }
 
-    // 1. Fetch user matching cookie or requested role
     let user = await prisma.user.findFirst({
       where: targetWhere,
       include: {
@@ -108,7 +107,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 2. Fetch all courses for calendar and navigation
     const allCourses = await prisma.course.findMany({
       include: {
         instructor: true,
@@ -120,7 +118,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 3. Fetch active online users
     const onlineUsers = await prisma.user.findMany({
       take: 8,
       select: {
@@ -132,15 +129,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 4. Fetch timeline events strictly assigned to the student or instructor
     let eventWhere: any = {};
     if (user?.role === "STUDENT") {
       const enrolledCourseIds = (user.enrollments || []).map((e) => e.courseId);
       eventWhere = {
         OR: [
-          // Directly assigned to this student (e.g. 1-on-1 session, individual assessment)
+
           { userId: user.id },
-          // Assigned to one of the student's enrolled courses (and not assigned exclusively to another student)
+
           {
             courseId: { in: enrolledCourseIds },
             OR: [
@@ -290,7 +286,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "delete_private_file") {
       const { fileId } = body;
-      // Fetch file to get fileUrl if it exists
+
       const existing = await prisma.privateFile.findUnique({ where: { id: fileId } });
       if (existing && existing.fileUrl && existing.fileUrl.startsWith("/api/files/")) {
         const fileKey = existing.fileUrl.replace("/api/files/", "");

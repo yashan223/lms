@@ -1,7 +1,3 @@
-/**
- * Utility functions for calendar integration and Google Calendar linking
- */
-
 export interface CalendarEventPayload {
   title: string;
   description?: string | null;
@@ -11,9 +7,6 @@ export interface CalendarEventPayload {
   durationMinutes?: number;
 }
 
-/**
- * Builds a direct Google Calendar event creation URL
- */
 export function buildGoogleCalendarUrl({
   title,
   description,
@@ -26,7 +19,6 @@ export function buildGoogleCalendarUrl({
   const validStart = isNaN(start.getTime()) ? new Date() : start;
   const end = new Date(validStart.getTime() + durationMinutes * 60 * 1000);
 
-  // Format UTC dates as YYYYMMDDTHHmmssZ
   const formatUtc = (d: Date) => {
     const pad = (n: number) => n.toString().padStart(2, "0");
     const y = d.getUTCFullYear();
@@ -52,7 +44,6 @@ export function buildGoogleCalendarUrl({
     details: detailsLines.join("\n\n"),
   });
 
-  // Extract link if in description or explicitly provided
   if (location) {
     params.set("location", location);
   } else if (description && (description.includes("http://") || description.includes("https://"))) {

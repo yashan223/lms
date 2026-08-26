@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
     const saveToDb = formData.get("saveToDb") === "true" || formData.get("saveToPrivateFiles") === "true";
     const customPrefix = formData.get("prefix") as string | null;
 
-    // Convert file to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -42,7 +41,6 @@ export async function POST(request: NextRequest) {
 
     let dbRecord = null;
 
-    // If student/instructor private file upload, persist to PrivateFile table
     if (saveToDb && userId) {
       dbRecord = await prisma.privateFile.create({
         data: {

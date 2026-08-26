@@ -58,8 +58,6 @@ export interface Course {
   skills: string[];
 }
 
-
-
 export interface Testimonial {
   id: string;
   name: string;

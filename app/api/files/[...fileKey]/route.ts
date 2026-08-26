@@ -50,7 +50,6 @@ export async function GET(
     const isPrivate = fileKey.startsWith("private/");
     const filename = path.basename(safePath);
 
-    // Convert Node ReadStream to Web ReadableStream for Next.js response
     const webStream = Readable.toWeb(stream) as ReadableStream<Uint8Array>;
 
     const headers: Record<string, string> = {

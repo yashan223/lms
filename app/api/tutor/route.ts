@@ -10,7 +10,6 @@ export async function GET(request: NextRequest) {
   try {
     const emailCookie = request.cookies.get("edupulse_user_email")?.value;
 
-    // 1. Locate the active tutor
     let tutor = null;
     if (emailCookie) {
       tutor = await prisma.user.findFirst({
@@ -21,7 +20,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fallback to first instructor if cookie not set or not matching
     if (!tutor) {
       tutor = await prisma.user.findFirst({
         where: { role: Role.INSTRUCTOR },
@@ -35,7 +33,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 2. Fetch courses assigned/authored by this tutor (or all courses if tutor hasn't authored any yet)
     let courses: any[] = await prisma.course.findMany({
       where: { instructorId: tutor.id },
       include: {
@@ -52,7 +49,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // If tutor has no direct courses, give access to academy courses
     if (courses.length === 0) {
       courses = await prisma.course.findMany({
         include: {
@@ -72,7 +68,6 @@ export async function GET(request: NextRequest) {
 
     const courseIds = courses.map((c) => c.id);
 
-    // 3. Aggregate all enrolled students across the tutor's courses
     const studentMap = new Map<string, any>();
 
     courses.forEach((course) => {
@@ -111,7 +106,6 @@ export async function GET(request: NextRequest) {
 
     const students = Array.from(studentMap.values());
 
-    // 4. Fetch scheduled classes & calendar events for this tutor
     const events = await prisma.event.findMany({
       where: {
         OR: [
@@ -128,7 +122,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 5. Fetch 30-min free trial requests for this tutor
     const trials = await prisma.trialRequest.findMany({
       where: {
         OR: [
@@ -176,7 +169,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
-    // 1. UPDATE TUTOR PROFILE & QUALIFICATIONS
     if (action === "update_profile") {
       const { tutorId, name, headline, bio, phone, avatar } = body;
 
@@ -207,7 +199,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2. SCHEDULE NEW LIVE CLASS / SEMINAR FOR STUDENTS
     if (action === "schedule_class") {
       const {
         title,
@@ -262,7 +253,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. START LIVE CLASS (TUTOR TRIGGER)
     if (action === "start_class") {
       const { eventId, meetingLink } = body;
       if (!eventId) {
@@ -291,7 +281,6 @@ export async function POST(request: NextRequest) {
 
       broadcastLMSEvent("EVENTS_CHANGED");
 
-      // Notify all enrolled students in the associated course
       if (updated.courseId) {
         const enrollments = await prisma.enrollment.findMany({
           where: { courseId: updated.courseId },
@@ -309,12 +298,10 @@ export async function POST(request: NextRequest) {
             })),
           });
 
-          // Broadcast to each student's feed
           enrollments.forEach((e) => {
             broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: e.userId });
           });
 
-          // Also broadcast a CLASS_LIVE event with meeting info
           broadcastLMSEvent("EVENTS_CHANGED", {
             classLive: true,
             eventId: updated.id,
@@ -340,7 +327,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. END LIVE CLASS
     if (action === "end_class") {
       const { eventId } = body;
       if (!eventId) {
@@ -365,7 +351,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 5. DELETE / CANCEL SCHEDULED CLASS
     if (action === "delete_class") {
       const { eventId } = body;
 
@@ -388,7 +373,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 6. RESCHEDULE CLASS SESSION
     if (action === "reschedule_class") {
       const { eventId, scheduledDate, meetingLink, description, title } = body;
       if (!eventId || !scheduledDate) {
@@ -435,7 +419,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 7. RESCHEDULE 1-ON-1 TRIAL SESSION
     if (action === "reschedule_trial") {
       const { trialId, preferredDate, notes } = body;
       if (!trialId || !preferredDate) {
@@ -462,7 +445,6 @@ export async function POST(request: NextRequest) {
         include: { course: true, tutor: true, student: true },
       });
 
-      // Also update linked calendar event if present
       if (updatedTrial.courseId) {
         await prisma.event.updateMany({
           where: {

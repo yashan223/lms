@@ -39,7 +39,6 @@ export default function CoursesPage() {
     "School of Economics & Commerce",
   ];
 
-  // Fetch live courses from server
   const loadCourses = async () => {
     try {
       setLoading(true);
@@ -84,7 +83,6 @@ export default function CoursesPage() {
     loadCourses();
   }, []);
 
-  // Real-time updates when courses change
   useRealtimeSync({
     events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED"],
     onSync: () => {
@@ -115,7 +113,6 @@ export default function CoursesPage() {
 
       <main className="flex-1 py-8 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          {/* Search & Filter Controls */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
@@ -150,7 +147,6 @@ export default function CoursesPage() {
             </div>
           </div>
 
-          {/* Category Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => (
               <button
@@ -167,7 +163,6 @@ export default function CoursesPage() {
             ))}
           </div>
 
-          {/* Course Grid */}
           {filteredCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCourses.map((course) => (
@@ -176,7 +171,6 @@ export default function CoursesPage() {
                   className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
                 >
                   <div>
-                    {/* Thumbnail Banner */}
                     <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
                       <img
                         src={course.thumbnail}
@@ -198,7 +192,6 @@ export default function CoursesPage() {
                       </div>
                     </div>
 
-                    {/* Body Content */}
                     <div className="p-5 space-y-3">
                       <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-700 transition-colors leading-snug line-clamp-2">
                         {course.title}
@@ -208,7 +201,6 @@ export default function CoursesPage() {
                         {course.subtitle}
                       </p>
 
-                      {/* Course metadata */}
                       <div className="flex items-center gap-4 text-xs text-slate-500 py-1 border-y border-slate-100">
                         <span className="flex items-center gap-1 font-medium">
                           <Clock className="w-3.5 h-3.5 text-blue-600" />
@@ -224,7 +216,6 @@ export default function CoursesPage() {
                         </span>
                       </div>
 
-                      {/* Examiner Info */}
                       <div className="flex items-center gap-2.5 pt-1">
                         <Avatar className="w-8 h-8">
                           <AvatarImage src={course.instructor.avatar} alt={course.instructor.name} />
@@ -242,7 +233,6 @@ export default function CoursesPage() {
                     </div>
                   </div>
 
-                  {/* Footer Pricing & Actions */}
                   <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-black text-slate-900">
@@ -297,7 +287,6 @@ export default function CoursesPage() {
         </div>
       </main>
 
-      {/* Free Trial Request Modal */}
       <TrialRequestModal
         isOpen={showTrialModal}
         onClose={() => setShowTrialModal(false)}

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -15,7 +14,6 @@ import {
   Info,
   ShieldAlert,
   Loader2,
-  X,
 } from "lucide-react";
 
 export type ConfirmationVariant = "danger" | "warning" | "info" | "success";
@@ -106,7 +104,6 @@ export function ConfirmationModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isLoading && onClose()}>
       <DialogContent className="max-w-md p-0 overflow-hidden rounded-3xl border border-slate-200 shadow-2xl bg-white animate-in zoom-in-95 duration-200">
         <div className="p-6 space-y-4">
-          {/* Header row with icon */}
           <div className="flex items-start gap-3.5">
             <div
               className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-xs shrink-0 ${config.iconBg} ${config.iconColor}`}
@@ -128,12 +125,10 @@ export function ConfirmationModal({
             </div>
           </div>
 
-          {/* Description */}
           <DialogDescription className="text-xs sm:text-sm text-slate-600 leading-relaxed pl-0.5">
             {description}
           </DialogDescription>
 
-          {/* Mandatory Checkbox Consent (Optional) */}
           {requireConsentText && (
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2.5 mt-2">
               <input
@@ -152,7 +147,6 @@ export function ConfirmationModal({
             </div>
           )}
 
-          {/* Footer Action Buttons */}
           <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
             <Button
               type="button"

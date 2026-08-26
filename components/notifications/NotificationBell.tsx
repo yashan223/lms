@@ -52,7 +52,6 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
     fetchNotifications();
   }, []);
 
-  // Real-time synchronization
   useRealtimeSync({
     events: ["NOTIFICATIONS_CHANGED", "CHAT_MESSAGE", "EVENTS_CHANGED"],
     onSync: () => {
@@ -60,7 +59,6 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
     },
   });
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -191,7 +189,6 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-slate-200 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          {/* Header */}
           <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
             <div className="flex items-center gap-2">
               <span className="font-bold text-xs text-slate-900">Notifications</span>
@@ -228,7 +225,6 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
             </div>
           </div>
 
-          {/* List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
             {notifications.length > 0 ? (
               notifications.map((item) => (

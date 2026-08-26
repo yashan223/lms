@@ -12,7 +12,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Look up user in PostgreSQL via Prisma
     const user = await prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },
       include: {
@@ -31,7 +30,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check password (direct match for demo seed / hashed comparison)
     if (user.passwordHash !== password && !user.passwordHash.includes(password)) {
       return NextResponse.json(
         { error: "Invalid password entered" },
@@ -39,7 +37,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build user session payload
     const safeUser = {
       id: user.id,
       name: user.name,
@@ -63,11 +60,10 @@ export async function POST(request: Request) {
       redirectTo: redirectPath,
     });
 
-    // Set cookie for session
     response.cookies.set("edupulse_user_role", user.role, {
       path: "/",
       httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     response.cookies.set("edupulse_user_email", user.email, {

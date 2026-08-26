@@ -175,19 +175,15 @@ function TutorDashboardContent() {
   const [events, setEvents] = useState<ScheduledClassEvent[]>([]);
   const [trials, setTrials] = useState<any[]>([]);
 
-  // Navigation tree state
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
 
-  // Filters & Search
   const [courseSearch, setCourseSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [selectedCourseFilter, setSelectedCourseFilter] = useState("ALL");
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
 
-  // Center Tab View: "courses" | "classes" | "students" | "trials" | "earnings" | "profile"
   const [centerTab, setCenterTab] = useState<"courses" | "classes" | "students" | "trials" | "earnings" | "profile">("courses");
 
-  // Handle URL query parameter for tab
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "profile" || tab === "courses" || tab === "classes" || tab === "students" || tab === "trials" || tab === "earnings") {
@@ -195,7 +191,6 @@ function TutorDashboardContent() {
     }
   }, [searchParams]);
 
-  // Computed Earnings & Teaching Hours
   const totalEarnings = useMemo(() => {
     return courses.reduce((sum, c) => {
       const price = Number(c.price) || 0;
@@ -205,11 +200,11 @@ function TutorDashboardContent() {
   }, [courses]);
 
   const tutorShareEarnings = useMemo(() => {
-    return totalEarnings * 0.85; // 85% tutor payout share
+    return totalEarnings * 0.85;
   }, [totalEarnings]);
 
   const totalTeachingMinutes = useMemo(() => {
-    // 90 mins for each scheduled/live class + 30 mins for each trial consultation
+
     const classMins = events.length * 90;
     const trialMins = trials.length * 30;
     return classMins + trialMins;
@@ -232,7 +227,6 @@ function TutorDashboardContent() {
     return "65.00";
   }, [totalTeachingHours, tutorShareEarnings]);
 
-  // Schedule Class Modal State
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleMode, setScheduleMode] = useState<"COURSE" | "STUDENT">("COURSE");
   const [newClassStudentId, setNewClassStudentId] = useState("");
@@ -246,7 +240,6 @@ function TutorDashboardContent() {
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
-  // Reschedule Modal State
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleTargetEvent, setRescheduleTargetEvent] = useState<ScheduledClassEvent | null>(null);
   const [rescheduleTargetTrial, setRescheduleTargetTrial] = useState<any | null>(null);
@@ -259,12 +252,10 @@ function TutorDashboardContent() {
     text: string;
   } | null>(null);
 
-  // Student Details Modal & Chat
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<StudentRecord | null>(null);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
-  // Full Profile Customization State
   const [profileName, setProfileName] = useState("");
   const [profileHeadline, setProfileHeadline] = useState("");
   const [profileAbout, setProfileAbout] = useState("");
@@ -314,7 +305,6 @@ function TutorDashboardContent() {
   const [profileResearchGate, setProfileResearchGate] = useState("https://researchgate.net");
   const [profileWebsite, setProfileWebsite] = useState("https://edupulse.uk");
 
-  // Temporary Inputs for adding items
   const [newDegreeTitle, setNewDegreeTitle] = useState("");
   const [newDegreeInst, setNewDegreeInst] = useState("");
   const [newDegreeYear, setNewDegreeYear] = useState("");
@@ -334,10 +324,8 @@ function TutorDashboardContent() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Calendar Navigation State
   const [calDate, setCalDate] = useState(() => new Date());
 
-  // Confirmation Modal
   const [confirmModalData, setConfirmModalData] = useState<{
     isOpen: boolean;
     title: string;
@@ -370,7 +358,6 @@ function TutorDashboardContent() {
         setProfilePhone(data.tutor.phone || "");
         setProfileAvatar(data.tutor.avatar || "");
 
-        // Default credentials
         let parsedAbout = "Senior Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum with a focus on deep conceptual proofs, problem sets, and examination masterclasses.";
         let parsedDegrees: AcademicDegree[] = [
           {
@@ -481,7 +468,6 @@ function TutorDashboardContent() {
     },
   });
 
-  // Calendar calculation
   const calendarDays = useMemo(() => {
     const year = calDate.getFullYear();
     const month = calDate.getMonth();
@@ -589,7 +575,6 @@ function TutorDashboardContent() {
     setCalDate(new Date());
   };
 
-  // Filtered Courses
   const filteredCourses = useMemo(() => {
     return courses.filter((c) => {
       const matchSearch =
@@ -600,7 +585,6 @@ function TutorDashboardContent() {
     });
   }, [courses, courseSearch]);
 
-  // Filtered Students
   const filteredStudents = useMemo(() => {
     return students.filter((st) => {
       const matchQuery =
@@ -616,7 +600,6 @@ function TutorDashboardContent() {
     });
   }, [students, studentSearch, selectedCourseFilter]);
 
-  // Filtered Events (strictly exclude ended classes from 'ALL' view)
   const filteredEvents = useMemo(() => {
     const now = Date.now();
     return events.filter((ev) => {
@@ -631,22 +614,20 @@ function TutorDashboardContent() {
     });
   }, [events, classFilter]);
 
-  // Upcoming events (strictly exclude ended/completed classes)
   const upcomingEvents = useMemo(() => {
     const now = Date.now();
     return events
       .filter((ev) => {
-        // Exclude completed, cancelled, or ended classes
+
         if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || ev.endedAt) return false;
-        // Include if currently LIVE
+
         if (ev.status === "LIVE") return true;
-        // Include if scheduled in the future
+
         return (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate).getTime() >= now;
       })
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [events]);
 
-  // Schedule class
   const handleScheduleClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClassTitle.trim() || !newClassDate) return;
@@ -684,7 +665,6 @@ function TutorDashboardContent() {
     }
   };
 
-  // Start Class
   const handleStartClass = async (eventId: string, existingMeetingLink?: string | null) => {
     try {
       setStartingClassId(eventId);
@@ -711,7 +691,6 @@ function TutorDashboardContent() {
     }
   };
 
-  // End Class
   const handleEndClass = async (eventId: string) => {
     try {
       setEndingClassId(eventId);
@@ -733,7 +712,6 @@ function TutorDashboardContent() {
     }
   };
 
-  // Delete Class
   const handleDeleteClass = async (eventId: string) => {
     setConfirmModalData({
       isOpen: true,
@@ -762,7 +740,6 @@ function TutorDashboardContent() {
     });
   };
 
-  // Profile photo file upload handler
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -787,7 +764,6 @@ function TutorDashboardContent() {
     reader.readAsDataURL(file);
   };
 
-  // Add & Remove Degrees
   const handleAddDegree = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDegreeTitle.trim() || !newDegreeInst.trim()) return;
@@ -809,7 +785,6 @@ function TutorDashboardContent() {
     setProfileDegrees((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Add & Remove Specializations
   const handleAddSpec = (specToAdd?: string) => {
     const val = (specToAdd || newSpecTag).trim();
     if (!val) return;
@@ -823,7 +798,6 @@ function TutorDashboardContent() {
     setProfileSpecs((prev) => prev.filter((s) => s !== spec));
   };
 
-  // Add & Remove Certifications
   const handleAddCert = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCertTitle.trim()) return;
@@ -843,7 +817,6 @@ function TutorDashboardContent() {
     setProfileCerts((prev) => prev.filter((c) => c.id !== id));
   };
 
-  // Save Full Profile & Qualifications
   const handleSaveProfile = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!tutor?.id) return;
@@ -1032,14 +1005,10 @@ function TutorDashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#f4f6f9] flex flex-col font-sans text-slate-800">
-      
-      {/* ========================================================================= */}
-      {/* 1. TOP HEADER BAR (Exact same as Dashboard)                                */}
-      {/* ========================================================================= */}
+
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
         <div className="max-w-[1480px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          
-          {/* Left Brand & Logo */}
+
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2.5 py-1">
               <img
@@ -1059,19 +1028,15 @@ function TutorDashboardContent() {
             </nav>
           </div>
 
-          {/* Right Header Utilities */}
           <div className="flex items-center gap-3">
-            {/* Instructor Role Badge */}
             <Badge variant="roleInstructor" className="text-[11px] px-2.5 py-1 font-bold">
               Instructor
             </Badge>
 
-            {/* Notification Center */}
             <NotificationBell userRole="INSTRUCTOR" />
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
-            {/* User Profile */}
             <div className="flex items-center gap-2 pl-1">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wide hidden md:block">
                 {tutorName}
@@ -1085,7 +1050,6 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-            {/* Sign Out Button */}
             <button
               onClick={handleLogout}
               title="Sign Out"
@@ -1099,23 +1063,12 @@ function TutorDashboardContent() {
         </div>
       </header>
 
-
-
-      {/* ========================================================================= */}
-      {/* 3. MAIN DASHBOARD 3-COLUMN WORKSPACE                                      */}
-      {/* ========================================================================= */}
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-6 space-y-5 flex-1">
-        
-        {/* 3-Column Grid Workspace */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          
-          {/* ===================================================================== */}
-          {/* LEFT SIDEBAR (col-span-3) - Navigation, Quick Tools, Online Students */}
-          {/* ===================================================================== */}
-          <aside className="lg:col-span-3 space-y-4">
-            
 
-            {/* Block 2: Quick Studio Management Tools */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+          <aside className="lg:col-span-3 space-y-4">
+
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Faculty Tools
@@ -1209,7 +1162,6 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-            {/* Block 3: Interactive Calendar Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -1233,14 +1185,12 @@ function TutorDashboardContent() {
                 </div>
               </div>
 
-              {/* Day names */}
               <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">
                 {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
                   <div key={i} className="py-1">{d}</div>
                 ))}
               </div>
 
-              {/* Days grid */}
               <div className="grid grid-cols-7 text-center text-xs">
                 {calendarDays.map((date, idx) => {
                   if (!date) return <div key={`empty-${idx}`} className="p-1" />;
@@ -1281,7 +1231,6 @@ function TutorDashboardContent() {
                         />
                       )}
 
-                      {/* Hover Popup Tooltip showing class details */}
                       {hasEvents && (
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col z-50 w-48 sm:w-56 p-2.5 bg-slate-900/95 text-white rounded-xl shadow-xl border border-slate-700/70 backdrop-blur-md pointer-events-none text-left animate-in fade-in zoom-in-95 duration-150">
                           <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider border-b border-slate-700/60 pb-1 flex items-center justify-between">
@@ -1314,7 +1263,6 @@ function TutorDashboardContent() {
                               </div>
                             ))}
                           </div>
-                          {/* Arrow pointer */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-slate-900" />
                         </div>
                       )}
@@ -1324,7 +1272,6 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-            {/* Block 4: Studio Statistics Summary */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-2.5">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Studio Statistics
@@ -1351,12 +1298,8 @@ function TutorDashboardContent() {
 
           </aside>
 
-          {/* ===================================================================== */}
-          {/* CENTER COLUMN (col-span-6) - Main Workspace Content                  */}
-          {/* ===================================================================== */}
           <div className="lg:col-span-6 space-y-4">
-            
-            {/* Center Tab Header Switcher */}
+
             <div className="bg-white rounded-lg border border-slate-200 p-2 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setCenterTab("courses")}
@@ -1431,11 +1374,9 @@ function TutorDashboardContent() {
               </button>
             </div>
 
-            {/* VIEW 0: EARNINGS & TEACHING HOURS */}
             {centerTab === "earnings" && (
               <div className="space-y-4">
 
-                {/* Summary Stats */}
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-3">
                   <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
                     <span>Total earnings (instructor share)</span>
@@ -1471,7 +1412,6 @@ function TutorDashboardContent() {
                   </div>
                 </div>
 
-                {/* Per-Course Revenue */}
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
                   <h3 className="text-xs font-medium text-slate-600 mb-3">Revenue by course</h3>
                   <div className="space-y-3">
@@ -1508,7 +1448,6 @@ function TutorDashboardContent() {
               </div>
             )}
 
-
             {centerTab === "courses" && (
               <div className="space-y-4">
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
@@ -1517,7 +1456,6 @@ function TutorDashboardContent() {
                       Assigned Curriculum Courses
                     </h3>
 
-                    {/* Search Course Input */}
                     <div className="relative w-full sm:w-56">
                       <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
@@ -1600,7 +1538,6 @@ function TutorDashboardContent() {
               </div>
             )}
 
-            {/* VIEW 2: LIVE CLASSES */}
             {centerTab === "classes" && (
               <div className="space-y-4">
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
@@ -1609,7 +1546,6 @@ function TutorDashboardContent() {
                       Live Classroom Sessions
                     </h3>
 
-                    {/* Filter Pills */}
                     <div className="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs">
                       {(["ALL", "LIVE", "SCHEDULED", "COMPLETED"] as const).map((f) => {
                         const activeCount = events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length;
@@ -1695,7 +1631,6 @@ function TutorDashboardContent() {
                                 )}
                               </div>
 
-                              {/* Class History Start & End Timestamps */}
                               {(ev.startedAt || ev.endedAt || isCompleted) && (
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 mt-1 border-t border-slate-100 text-[10px]">
                                   <div className="p-1.5 rounded-lg bg-emerald-50/70 border border-emerald-100">
@@ -1801,7 +1736,6 @@ function TutorDashboardContent() {
               </div>
             )}
 
-            {/* VIEW 3: ENROLLED STUDENTS */}
             {centerTab === "students" && (
               <div className="space-y-4">
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
@@ -1810,7 +1744,6 @@ function TutorDashboardContent() {
                       Enrolled Students Directory ({filteredStudents.length})
                     </h3>
 
-                    {/* Search & Filter */}
                     <div className="flex items-center gap-2">
                       <div className="relative w-full sm:w-44">
                         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1904,7 +1837,6 @@ function TutorDashboardContent() {
               </div>
             )}
 
-            {/* VIEW 4: 1-ON-1 TRIALS */}
             {centerTab === "trials" && (
               <div className="space-y-4">
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
@@ -1989,10 +1921,8 @@ function TutorDashboardContent() {
               </div>
             )}
 
-            {/* VIEW 5: FULL-PAGE INSTRUCTOR PROFILE & CREDENTIALS STUDIO */}
             {centerTab === "profile" && (
               <div className="space-y-6 animate-in fade-in duration-300">
-                {/* Header Banner */}
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-3">
@@ -2031,7 +1961,6 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {/* Feedback Status Alert */}
                   {profileStatusMsg && (
                     <div
                       className={`p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in slide-in-from-top-2 duration-200 ${
@@ -2058,10 +1987,8 @@ function TutorDashboardContent() {
                   )}
                 </div>
 
-                {/* Form Sections Grid */}
                 <div className="grid grid-cols-1 gap-6">
 
-                  {/* CARD 1: PROFILE PHOTO UPLOAD & BRANDING */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div>
@@ -2076,7 +2003,6 @@ function TutorDashboardContent() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-6">
-                      {/* Avatar preview */}
                       <div className="relative group shrink-0">
                         <div className="w-28 h-28 rounded-2xl bg-slate-900 overflow-hidden border-2 border-slate-200 shadow-lg ring-4 ring-blue-500/10">
                           <img
@@ -2098,7 +2024,6 @@ function TutorDashboardContent() {
                         </button>
                       </div>
 
-                      {/* Photo Upload Controls */}
                       <div className="flex-1 space-y-3 w-full">
                         <input
                           type="file"
@@ -2155,7 +2080,6 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {/* CARD 2: BASIC INSTRUCTOR IDENTITY & HEADLINE */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
                     <div className="border-b border-slate-100 pb-3">
                       <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -2251,7 +2175,6 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {/* CARD 3: ACADEMIC DEGREES & EDUCATION (CUSTOMIZATION) */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div>
@@ -2268,7 +2191,6 @@ function TutorDashboardContent() {
                       </Badge>
                     </div>
 
-                    {/* Current Degrees List */}
                     {profileDegrees.length === 0 ? (
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-400 italic">
                         No academic degrees added yet. Fill out the form below to add your qualifications.
@@ -2313,7 +2235,6 @@ function TutorDashboardContent() {
                       </div>
                     )}
 
-                    {/* Add Degree Form Subcard */}
                     <form onSubmit={handleAddDegree} className="p-4 rounded-xl bg-blue-50/40 border border-blue-100 space-y-3">
                       <div className="font-bold text-xs text-blue-950 flex items-center gap-1.5">
                         <Plus className="w-3.5 h-3.5 text-blue-600" />
@@ -2379,7 +2300,6 @@ function TutorDashboardContent() {
                     </form>
                   </div>
 
-                  {/* CARD 4: SUBJECT SPECIALIZATIONS & MODULES */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
                     <div className="border-b border-slate-100 pb-3">
                       <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -2391,7 +2311,6 @@ function TutorDashboardContent() {
                       </p>
                     </div>
 
-                    {/* Active Tags */}
                     <div className="flex flex-wrap gap-2">
                       {profileSpecs.map((spec, idx) => (
                         <span
@@ -2410,7 +2329,6 @@ function TutorDashboardContent() {
                       ))}
                     </div>
 
-                    {/* Add Tag Row */}
                     <div className="flex items-center gap-2">
                       <Input
                         placeholder="Add custom specialization (e.g. Further Pure FP2, Mechanics M2)..."
@@ -2433,7 +2351,6 @@ function TutorDashboardContent() {
                       </Button>
                     </div>
 
-                    {/* Quick Presets */}
                     <div className="space-y-1 pt-1">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                         Quick Add Common Subjects:
@@ -2462,7 +2379,6 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {/* CARD 5: EXAMINER CERTIFICATIONS & ACCREDITATIONS */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div>
@@ -2479,7 +2395,6 @@ function TutorDashboardContent() {
                       </Badge>
                     </div>
 
-                    {/* Current Certifications */}
                     {profileCerts.length === 0 ? (
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-400 italic">
                         No certifications added yet.
@@ -2515,7 +2430,6 @@ function TutorDashboardContent() {
                       </div>
                     )}
 
-                    {/* Add Cert Form */}
                     <form onSubmit={handleAddCert} className="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100 space-y-3">
                       <div className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
                         <Plus className="w-3.5 h-3.5 text-emerald-600" />
@@ -2568,7 +2482,6 @@ function TutorDashboardContent() {
                     </form>
                   </div>
 
-                  {/* CARD 6: COMPREHENSIVE BIOGRAPHY & TEACHING PHILOSOPHY */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
                     <div className="border-b border-slate-100 pb-3">
                       <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -2595,7 +2508,6 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {/* CARD 7: PROFESSIONAL & RESEARCH LINKS */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
                     <div className="border-b border-slate-100 pb-3">
                       <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -2640,7 +2552,6 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {/* SAVE ALL CHANGES PROMINENT ACTION CARD */}
                   <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950 via-[#0c2461] to-slate-900 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <h4 className="font-bold text-base text-white flex items-center gap-2">
@@ -2680,12 +2591,8 @@ function TutorDashboardContent() {
 
           </div>
 
-          {/* ===================================================================== */}
-          {/* RIGHT SIDEBAR (col-span-3) - Faculty Card, Calendar, Studio Metrics   */}
-          {/* ===================================================================== */}
           <aside className="lg:col-span-3 space-y-4">
-            
-            {/* Block 1: Instructor Profile Card */}
+
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -2719,7 +2626,6 @@ function TutorDashboardContent() {
                 </div>
               </div>
 
-              {/* Degrees summary in sidebar card */}
               {profileDegrees.length > 0 && (
                 <div className="space-y-1 border-t border-slate-100 pt-2">
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
@@ -2750,7 +2656,6 @@ function TutorDashboardContent() {
               </button>
             </div>
 
-            {/* Block 2: Upcoming Class Schedule */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -2810,19 +2715,13 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-
-
           </aside>
 
         </div>
 
       </main>
 
-      {/* ========================================================================= */}
-      {/* 4. MODALS & DRAWERS                                                       */}
-      {/* ========================================================================= */}
 
-      {/* Schedule Live Class Modal */}
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
@@ -2849,7 +2748,6 @@ function TutorDashboardContent() {
             </div>
 
             <form onSubmit={handleScheduleClass} className="space-y-4 text-xs">
-              {/* Audience Target Toggle */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1.5">
                   Class Audience Target
@@ -2994,9 +2892,6 @@ function TutorDashboardContent() {
         </div>
       )}
 
-
-
-      {/* Reschedule Class / Trial Session Modal */}
       {showRescheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
@@ -3040,7 +2935,6 @@ function TutorDashboardContent() {
             )}
 
             <form onSubmit={handleConfirmReschedule} className="space-y-4 text-xs">
-              {/* Target info card */}
               <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 space-y-1">
                 <div className="font-bold text-blue-950 text-xs">
                   {rescheduleTargetEvent?.title || rescheduleTargetTrial?.topic || "Consultation Session"}
@@ -3122,7 +3016,6 @@ function TutorDashboardContent() {
         </div>
       )}
 
-      {/* Student Details Inspection Modal */}
       {selectedStudentForModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
@@ -3200,7 +3093,6 @@ function TutorDashboardContent() {
         </div>
       )}
 
-      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={confirmModalData.isOpen}
         onClose={() => setConfirmModalData((prev) => ({ ...prev, isOpen: false }))}
@@ -3210,7 +3102,6 @@ function TutorDashboardContent() {
         variant={confirmModalData.variant}
       />
 
-      {/* Encrypted Direct Chat Drawer */}
       <EncryptedChatDrawer
         isOpen={isChatDrawerOpen}
         onClose={() => setIsChatDrawerOpen(false)}

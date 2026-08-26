@@ -100,7 +100,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
-    // 1. REQUEST A 30-MINUTE FREE TRIAL ONLINE SESSION
     if (action === "request_trial") {
       const {
         studentName,
@@ -129,7 +128,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Auto-resolve tutor if course is provided
       let resolvedTutorId = tutorId || null;
       let courseTitle = "London A/L Tutorial Masterclass";
       let courseSubjectCode = "";
@@ -145,10 +143,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Instant Google Meet online room URL
       const meetingLink = "https://meet.google.com/new";
 
-      // Create trial record
       const trial = await prisma.trialRequest.create({
         data: {
           studentName: studentName.trim(),
@@ -174,7 +170,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Automatically create a linked Calendar Event so it is visible on both student and tutor calendars
       const eventTitle = `30-Min Free Trial: ${courseTitle} (${studentName.trim()})`;
       const eventDescription = [
         `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
@@ -195,7 +190,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Realtime notification broadcast
       broadcastLMSEvent("TRIALS_CHANGED");
       broadcastLMSEvent("EVENTS_CHANGED");
 
@@ -207,7 +201,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2. UPDATE TRIAL STATUS (TUTORS & ADMINS)
     if (action === "update_trial_status") {
       const { trialId, status, meetingLink, notes } = body;
 
@@ -248,7 +241,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. RESCHEDULE TRIAL (STUDENTS & INSTRUCTORS)
     if (action === "reschedule_trial") {
       const { trialId, preferredDate, notes } = body;
       if (!trialId || !preferredDate) {
@@ -284,7 +276,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Synchronize linked event if present
       if (updatedTrial.courseId) {
         await prisma.event.updateMany({
           where: {

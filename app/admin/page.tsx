@@ -78,14 +78,12 @@ export default function AdminDashboardPage() {
   const [facultyList, setFacultyList] = useState<any[]>([]);
   const [eventsList, setEventsList] = useState<any[]>([]);
 
-  // Live Class Hub States
   const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
   const [liveClassSearch, setLiveClassSearch] = useState("");
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
-  // New Live Class Form States
   const [newClassTitle, setNewClassTitle] = useState("");
   const [newClassCourseId, setNewClassCourseId] = useState("");
   const [newClassTutorId, setNewClassTutorId] = useState("");
@@ -96,7 +94,6 @@ export default function AdminDashboardPage() {
   const [newClassType, setNewClassType] = useState("LIVE_SEMINAR");
   const [isSubmittingClass, setIsSubmittingClass] = useState(false);
 
-  // User Management State
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -104,7 +101,6 @@ export default function AdminDashboardPage() {
   const [showEnrollUserModal, setShowEnrollUserModal] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
 
-  // New/Edit User Form Fields
   const [formUserName, setFormUserName] = useState("");
   const [formUserEmail, setFormUserEmail] = useState("");
   const [formUserPhone, setFormUserPhone] = useState("");
@@ -114,7 +110,6 @@ export default function AdminDashboardPage() {
   const [formUserBio, setFormUserBio] = useState("");
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
-  // Course Management State
   const [courseSearch, setCourseSearch] = useState("");
   const [courseCatFilter, setCourseCatFilter] = useState("ALL");
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
@@ -123,7 +118,6 @@ export default function AdminDashboardPage() {
   const [selectedCourseForEdit, setSelectedCourseForEdit] = useState<any>(null);
   const [selectedCourseForSyllabus, setSelectedCourseForSyllabus] = useState<any>(null);
 
-  // New/Edit Course Form Fields
   const [courseFormTitle, setCourseFormTitle] = useState("");
   const [courseFormCode, setCourseFormCode] = useState("");
   const [courseFormCategory, setCourseFormCategory] = useState("School of Mathematics & Computing");
@@ -133,13 +127,11 @@ export default function AdminDashboardPage() {
   const [courseFormSubtitle, setCourseFormSubtitle] = useState("");
   const [courseFormInstructorId, setCourseFormInstructorId] = useState("");
 
-  // Syllabus Module & Lesson State
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [newLessonDuration, setNewLessonDuration] = useState("30");
   const [selectedModuleIdForLesson, setSelectedModuleIdForLesson] = useState("");
 
-  // Course Material & File Management State
   const [showManageMaterialsModal, setShowManageMaterialsModal] = useState(false);
   const [selectedCourseForMaterials, setSelectedCourseForMaterials] = useState<any>(null);
   const [matFormTitle, setMatFormTitle] = useState("");
@@ -150,7 +142,6 @@ export default function AdminDashboardPage() {
   const [materialStatusMsg, setMaterialStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [matSearchQuery, setMatSearchQuery] = useState("");
 
-  // Confirmation modal state
   const [confirmModalData, setConfirmModalData] = useState<{
     isOpen: boolean;
     title: string;
@@ -177,7 +168,6 @@ export default function AdminDashboardPage() {
 
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Fetch live database records from PostgreSQL
   const fetchAdminData = async () => {
     try {
       setLoading(true);
@@ -211,14 +201,12 @@ export default function AdminDashboardPage() {
     fetchAdminData();
   }, []);
 
-  // Real-time multi-user live synchronization via SSE
   useRealtimeSync({
     onSync: () => {
       fetchAdminData();
     },
   });
 
-  // Filtered Users
   const filteredUsers = useMemo(() => {
     return allUsersList.filter((u) => {
       const matchesSearch =
@@ -230,7 +218,6 @@ export default function AdminDashboardPage() {
     });
   }, [allUsersList, userSearch, userRoleFilter]);
 
-  // Filtered Courses
   const filteredCourses = useMemo(() => {
     return coursesList.filter((c) => {
       const matchesSearch =
@@ -242,7 +229,6 @@ export default function AdminDashboardPage() {
     });
   }, [coursesList, courseSearch, courseCatFilter]);
 
-  // Financial calculations
   const totalEnrollmentsCount = useMemo(() => {
     return coursesList.reduce((acc, c) => acc + (c.enrollments?.length || 0), 0);
   }, [coursesList]);
@@ -254,9 +240,6 @@ export default function AdminDashboardPage() {
     }, 0);
   }, [coursesList]);
 
-  // ========================================================
-  // USER HANDLERS
-  // ========================================================
   const handleOpenAddUser = () => {
     setFormUserName("");
     setFormUserEmail("");
@@ -394,9 +377,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // ========================================================
-  // COURSE HANDLERS
-  // ========================================================
   const handleOpenAddCourse = () => {
     setCourseFormTitle("");
     setCourseFormCode("MATH-AS-01");
@@ -605,9 +585,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // ========================================================
-  // COURSE MATERIAL / FILE HANDLERS
-  // ========================================================
   const handleOpenManageMaterials = (course: any) => {
     setSelectedCourseForMaterials(course);
     setMatFormTitle("");
@@ -630,7 +607,6 @@ export default function AdminDashboardPage() {
       setUploadingCourseMaterial(true);
       setMaterialStatusMsg(null);
 
-      // 1. Upload to VPS storage
       const formData = new FormData();
       formData.append("file", selectedMatUploadFile);
       formData.append("isPrivate", "false");
@@ -646,7 +622,6 @@ export default function AdminDashboardPage() {
         return;
       }
 
-      // 2. Link material in academy records via admin
       const saveRes = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -713,9 +688,6 @@ export default function AdminDashboardPage() {
     });
   };
 
-  // ========================================================
-  // LIVE CLASS & GOOGLE MEET HANDLERS
-  // ========================================================
   const handleStartClass = async (event: any) => {
     try {
       setStartingClassId(event.id);
@@ -831,7 +803,6 @@ export default function AdminDashboardPage() {
     });
   };
 
-  // Filtered Live Classes
   const liveClassesList = useMemo(() => {
     return eventsList.filter((ev) => {
       const matchSearch =
@@ -880,13 +851,11 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-slate-900 selection:bg-blue-500 selection:text-white">
-      {/* 1. LEFT SIDEBAR PANEL */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-64 bg-white text-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out border-r border-slate-200 shadow-2xs lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Sidebar Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <img
@@ -904,7 +873,6 @@ export default function AdminDashboardPage() {
           </button>
         </div>
 
-        {/* Sidebar Navigation */}
         <nav className="flex-1 p-3.5 space-y-1.5 overflow-y-auto scrollbar-none">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">
             Administration Hub
@@ -944,7 +912,6 @@ export default function AdminDashboardPage() {
           })}
         </nav>
 
-        {/* Sidebar Bottom Profile & Links */}
         <div className="p-3.5 border-t border-slate-200 space-y-3 bg-slate-50/70">
           <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
             <Avatar className="w-8 h-8 ring-1 ring-blue-200">
@@ -984,7 +951,6 @@ export default function AdminDashboardPage() {
         />
       )}
 
-      {/* 2. RIGHT WORKSPACE */}
       <div className="flex-1 flex flex-col lg:pl-64 min-w-0">
         <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-2xs">
           <div className="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
@@ -1064,7 +1030,6 @@ export default function AdminDashboardPage() {
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto">
-          {/* Error Banner */}
           {fetchError && (
             <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3 animate-in fade-in">
               <div className="flex items-center gap-2">
@@ -1081,7 +1046,6 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* Loading Indicator for Initial Mount */}
           {loading && allUsersList.length === 0 && !fetchError && (
             <div className="py-24 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
@@ -1089,12 +1053,8 @@ export default function AdminDashboardPage() {
               <p className="text-xs text-slate-400">Synchronizing students, faculty lecturers, and curriculum.</p>
             </div>
           )}
-          {/* ======================================================== */}
-          {/* TAB 1: EXECUTIVE OVERVIEW */}
-          {/* ======================================================== */}
           {activeTab === "overview" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Executive Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
@@ -1133,7 +1093,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Recent User Registrations */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="font-bold text-sm text-slate-900">Recent User Registrations & Accounts</h3>
@@ -1174,12 +1133,8 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ======================================================== */}
-          {/* TAB 2: LIVE CLASSES & GOOGLE MEET OPERATIONS HUB */}
-          {/* ======================================================== */}
           {activeTab === "live_classes" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Top Operational Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className={`p-4 rounded-2xl bg-white border shadow-2xs space-y-1 ${liveNowCount > 0 ? "border-red-300 ring-2 ring-red-500/20" : "border-slate-200"}`}>
                   <div className="flex items-center justify-between">
@@ -1237,7 +1192,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Search & Filter Toolbar */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                   <div className="relative w-full sm:w-80">
@@ -1285,7 +1239,6 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
 
-              {/* 1. CURRENTLY ONGOING / LIVE NOW SECTION */}
               {(liveClassFilter === "ALL" || liveClassFilter === "LIVE") && liveNowCount > 0 && (
                 <div className="rounded-2xl border-2 border-red-500 bg-red-50/20 p-5 space-y-4 shadow-sm">
                   <div className="flex items-center justify-between border-b border-red-200/60 pb-3">
@@ -1331,7 +1284,6 @@ export default function AdminDashboardPage() {
                               </div>
                             </div>
 
-                            {/* Faculty & Attendance */}
                             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
                               <div className="flex items-center gap-2 min-w-0">
                                 <Avatar className="w-7 h-7 ring-1 ring-slate-200">
@@ -1354,7 +1306,6 @@ export default function AdminDashboardPage() {
                             </div>
                           </div>
 
-                          {/* Action Buttons */}
                           <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                             {ev.meetingLink ? (
                               <a
@@ -1391,7 +1342,6 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* 2. ALL / FILTERED CLASSES LIST */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-0">
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                   <div>
@@ -1418,7 +1368,6 @@ export default function AdminDashboardPage() {
                             isLive ? "bg-red-50/30" : "hover:bg-slate-50/70"
                           }`}
                         >
-                          {/* Class Info */}
                           <div className="flex items-start gap-3 min-w-0">
                             <div
                               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
@@ -1494,7 +1443,6 @@ export default function AdminDashboardPage() {
                                 )}
                               </div>
 
-                              {/* Class History Timing Audit Log: Started At, Ended At, and Duration */}
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2.5 mt-1 border-t border-slate-100 text-[11px]">
                                 <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex flex-col justify-center">
                                   <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
@@ -1544,7 +1492,6 @@ export default function AdminDashboardPage() {
                             </div>
                           </div>
 
-                          {/* Actions */}
                           <div className="flex items-center gap-2 self-end lg:self-center shrink-0">
                             {isLive ? (
                               <>
@@ -1642,12 +1589,8 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ======================================================== */}
-          {/* TAB 3: USER MANAGEMENT HUB */}
-          {/* ======================================================== */}
           {activeTab === "users" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* User Metric Counters */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <span className="text-xs font-medium text-slate-500">Total Accounts</span>
@@ -1673,7 +1616,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* User Filters & Search */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                   <div className="relative w-full sm:w-80">
@@ -1717,7 +1659,6 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
 
-              {/* Users Table */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
@@ -1812,12 +1753,8 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ======================================================== */}
-          {/* TAB 3: COURSE MANAGEMENT HUB */}
-          {/* ======================================================== */}
           {activeTab === "courses" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Course Metric Counters */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <span className="text-xs font-medium text-slate-500">Total Active Courses</span>
@@ -1837,7 +1774,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Course Filters & Search */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="relative w-full sm:w-80">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1858,7 +1794,6 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
 
-              {/* Courses Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredCourses.map((course) => (
                   <div
@@ -1937,11 +1872,6 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-
-
-          {/* ======================================================== */}
-          {/* TAB 5: FINANCIALS & TUITION */}
-          {/* ======================================================== */}
           {activeTab === "finances" && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1966,7 +1896,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Tuition Invoicing & Transactions Ledger */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-3 p-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
@@ -2028,10 +1957,6 @@ export default function AdminDashboardPage() {
         </main>
       </div>
 
-      {/* ======================================================== */}
-      {/* USER MANAGEMENT MODALS */}
-      {/* ======================================================== */}
-      {/* ADD USER MODAL */}
       {showAddUserModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -2082,7 +2007,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* EDIT USER MODAL */}
       {showEditUserModal && selectedUserForEdit && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -2127,7 +2051,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ENROLL USER MODAL */}
       {showEnrollUserModal && selectedUserForEdit && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -2164,10 +2087,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* COURSE MANAGEMENT MODALS */}
-      {/* ======================================================== */}
-      {/* CREATE COURSE MODAL */}
       {showAddCourseModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
@@ -2230,7 +2149,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* EDIT COURSE MODAL */}
       {showEditCourseModal && selectedCourseForEdit && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
@@ -2276,7 +2194,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* SYLLABUS BUILDER MODAL */}
       {showManageSyllabusModal && selectedCourseForSyllabus && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
@@ -2288,7 +2205,6 @@ export default function AdminDashboardPage() {
               <button onClick={() => setShowManageSyllabusModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
-            {/* Add Module Input */}
             <form onSubmit={handleAddModule} className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200 flex gap-2">
               <Input
                 required
@@ -2302,7 +2218,6 @@ export default function AdminDashboardPage() {
               </Button>
             </form>
 
-            {/* Modules List */}
             <div className="space-y-4 pt-2">
               {selectedCourseForSyllabus.modules?.map((mod: any, mIdx: number) => (
                 <div key={mod.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
@@ -2322,7 +2237,6 @@ export default function AdminDashboardPage() {
                     </button>
                   </div>
 
-                  {/* Lessons inside Module */}
                   <div className="pl-6 space-y-1.5">
                     {mod.lessons?.map((les: any, lIdx: number) => (
                       <div key={les.id} className="p-2 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between text-xs">
@@ -2342,7 +2256,6 @@ export default function AdminDashboardPage() {
                       </div>
                     ))}
 
-                    {/* Add Lesson Form */}
                     {selectedModuleIdForLesson === mod.id ? (
                       <form onSubmit={handleAddLesson} className="pt-2 flex gap-2">
                         <Input
@@ -2379,13 +2292,9 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* COURSE MATERIAL & FILE MANAGEMENT MODAL */}
-      {/* ======================================================== */}
       {showManageMaterialsModal && selectedCourseForMaterials && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -2409,7 +2318,6 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Upload File Form */}
             <form
               onSubmit={handleUploadCourseMaterial}
               className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs"
@@ -2424,7 +2332,6 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
 
-              {/* Status Message */}
               {materialStatusMsg && (
                 <div
                   className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
@@ -2527,7 +2434,6 @@ export default function AdminDashboardPage() {
               </div>
             </form>
 
-            {/* Existing Course Materials List */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
@@ -2628,11 +2534,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-
-
-      {/* ======================================================== */}
-      {/* SCHEDULE LIVE GOOGLE MEET CLASS MODAL (ADMIN) */}
-      {/* ======================================================== */}
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -2660,7 +2561,6 @@ export default function AdminDashboardPage() {
             </div>
 
             <form onSubmit={handleScheduleLiveClass} className="space-y-3.5 text-xs">
-              {/* Class Title */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Class / Session Title <span className="text-red-500">*</span>
@@ -2674,7 +2574,6 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              {/* Course Association */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Course / Masterclass Association
@@ -2693,7 +2592,6 @@ export default function AdminDashboardPage() {
                 </select>
               </div>
 
-              {/* Faculty Instructor */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
@@ -2734,7 +2632,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Date & Google Meet Link */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
@@ -2762,7 +2659,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Description / Topic */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Class Overview & Topic Objectives
@@ -2776,7 +2672,6 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              {/* Actions */}
               <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
                 <Button
                   type="button"
@@ -2811,7 +2706,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* CONFIRMATION MODAL */}
       <ConfirmationModal
         isOpen={confirmModalData.isOpen}
         onClose={() => setConfirmModalData((prev) => ({ ...prev, isOpen: false }))}

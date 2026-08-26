@@ -85,17 +85,14 @@ export function EncryptedChatDrawer({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate total unread messages
   const totalUnreadCount = useMemo(() => {
     return conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
   }, [conversations]);
 
-  // Auto-scroll to bottom of message list
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Fetch all user conversations
   const fetchConversations = async () => {
     try {
       setLoadingConversations(true);
@@ -111,7 +108,6 @@ export function EncryptedChatDrawer({
     }
   };
 
-  // Fetch available contacts (tutors/students)
   const fetchContacts = async () => {
     try {
       const res = await fetch("/api/chat?action=contacts");
@@ -136,14 +132,12 @@ export function EncryptedChatDrawer({
     }
   }, [isOpen]);
 
-  // Open direct chat if initialRecipientId is passed
   useEffect(() => {
     if (isOpen && initialRecipientId && contacts.length > 0) {
       handleStartConversationWith(initialRecipientId);
     }
   }, [isOpen, initialRecipientId, contacts]);
 
-  // Real-time synchronization
   useRealtimeSync({
     events: ["CHAT_MESSAGE"],
     onSync: (payload) => {
@@ -154,7 +148,6 @@ export function EncryptedChatDrawer({
     },
   });
 
-  // Fetch and decrypt messages for a conversation
   const fetchMessages = async (convId: string, otherUser: any) => {
     try {
       setLoadingMessages(true);
@@ -164,11 +157,9 @@ export function EncryptedChatDrawer({
         const rawMessages = data.messages || [];
         setMessages(rawMessages);
 
-        // Derive E2EE Key client-side
         const key = await deriveConversationKey(currentUser.id, otherUser.id);
         setActiveCryptoKey(key);
 
-        // Decrypt all messages client-side
         const decMap: { [msgId: string]: string } = {};
         for (const msg of rawMessages) {
           if (msg.encryptedContent && msg.iv) {
@@ -187,14 +178,12 @@ export function EncryptedChatDrawer({
     }
   };
 
-  // Select active conversation
   const handleSelectConversation = (conv: any) => {
     setActiveConversation(conv);
     setShowContactsList(false);
     fetchMessages(conv.id, conv.otherUser);
   };
 
-  // Start or open conversation with a contact
   const handleStartConversationWith = async (contactId: string) => {
     try {
       setLoadingMessages(true);
@@ -222,7 +211,6 @@ export function EncryptedChatDrawer({
     }
   };
 
-  // Send End-to-End Encrypted Message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !activeConversation || !activeCryptoKey) return;
@@ -233,10 +221,8 @@ export function EncryptedChatDrawer({
     try {
       setIsSending(true);
 
-      // 1. Client-Side Encryption with AES-GCM 256-bit
       const { encryptedContent, iv } = await encryptMessage(plainText, activeCryptoKey);
 
-      // 2. Transmit Ciphertext & IV to Server (Zero-Knowledge)
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -277,7 +263,6 @@ export function EncryptedChatDrawer({
 
   return (
     <>
-      {/* Side Round Pop-up Floating Action Button */}
       <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
         <button
           onClick={handleToggleOpen}
@@ -298,14 +283,12 @@ export function EncryptedChatDrawer({
             </div>
           )}
 
-          {/* Unread Count Badge */}
           {!isOpen && totalUnreadCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center ring-2 ring-white shadow-md animate-pulse">
               {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
             </span>
           )}
 
-          {/* Tooltip Label on Hover (when closed) */}
           {!isOpen && (
             <div className="absolute right-full mr-3 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg hidden sm:flex items-center gap-1.5">
               <Lock className="w-3 h-3 text-emerald-400" />
@@ -315,11 +298,9 @@ export function EncryptedChatDrawer({
         </button>
       </div>
 
-      {/* Floating Side Round Popup Window */}
       {isOpen && (
         <div className="fixed bottom-22 right-4 sm:right-6 z-50 w-[92vw] sm:w-[420px] max-w-[440px] h-[580px] max-h-[calc(100vh-7rem)] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
-          
-          {/* Header */}
+
           <div className="px-4 py-3.5 bg-[#0c2461] text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5 min-w-0">
               {activeConversation ? (
@@ -374,12 +355,10 @@ export function EncryptedChatDrawer({
             </div>
           </div>
 
-          {/* Body */}
           <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
             {activeConversation ? (
-              // ACTIVE CONVERSATION CHAT VIEW
+
               <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Security reminder banner */}
                 <div className="bg-emerald-50/80 border-b border-emerald-200/60 px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-emerald-900">
                   <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
                   <span className="truncate">
@@ -387,7 +366,6 @@ export function EncryptedChatDrawer({
                   </span>
                 </div>
 
-                {/* Messages Scroll Area */}
                 <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 bg-slate-50/60">
                   {loadingMessages ? (
                     <div className="py-16 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
@@ -446,7 +424,6 @@ export function EncryptedChatDrawer({
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Message Input Form */}
                 <form
                   onSubmit={handleSendMessage}
                   className="p-2.5 border-t border-slate-200 bg-white flex items-center gap-2"
@@ -478,9 +455,8 @@ export function EncryptedChatDrawer({
                 </form>
               </div>
             ) : (
-              // CONVERSATIONS & CONTACTS LIST VIEW
+
               <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Search & Tabs */}
                 <div className="p-3 border-b border-slate-200 space-y-2 bg-white">
                   <div className="relative">
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -508,7 +484,6 @@ export function EncryptedChatDrawer({
                   </div>
                 </div>
 
-                {/* List Items */}
                 <div className="flex-1 overflow-y-auto divide-y divide-slate-100 bg-white">
                   {showContactsList ? (
                     filteredContacts.length > 0 ? (

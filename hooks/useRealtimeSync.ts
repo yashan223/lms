@@ -19,7 +19,6 @@ export function useRealtimeSync({
   const callbackRef = useRef(onSync);
   const eventsRef = useRef(events);
 
-  // Keep latest callback reference without triggering reconnection effect
   useEffect(() => {
     callbackRef.current = onSync;
   }, [onSync]);
@@ -56,7 +55,7 @@ export function useRealtimeSync({
           try {
             const payload: LMSEventPayload = JSON.parse(e.data);
             if (payload.type === "PING") {
-              return; // Keep-alive ping
+              return;
             }
 
             const targetEvents = eventsRef.current;
@@ -74,7 +73,7 @@ export function useRealtimeSync({
             eventSource.close();
             eventSource = null;
           }
-          // Reconnect with a 3-second backoff
+
           if (!isCleanedUp) {
             reconnectTimeout = setTimeout(connect, 3000);
           }
@@ -89,7 +88,6 @@ export function useRealtimeSync({
 
     connect();
 
-    // Also sync whenever user switches back to this browser tab
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         triggerSync();

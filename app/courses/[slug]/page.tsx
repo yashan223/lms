@@ -80,7 +80,6 @@ export default function CourseDetailPage({
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
 
-  // Instant in-memory cache retrieval for 0ms transitions
   const getCachedCourse = () => {
     if (typeof window !== "undefined" && (window as any).__EDU_COURSE_CACHE) {
       return (window as any).__EDU_COURSE_CACHE[slug] || (window as any).__EDU_COURSE_CACHE[decodeURIComponent(slug)] || null;
@@ -98,7 +97,6 @@ export default function CourseDetailPage({
   const [isEnrolled, setIsEnrolled] = useState(Boolean(initialCached?.enrollments?.length));
   const [enrollLoading, setEnrollLoading] = useState(false);
 
-  // Role check — only ADMIN / INSTRUCTOR can upload or delete materials
   const [isStaff, setIsStaff] = useState(false);
   useEffect(() => {
     const role = document.cookie
@@ -108,11 +106,9 @@ export default function CourseDetailPage({
     setIsStaff(role === "ADMIN" || role === "INSTRUCTOR");
   }, []);
 
-  // Materials filter & search
   const [materialCategory, setMaterialCategory] = useState<string>("ALL");
   const [materialSearch, setMaterialSearch] = useState<string>("");
 
-  // Upload Material Modal
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [newMaterialTitle, setNewMaterialTitle] = useState("");
@@ -122,7 +118,6 @@ export default function CourseDetailPage({
   const [uploadingMaterial, setUploadingMaterial] = useState(false);
   const [uploadStatusMsg, setUploadStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Load Course Data (with non-blocking background revalidation)
   const loadCourse = async (silent = false) => {
     try {
       if (!course && !silent) {
@@ -142,7 +137,6 @@ export default function CourseDetailPage({
             },
           };
 
-          // Save to global fast cache
           if (typeof window !== "undefined") {
             (window as any).__EDU_COURSE_CACHE = (window as any).__EDU_COURSE_CACHE || {};
             (window as any).__EDU_COURSE_CACHE[slug] = formatted;
@@ -156,7 +150,6 @@ export default function CourseDetailPage({
             setIsEnrolled(true);
           }
 
-          // Select first lesson by default if not set
           if (data.course.modules?.[0]?.lessons?.[0]) {
             setSelectedLesson((prev) => prev || data.course.modules[0].lessons[0]);
           }
@@ -174,13 +167,12 @@ export default function CourseDetailPage({
     if (cached) {
       setCourse(cached);
       setLoading(false);
-      loadCourse(true); // silent revalidation in background
+      loadCourse(true);
     } else {
       loadCourse(false);
     }
   }, [slug]);
 
-  // Real-time synchronization for study materials & syllabus changes
   useRealtimeSync({
     events: ["MATERIALS_CHANGED", "COURSES_CHANGED", "ENROLLMENTS_CHANGED"],
     onSync: () => {
@@ -188,7 +180,6 @@ export default function CourseDetailPage({
     },
   });
 
-  // Handle Enrollment
   const handleEnroll = async () => {
     try {
       setEnrollLoading(true);
@@ -211,14 +202,12 @@ export default function CourseDetailPage({
     }
   };
 
-  // Toggle Lesson Completion
   const toggleLessonCompletion = (lessonId: string) => {
     setCompletedLessonIds((prev) =>
       prev.includes(lessonId) ? prev.filter((id) => id !== lessonId) : [...prev, lessonId]
     );
   };
 
-  // Upload Study Material to VPS Storage & Prisma
   const handleUploadMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUploadFile || !newMaterialTitle.trim()) {
@@ -230,7 +219,6 @@ export default function CourseDetailPage({
       setUploadingMaterial(true);
       setUploadStatusMsg(null);
 
-      // 1. Upload file to VPS storage
       const formData = new FormData();
       formData.append("file", selectedUploadFile);
       formData.append("isPrivate", "false");
@@ -247,7 +235,6 @@ export default function CourseDetailPage({
         return;
       }
 
-      // 2. Link material to Course in PostgreSQL
       const materialRes = await fetch(`/api/courses/${encodeURIComponent(slug)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -284,7 +271,6 @@ export default function CourseDetailPage({
     }
   };
 
-  // Delete Course Material
   const handleDeleteMaterial = async (materialId: string) => {
     if (!confirm("Are you sure you want to remove this study material?")) return;
     try {
@@ -324,7 +310,6 @@ export default function CourseDetailPage({
   const totalLessons = courseModules.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0);
   const materialsList: CourseMaterial[] = course?.materials || [];
 
-  // Filtered Study Materials
   const filteredMaterials = materialsList.filter((mat) => {
     const matchesCategory = materialCategory === "ALL" || mat.category === materialCategory;
     const matchesSearch =
@@ -351,10 +336,8 @@ export default function CourseDetailPage({
       <Navbar />
 
       <main className="flex-1">
-        {/* Top Hero Banner */}
         <section className="bg-[#0b1b3d] text-white py-10 px-4 sm:px-6 lg:px-8 border-b border-blue-900/40">
           <div className="max-w-7xl mx-auto">
-            {/* Breadcrumb Navigation */}
             <div className="flex items-center gap-2 text-xs text-blue-300/80 mb-4 flex-wrap">
               <Link href="/" className="hover:text-white transition-colors">Home</Link>
               <span>/</span>
@@ -390,7 +373,6 @@ export default function CourseDetailPage({
                   {course?.subtitle || course?.description}
                 </p>
 
-                {/* Key Course Stats */}
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-2">
                   <span className="flex items-center gap-1.5">
                     <BookOpen className="w-4 h-4 text-sky-400" />
@@ -403,7 +385,6 @@ export default function CourseDetailPage({
                   </span>
                 </div>
 
-                {/* Instructor Bar */}
                 <div className="flex items-center gap-3 pt-2">
                   <Avatar className="w-10 h-10 ring-2 ring-blue-400/40">
                     <AvatarImage src={course?.instructor?.avatar} alt={course?.instructor?.name} />
@@ -416,7 +397,6 @@ export default function CourseDetailPage({
                 </div>
               </div>
 
-              {/* Right Action Quick Card */}
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 text-slate-900 border border-slate-200 shadow-xl space-y-4">
                 <div className="flex items-baseline justify-between">
                   <div>
@@ -487,7 +467,6 @@ export default function CourseDetailPage({
           </div>
         </section>
 
-        {/* Navigation Tabs Strip */}
         <section className="bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto py-2">
@@ -521,8 +500,6 @@ export default function CourseDetailPage({
                 </span>
               </button>
 
-
-
               <button
                 onClick={() => setActiveTab("overview")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
@@ -538,10 +515,8 @@ export default function CourseDetailPage({
           </div>
         </section>
 
-        {/* Tab 1: Dedicated Study Materials Hub */}
         {activeTab === "materials" && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
-            {/* Header & Upload Action */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xs">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
                 <div>
@@ -569,7 +544,6 @@ export default function CourseDetailPage({
                 )}
               </div>
 
-              {/* Filters & Search Toolbar */}
               <div className="pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
                   {[
@@ -609,7 +583,6 @@ export default function CourseDetailPage({
               </div>
             </div>
 
-            {/* Study Materials Cards Grid */}
             {filteredMaterials.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-2xs space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
@@ -707,16 +680,13 @@ export default function CourseDetailPage({
           </section>
         )}
 
-        {/* Tab 2: Curriculum & Video Classroom */}
         {activeTab === "curriculum" && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left 7 Cols: Video Player & Lesson Study Sheet */}
               <div className="lg:col-span-7 space-y-6">
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xs space-y-5">
                   {selectedLesson ? (
                     <>
-                      {/* Responsive Virtual Classroom Video Area */}
                       <div className="w-full aspect-video rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center text-white relative overflow-hidden group shadow-inner">
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
                         <div className="relative z-10 text-center space-y-3 p-6">
@@ -737,7 +707,6 @@ export default function CourseDetailPage({
                         </div>
                       </div>
 
-                      {/* Lesson Details & Actions */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                           <div>
@@ -761,7 +730,6 @@ export default function CourseDetailPage({
                           </Button>
                         </div>
 
-                        {/* Objectives Callout */}
                         <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-slate-700 space-y-2">
                           <div className="font-bold text-blue-900 flex items-center gap-1.5">
                             <Award className="w-4 h-4 text-blue-600" />
@@ -782,7 +750,6 @@ export default function CourseDetailPage({
                 </div>
               </div>
 
-              {/* Right 5 Cols: Modules Accordion */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
                   <div className="border-b border-slate-100 pb-3">
@@ -864,9 +831,6 @@ export default function CourseDetailPage({
           </section>
         )}
 
-
-
-        {/* Tab 4: Specification Details & Overview */}
         {activeTab === "overview" && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -901,7 +865,6 @@ export default function CourseDetailPage({
                 </div>
               </div>
 
-              {/* Lead Faculty Card */}
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
                 <h3 className="font-bold text-sm text-slate-900">Lead Faculty Educator</h3>
                 <div className="flex items-center gap-3">
@@ -923,7 +886,6 @@ export default function CourseDetailPage({
         )}
       </main>
 
-      {/* Upload Study Material Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
@@ -1061,7 +1023,6 @@ export default function CourseDetailPage({
         </div>
       )}
 
-      {/* 30-Minute Free Trial Session Request Modal */}
       <TrialRequestModal
         isOpen={showTrialModal}
         onClose={() => setShowTrialModal(false)}

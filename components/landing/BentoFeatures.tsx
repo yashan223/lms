@@ -15,7 +15,6 @@ export function BentoFeatures() {
   return (
     <section id="features" className="py-20 bg-gradient-to-b from-white via-blue-50/30 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             Engineered for Academic Excellence &{" "}
@@ -28,9 +27,7 @@ export function BentoFeatures() {
           </p>
         </div>
 
-        {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-6">
-          {/* Bento Item 1: AI Study Copilot (Span 7) */}
           <div className="lg:col-span-7 rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white p-8 sm:p-10 flex flex-col justify-between shadow-xl shadow-blue-600/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 blur-3xl rounded-full pointer-events-none" />
 
@@ -47,7 +44,6 @@ export function BentoFeatures() {
               </p>
             </div>
 
-            {/* Micro chat simulation */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 space-y-2.5">
               <div className="flex items-start gap-2.5">
                 <div className="w-6 h-6 rounded-full bg-sky-300 text-blue-900 flex items-center justify-center font-bold text-[10px] shrink-0">
@@ -60,7 +56,6 @@ export function BentoFeatures() {
             </div>
           </div>
 
-          {/* Bento Item 2: Automated Code Rubrics (Span 5) */}
           <div className="lg:col-span-5 rounded-3xl bg-white border border-blue-100 p-8 sm:p-10 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6">
@@ -83,7 +78,6 @@ export function BentoFeatures() {
             </div>
           </div>
 
-          {/* Bento Item 3: Live Interactive Classrooms (Span 4) */}
           <div className="lg:col-span-4 rounded-3xl bg-white border border-blue-100 p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-6">
@@ -102,7 +96,6 @@ export function BentoFeatures() {
             </div>
           </div>
 
-          {/* Bento Item 4: Institutional Skill Graph (Span 4) */}
           <div className="lg:col-span-4 rounded-3xl bg-white border border-blue-100 p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6">
@@ -121,7 +114,6 @@ export function BentoFeatures() {
             </div>
           </div>
 
-          {/* Bento Item 5: Verifiable Certifications (Span 4) */}
           <div className="lg:col-span-4 rounded-3xl bg-white border border-blue-100 p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">

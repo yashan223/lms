@@ -26,7 +26,6 @@ export function RoleTabsShowcase() {
   return (
     <section id="roles" className="py-20 bg-slate-50/50 border-b border-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             One Unified Platform.{" "}
@@ -39,7 +38,6 @@ export function RoleTabsShowcase() {
           </p>
         </div>
 
-        {/* Interactive Tabs */}
         <Tabs
           defaultValue="STUDENT"
           value={activeTab}
@@ -74,7 +72,6 @@ export function RoleTabsShowcase() {
             </TabsList>
           </div>
 
-          {/* 1. STUDENT TAB CONTENT */}
           <TabsContent value="STUDENT">
             <div className="bg-white rounded-3xl border border-blue-100 p-6 sm:p-10 shadow-xl shadow-blue-500/5">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -134,9 +131,7 @@ export function RoleTabsShowcase() {
                   </div>
                 </div>
 
-                {/* Visual Mockup for Student */}
                 <div className="lg:col-span-6 bg-slate-50 rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-inner">
-                  {/* Video player simulation */}
                   <div className="relative aspect-video rounded-xl bg-slate-900 overflow-hidden shadow-md flex items-center justify-center group cursor-pointer">
                     <img
                       src="https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=800&auto=format&fit=crop&q=80"
@@ -144,7 +139,7 @@ export function RoleTabsShowcase() {
                       className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    
+
                     <div className="absolute w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                       <Play className="w-6 h-6 fill-white ml-0.5" />
                     </div>
@@ -159,7 +154,6 @@ export function RoleTabsShowcase() {
                     </div>
                   </div>
 
-                  {/* Student Quick Tabs */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-white rounded-xl border border-slate-200">
                       <div className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
@@ -186,7 +180,6 @@ export function RoleTabsShowcase() {
             </div>
           </TabsContent>
 
-          {/* 2. INSTRUCTOR TAB CONTENT */}
           <TabsContent value="INSTRUCTOR">
             <div className="bg-white rounded-3xl border border-blue-100 p-6 sm:p-10 shadow-xl shadow-blue-500/5">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -246,9 +239,7 @@ export function RoleTabsShowcase() {
                   </div>
                 </div>
 
-                {/* Visual Mockup for Instructor */}
                 <div className="lg:col-span-6 bg-slate-50 rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-inner">
-                  {/* Instructor Studio Dashboard Preview */}
                   <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div className="flex items-center gap-2">
@@ -310,7 +301,6 @@ export function RoleTabsShowcase() {
             </div>
           </TabsContent>
 
-          {/* 3. ADMIN TAB CONTENT */}
           <TabsContent value="ADMIN">
             <div className="bg-white rounded-3xl border border-blue-100 p-6 sm:p-10 shadow-xl shadow-blue-500/5">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -370,9 +360,7 @@ export function RoleTabsShowcase() {
                   </div>
                 </div>
 
-                {/* Visual Mockup for Admin */}
                 <div className="lg:col-span-6 bg-slate-50 rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-inner">
-                  {/* Admin Command Console Preview */}
                   <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div className="flex items-center gap-2">

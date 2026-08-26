@@ -25,7 +25,6 @@ export function MetricsStrip() {
   return (
     <section className="py-12 bg-white border-y border-blue-100/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Metric Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12">
           {PLATFORM_METRICS.map((metric, idx) => {
             const Icon = metricIcons[idx % metricIcons.length];
@@ -58,7 +57,6 @@ export function MetricsStrip() {
           })}
         </div>
 
-        {/* Institutional Partners Banner */}
         <div className="pt-4 border-t border-slate-100">
           <p className="text-center text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">
             Partnered with leading universities & academic faculties worldwide

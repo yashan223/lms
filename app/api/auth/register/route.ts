@@ -15,7 +15,6 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if already registered
     const existing = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create new Student in PostgreSQL
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
@@ -41,7 +39,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Auto-enroll in featured London A/L or O/L course
     const sampleCourse = await prisma.course.findFirst({
       where: { status: "PUBLISHED" },
     });

@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action") || "conversations";
 
-    // 1. Fetch all conversations for current user
     if (action === "conversations") {
       const conversations = await prisma.conversation.findMany({
         where: {
@@ -53,7 +52,6 @@ export async function GET(req: NextRequest) {
         orderBy: { lastMessageAt: "desc" },
       });
 
-      // Calculate unread count per conversation
       const enrichedConversations = await Promise.all(
         conversations.map(async (conv) => {
           const otherUser = conv.participantAId === currentUserId ? conv.participantB : conv.participantA;
@@ -79,14 +77,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ conversations: enrichedConversations });
     }
 
-    // 2. Fetch messages for a specific conversation
     if (action === "messages") {
       const conversationId = searchParams.get("conversationId");
       if (!conversationId) {
         return NextResponse.json({ error: "conversationId is required" }, { status: 400 });
       }
 
-      // Verify user is participant
       const conversation = await prisma.conversation.findUnique({
         where: { id: conversationId },
         include: {
@@ -109,7 +105,6 @@ export async function GET(req: NextRequest) {
         take: 150,
       });
 
-      // Mark unread messages sent to this user as read
       await prisma.message.updateMany({
         where: {
           conversationId,
@@ -130,13 +125,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 3. Fetch potential chat contacts (Tutors, Enrolled Students, Peers)
     if (action === "contacts") {
       const userRole = user.role;
       let contacts: any[] = [];
 
       if (userRole === "STUDENT") {
-        // Find instructors of student's enrolled courses + all instructors
+
         const tutors = await prisma.user.findMany({
           where: {
             role: "INSTRUCTOR",
@@ -146,7 +140,7 @@ export async function GET(req: NextRequest) {
         });
         contacts = tutors;
       } else if (userRole === "INSTRUCTOR") {
-        // Find students enrolled in tutor's courses
+
         const enrollments = await prisma.enrollment.findMany({
           where: {
             course: { instructorId: currentUserId },
@@ -165,7 +159,6 @@ export async function GET(req: NextRequest) {
           }
         });
 
-        // Also add other faculty tutors
         const peers = await prisma.user.findMany({
           where: {
             role: "INSTRUCTOR",
@@ -176,7 +169,7 @@ export async function GET(req: NextRequest) {
 
         contacts = [...Array.from(uniqueStudentsMap.values()), ...peers];
       } else {
-        // Admin can chat with anyone
+
         contacts = await prisma.user.findMany({
           where: { id: { not: currentUserId } },
           select: { id: true, name: true, email: true, role: true, avatar: true, headline: true },
@@ -206,14 +199,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action } = body;
 
-    // A. Start or retrieve a 1-on-1 Conversation
     if (action === "get_or_create_conversation") {
       const { recipientId, courseId } = body;
       if (!recipientId || recipientId === currentUserId) {
         return NextResponse.json({ error: "Invalid recipient ID" }, { status: 400 });
       }
 
-      // Check existing conversation in either orientation
       let conversation = await prisma.conversation.findFirst({
         where: {
           OR: [
@@ -253,7 +244,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // B. Send an End-to-End Encrypted Message
     if (action === "send_message") {
       const { conversationId, receiverId, encryptedContent, iv, senderPublicKey } = body;
 
@@ -264,7 +254,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Verify conversation and participation
       const conversation = await prisma.conversation.findUnique({
         where: { id: conversationId },
       });
@@ -277,7 +266,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized conversation access" }, { status: 403 });
       }
 
-      // Store zero-knowledge ciphertext and IV
       const message = await prisma.message.create({
         data: {
           conversationId,
@@ -290,13 +278,11 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Update conversation timestamp
       await prisma.conversation.update({
         where: { id: conversationId },
         data: { lastMessageAt: new Date() },
       });
 
-      // Create in-app Notification for receiver
       await prisma.notification.create({
         data: {
           userId: receiverId,
@@ -307,7 +293,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Broadcast Real-time sync events
       broadcastLMSEvent("CHAT_MESSAGE", {
         conversationId,
         senderId: currentUserId,

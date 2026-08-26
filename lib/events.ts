@@ -24,16 +24,12 @@ const globalForEvents = globalThis as unknown as {
 export const eventEmitter =
   globalForEvents.lmsEventEmitter ?? new EventEmitter();
 
-// Support unlimited client listeners without MaxListenersExceededWarning
 eventEmitter.setMaxListeners(200);
 
 if (process.env.NODE_ENV !== "production") {
   globalForEvents.lmsEventEmitter = eventEmitter;
 }
 
-/**
- * Broadcast an LMS mutation event to all active real-time client listeners
- */
 export function broadcastLMSEvent(type: LMSEventType, data?: any) {
   const payload: LMSEventPayload = {
     type,

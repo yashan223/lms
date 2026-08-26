@@ -52,6 +52,20 @@ import {
 } from "lucide-react";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 
+function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
+  if (!startedAt) return "—";
+  if (!endedAt) return "In Progress";
+  const start = new Date(startedAt).getTime();
+  const end = new Date(endedAt).getTime();
+  const diffMs = end - start;
+  if (diffMs <= 0) return "< 1 min";
+  const diffMins = Math.round(diffMs / (1000 * 60));
+  if (diffMins < 60) return `${diffMins} mins`;
+  const hrs = Math.floor(diffMins / 60);
+  const mins = diffMins % 60;
+  return `${hrs}h ${mins}m`;
+}
+
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "live_classes" | "users" | "courses" | "finances"
@@ -1484,6 +1498,54 @@ export default function AdminDashboardPage() {
                                     <ExternalLink className="w-3 h-3 shrink-0" />
                                   </a>
                                 )}
+                              </div>
+
+                              {/* Class History Timing Audit Log: Started At, Ended At, and Duration */}
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2.5 mt-1 border-t border-slate-100 text-[11px]">
+                                <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex flex-col justify-center">
+                                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                                    Session Started
+                                  </span>
+                                  <span className="font-bold text-emerald-950 font-mono text-xs">
+                                    {ev.startedAt
+                                      ? new Date(ev.startedAt).toLocaleString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          second: "2-digit",
+                                        })
+                                      : "Not started yet"}
+                                  </span>
+                                </div>
+
+                                <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-200/60 flex flex-col justify-center">
+                                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">
+                                    Session Ended
+                                  </span>
+                                  <span className="font-bold text-blue-950 font-mono text-xs">
+                                    {ev.endedAt
+                                      ? new Date(ev.endedAt).toLocaleString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          second: "2-digit",
+                                        })
+                                      : isLive
+                                      ? "● Live in Session"
+                                      : "—"}
+                                  </span>
+                                </div>
+
+                                <div className="p-2 rounded-xl bg-indigo-50/70 border border-indigo-200/60 flex flex-col justify-center">
+                                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">
+                                    Total Recorded Duration
+                                  </span>
+                                  <span className="font-bold text-indigo-950 font-mono text-xs">
+                                    {formatSessionDuration(ev.startedAt, ev.endedAt)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>

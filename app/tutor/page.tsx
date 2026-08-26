@@ -85,6 +85,20 @@ const getSafeMeetingLink = (link?: string | null) => {
   return trimmed;
 };
 
+const formatSessionDuration = (startedAt?: string | Date | null, endedAt?: string | Date | null) => {
+  if (!startedAt) return "—";
+  if (!endedAt) return "In Progress";
+  const start = new Date(startedAt).getTime();
+  const end = new Date(endedAt).getTime();
+  const diffMs = end - start;
+  if (diffMs <= 0) return "< 1 min";
+  const diffMins = Math.round(diffMs / (1000 * 60));
+  if (diffMins < 60) return `${diffMins} mins`;
+  const hrs = Math.floor(diffMins / 60);
+  const mins = diffMins % 60;
+  return `${hrs}h ${mins}m`;
+};
+
 interface AcademicDegree {
   id: string;
   degree: string;
@@ -1686,6 +1700,34 @@ function TutorDashboardContent() {
                                   </a>
                                 )}
                               </div>
+
+                              {/* Class History Start & End Timestamps */}
+                              {(ev.startedAt || ev.endedAt || isCompleted) && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 mt-1 border-t border-slate-100 text-[10px]">
+                                  <div className="p-1.5 rounded-lg bg-emerald-50/70 border border-emerald-100">
+                                    <span className="text-emerald-700 font-bold uppercase block">Started</span>
+                                    <span className="font-bold text-emerald-950 font-mono">
+                                      {ev.startedAt
+                                        ? new Date(ev.startedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+                                        : "Not recorded"}
+                                    </span>
+                                  </div>
+                                  <div className="p-1.5 rounded-lg bg-blue-50/70 border border-blue-100">
+                                    <span className="text-blue-700 font-bold uppercase block">Ended</span>
+                                    <span className="font-bold text-blue-950 font-mono">
+                                      {ev.endedAt
+                                        ? new Date(ev.endedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+                                        : isLive ? "● In Session" : "—"}
+                                    </span>
+                                  </div>
+                                  <div className="p-1.5 rounded-lg bg-indigo-50/70 border border-indigo-100">
+                                    <span className="text-indigo-700 font-bold uppercase block">Duration</span>
+                                    <span className="font-bold text-indigo-950 font-mono">
+                                      {formatSessionDuration(ev.startedAt, ev.endedAt)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-2 self-end sm:self-center shrink-0">

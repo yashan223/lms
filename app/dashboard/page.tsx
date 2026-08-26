@@ -448,6 +448,8 @@ function DashboardContent() {
       const date = new Date(calendarYear, calendarMonthIndex - 1, d);
       const dateStr = date.toDateString();
       const events = studentTimelineEvents.filter((ev) => {
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        if (isEnded) return false;
         const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
         if (!matchDate) return false;
         if (calendarCourseFilter !== "all") {
@@ -471,6 +473,8 @@ function DashboardContent() {
       const date = new Date(calendarYear, calendarMonthIndex, d);
       const dateStr = date.toDateString();
       const events = studentTimelineEvents.filter((ev) => {
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        if (isEnded) return false;
         const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
         if (!matchDate) return false;
         if (calendarCourseFilter !== "all") {
@@ -495,6 +499,8 @@ function DashboardContent() {
       const date = new Date(calendarYear, calendarMonthIndex + 1, d);
       const dateStr = date.toDateString();
       const events = studentTimelineEvents.filter((ev) => {
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        if (isEnded) return false;
         const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
         if (!matchDate) return false;
         if (calendarCourseFilter !== "all") {
@@ -516,11 +522,13 @@ function DashboardContent() {
     return cells;
   }, [calendarYear, calendarMonthIndex, studentTimelineEvents, calendarCourseFilter, selectedDate]);
 
-  // Selected Day's Events
+  // Selected Day's Events (excluding ended classes)
   const selectedDayEvents = useMemo(() => {
     if (!selectedDate) return [];
     const selectedStr = selectedDate.toDateString();
     return studentTimelineEvents.filter((ev) => {
+      const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+      if (isEnded) return false;
       const matchDate = new Date(ev.dueDate).toDateString() === selectedStr;
       if (!matchDate) return false;
       if (calendarCourseFilter !== "all") {
@@ -995,11 +1003,24 @@ function DashboardContent() {
               <div className="grid grid-cols-7 text-center text-xs">
                 {calendarDays.map((cell, idx) => {
                   const hasEvents = cell.events.length > 0;
+                  const tooltipTitle = hasEvents
+                    ? cell.events
+                        .map(
+                          (e) =>
+                            `${e.title} (${new Date(e.dueDate).toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })})`
+                        )
+                        .join("\n")
+                    : undefined;
+
                   return (
                     <div
                       key={idx}
                       onClick={() => setSelectedDate(cell.date)}
-                      className={`p-1 flex flex-col items-center justify-center rounded-md cursor-pointer ${
+                      title={tooltipTitle}
+                      className={`p-1 relative group flex flex-col items-center justify-center rounded-md cursor-pointer transition-all ${
                         cell.isToday
                           ? "bg-[#0c2461] text-white font-bold"
                           : cell.isSelected
@@ -1012,10 +1033,48 @@ function DashboardContent() {
                       <span className="text-[11px] leading-tight">{cell.dayNumber}</span>
                       {hasEvents && (
                         <span
-                          className={`w-1 h-1 rounded-full mt-0.5 ${
-                            cell.isToday ? "bg-amber-300" : "bg-blue-600"
+                          className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                            cell.isToday ? "bg-amber-300 ring-1 ring-amber-400/50" : "bg-blue-600 ring-1 ring-blue-400/50"
                           }`}
                         />
+                      )}
+
+                      {/* Hover Popup Tooltip showing class details */}
+                      {hasEvents && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col z-50 w-48 sm:w-56 p-2.5 bg-slate-900/95 text-white rounded-xl shadow-xl border border-slate-700/70 backdrop-blur-md pointer-events-none text-left animate-in fade-in zoom-in-95 duration-150">
+                          <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider border-b border-slate-700/60 pb-1 flex items-center justify-between">
+                            <span>{cell.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+                            <span className="text-[9px] font-normal text-slate-400 font-mono">{cell.events.length} class{cell.events.length > 1 ? "es" : ""}</span>
+                          </div>
+                          <div className="space-y-2 pt-1.5 max-h-40 overflow-y-auto">
+                            {cell.events.map((ev: any) => (
+                              <div key={ev.id} className="space-y-0.5">
+                                <div className="text-[11px] font-bold text-white leading-tight truncate">
+                                  {ev.title}
+                                </div>
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <span className="font-mono text-sky-300">
+                                    {new Date(ev.dueDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
+                                    ev.status === "LIVE"
+                                      ? "bg-red-500 text-white animate-pulse"
+                                      : "bg-blue-500/20 text-blue-300 border border-blue-400/30"
+                                  }`}>
+                                    {ev.status === "LIVE" ? "● LIVE" : ev.type === "LIVE_SEMINAR" ? "Live Seminar" : ev.type?.replace("_", " ") || "Class"}
+                                  </span>
+                                </div>
+                                {ev.course?.title && (
+                                  <div className="text-[9px] text-slate-400 truncate">
+                                    {ev.course.title}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {/* Arrow pointer */}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-slate-900" />
+                        </div>
                       )}
                     </div>
                   );

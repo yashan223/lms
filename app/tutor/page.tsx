@@ -300,6 +300,57 @@ function TutorDashboardContent() {
     return days;
   }, [calDate]);
 
+  const getEventsOnDate = useCallback(
+    (date: Date | null) => {
+      if (!date) return [];
+      const y = date.getFullYear();
+      const m = date.getMonth();
+      const d = date.getDate();
+
+      const matchedClasses = events
+        .filter((ev) => {
+          const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+          if (isEnded) return false;
+          const evDate = new Date(ev.dueDate);
+          return (
+            evDate.getFullYear() === y &&
+            evDate.getMonth() === m &&
+            evDate.getDate() === d
+          );
+        })
+        .map((ev) => ({
+          id: ev.id,
+          title: ev.title,
+          dueDate: ev.dueDate,
+          type: ev.type || "LIVE_SEMINAR",
+          isLive: ev.status === "LIVE",
+          courseTitle: ev.course?.title,
+        }));
+
+      const matchedTrials = trials
+        .filter((tr) => {
+          if (tr.status === "COMPLETED" || tr.status === "CANCELLED") return false;
+          const trDate = new Date(tr.preferredDate);
+          return (
+            trDate.getFullYear() === y &&
+            trDate.getMonth() === m &&
+            trDate.getDate() === d
+          );
+        })
+        .map((tr) => ({
+          id: tr.id,
+          title: `1-on-1 Trial: ${tr.studentName || tr.student?.name || "Student"}`,
+          dueDate: tr.preferredDate,
+          type: "TRIAL",
+          isLive: false,
+          courseTitle: tr.course?.title || tr.topic,
+        }));
+
+      return [...matchedClasses, ...matchedTrials];
+    },
+    [events, trials]
+  );
+
   const hasEventOnDate = useCallback(
     (date: Date | null) => {
       if (!date) return false;
@@ -307,6 +358,8 @@ function TutorDashboardContent() {
       const m = date.getMonth();
       const d = date.getDate();
       const hasClass = events.some((ev) => {
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        if (isEnded) return false;
         const evDate = new Date(ev.dueDate);
         return (
           evDate.getFullYear() === y &&
@@ -315,6 +368,7 @@ function TutorDashboardContent() {
         );
       });
       const hasTrial = trials.some((tr) => {
+        if (tr.status === "COMPLETED" || tr.status === "CANCELLED") return false;
         const trDate = new Date(tr.preferredDate);
         return (
           trDate.getFullYear() === y &&
@@ -799,11 +853,25 @@ function TutorDashboardContent() {
                     date.getDate() === new Date().getDate() &&
                     date.getMonth() === new Date().getMonth() &&
                     date.getFullYear() === new Date().getFullYear();
-                  const hasEvents = hasEventOnDate(date);
+                  const dayEvents = getEventsOnDate(date);
+                  const hasEvents = dayEvents.length > 0;
+                  const tooltipTitle = hasEvents
+                    ? dayEvents
+                        .map(
+                          (e) =>
+                            `${e.title} (${new Date(e.dueDate).toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })})`
+                        )
+                        .join("\n")
+                    : undefined;
+
                   return (
                     <div
                       key={date.toISOString()}
-                      className={`p-1 relative flex flex-col items-center justify-center rounded-md ${
+                      title={tooltipTitle}
+                      className={`p-1 relative group flex flex-col items-center justify-center rounded-md cursor-pointer transition-all ${
                         isToday
                           ? "bg-[#0c2461] text-white font-bold"
                           : "text-slate-700 hover:bg-slate-100"
@@ -812,10 +880,48 @@ function TutorDashboardContent() {
                       <span className="text-[11px] leading-tight">{date.getDate()}</span>
                       {hasEvents && (
                         <span
-                          className={`w-1 h-1 rounded-full mt-0.5 ${
-                            isToday ? "bg-amber-300" : "bg-blue-600"
+                          className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                            isToday ? "bg-amber-300 ring-1 ring-amber-400/50" : "bg-blue-600 ring-1 ring-blue-400/50"
                           }`}
                         />
+                      )}
+
+                      {/* Hover Popup Tooltip showing class details */}
+                      {hasEvents && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col z-50 w-48 sm:w-56 p-2.5 bg-slate-900/95 text-white rounded-xl shadow-xl border border-slate-700/70 backdrop-blur-md pointer-events-none text-left animate-in fade-in zoom-in-95 duration-150">
+                          <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider border-b border-slate-700/60 pb-1 flex items-center justify-between">
+                            <span>{date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+                            <span className="text-[9px] font-normal text-slate-400 font-mono">{dayEvents.length} session{dayEvents.length > 1 ? "s" : ""}</span>
+                          </div>
+                          <div className="space-y-2 pt-1.5 max-h-40 overflow-y-auto">
+                            {dayEvents.map((ev: any) => (
+                              <div key={ev.id} className="space-y-0.5">
+                                <div className="text-[11px] font-bold text-white leading-tight truncate">
+                                  {ev.title}
+                                </div>
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <span className="font-mono text-sky-300">
+                                    {new Date(ev.dueDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
+                                    ev.isLive
+                                      ? "bg-red-500 text-white animate-pulse"
+                                      : "bg-blue-500/20 text-blue-300 border border-blue-400/30"
+                                  }`}>
+                                    {ev.isLive ? "● LIVE" : ev.type === "TRIAL" ? "1-on-1 Trial" : ev.type === "LIVE_SEMINAR" ? "Live Seminar" : ev.type?.replace("_", " ") || "Class"}
+                                  </span>
+                                </div>
+                                {ev.courseTitle && (
+                                  <div className="text-[9px] text-slate-400 truncate">
+                                    {ev.courseTitle}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {/* Arrow pointer */}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-slate-900" />
+                        </div>
                       )}
                     </div>
                   );

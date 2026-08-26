@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "Faculty profile and qualifications updated successfully.",
+        message: "Tutor profile and qualifications updated successfully.",
         tutor: updatedTutor,
       });
     }

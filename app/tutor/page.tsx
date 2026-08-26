@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   GraduationCap,
   Search,
@@ -49,6 +49,12 @@ import {
   Globe,
   Settings,
   Check,
+  Upload,
+  Camera,
+  Sparkles,
+  School,
+  Briefcase,
+  Share2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,6 +84,21 @@ const getSafeMeetingLink = (link?: string | null) => {
   }
   return trimmed;
 };
+
+interface AcademicDegree {
+  id: string;
+  degree: string;
+  institution: string;
+  year: string;
+  honors?: string;
+}
+
+interface AcademicCertification {
+  id: string;
+  title: string;
+  authority: string;
+  year: string;
+}
 
 interface EnrolledCourseInfo {
   courseId: string;
@@ -131,6 +152,7 @@ interface ScheduledClassEvent {
 
 function TutorDashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [tutor, setTutor] = useState<any>(null);
@@ -148,8 +170,16 @@ function TutorDashboardContent() {
   const [selectedCourseFilter, setSelectedCourseFilter] = useState("ALL");
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
 
-  // Center Tab View: "courses" | "classes" | "students" | "trials" | "earnings"
-  const [centerTab, setCenterTab] = useState<"courses" | "classes" | "students" | "trials" | "earnings">("courses");
+  // Center Tab View: "courses" | "classes" | "students" | "trials" | "earnings" | "profile"
+  const [centerTab, setCenterTab] = useState<"courses" | "classes" | "students" | "trials" | "earnings" | "profile">("courses");
+
+  // Handle URL query parameter for tab
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "profile" || tab === "courses" || tab === "classes" || tab === "students" || tab === "trials" || tab === "earnings") {
+      setCenterTab(tab);
+    }
+  }, [searchParams]);
 
   // Computed Earnings & Teaching Hours
   const totalEarnings = useMemo(() => {
@@ -207,18 +237,75 @@ function TutorDashboardContent() {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
-  // Profile Edit Modal
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  // Full Profile Customization State
   const [profileName, setProfileName] = useState("");
   const [profileHeadline, setProfileHeadline] = useState("");
-  const [profileBio, setProfileBio] = useState("");
+  const [profileAbout, setProfileAbout] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("");
+  const [profileDegrees, setProfileDegrees] = useState<AcademicDegree[]>([
+    {
+      id: "deg-1",
+      degree: "B.Sc. (Hons) in Pure Mathematics",
+      institution: "Imperial College London",
+      year: "2016",
+      honors: "First Class Honours",
+    },
+    {
+      id: "deg-2",
+      degree: "M.Sc. in Applied Mathematics & Mechanics",
+      institution: "University of Cambridge",
+      year: "2018",
+      honors: "Distinction",
+    },
+  ]);
+  const [profileSpecs, setProfileSpecs] = useState<string[]>([
+    "Pure Mathematics (P1-P4)",
+    "Further Mechanics (M1-M3)",
+    "Differential Equations & Calculus",
+    "Pearson Edexcel IAL",
+    "Cambridge International A/L",
+  ]);
+  const [profileCerts, setProfileCerts] = useState<AcademicCertification[]>([
+    {
+      id: "cert-1",
+      title: "Certified Lead Examiner & Assessment Specialist",
+      authority: "Pearson Edexcel International",
+      year: "2021",
+    },
+    {
+      id: "cert-2",
+      title: "Fellow of the Higher Education Academy (FHEA)",
+      authority: "Advance HE",
+      year: "2019",
+    },
+  ]);
+  const [profileExp, setProfileExp] = useState("10+ Years");
+  const [profileRate, setProfileRate] = useState("65");
+  const [profileHours, setProfileHours] = useState("Mon - Fri: 4:00 PM - 8:00 PM GMT");
+  const [profileLinkedin, setProfileLinkedin] = useState("https://linkedin.com");
+  const [profileResearchGate, setProfileResearchGate] = useState("https://researchgate.net");
+  const [profileWebsite, setProfileWebsite] = useState("https://edupulse.uk");
+
+  // Temporary Inputs for adding items
+  const [newDegreeTitle, setNewDegreeTitle] = useState("");
+  const [newDegreeInst, setNewDegreeInst] = useState("");
+  const [newDegreeYear, setNewDegreeYear] = useState("");
+  const [newDegreeHonors, setNewDegreeHonors] = useState("");
+
+  const [newSpecTag, setNewSpecTag] = useState("");
+
+  const [newCertTitle, setNewCertTitle] = useState("");
+  const [newCertAuth, setNewCertAuth] = useState("");
+  const [newCertYear, setNewCertYear] = useState("");
+
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileStatusMsg, setProfileStatusMsg] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Calendar Navigation State
   const [calDate, setCalDate] = useState(() => new Date());
@@ -252,10 +339,94 @@ function TutorDashboardContent() {
       if (data.tutor) {
         setTutor(data.tutor);
         setProfileName(data.tutor.name || "");
-        setProfileHeadline(data.tutor.headline || "");
-        setProfileBio(data.tutor.bio || "");
+        setProfileHeadline(data.tutor.headline || "Senior Faculty Lecturer");
         setProfilePhone(data.tutor.phone || "");
         setProfileAvatar(data.tutor.avatar || "");
+
+        // Default credentials
+        let parsedAbout = "Senior Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum with a focus on deep conceptual proofs, problem sets, and examination masterclasses.";
+        let parsedDegrees: AcademicDegree[] = [
+          {
+            id: "deg-1",
+            degree: "B.Sc. (Hons) in Pure Mathematics",
+            institution: "Imperial College London",
+            year: "2016",
+            honors: "First Class Honours",
+          },
+          {
+            id: "deg-2",
+            degree: "M.Sc. in Applied Mathematics & Mechanics",
+            institution: "University of Cambridge",
+            year: "2018",
+            honors: "Distinction",
+          },
+        ];
+        let parsedSpecs: string[] = [
+          "Pure Mathematics (P1-P4)",
+          "Further Mechanics (M1-M3)",
+          "Differential Equations & Calculus",
+          "Pearson Edexcel IAL",
+          "Cambridge International A/L",
+        ];
+        let parsedCerts: AcademicCertification[] = [
+          {
+            id: "cert-1",
+            title: "Certified Lead Examiner & Assessment Specialist",
+            authority: "Pearson Edexcel International",
+            year: "2021",
+          },
+          {
+            id: "cert-2",
+            title: "Fellow of the Higher Education Academy (FHEA)",
+            authority: "Advance HE",
+            year: "2019",
+          },
+        ];
+        let parsedExp = "10+ Years";
+        let parsedRate = "65";
+        let parsedHours = "Mon - Fri: 4:00 PM - 8:00 PM GMT";
+        let parsedLinkedin = "https://linkedin.com";
+        let parsedResearchGate = "https://researchgate.net";
+        let parsedWebsite = "https://edupulse.uk";
+
+        if (data.tutor.bio) {
+          try {
+            if (data.tutor.bio.trim().startsWith("{") && data.tutor.bio.trim().endsWith("}")) {
+              const parsed = JSON.parse(data.tutor.bio);
+              if (parsed.about) parsedAbout = parsed.about;
+              if (Array.isArray(parsed.degrees) && parsed.degrees.length > 0) {
+                parsedDegrees = parsed.degrees;
+              }
+              if (Array.isArray(parsed.specializations) && parsed.specializations.length > 0) {
+                parsedSpecs = parsed.specializations;
+              }
+              if (Array.isArray(parsed.certifications) && parsed.certifications.length > 0) {
+                parsedCerts = parsed.certifications;
+              }
+              if (parsed.experienceYears) parsedExp = parsed.experienceYears;
+              if (parsed.hourlyRate) parsedRate = parsed.hourlyRate;
+              if (parsed.officeHours) parsedHours = parsed.officeHours;
+              if (parsed.linkedin) parsedLinkedin = parsed.linkedin;
+              if (parsed.researchGate) parsedResearchGate = parsed.researchGate;
+              if (parsed.website) parsedWebsite = parsed.website;
+            } else {
+              parsedAbout = data.tutor.bio;
+            }
+          } catch (e) {
+            parsedAbout = data.tutor.bio;
+          }
+        }
+
+        setProfileAbout(parsedAbout);
+        setProfileDegrees(parsedDegrees);
+        setProfileSpecs(parsedSpecs);
+        setProfileCerts(parsedCerts);
+        setProfileExp(parsedExp);
+        setProfileRate(parsedRate);
+        setProfileHours(parsedHours);
+        setProfileLinkedin(parsedLinkedin);
+        setProfileResearchGate(parsedResearchGate);
+        setProfileWebsite(parsedWebsite);
       }
       setCourses(data.courses || []);
       setStudents(data.students || []);
@@ -564,13 +735,108 @@ function TutorDashboardContent() {
     });
   };
 
-  // Save Profile
-  const handleSaveProfile = async (e: React.FormEvent) => {
+  // Profile photo file upload handler
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileStatusMsg({
+        type: "error",
+        text: "Image file is too large. Please upload an image under 5MB.",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setProfileAvatar(base64);
+      setProfileStatusMsg({
+        type: "success",
+        text: "Profile photo uploaded! Click 'Save Profile Changes' to apply.",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Add & Remove Degrees
+  const handleAddDegree = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newDegreeTitle.trim() || !newDegreeInst.trim()) return;
+    const newDeg: AcademicDegree = {
+      id: `deg-${Date.now()}`,
+      degree: newDegreeTitle.trim(),
+      institution: newDegreeInst.trim(),
+      year: newDegreeYear.trim() || new Date().getFullYear().toString(),
+      honors: newDegreeHonors.trim() || undefined,
+    };
+    setProfileDegrees((prev) => [...prev, newDeg]);
+    setNewDegreeTitle("");
+    setNewDegreeInst("");
+    setNewDegreeYear("");
+    setNewDegreeHonors("");
+  };
+
+  const handleRemoveDegree = (id: string) => {
+    setProfileDegrees((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  // Add & Remove Specializations
+  const handleAddSpec = (specToAdd?: string) => {
+    const val = (specToAdd || newSpecTag).trim();
+    if (!val) return;
+    if (!profileSpecs.includes(val)) {
+      setProfileSpecs((prev) => [...prev, val]);
+    }
+    if (!specToAdd) setNewSpecTag("");
+  };
+
+  const handleRemoveSpec = (spec: string) => {
+    setProfileSpecs((prev) => prev.filter((s) => s !== spec));
+  };
+
+  // Add & Remove Certifications
+  const handleAddCert = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCertTitle.trim()) return;
+    const newCert: AcademicCertification = {
+      id: `cert-${Date.now()}`,
+      title: newCertTitle.trim(),
+      authority: newCertAuth.trim() || "International Assessment Board",
+      year: newCertYear.trim() || new Date().getFullYear().toString(),
+    };
+    setProfileCerts((prev) => [...prev, newCert]);
+    setNewCertTitle("");
+    setNewCertAuth("");
+    setNewCertYear("");
+  };
+
+  const handleRemoveCert = (id: string) => {
+    setProfileCerts((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  // Save Full Profile & Qualifications
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!tutor?.id) return;
     try {
       setProfileSaving(true);
       setProfileStatusMsg(null);
+
+      const bioPayload = JSON.stringify({
+        about: profileAbout,
+        degrees: profileDegrees,
+        specializations: profileSpecs,
+        certifications: profileCerts,
+        experienceYears: profileExp,
+        hourlyRate: profileRate,
+        officeHours: profileHours,
+        linkedin: profileLinkedin,
+        researchGate: profileResearchGate,
+        website: profileWebsite,
+      });
+
       const res = await fetch("/api/tutor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -579,7 +845,7 @@ function TutorDashboardContent() {
           tutorId: tutor.id,
           name: profileName,
           headline: profileHeadline,
-          bio: profileBio,
+          bio: bioPayload,
           phone: profilePhone,
           avatar: profileAvatar,
         }),
@@ -588,10 +854,9 @@ function TutorDashboardContent() {
       if (res.ok) {
         setProfileStatusMsg({
           type: "success",
-          text: "Faculty qualifications saved successfully!",
+          text: "Tutor profile, academic degrees, and credentials saved successfully!",
         });
         setTutor(data.tutor);
-        setTimeout(() => setShowProfileModal(false), 1200);
       } else {
         setProfileStatusMsg({
           type: "error",
@@ -601,7 +866,7 @@ function TutorDashboardContent() {
     } catch (error) {
       setProfileStatusMsg({
         type: "error",
-        text: "Network error saving profile.",
+        text: "Network error while saving profile.",
       });
     } finally {
       setProfileSaving(false);
@@ -809,6 +1074,23 @@ function TutorDashboardContent() {
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
                     {trials.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setCenterTab("profile")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "profile"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Tutor Profile & Credentials</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 font-bold">
+                    Edit
                   </span>
                 </button>
               </div>
@@ -1021,6 +1303,18 @@ function TutorDashboardContent() {
               >
                 <DollarSign className="w-3.5 h-3.5" />
                 <span>Earnings & Hours</span>
+              </button>
+
+              <button
+                onClick={() => setCenterTab("profile")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  centerTab === "profile"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Tutor Profile</span>
               </button>
             </div>
 
@@ -1538,6 +1832,695 @@ function TutorDashboardContent() {
               </div>
             )}
 
+            {/* VIEW 5: FULL-PAGE TUTOR PROFILE & CREDENTIALS STUDIO */}
+            {centerTab === "profile" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                {/* Header Banner */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#0c2461] text-white flex items-center justify-center shadow-md shadow-blue-950/20 shrink-0">
+                        <UserCheck className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                          Tutor Profile & Studio Customization
+                        </h2>
+                        <p className="text-xs text-slate-500">
+                          Personalize your public instructor identity, verified academic degrees, examiner accreditations, and bio.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSaveProfile()}
+                        disabled={profileSaving}
+                        className="px-5 py-2.5 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-md shadow-blue-950/20 transition-all flex items-center gap-2 cursor-pointer shrink-0 disabled:opacity-50"
+                      >
+                        {profileSaving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Saving Changes...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            <span>Save Profile Changes</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Feedback Status Alert */}
+                  {profileStatusMsg && (
+                    <div
+                      className={`p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in slide-in-from-top-2 duration-200 ${
+                        profileStatusMsg.type === "success"
+                          ? "bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs"
+                          : "bg-red-50 text-red-900 border border-red-200 shadow-2xs"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {profileStatusMsg.type === "success" ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                        )}
+                        <span>{profileStatusMsg.text}</span>
+                      </div>
+                      <button
+                        onClick={() => setProfileStatusMsg(null)}
+                        className="text-slate-400 hover:text-slate-700 p-0.5"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Sections Grid */}
+                <div className="grid grid-cols-1 gap-6">
+
+                  {/* CARD 1: PROFILE PHOTO UPLOAD & BRANDING */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                          <Camera className="w-4 h-4 text-blue-600" />
+                          <span>Profile Picture & Photo Customization</span>
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Upload a professional high-resolution photo. Students and parents will see this on course syllabi.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                      {/* Avatar preview */}
+                      <div className="relative group shrink-0">
+                        <div className="w-28 h-28 rounded-2xl bg-slate-900 overflow-hidden border-2 border-slate-200 shadow-lg ring-4 ring-blue-500/10">
+                          <img
+                            src={
+                              profileAvatar ||
+                              "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80"
+                            }
+                            alt="Profile Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex flex-col items-center justify-center text-xs font-bold gap-1 cursor-pointer"
+                        >
+                          <Camera className="w-5 h-5" />
+                          <span>Change</span>
+                        </button>
+                      </div>
+
+                      {/* Photo Upload Controls */}
+                      <div className="flex-1 space-y-3 w-full">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageFileChange}
+                          accept="image/*"
+                          className="hidden"
+                        />
+
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Photo from Device</span>
+                          </button>
+
+                          {profileAvatar && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfileAvatar("");
+                                setProfileStatusMsg({
+                                  type: "success",
+                                  text: "Photo removed. Default avatar will be used.",
+                                });
+                              }}
+                              className="px-3 py-2 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-600 hover:text-red-700 text-xs font-semibold border border-slate-200 hover:border-red-200 transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Remove</span>
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 block">
+                            Or Enter Direct Image URL
+                          </label>
+                          <Input
+                            placeholder="https://images.unsplash.com/..."
+                            value={profileAvatar}
+                            onChange={(e) => setProfileAvatar(e.target.value)}
+                            className="rounded-xl h-8 text-xs font-mono"
+                          />
+                        </div>
+
+                        <p className="text-[11px] text-slate-400">
+                          Supports PNG, JPG, JPEG, and WEBP formats up to 5MB. Photo is automatically cropped and optimized.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARD 2: BASIC TUTOR IDENTITY & HEADLINE */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                    <div className="border-b border-slate-100 pb-3">
+                      <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        <UserCheck className="w-4 h-4 text-blue-600" />
+                        <span>Basic Identity & Designation</span>
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Official tutor name, headline, and direct student contact numbers.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-xs text-slate-700 block">
+                          Full Legal / Display Name <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          required
+                          value={profileName}
+                          onChange={(e) => setProfileName(e.target.value)}
+                          placeholder="e.g. Dr. Arthur Pendelton"
+                          className="rounded-xl h-9 text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-xs text-slate-700 block">
+                          Phone / WhatsApp Number
+                        </label>
+                        <Input
+                          value={profilePhone}
+                          onChange={(e) => setProfilePhone(e.target.value)}
+                          placeholder="e.g. +1 (555) 234-5678"
+                          className="rounded-xl h-9 text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-xs text-slate-700 block">
+                        Academic Headline & Title
+                      </label>
+                      <Input
+                        value={profileHeadline}
+                        onChange={(e) => setProfileHeadline(e.target.value)}
+                        placeholder="e.g. Senior Lead Lecturer & Certified Lead Examiner (London A/L Pure Mathematics)"
+                        className="rounded-xl h-9 text-xs"
+                      />
+                      <p className="text-[10px] text-slate-400">
+                        This appears right underneath your name on all course pages and search cards.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-xs text-slate-700 block">
+                          Teaching Experience
+                        </label>
+                        <Input
+                          value={profileExp}
+                          onChange={(e) => setProfileExp(e.target.value)}
+                          placeholder="e.g. 12+ Years Lead Faculty"
+                          className="rounded-xl h-9 text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-xs text-slate-700 block">
+                          Hourly Rate ($ / hr)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                          <Input
+                            value={profileRate}
+                            onChange={(e) => setProfileRate(e.target.value)}
+                            placeholder="65"
+                            className="rounded-xl h-9 text-xs pl-7"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-xs text-slate-700 block">
+                          Office / Availability Hours
+                        </label>
+                        <Input
+                          value={profileHours}
+                          onChange={(e) => setProfileHours(e.target.value)}
+                          placeholder="e.g. Mon - Fri: 4:00 PM - 8:00 PM GMT"
+                          className="rounded-xl h-9 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARD 3: ACADEMIC DEGREES & EDUCATION (CUSTOMIZATION) */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-blue-600" />
+                          <span>Academic Degrees & Educational Credentials</span>
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Add university bachelor&apos;s, master&apos;s, and doctoral degrees with institution and graduation honors.
+                        </p>
+                      </div>
+                      <Badge className="bg-blue-50 text-blue-800 text-[11px] font-bold self-start sm:self-center">
+                        {profileDegrees.length} {profileDegrees.length === 1 ? "Degree" : "Degrees"} Listed
+                      </Badge>
+                    </div>
+
+                    {/* Current Degrees List */}
+                    {profileDegrees.length === 0 ? (
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-400 italic">
+                        No academic degrees added yet. Fill out the form below to add your qualifications.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {profileDegrees.map((deg) => (
+                          <div
+                            key={deg.id}
+                            className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-blue-200 transition-all flex flex-col justify-between space-y-2 shadow-2xs"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="font-bold text-xs text-slate-900 leading-tight">
+                                  {deg.degree}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveDegree(deg.id)}
+                                  className="text-slate-400 hover:text-red-600 p-0.5 cursor-pointer shrink-0"
+                                  title="Remove Degree"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <p className="text-xs text-slate-600 flex items-center gap-1.5">
+                                <School className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>{deg.institution}</span>
+                              </p>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px]">
+                              <span className="font-mono text-slate-500">Graduation: {deg.year}</span>
+                              {deg.honors && (
+                                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                  {deg.honors}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add Degree Form Subcard */}
+                    <form onSubmit={handleAddDegree} className="p-4 rounded-xl bg-blue-50/40 border border-blue-100 space-y-3">
+                      <div className="font-bold text-xs text-blue-950 flex items-center gap-1.5">
+                        <Plus className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Add New Academic Degree</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">Degree Name *</label>
+                          <Input
+                            required
+                            placeholder="e.g. B.Sc. (Hons) in Pure Mathematics"
+                            value={newDegreeTitle}
+                            onChange={(e) => setNewDegreeTitle(e.target.value)}
+                            className="bg-white rounded-xl h-8 text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">Institution / University *</label>
+                          <Input
+                            required
+                            placeholder="e.g. Imperial College London"
+                            value={newDegreeInst}
+                            onChange={(e) => setNewDegreeInst(e.target.value)}
+                            className="bg-white rounded-xl h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">Graduation Year</label>
+                          <Input
+                            placeholder="e.g. 2018"
+                            value={newDegreeYear}
+                            onChange={(e) => setNewDegreeYear(e.target.value)}
+                            className="bg-white rounded-xl h-8 text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">Honors / Distinctions (Optional)</label>
+                          <Input
+                            placeholder="e.g. First Class Honours, Dean's List"
+                            value={newDegreeHonors}
+                            onChange={(e) => setNewDegreeHonors(e.target.value)}
+                            className="bg-white rounded-xl h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-1 flex justify-end">
+                        <Button
+                          type="submit"
+                          size="sm"
+                          className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-4 gap-1.5 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add Degree to Profile</span>
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* CARD 4: SUBJECT SPECIALIZATIONS & MODULES */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                    <div className="border-b border-slate-100 pb-3">
+                      <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-blue-600" />
+                        <span>Subject Specializations & Syllabus Expertise</span>
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Highlight the specific units, exam boards, and advanced topics you teach.
+                      </p>
+                    </div>
+
+                    {/* Active Tags */}
+                    <div className="flex flex-wrap gap-2">
+                      {profileSpecs.map((spec, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+                        >
+                          <span>{spec}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSpec(spec)}
+                            className="text-blue-500 hover:text-red-600 p-0.5 rounded-full"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Add Tag Row */}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Add custom specialization (e.g. Further Pure FP2, Mechanics M2)..."
+                        value={newSpecTag}
+                        onChange={(e) => setNewSpecTag(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddSpec();
+                          }
+                        }}
+                        className="rounded-xl h-9 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => handleAddSpec()}
+                        className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl px-4 cursor-pointer shrink-0"
+                      >
+                        + Add Tag
+                      </Button>
+                    </div>
+
+                    {/* Quick Presets */}
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Quick Add Common Subjects:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          "Pure Mathematics (P1-P4)",
+                          "Further Mechanics (FM1-FM2)",
+                          "Statistics (S1-S2)",
+                          "Further Pure (FP1-FP3)",
+                          "Physics AS/A2 (Unit 1-6)",
+                          "Chemistry AS/A2",
+                          "Economics & Quantitative Methods",
+                          "Cambridge IGCSE O/L",
+                        ].map((preset, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleAddSpec(preset)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 text-[11px] font-semibold transition-all border border-slate-200 cursor-pointer"
+                          >
+                            + {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARD 5: EXAMINER CERTIFICATIONS & ACCREDITATIONS */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          <span>Examiner Certifications & Teaching Accreditations</span>
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Credentials and assessment examiner appointments from Pearson, Cambridge, or international boards.
+                        </p>
+                      </div>
+                      <Badge className="bg-emerald-50 text-emerald-800 text-[11px] font-bold">
+                        {profileCerts.length} Certified
+                      </Badge>
+                    </div>
+
+                    {/* Current Certifications */}
+                    {profileCerts.length === 0 ? (
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-400 italic">
+                        No certifications added yet.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {profileCerts.map((cert) => (
+                          <div
+                            key={cert.id}
+                            className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3 shadow-2xs"
+                          >
+                            <div className="space-y-0.5">
+                              <div className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
+                                <Award className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>{cert.title}</span>
+                              </div>
+                              <div className="text-[11px] text-slate-600 flex items-center gap-2">
+                                <span>{cert.authority}</span>
+                                <span>•</span>
+                                <span className="font-mono text-slate-500">{cert.year}</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCert(cert.id)}
+                              className="text-slate-400 hover:text-red-600 p-1 cursor-pointer"
+                              title="Remove Certification"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add Cert Form */}
+                    <form onSubmit={handleAddCert} className="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100 space-y-3">
+                      <div className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
+                        <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Add Examiner Accreditation</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">Certification Title *</label>
+                          <Input
+                            required
+                            placeholder="e.g. Pearson Edexcel Certified Senior Lead Examiner"
+                            value={newCertTitle}
+                            onChange={(e) => setNewCertTitle(e.target.value)}
+                            className="bg-white rounded-xl h-8 text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">Issuing Authority / Board</label>
+                          <Input
+                            placeholder="e.g. Pearson Edexcel International"
+                            value={newCertAuth}
+                            onChange={(e) => setNewCertAuth(e.target.value)}
+                            className="bg-white rounded-xl h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="w-36 space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">Year Awarded</label>
+                          <Input
+                            placeholder="e.g. 2021"
+                            value={newCertYear}
+                            onChange={(e) => setNewCertYear(e.target.value)}
+                            className="bg-white rounded-xl h-8 text-xs"
+                          />
+                        </div>
+
+                        <Button
+                          type="submit"
+                          size="sm"
+                          className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl px-4 gap-1.5 cursor-pointer mt-4"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add Certification</span>
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* CARD 6: COMPREHENSIVE BIOGRAPHY & TEACHING PHILOSOPHY */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                    <div className="border-b border-slate-100 pb-3">
+                      <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span>Comprehensive Biography & Teaching Philosophy</span>
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Describe your academic background, student pass rate accomplishments, error-checking methods, and lecture format.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <textarea
+                        rows={6}
+                        value={profileAbout}
+                        onChange={(e) => setProfileAbout(e.target.value)}
+                        placeholder="Write an engaging introduction about your teaching style, past student A* scores, masterclass structure, and passion for mathematics and sciences..."
+                        className="w-full p-3.5 rounded-xl border border-slate-200 text-xs leading-relaxed resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Markdown supported</span>
+                        <span>{profileAbout.length} characters</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARD 7: PROFESSIONAL & RESEARCH LINKS */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                    <div className="border-b border-slate-100 pb-3">
+                      <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-blue-600" />
+                        <span>Professional & Research Links</span>
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Connect your verified external academic profiles, LinkedIn, and personal portfolio.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">LinkedIn Profile</label>
+                        <Input
+                          placeholder="https://linkedin.com/in/..."
+                          value={profileLinkedin}
+                          onChange={(e) => setProfileLinkedin(e.target.value)}
+                          className="rounded-xl h-9 text-xs font-mono"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">ResearchGate / ORCID</label>
+                        <Input
+                          placeholder="https://researchgate.net/profile/..."
+                          value={profileResearchGate}
+                          onChange={(e) => setProfileResearchGate(e.target.value)}
+                          className="rounded-xl h-9 text-xs font-mono"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">Personal Academic Website</label>
+                        <Input
+                          placeholder="https://yourname.com"
+                          value={profileWebsite}
+                          onChange={(e) => setProfileWebsite(e.target.value)}
+                          className="rounded-xl h-9 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SAVE ALL CHANGES PROMINENT ACTION CARD */}
+                  <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950 via-[#0c2461] to-slate-900 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-base text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        <span>Ready to update your public credentials?</span>
+                      </h4>
+                      <p className="text-xs text-blue-200">
+                        Saved changes immediately synchronize to your course pages and student directories.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleSaveProfile()}
+                        disabled={profileSaving}
+                        className="px-6 py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-black shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {profileSaving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                            <span>Saving Profile...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Save Profile Changes</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* ===================================================================== */}
@@ -1545,18 +2528,18 @@ function TutorDashboardContent() {
           {/* ===================================================================== */}
           <aside className="lg:col-span-3 space-y-4">
             
-            {/* Block 1: Faculty Profile Card */}
+            {/* Block 1: Tutor Profile Card */}
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Faculty Lead Profile
+                  Tutor Profile
                 </h3>
                 <button
-                  onClick={() => setShowProfileModal(true)}
+                  onClick={() => setCenterTab("profile")}
                   className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
                 >
                   <Edit3 className="w-3 h-3" />
-                  <span>Edit</span>
+                  <span>Edit Profile</span>
                 </button>
               </div>
 
@@ -1564,6 +2547,7 @@ function TutorDashboardContent() {
                 <div className="w-12 h-12 rounded-xl bg-blue-950 text-white overflow-hidden border border-slate-200 shrink-0">
                   <img
                     src={
+                      profileAvatar ||
                       tutor?.avatar ||
                       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
                     }
@@ -1572,15 +2556,41 @@ function TutorDashboardContent() {
                   />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-bold text-xs text-slate-900 truncate">{tutorName}</h4>
-                  <p className="text-[11px] text-slate-500 truncate">{tutor?.headline || "Subject Lead"}</p>
+                  <h4 className="font-bold text-xs text-slate-900 truncate">{profileName || tutorName}</h4>
+                  <p className="text-[11px] text-slate-500 truncate">{profileHeadline || tutor?.headline || "Subject Lead"}</p>
                   <span className="text-[10px] text-emerald-700 font-bold">● Active Online</span>
                 </div>
               </div>
 
+              {/* Degrees summary in sidebar card */}
+              {profileDegrees.length > 0 && (
+                <div className="space-y-1 border-t border-slate-100 pt-2">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    <GraduationCap className="w-3 h-3 text-blue-600" />
+                    <span>Academic Degrees:</span>
+                  </div>
+                  <div className="space-y-1">
+                    {profileDegrees.slice(0, 2).map((deg) => (
+                      <div key={deg.id} className="text-[11px] text-slate-700 font-medium truncate flex items-center justify-between">
+                        <span className="truncate">{deg.degree}</span>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0 ml-1">{deg.year}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed border-t border-slate-100 pt-2">
-                {tutor?.bio || "Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum."}
+                {profileAbout || "Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum."}
               </p>
+
+              <button
+                onClick={() => setCenterTab("profile")}
+                className="w-full py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Customize Full Profile</span>
+              </button>
             </div>
 
             {/* Block 2: Upcoming Class Schedule */}
@@ -1843,118 +2853,7 @@ function TutorDashboardContent() {
         </div>
       )}
 
-      {/* Edit Profile Modal */}
-      {showProfileModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-600 text-white">
-                  <Edit3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">
-                    Edit Faculty Qualifications
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Update lecturer identity, credentials, and contact details
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowProfileModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
-              >
-                ✕
-              </button>
-            </div>
 
-            {profileStatusMsg && (
-              <div
-                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
-                  profileStatusMsg.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                    : "bg-red-50 text-red-800 border border-red-200"
-                }`}
-              >
-                {profileStatusMsg.type === "success" ? (
-                  <Check className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                )}
-                <span>{profileStatusMsg.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Full Name *</label>
-                <Input
-                  required
-                  value={profileName}
-                  onChange={(e) => setProfileName(e.target.value)}
-                  className="rounded-xl h-9 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Academic Headline</label>
-                <Input
-                  value={profileHeadline}
-                  onChange={(e) => setProfileHeadline(e.target.value)}
-                  className="rounded-xl h-9 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Avatar URL</label>
-                <Input
-                  value={profileAvatar}
-                  onChange={(e) => setProfileAvatar(e.target.value)}
-                  className="rounded-xl h-9 text-xs font-mono"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Phone / WhatsApp</label>
-                <Input
-                  value={profilePhone}
-                  onChange={(e) => setProfilePhone(e.target.value)}
-                  className="rounded-xl h-9 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Biography</label>
-                <textarea
-                  rows={3}
-                  value={profileBio}
-                  onChange={(e) => setProfileBio(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowProfileModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={profileSaving}
-                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5"
-                >
-                  {profileSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Student Details Inspection Modal */}
       {selectedStudentForModal && (

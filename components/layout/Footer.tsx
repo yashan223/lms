@@ -83,35 +83,35 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Academic Disciplines Column */}
+            {/* Academic Subjects Column */}
             <div className="space-y-3 text-xs sm:text-sm">
               <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-                Disciplines
+                Subjects
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="#courses" className="hover:text-blue-600 transition-colors">
-                    Environmental Science
+                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                    Pure Mathematics (P1–P4)
                   </Link>
                 </li>
                 <li>
-                  <Link href="#courses" className="hover:text-blue-600 transition-colors">
-                    Business & Leadership
+                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                    Mechanics & Physics (M1/PHY)
                   </Link>
                 </li>
                 <li>
-                  <Link href="#courses" className="hover:text-blue-600 transition-colors">
-                    Cognitive Neuroscience
+                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                    Chemistry & Biology
                   </Link>
                 </li>
                 <li>
-                  <Link href="#courses" className="hover:text-blue-600 transition-colors">
-                    Architecture & Spatial Design
+                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                    Economics & Business Studies
                   </Link>
                 </li>
                 <li>
-                  <Link href="#courses" className="hover:text-blue-600 transition-colors">
-                    Analytics & Decision Science
+                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                    Computer Science & ICT
                   </Link>
                 </li>
               </ul>

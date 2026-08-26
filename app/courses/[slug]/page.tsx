@@ -377,7 +377,7 @@ export default function CourseDetailPage({
                   </Badge>
                   {isEnrolled && (
                     <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Enrolled Scholar
+                      <Check className="w-3 h-3" /> Enrolled Student
                     </Badge>
                   )}
                 </div>
@@ -420,10 +420,10 @@ export default function CourseDetailPage({
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 text-slate-900 border border-slate-200 shadow-xl space-y-4">
                 <div className="flex items-baseline justify-between">
                   <div>
-                    <span className="text-3xl font-black text-slate-900">£{course?.price || 95}</span>
+                    <span className="text-3xl font-black text-slate-900">${course?.price || 95}</span>
                     <span className="text-xs text-slate-400 ml-2">Full Specification</span>
                   </div>
-                  <span className="text-xs text-slate-400 line-through">£160.00</span>
+                  <span className="text-xs text-slate-400 line-through">$160.00</span>
                 </div>
 
                 {isEnrolled ? (

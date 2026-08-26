@@ -43,7 +43,7 @@ export function BentoFeatures() {
                 24/7 Academic AI Tutor & Concept Explainer
               </h3>
               <p className="text-blue-100 text-sm sm:text-base leading-relaxed max-w-lg mb-6">
-                Never get stuck on complex theory again. Scholars can highlight any lecture excerpt or formula to receive clear conceptual breakdowns and guided study notes.
+                Never get stuck on complex theory again. Students can highlight any lecture excerpt or formula to receive clear conceptual breakdowns and guided study notes.
               </p>
             </div>
 
@@ -70,7 +70,7 @@ export function BentoFeatures() {
                 Structured Syllabus & Study Handbooks
               </h3>
               <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
-                Educators configure structured curriculum modules, formula sheets, quantitative problem sets, and interactive lectures with instant scholar access.
+                Educators configure structured curriculum modules, formula sheets, quantitative problem sets, and interactive lectures with instant student access.
               </p>
             </div>
 

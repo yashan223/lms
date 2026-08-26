@@ -415,7 +415,7 @@ function DashboardContent() {
       const matchesCourse =
         (ev.courseId && enrolledCourseIds.has(ev.courseId)) ||
         (ev.course?.id && enrolledCourseIds.has(ev.course.id));
-      if (matchesCourse && (!ev.userId || (user?.id && ev.userId === user.id))) {
+      if (matchesCourse && (!ev.userId || (user?.id && ev.userId === user.id) || (ev.course && ev.course.instructorId === ev.userId) || ev.user?.role === "INSTRUCTOR")) {
         return true;
       }
       return false;
@@ -538,9 +538,16 @@ function DashboardContent() {
         (ev) => ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter
       );
     }
-    const now = new Date().getTime() - 24 * 60 * 60 * 1000;
+    const now = Date.now();
     return list
-      .filter((ev) => new Date(ev.dueDate).getTime() >= now)
+      .filter((ev) => {
+        // Exclude completed, cancelled, or ended classes
+        if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || ev.endedAt) return false;
+        // Include if currently LIVE
+        if (ev.status === "LIVE") return true;
+        // Include if scheduled in the future
+        return (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate).getTime() >= now;
+      })
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [studentTimelineEvents, calendarCourseFilter]);
 
@@ -561,7 +568,8 @@ function DashboardContent() {
         const futureLimit = now + days * 24 * 60 * 60 * 1000;
         list = list.filter((ev) => {
           const t = new Date(ev.dueDate).getTime();
-          return t >= now - 24 * 60 * 60 * 1000 && t <= futureLimit;
+          const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+          return !isEnded && t >= now && t <= futureLimit;
         });
       }
     }
@@ -1091,6 +1099,11 @@ function DashboardContent() {
                                   <span>Live Now</span>
                                 </Badge>
                               )}
+                              {(ev.status === "COMPLETED" || ev.endedAt) && (
+                                <Badge className="bg-slate-100 text-slate-600 text-[9px] font-semibold">
+                                  Ended
+                                </Badge>
+                              )}
                               {ev.type && (
                                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
                                   ev.type === "WORKSHOP"
@@ -1113,7 +1126,7 @@ function DashboardContent() {
                             <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1 flex-wrap">
                               <span className="text-blue-700 font-semibold flex items-center gap-1">
                                 <Calendar className="w-3 h-3 text-blue-600" />
-                                {new Date(ev.dueDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                {new Date(ev.dueDate).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                               </span>
                               {ev.course && (
                                 <span className="text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[180px]">
@@ -1228,10 +1241,17 @@ function DashboardContent() {
                       key={ev.id}
                       className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs space-y-1"
                     >
-                      <div className="font-bold text-slate-900 truncate">{ev.title}</div>
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="font-bold text-slate-900 truncate">{ev.title}</div>
+                        {ev.status === "LIVE" && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-red-600 text-white animate-pulse shrink-0">
+                            LIVE
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-slate-500 font-mono flex items-center justify-between">
                         <span>
-                          {new Date(ev.dueDate).toLocaleDateString("en-GB", {
+                          {new Date(ev.dueDate).toLocaleDateString("en-US", {
                             day: "numeric",
                             month: "short",
                             hour: "2-digit",
@@ -1350,7 +1370,7 @@ function DashboardContent() {
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center justify-between p-2 rounded bg-emerald-50 text-emerald-900 font-bold border border-emerald-200">
                     <span>Monthly Clearance:</span>
-                    <span>£1,840.00</span>
+                    <span>$1,840.00</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
                     <span>Scripts Graded:</span>

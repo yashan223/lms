@@ -416,7 +416,7 @@ export function EncryptedChatDrawer({
 
                           <div className="flex items-center gap-1 text-[9px] text-slate-400 mt-0.5 px-1">
                             <span>
-                              {new Date(msg.createdAt).toLocaleTimeString("en-GB", {
+                              {new Date(msg.createdAt).toLocaleTimeString("en-US", {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
@@ -586,7 +586,7 @@ export function EncryptedChatDrawer({
                         <MessageSquare className="w-8 h-8 mx-auto text-slate-300" />
                         <p className="font-bold text-slate-700">No active conversations</p>
                         <p className="text-[11px] text-slate-500">
-                          Click &quot;+ New Message&quot; to message your tutor or scholar.
+                          Click &quot;+ New Message&quot; to message your tutor or student.
                         </p>
                         <Button
                           size="sm"

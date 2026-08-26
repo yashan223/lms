@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create new Student Scholar in PostgreSQL
+    // Create new Student in PostgreSQL
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
         passwordHash: password,
         phone: phone ? phone.trim() : null,
         role: Role.STUDENT,
-        headline: `${qualification || "London A/L"} Scholar (${targetSeries || "Spring / Summer 2026"})`,
-        bio: `Enrolled academic scholar studying ${examBoard || "London A/L & O/L"} curriculum.`,
+        headline: `${qualification || "London A/L"} Student (${targetSeries || "Spring / Summer 2026"})`,
+        bio: `Enrolled student studying ${examBoard || "London A/L & O/L"} curriculum.`,
         avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
       },
     });

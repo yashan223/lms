@@ -211,7 +211,7 @@ export default function ResetPasswordPage() {
         </div>
       </main>
       <footer className="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
-        EduPulse London A/L &amp; O/L Academy • Authorized Assessment Center #UK-92810
+        EduPulse London A/L &amp; O/L Academy • Authorized Assessment Center #EDU-92810
       </footer>
     </div>
   );

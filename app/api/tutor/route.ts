@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
           status: "SCHEDULED",
           type: (type as EventType) || EventType.LIVE_SEMINAR,
           courseId: courseId || null,
-          userId: studentId || tutorId || null,
+          userId: studentId || null,
         },
       });
 

@@ -49,7 +49,7 @@ export function Footer() {
               </Link>
 
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-sm">
-                Empowering scholars, faculty educators, and system administrators with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
+                Empowering students, faculty educators, and system administrators with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
               </p>
 
               {/* Social Icons */}
@@ -123,7 +123,7 @@ export function Footer() {
                 Academic Newsletter
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Receive weekly scholarship digests, new course releases, and educator resources.
+                Receive weekly student digests, new course releases, and educator resources.
               </p>
 
               <form onSubmit={handleSubscribe} className="space-y-2">

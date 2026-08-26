@@ -20,15 +20,15 @@ export function AboutSection() {
   const pillars = [
     {
       icon: Award,
-      title: "Accredited UK Curriculum",
+      title: "Accredited Academic Curriculum",
       description: "100% specification alignment for London A/L (IAL AS & A2) and London O/L (IGCSE) Pearson Edexcel and Cambridge syllabi.",
-      badge: "UK Standards",
+      badge: "Academic Standards",
       badgeColor: "bg-blue-100 text-blue-800",
     },
     {
       icon: Users,
       title: "Senior Lead Lecturers",
-      description: "Learn directly from active UK university and college faculty who structure course content, author study materials, and guide scholars.",
+      description: "Learn directly from active university and college faculty who structure course content, author study materials, and guide students.",
       badge: "Expert Faculty",
       badgeColor: "bg-purple-100 text-purple-800",
     },
@@ -60,7 +60,7 @@ export function AboutSection() {
             </h2>
 
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              EduPulse is a premier international learning platform dedicated to London A/L and London O/L scholars. We bridge digital interactive lectures, comprehensive topic walkthroughs, and certified lecturer evaluations to ensure students achieve academic mastery.
+              EduPulse is a premier international learning platform dedicated to London A/L and London O/L students. We bridge digital interactive lectures, comprehensive topic walkthroughs, and certified lecturer evaluations to ensure students achieve academic mastery.
             </p>
 
             {/* Checklist items */}
@@ -108,7 +108,7 @@ export function AboutSection() {
                   International Academic Accreditation
                 </div>
                 <div className="text-sm sm:text-base font-extrabold leading-snug">
-                  Academy #UK-92810 • 140+ Partner Learning Institutions
+                  Academy #EDU-92810 • 140+ Partner Learning Institutions
                 </div>
               </div>
             </div>

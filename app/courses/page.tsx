@@ -220,7 +220,7 @@ export default function CoursesPage() {
                         </span>
                         <span className="flex items-center gap-1 font-medium">
                           <Users className="w-3.5 h-3.5 text-blue-600" />
-                          {course.studentsEnrolled.toLocaleString()} scholars
+                          {course.studentsEnrolled.toLocaleString()} students
                         </span>
                       </div>
 
@@ -246,7 +246,7 @@ export default function CoursesPage() {
                   <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-black text-slate-900">
-                        £{course.price}
+                        ${course.price}
                       </span>
                     </div>
 

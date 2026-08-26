@@ -35,7 +35,7 @@ export function RoleTabsShowcase() {
             </span>
           </h2>
           <p className="text-base text-slate-600 leading-relaxed">
-            EduPulse delivers specialized workspaces designed specifically for scholars, faculty educators, and system administrators.
+            EduPulse delivers specialized workspaces designed specifically for students, faculty educators, and system administrators.
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export function RoleTabsShowcase() {
                   </h3>
 
                   <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                    Designed to maximize academic retention. Scholars receive synchronized video playback, structured study notes, in-lecture bookmarks, and instant conceptual answers.
+                    Designed to maximize academic retention. Students receive synchronized video playback, structured study notes, in-lecture bookmarks, and instant conceptual answers.
                   </p>
 
                   <div className="space-y-3">
@@ -299,7 +299,7 @@ export function RoleTabsShowcase() {
                     <div className="p-3 bg-white rounded-xl border border-slate-200">
                       <div className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
                         <Users className="w-4 h-4 text-indigo-600" />
-                        Active Scholars
+                        Active Students
                       </div>
                       <div className="text-lg font-black text-slate-900">38,400+</div>
                       <p className="text-[10px] text-slate-500">Across all qualifications</p>

@@ -118,6 +118,8 @@ interface ScheduledClassEvent {
   type: string;
   status?: "SCHEDULED" | "LIVE" | "COMPLETED" | "CANCELLED" | string;
   meetingLink?: string | null;
+  startedAt?: string | Date | null;
+  endedAt?: string | Date | null;
   courseId?: string;
   course?: {
     id: string;
@@ -304,7 +306,7 @@ function TutorDashboardContent() {
       const y = date.getFullYear();
       const m = date.getMonth();
       const d = date.getDate();
-      return events.some((ev) => {
+      const hasClass = events.some((ev) => {
         const evDate = new Date(ev.dueDate);
         return (
           evDate.getFullYear() === y &&
@@ -312,8 +314,17 @@ function TutorDashboardContent() {
           evDate.getDate() === d
         );
       });
+      const hasTrial = trials.some((tr) => {
+        const trDate = new Date(tr.preferredDate);
+        return (
+          trDate.getFullYear() === y &&
+          trDate.getMonth() === m &&
+          trDate.getDate() === d
+        );
+      });
+      return hasClass || hasTrial;
     },
-    [events]
+    [events, trials]
   );
 
   const prevMonth = () => {
@@ -355,14 +366,33 @@ function TutorDashboardContent() {
 
   // Filtered Events
   const filteredEvents = useMemo(() => {
+    const now = Date.now();
     return events.filter((ev) => {
+      const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
       if (classFilter === "ALL") return true;
       if (classFilter === "LIVE") return ev.status === "LIVE";
-      if (classFilter === "SCHEDULED") return ev.status === "SCHEDULED" || !ev.status;
-      if (classFilter === "COMPLETED") return ev.status === "COMPLETED";
+      if (classFilter === "SCHEDULED") {
+        return !isEnded && (ev.status === "SCHEDULED" || !ev.status || ev.status === "LIVE") && (ev.status === "LIVE" || new Date(ev.dueDate).getTime() >= now);
+      }
+      if (classFilter === "COMPLETED") return isEnded;
       return true;
     });
   }, [events, classFilter]);
+
+  // Upcoming events (strictly exclude ended/completed classes)
+  const upcomingEvents = useMemo(() => {
+    const now = Date.now();
+    return events
+      .filter((ev) => {
+        // Exclude completed, cancelled, or ended classes
+        if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || ev.endedAt) return false;
+        // Include if currently LIVE
+        if (ev.status === "LIVE") return true;
+        // Include if scheduled in the future
+        return (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate).getTime() >= now;
+      })
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }, [events]);
 
   // Schedule class
   const handleScheduleClass = async (e: React.FormEvent) => {
@@ -456,7 +486,7 @@ function TutorDashboardContent() {
     setConfirmModalData({
       isOpen: true,
       title: "Cancel & Delete Class Session?",
-      description: "This will remove the scheduled live class from all enrolled scholar calendars.",
+      description: "This will remove the scheduled live class from all enrolled student calendars.",
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -648,7 +678,7 @@ function TutorDashboardContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           
           {/* ===================================================================== */}
-          {/* LEFT SIDEBAR (col-span-3) - Navigation, Quick Tools, Online Scholars */}
+          {/* LEFT SIDEBAR (col-span-3) - Navigation, Quick Tools, Online Students */}
           {/* ===================================================================== */}
           <aside className="lg:col-span-3 space-y-4">
             
@@ -704,7 +734,7 @@ function TutorDashboardContent() {
                 >
                   <span className="flex items-center gap-2">
                     <Users className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Enrolled Scholars</span>
+                    <span>Enrolled Students</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
                     {students.length}
@@ -734,7 +764,7 @@ function TutorDashboardContent() {
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  {calDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
+                  {calDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                 </h3>
                 <div className="flex items-center gap-1">
                   <button
@@ -801,7 +831,7 @@ function TutorDashboardContent() {
               <div className="grid grid-cols-2 gap-2 text-center text-xs">
                 <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
                   <div className="font-bold text-slate-900 text-sm">{students.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Scholars</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Students</div>
                 </div>
                 <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
                   <div className="font-bold text-slate-900 text-sm">{courses.length}</div>
@@ -860,7 +890,7 @@ function TutorDashboardContent() {
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Scholars Directory ({students.length})</span>
+                <span>Students Directory ({students.length})</span>
               </button>
 
               <button
@@ -896,15 +926,15 @@ function TutorDashboardContent() {
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-3">
                   <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
                     <span>Total earnings (tutor share)</span>
-                    <span>£{tutorShareEarnings.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>${tutorShareEarnings.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
                     <span>Gross course revenue</span>
-                    <span>£{totalEarnings.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>${totalEarnings.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
                     <span>Effective hourly rate</span>
-                    <span>£{effectiveHourlyRate}/h</span>
+                    <span>${effectiveHourlyRate}/h</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-700 py-1 border-b border-slate-100">
                     <span>Total scheduled classes</span>
@@ -945,8 +975,8 @@ function TutorDashboardContent() {
                             <div className="flex items-center justify-between text-xs text-slate-700">
                               <span className="truncate max-w-[65%]">{c.title}</span>
                               <div className="flex items-center gap-3 shrink-0 text-slate-500">
-                                <span>{enrolled} scholars</span>
-                                <span>£{revenue.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span>{enrolled} students</span>
+                                <span>${revenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                               </div>
                             </div>
                             <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
@@ -1004,7 +1034,7 @@ function TutorDashboardContent() {
                                 {c.subjectCode || "LONDON A/L"}
                               </span>
                               <span className="text-xs font-bold text-slate-900 font-mono">
-                                £{c.price}
+                                ${c.price}
                               </span>
                             </div>
 
@@ -1023,7 +1053,7 @@ function TutorDashboardContent() {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Users className="w-3 h-3 text-slate-400" />
-                                {c.enrollments?.length || 0} Scholars
+                                {c.enrollments?.length || 0} Students
                               </span>
                             </div>
                           </div>
@@ -1078,10 +1108,10 @@ function TutorDashboardContent() {
                               : "text-slate-600 hover:text-slate-900"
                           }`}
                         >
-                          {f === "ALL" && "All"}
-                          {f === "LIVE" && "Live Now"}
-                          {f === "SCHEDULED" && "Upcoming"}
-                          {f === "COMPLETED" && "Past"}
+                          {f === "ALL" && `All (${events.length})`}
+                          {f === "LIVE" && `Live Now (${events.filter((e) => e.status === "LIVE").length})`}
+                          {f === "SCHEDULED" && `Upcoming (${upcomingEvents.length})`}
+                          {f === "COMPLETED" && `Past / Ended (${events.filter((e) => e.status === "COMPLETED" || !!e.endedAt).length})`}
                         </button>
                       ))}
                     </div>
@@ -1126,7 +1156,7 @@ function TutorDashboardContent() {
                               <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 font-mono">
                                 <span className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3 text-slate-400" />
-                                  {new Date(ev.dueDate).toLocaleDateString("en-GB", {
+                                  {new Date(ev.dueDate).toLocaleDateString("en-US", {
                                     day: "numeric",
                                     month: "short",
                                     hour: "2-digit",
@@ -1207,13 +1237,13 @@ function TutorDashboardContent() {
               </div>
             )}
 
-            {/* VIEW 3: ENROLLED SCHOLARS */}
+            {/* VIEW 3: ENROLLED STUDENTS */}
             {centerTab === "students" && (
               <div className="space-y-4">
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-                      Enrolled Scholars Directory ({filteredStudents.length})
+                      Enrolled Students Directory ({filteredStudents.length})
                     </h3>
 
                     {/* Search & Filter */}
@@ -1222,7 +1252,7 @@ function TutorDashboardContent() {
                         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                           type="text"
-                          placeholder="Search scholar..."
+                          placeholder="Search student..."
                           value={studentSearch}
                           onChange={(e) => setStudentSearch(e.target.value)}
                           className="w-full pl-8 pr-3 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
@@ -1246,7 +1276,7 @@ function TutorDashboardContent() {
 
                   {filteredStudents.length === 0 ? (
                     <div className="text-center py-8 text-xs text-slate-400 italic">
-                      No scholars match your query.
+                      No students match your query.
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1269,7 +1299,7 @@ function TutorDashboardContent() {
                             <button
                               onClick={() => setSelectedStudentForModal(st)}
                               className="text-slate-400 hover:text-slate-700 p-1"
-                              title="View Scholar Details"
+                              title="View Student Details"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </button>
@@ -1347,7 +1377,7 @@ function TutorDashboardContent() {
                             <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
                               <span className="flex items-center gap-1 font-mono text-blue-700 font-bold">
                                 <Clock className="w-3 h-3 text-blue-600" />
-                                {new Date(tr.preferredDate).toLocaleDateString("en-GB", {
+                                {new Date(tr.preferredDate).toLocaleDateString("en-US", {
                                   day: "numeric",
                                   month: "short",
                                   hour: "2-digit",
@@ -1428,7 +1458,7 @@ function TutorDashboardContent() {
               </div>
 
               <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed border-t border-slate-100 pt-2">
-                {tutor?.bio || "UK Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge syllabi."}
+                {tutor?.bio || "Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum."}
               </p>
             </div>
 
@@ -1439,25 +1469,32 @@ function TutorDashboardContent() {
                   Upcoming Classes
                 </h3>
                 <span className="text-[11px] font-bold text-blue-700 font-mono">
-                  {events.length} Scheduled
+                  {upcomingEvents.length} Scheduled
                 </span>
               </div>
 
               <div className="space-y-2">
-                {events.length === 0 ? (
+                {upcomingEvents.length === 0 ? (
                   <p className="text-xs text-slate-400 italic text-center py-2">
                     No scheduled sessions.
                   </p>
                 ) : (
-                  events.slice(0, 3).map((ev) => (
+                  upcomingEvents.slice(0, 4).map((ev) => (
                     <div
                       key={ev.id}
                       className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs space-y-1"
                     >
-                      <div className="font-bold text-slate-900 truncate">{ev.title}</div>
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="font-bold text-slate-900 truncate">{ev.title}</div>
+                        {ev.status === "LIVE" && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-red-600 text-white animate-pulse shrink-0">
+                            LIVE
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-slate-500 font-mono flex items-center justify-between">
                         <span>
-                          {new Date(ev.dueDate).toLocaleDateString("en-GB", {
+                          {new Date(ev.dueDate).toLocaleDateString("en-US", {
                             day: "numeric",
                             month: "short",
                             hour: "2-digit",
@@ -1552,7 +1589,7 @@ function TutorDashboardContent() {
                     }`}
                   >
                     <GraduationCap className="w-3.5 h-3.5 text-purple-600" />
-                    <span>1-on-1 Scholar Mentoring</span>
+                    <span>1-on-1 Student Mentoring</span>
                   </button>
                 </div>
               </div>
@@ -1578,7 +1615,7 @@ function TutorDashboardContent() {
               ) : (
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Select Scholar <span className="text-red-500">*</span>
+                    Select Student <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={newClassStudentId}
@@ -1586,7 +1623,7 @@ function TutorDashboardContent() {
                     className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
                     required
                   >
-                    <option value="">Choose a scholar...</option>
+                    <option value="">Choose a student...</option>
                     {students.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name} ({s.email})
@@ -1812,7 +1849,7 @@ function TutorDashboardContent() {
                     {selectedStudentForModal.name}
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    {selectedStudentForModal.headline || "London A/L Scholar"}
+                    {selectedStudentForModal.headline || "London A/L Student"}
                   </p>
                 </div>
               </div>
@@ -1843,7 +1880,7 @@ function TutorDashboardContent() {
                     <div key={idx} className="p-2 rounded-lg bg-blue-50/60 border border-blue-100 flex items-center justify-between">
                       <span className="font-semibold text-blue-900 truncate mr-2">{c.courseTitle}</span>
                       <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                        {new Date(c.enrolledAt).toLocaleDateString("en-GB")}
+                        {new Date(c.enrolledAt).toLocaleDateString("en-US")}
                       </span>
                     </div>
                   ))}

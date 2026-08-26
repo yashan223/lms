@@ -210,7 +210,7 @@ export function TrialRequestModal({
                 <span className="text-slate-500">Scheduled Date & Time:</span>
                 <span className="font-bold text-blue-700 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
-                  {new Date(createdTrial.preferredDate).toLocaleString("en-GB", {
+                  {new Date(createdTrial.preferredDate).toLocaleString("en-US", {
                     weekday: "short",
                     day: "numeric",
                     month: "short",

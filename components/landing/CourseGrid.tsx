@@ -207,7 +207,7 @@ export function CourseGrid() {
                       </span>
                       <span className="flex items-center gap-1 font-medium">
                         <Users className="w-3.5 h-3.5 text-blue-600" />
-                        {course.studentsEnrolled.toLocaleString()} scholars
+                        {course.studentsEnrolled.toLocaleString()} students
                       </span>
                     </div>
 
@@ -238,11 +238,11 @@ export function CourseGrid() {
                 <div className="px-5 sm:px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-2xl font-black text-slate-900">
-                      £{course.price}
+                      ${course.price}
                     </span>
                     {course.originalPrice && (
                       <span className="text-xs text-slate-400 line-through">
-                        £{course.originalPrice}
+                        ${course.originalPrice}
                       </span>
                     )}
                   </div>

@@ -249,7 +249,7 @@ export default function AdminDashboardPage() {
     setFormUserPhone("");
     setFormUserPassword("StudentPass123!");
     setFormUserRole("STUDENT");
-    setFormUserHeadline("London A/L Pure Maths Scholar");
+    setFormUserHeadline("London A/L Pure Maths Student");
     setFormUserBio("Enrolled in London A/L & O/L masterclass syllabus.");
     setShowAddUserModal(true);
   };
@@ -827,12 +827,13 @@ export default function AdminDashboardPage() {
         (ev.course?.instructor?.name && ev.course.instructor.name.toLowerCase().includes(liveClassSearch.toLowerCase()));
 
       let matchFilter = true;
+      const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
       if (liveClassFilter === "LIVE") {
         matchFilter = ev.status === "LIVE";
       } else if (liveClassFilter === "SCHEDULED") {
-        matchFilter = ev.status === "SCHEDULED" || (!ev.status && new Date(ev.dueDate) >= new Date());
+        matchFilter = !isEnded && (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate) >= new Date();
       } else if (liveClassFilter === "COMPLETED") {
-        matchFilter = ev.status === "COMPLETED";
+        matchFilter = isEnded;
       }
 
       return matchSearch && matchFilter;
@@ -840,8 +841,11 @@ export default function AdminDashboardPage() {
   }, [eventsList, liveClassSearch, liveClassFilter]);
 
   const liveNowCount = eventsList.filter((e) => e.status === "LIVE").length;
-  const upcomingCount = eventsList.filter((e) => e.status === "SCHEDULED" || (!e.status && new Date(e.dueDate) >= new Date())).length;
-  const completedCount = eventsList.filter((e) => e.status === "COMPLETED").length;
+  const upcomingCount = eventsList.filter((e) => {
+    const isEnded = e.status === "COMPLETED" || e.status === "CANCELLED" || !!e.endedAt;
+    return !isEnded && (e.status === "SCHEDULED" || !e.status) && new Date(e.dueDate) >= new Date();
+  }).length;
+  const completedCount = eventsList.filter((e) => e.status === "COMPLETED" || !!e.endedAt).length;
 
   const navMenuItems = [
     { id: "overview", label: "Executive Overview", icon: Layers },
@@ -876,7 +880,7 @@ export default function AdminDashboardPage() {
                 EduPulse Admin
               </span>
               <span className="text-[9px] font-bold tracking-wider text-blue-500 uppercase">
-                Academy #UK-92810
+                Academy #EDU-92810
               </span>
             </div>
           </Link>
@@ -1071,7 +1075,7 @@ export default function AdminDashboardPage() {
             <div className="py-24 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
               <div className="text-sm font-bold text-slate-800">Loading Institutional Records...</div>
-              <p className="text-xs text-slate-400">Synchronizing student scholars, faculty lecturers, and curriculum syllabi.</p>
+              <p className="text-xs text-slate-400">Synchronizing students, faculty lecturers, and curriculum.</p>
             </div>
           )}
           {/* ======================================================== */}
@@ -1113,7 +1117,7 @@ export default function AdminDashboardPage() {
                     <span className="text-xs font-medium text-indigo-600">Gross Tuition Volume</span>
                     <DollarSign className="w-4 h-4 text-indigo-600" />
                   </div>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">£{totalCalculatedRevenue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}</div>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">${totalCalculatedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
                   <div className="text-[11px] text-slate-500">Calculated from enrollments</div>
                 </div>
               </div>
@@ -1147,9 +1151,9 @@ export default function AdminDashboardPage() {
                               {u.role}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-700">{u.headline || "Enrolled Scholar"}</td>
+                          <td className="py-3 px-4 text-slate-700">{u.headline || "Enrolled Student"}</td>
                           <td className="py-3 px-4 font-semibold text-slate-800">{u.enrollments?.length || 0} Courses</td>
-                          <td className="py-3 px-4 text-slate-400">{new Date(u.createdAt).toLocaleDateString("en-GB")}</td>
+                          <td className="py-3 px-4 text-slate-400">{new Date(u.createdAt).toLocaleDateString("en-US")}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1333,7 +1337,7 @@ export default function AdminDashboardPage() {
 
                               <div className="text-right text-[11px]">
                                 <span className="font-bold text-slate-700">
-                                  {ev.course?.enrollments?.length || 1} Scholars Enrolled
+                                  {ev.course?.enrollments?.length || 1} Students Enrolled
                                 </span>
                               </div>
                             </div>
@@ -1450,7 +1454,7 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center gap-4 text-[11px] text-slate-500 flex-wrap">
                                 <span className="flex items-center gap-1 font-semibold text-slate-700">
                                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                  {new Date(ev.dueDate).toLocaleString("en-GB", {
+                                  {new Date(ev.dueDate).toLocaleString("en-US", {
                                     weekday: "short",
                                     day: "numeric",
                                     month: "short",
@@ -1593,7 +1597,7 @@ export default function AdminDashboardPage() {
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <span className="text-xs font-medium text-blue-600">Students</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
-                    {allUsersList.filter((u) => u.role === "STUDENT").length} Scholars
+                    {allUsersList.filter((u) => u.role === "STUDENT").length} Students
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -1711,7 +1715,7 @@ export default function AdminDashboardPage() {
                               : `${u.createdCourses?.length || 0} Courses Assigned`}
                           </td>
                           <td className="py-3.5 px-4 text-slate-500">
-                            {new Date(u.createdAt).toLocaleDateString("en-GB")}
+                            {new Date(u.createdAt).toLocaleDateString("en-US")}
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
@@ -1824,7 +1828,7 @@ export default function AdminDashboardPage() {
                         <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> {course.modules?.length || 0} Modules</span>
                         <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-slate-400" /> {course.materials?.length || 0} Files</span>
                         <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-slate-400" /> {course.enrollments?.length || 0} Enrolled</span>
-                        <span className="font-bold text-slate-900">£{course.price}</span>
+                        <span className="font-bold text-slate-900">${course.price}</span>
                       </div>
                     </div>
 
@@ -1885,7 +1889,7 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <span className="text-xs font-medium text-slate-500">Gross Collected Tuition</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
-                    £{totalCalculatedRevenue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}
+                    ${totalCalculatedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                   <div className="text-[11px] text-emerald-600 font-semibold">100% Verified Bank Clearance</div>
                 </div>
@@ -1897,7 +1901,7 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <span className="text-xs font-medium text-indigo-600">Faculty Honorarium Pool</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
-                    £{(totalCalculatedRevenue * 0.3).toLocaleString("en-GB", { minimumFractionDigits: 2 })}
+                    ${(totalCalculatedRevenue * 0.3).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                   <div className="text-[11px] text-slate-500">Allocated to Senior Lecturers</div>
                 </div>
@@ -1947,13 +1951,13 @@ export default function AdminDashboardPage() {
                             <div className="text-[11px] text-slate-400">{tx.email}</div>
                           </td>
                           <td className="py-3 px-4 text-slate-700 font-medium">{tx.course}</td>
-                          <td className="py-3 px-4 font-bold text-slate-900">£{tx.price}</td>
+                          <td className="py-3 px-4 font-bold text-slate-900">${tx.price}</td>
                           <td className="py-3 px-4">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
                               PAID
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-500">{new Date(tx.date).toLocaleDateString("en-GB")}</td>
+                          <td className="py-3 px-4 text-slate-500">{new Date(tx.date).toLocaleDateString("en-US")}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2124,7 +2128,7 @@ export default function AdminDashboardPage() {
                   <Input placeholder="Subject code" value={courseFormCode} onChange={(e) => setCourseFormCode(e.target.value)} className="rounded-xl" />
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Tuition Price (£)</label>
+                  <label className="font-bold block mb-1">Tuition Price ($)</label>
                   <Input type="number" required value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
@@ -2187,7 +2191,7 @@ export default function AdminDashboardPage() {
                   <Input value={courseFormCode} onChange={(e) => setCourseFormCode(e.target.value)} className="rounded-xl" />
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Tuition Price (£)</label>
+                  <label className="font-bold block mb-1">Tuition Price ($)</label>
                   <Input type="number" required value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
@@ -2652,14 +2656,14 @@ export default function AdminDashboardPage() {
 
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Specific Scholar (Optional)
+                    Specific Student (Optional)
                   </label>
                   <select
                     value={newClassStudentId}
                     onChange={(e) => setNewClassStudentId(e.target.value)}
                     className="w-full h-9 px-3 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="">All Enrolled Course Scholars</option>
+                    <option value="">All Enrolled Course Students</option>
                     {allUsersList
                       .filter((u) => u.role === "STUDENT")
                       .map((s) => (

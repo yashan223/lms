@@ -7,7 +7,7 @@ import {
 
 export const PLATFORM_METRICS: PlatformMetric[] = [
   {
-    label: "Enrolled Scholars & Students",
+    label: "Enrolled Students",
     value: "28,400+",
     subtext: "London A/L (IAL) & London O/L (IGCSE)",
     growth: "+34% YoY",
@@ -28,7 +28,7 @@ export const PLATFORM_METRICS: PlatformMetric[] = [
     label: "Academic Partner Centers",
     value: "140+",
     subtext: "International Academic Partner Colleges",
-    growth: "UK Recognized",
+    growth: "Nationally Recognized",
   },
 ];
 
@@ -36,7 +36,7 @@ export const ACADEMY_TESTIMONIALS: Testimonial[] = [
   {
     id: "test-1",
     name: "Tariq Al-Mansoor",
-    role: "London A/L Scholar (4 A* Achieved)",
+    role: "London A/L Student (4 A* Achieved)",
     affiliation: "Admitted to Imperial College London (Mechanical Engineering)",
     avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
     content: "The lecture handbooks and formula sheets helped me master pure mathematics and physics. The step-by-step video proof lessons gave me the clarity to score full marks in Mechanics and Pure 4.",
@@ -68,13 +68,13 @@ export const ACADEMY_TESTIMONIALS: Testimonial[] = [
 export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "tier-student",
-    name: "Scholar Pro (Single Subject)",
+    name: "Student Pro (Single Subject)",
     badge: "Most Popular",
     description: "Full unit specification access, live interactive seminars, video lesson vaults, and solution guides.",
     monthlyPrice: 25,
     annualPrice: 20,
     popular: true,
-    roleTarget: "Individual Scholar (O/L or A/L)",
+    roleTarget: "Individual Student (O/L or A/L)",
     ctaText: "Enroll in Subject",
     features: [
       "Full unit topic video lectures",
@@ -147,7 +147,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "faq-4",
     category: "Admissions",
     question: "Can independent students and distance learners use this platform?",
-    answer: "Absolutely. Thousands of independent scholars and distance learners use EduPulse as their complete primary study and academic learning academy.",
+    answer: "Absolutely. Thousands of independent students and distance learners use EduPulse as their complete primary study and academic learning academy.",
   },
   {
     id: "faq-5",

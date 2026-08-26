@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
-import { cookies } from "next/headers";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 async function findCourseBySlugOrId(rawSlug: string) {
   if (!rawSlug) return null;
@@ -28,13 +28,18 @@ async function findCourseBySlugOrId(rawSlug: string) {
 }
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const { slug } = await params;
-    const cookieStore = await cookies();
-    const userRoleCookie = cookieStore.get("edupulse_user_role")?.value;
+    const auth = await getAuthenticatedUser(request);
+    if (!auth.user) {
+      return NextResponse.json(
+        { error: "Authentication required. Please sign in or register to purchase this course." },
+        { status: 401 }
+      );
+    }
 
     const course = await findCourseBySlugOrId(slug);
 
@@ -42,17 +47,7 @@ export async function POST(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    let user = await prisma.user.findFirst({
-      where: { role: "STUDENT" },
-    });
-
-    if (!user) {
-      user = await prisma.user.findFirst();
-    }
-
-    if (!user) {
-      return NextResponse.json({ error: "No student account available for enrollment" }, { status: 400 });
-    }
+    const user = auth.user;
 
     const existingEnrollment = await prisma.enrollment.findUnique({
       where: {
@@ -67,7 +62,7 @@ export async function POST(
       return NextResponse.json({
         success: true,
         alreadyEnrolled: true,
-        message: "Already enrolled in this course",
+        message: "You are already enrolled in this course.",
         courseId: course.id,
       });
     }
@@ -82,22 +77,33 @@ export async function POST(
     await prisma.event.create({
       data: {
         title: `Welcome to ${course.title}`,
-        description: `You have successfully enrolled in ${course.title}. Explore the syllabus modules and study notes.`,
+        description: `You have successfully purchased and enrolled in ${course.title}. All lecture modules and study handbooks are now unlocked.`,
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         courseId: course.id,
         userId: user.id,
       },
     });
 
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        title: "🎉 Course Unlocked & Enrolled",
+        message: `Your purchase of "${course.title}" was successful. All study materials and classes are now accessible.`,
+        type: "INFO",
+        link: `/courses/${course.slug}`,
+      },
+    });
+
     broadcastLMSEvent("ENROLLMENTS_CHANGED");
     broadcastLMSEvent("COURSES_CHANGED");
     broadcastLMSEvent("EVENTS_CHANGED");
+    broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: user.id });
 
     return NextResponse.json({
       success: true,
       alreadyEnrolled: false,
       enrollment: newEnrollment,
-      message: "Successfully enrolled in course",
+      message: `Successfully purchased and enrolled in ${course.title}!`,
     });
   } catch (error) {
     console.error("Course Enrollment API error:", error);

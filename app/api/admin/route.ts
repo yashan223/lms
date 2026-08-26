@@ -217,12 +217,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "unenroll_user") {
-      const { enrollmentId } = body;
-      await prisma.enrollment.delete({ where: { id: enrollmentId } });
+      const { enrollmentId, userId, courseId } = body;
+      if (enrollmentId) {
+        await prisma.enrollment.delete({ where: { id: enrollmentId } });
+      } else if (userId && courseId) {
+        await prisma.enrollment.deleteMany({
+          where: { userId, courseId },
+        });
+      }
       broadcastLMSEvent("ENROLLMENTS_CHANGED");
       broadcastLMSEvent("USERS_CHANGED");
       broadcastLMSEvent("COURSES_CHANGED");
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, message: "Student unenrolled successfully." });
     }
 
     if (action === "create_course") {

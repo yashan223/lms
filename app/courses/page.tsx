@@ -19,8 +19,10 @@ import {
   GraduationCap,
   CalendarCheck,
   Video,
+  Lock,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -30,6 +32,8 @@ export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [selectedPurchaseCourse, setSelectedPurchaseCourse] = useState<any | null>(null);
 
   const categories = [
     "All",
@@ -171,11 +175,11 @@ export default function CoursesPage() {
                   className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
                 >
                   <div>
-                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+                    <Link href={`/courses/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
                       <img
                         src={course.thumbnail}
                         alt={course.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 
@@ -190,12 +194,14 @@ export default function CoursesPage() {
                           {course.subjectCode}
                         </span>
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="p-5 space-y-3">
-                      <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-700 transition-colors leading-snug line-clamp-2">
-                        {course.title}
-                      </h3>
+                      <Link href={`/courses/${course.slug}`} prefetch={true} className="block">
+                        <h3 className="font-bold text-slate-900 text-base hover:text-blue-700 transition-colors leading-snug line-clamp-2 cursor-pointer">
+                          {course.title}
+                        </h3>
+                      </Link>
 
                       <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                         {course.subtitle}
@@ -209,10 +215,6 @@ export default function CoursesPage() {
                         <span className="flex items-center gap-1 font-medium">
                           <BookOpen className="w-3.5 h-3.5 text-blue-600" />
                           {course.lessonsCount} lessons
-                        </span>
-                        <span className="flex items-center gap-1 font-medium">
-                          <Users className="w-3.5 h-3.5 text-blue-600" />
-                          {course.studentsEnrolled.toLocaleString()} students
                         </span>
                       </div>
 
@@ -233,34 +235,37 @@ export default function CoursesPage() {
                     </div>
                   </div>
 
-                  <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <div className="flex items-baseline gap-1">
+                  <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <div className="flex items-baseline gap-1 shrink-0">
                       <span className="text-2xl font-black text-slate-900">
                         ${course.price}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => {
+                          setSelectedPurchaseCourse(course);
+                          setShowPurchaseModal(true);
+                        }}
+                        className="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                        title="Purchase course and unlock all study materials"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-blue-200 shrink-0" />
+                        <span>Purchase</span>
+                      </button>
+
                       <button
                         onClick={() => {
                           setSelectedTrialCourseId(course.id);
                           setShowTrialModal(true);
                         }}
-                        className="px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
+                        className="h-9 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
                         title="Book a 30-min free online trial session"
                       >
-                        <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
+                        <CalendarCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                         <span>Free Trial</span>
                       </button>
-
-                      <Link
-                        href={`/courses/${course.slug}`}
-                        prefetch={true}
-                        className="px-3.5 py-2 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
-                      >
-                        <span>Materials & Syllabus</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
                     </div>
                   </div>
                 </div>
@@ -292,6 +297,15 @@ export default function CoursesPage() {
         onClose={() => setShowTrialModal(false)}
         initialCourseId={selectedTrialCourseId}
         allCourses={courses}
+      />
+
+      <CoursePurchaseModal
+        isOpen={showPurchaseModal}
+        onClose={() => {
+          setShowPurchaseModal(false);
+          setSelectedPurchaseCourse(null);
+        }}
+        course={selectedPurchaseCourse}
       />
 
       <Footer />

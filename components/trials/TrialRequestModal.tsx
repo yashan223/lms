@@ -12,9 +12,6 @@ import {
   X,
   ExternalLink,
   BookOpen,
-  User,
-  Mail,
-  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,9 +63,6 @@ export function TrialRequestModal({
   onSuccess,
 }: TrialRequestModalProps) {
   const [courseId, setCourseId] = useState(initialCourseId || "");
-  const [studentName, setStudentName] = useState("");
-  const [studentEmail, setStudentEmail] = useState("");
-  const [studentPhone, setStudentPhone] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState("");
@@ -79,11 +73,6 @@ export function TrialRequestModal({
 
   useEffect(() => {
     if (isOpen) {
-      if (currentUser) {
-        setStudentName(currentUser.name || "");
-        setStudentEmail(currentUser.email || "");
-        setStudentPhone(currentUser.phone || "");
-      }
       if (initialCourseId) {
         setCourseId(initialCourseId);
       } else if (allCourses.length > 0 && !courseId) {
@@ -98,7 +87,7 @@ export function TrialRequestModal({
       setError(null);
       setCreatedTrial(null);
     }
-  }, [isOpen, currentUser, initialCourseId, allCourses]);
+  }, [isOpen, initialCourseId, allCourses, courseId]);
 
   if (!isOpen) return null;
 
@@ -106,8 +95,9 @@ export function TrialRequestModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentName.trim() || !studentEmail.trim() || !preferredDate) {
-      setError("Please complete all required fields.");
+
+    if (!preferredDate) {
+      setError("Please select a preferred date and time for your free trial session.");
       return;
     }
 
@@ -120,15 +110,14 @@ export function TrialRequestModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "request_trial",
-          studentName: studentName.trim(),
-          studentEmail: studentEmail.trim().toLowerCase(),
-          studentPhone: studentPhone.trim() || null,
           courseId: courseId || null,
           tutorId: initialTutorId || selectedCourse?.instructor?.id || null,
           studentId: currentUser?.id || null,
+          studentName: currentUser?.name || null,
+          studentEmail: currentUser?.email || null,
           preferredDate: new Date(preferredDate).toISOString(),
-          topic: topic.trim() || "30-Min Free Trial & Syllabus Overview",
-          notes: notes.trim() || null,
+          topic: topic?.trim() || "30-Min Free Trial & Syllabus Overview",
+          notes: notes?.trim() || null,
         }),
       });
 
@@ -167,7 +156,7 @@ export function TrialRequestModal({
                 </Badge>
               </div>
               <p className="text-xs text-slate-500">
-                1-on-1 Online Consultation & Syllabus Masterclass
+                1-on-1 Online Consultation &amp; Syllabus Masterclass
               </p>
             </div>
           </div>
@@ -181,16 +170,16 @@ export function TrialRequestModal({
 
         {createdTrial ? (
           <div className="space-y-4 py-2 text-center animate-in fade-in duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="w-8 h-8" />
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-sm">
+              <Clock className="w-8 h-8" />
             </div>
 
             <div className="space-y-1">
               <h4 className="font-extrabold text-base text-slate-900">
-                Free Trial Session Reserved!
+                Trial Request Submitted!
               </h4>
               <p className="text-xs text-slate-600 max-w-sm mx-auto">
-                Your 30-minute 1-on-1 online session has been scheduled and added to both your Academic Calendar and your instructor’s schedule.
+                Your 30-minute 1-on-1 trial request has been sent to your instructor. Your tutor will review and confirm the session date & time shortly.
               </p>
             </div>
 
@@ -202,9 +191,9 @@ export function TrialRequestModal({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Scheduled Date & Time:</span>
-                <span className="font-bold text-blue-700 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
+                <span className="text-slate-500">Requested Time:</span>
+                <span className="font-bold text-amber-800 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
                   {new Date(createdTrial.preferredDate).toLocaleString("en-US", {
                     weekday: "short",
                     day: "numeric",
@@ -215,52 +204,28 @@ export function TrialRequestModal({
                   {" "}(30 mins)
                 </span>
               </div>
-              {createdTrial.meetingLink && (
-                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
-                  <span className="text-slate-500">Online Classroom:</span>
-                  <a
-                    href={createdTrial.meetingLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 hover:text-blue-800 font-bold truncate max-w-[200px] flex items-center gap-1"
-                  >
-                    <span>{createdTrial.meetingLink}</span>
-                    <ExternalLink className="w-3 h-3 shrink-0" />
-                  </a>
-                </div>
-              )}
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                <span className="text-slate-500">Status:</span>
+                <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[11px] font-bold">
+                  ⏳ Pending Tutor Confirmation
+                </Badge>
+              </div>
             </div>
 
-            <div className="space-y-2 pt-2">
-              <a
-                href={buildGoogleCalendarUrl({
-                  title: `30-Min Free Trial: ${createdTrial.course?.title || "London A/L Tutorial"} (${createdTrial.studentName})`,
-                  description: `30-Minute 1-on-1 Online Trial Session with Faculty.\nTopic: ${createdTrial.topic}\nOnline Classroom: ${createdTrial.meetingLink}`,
-                  dueDate: createdTrial.preferredDate,
-                  courseTitle: createdTrial.course?.title,
-                  location: createdTrial.meetingLink,
-                  durationMinutes: 30,
-                })}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
-              >
-                <Calendar className="w-4 h-4" />
-                <span>Add 30-Min Trial to Google Calendar</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+            <p className="text-[11px] text-slate-500 bg-blue-50/70 border border-blue-100 rounded-xl p-3 text-left">
+              💡 <strong>Next Step:</strong> As soon as your tutor accepts or confirms the time, you will receive an in-app notification and the Google Meet room link will appear on your Academic Dashboard.
+            </p>
 
+            <div className="pt-2">
               <Button
-                variant="outline"
                 onClick={onClose}
-                className="w-full text-xs font-semibold rounded-xl"
+                className="w-full bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl py-2.5 shadow-xs cursor-pointer"
               >
-                Done
+                Got It, Return to Course
               </Button>
             </div>
           </div>
         ) : (
-
           <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
             {error && (
               <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
@@ -269,92 +234,40 @@ export function TrialRequestModal({
               </div>
             )}
 
+            {/* Exact Selected Subject / Course Display */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-1">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                <span>Selected Subject / Course</span>
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <div className="font-extrabold text-xs text-slate-900 leading-snug">
+                  {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Masterclass")}
+                </div>
+                {selectedCourse?.subjectCode && (
+                  <Badge variant="outline" className="text-[10px] font-bold bg-white text-blue-700 border-blue-200 shrink-0">
+                    {selectedCourse.subjectCode}
+                  </Badge>
+                )}
+              </div>
+              {(selectedCourse?.instructor?.name || initialTutorId) && (
+                <div className="text-[11px] text-slate-500 pt-0.5">
+                  Faculty: <span className="font-semibold text-slate-700">{selectedCourse?.instructor?.name || "Senior Faculty Instructor"}</span>
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                Select Subject / Course <span className="text-red-500">*</span>
+                Preferred Date &amp; Time <span className="text-red-500">*</span>
               </label>
-              <select
-                value={courseId}
-                onChange={(e) => setCourseId(e.target.value)}
-                className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              >
-                {allCourses.length > 0 ? (
-                  allCourses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title} {c.subjectCode ? `(${c.subjectCode})` : ""}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">London A/L General Tutorial</option>
-                )}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter full name"
-                    value={studentName}
-                    onChange={(e) => setStudentName(e.target.value)}
-                    className="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3 pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    required
-                    placeholder="Enter email address"
-                    value={studentEmail}
-                    onChange={(e) => setStudentEmail(e.target.value)}
-                    className="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Preferred Date & Time <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={preferredDate}
-                  onChange={(e) => setPreferredDate(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  WhatsApp / Phone (Optional)
-                </label>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    placeholder="Enter phone number"
-                    value={studentPhone}
-                    onChange={(e) => setStudentPhone(e.target.value)}
-                    className="w-full h-9 pl-8 pr-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3 pointer-events-none" />
-                </div>
-              </div>
+              <input
+                type="datetime-local"
+                required
+                value={preferredDate}
+                onChange={(e) => setPreferredDate(e.target.value)}
+                className="w-full h-9 px-2.5 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
             </div>
 
             <div>
@@ -363,9 +276,22 @@ export function TrialRequestModal({
               </label>
               <input
                 type="text"
-                placeholder="Mention any specific topics, exam boards, or requirements..."
+                placeholder="Mention any specific syllabus modules or questions (optional)..."
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
+                className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Additional Notes / Target Exam
+              </label>
+              <input
+                type="text"
+                placeholder="E.g. Target May/June 2026 series, Edexcel P2..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
                 className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -373,10 +299,10 @@ export function TrialRequestModal({
             <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/80 text-[11px] text-blue-900 space-y-1">
               <div className="font-bold flex items-center gap-1.5">
                 <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>30-Minute Live Online Interactive Session</span>
+                <span>30-Minute Live Online Interactive Consultation</span>
               </div>
               <p className="text-slate-600 leading-relaxed">
-                Connect directly with our subject faculty over video for syllabus diagnostics, problem-solving, and a tailored study plan. Linked directly to Google Calendar.
+                Connect directly with our subject faculty over video for syllabus diagnostics, problem-solving, and a tailored study plan.
               </p>
             </div>
 
@@ -391,7 +317,7 @@ export function TrialRequestModal({
               </Button>
               <Button
                 type="submit"
-                disabled={loading || !studentName.trim() || !studentEmail.trim()}
+                disabled={loading || !preferredDate}
                 className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 shadow-md shadow-blue-900/10 cursor-pointer"
               >
                 {loading ? (

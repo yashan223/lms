@@ -144,11 +144,11 @@ export function CourseGrid() {
                 className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+                  <Link href={`/courses/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
                     <img
                       src={course.thumbnail}
                       alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 
@@ -174,7 +174,7 @@ export function CourseGrid() {
                         {course.subjectCode}
                       </span>
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="p-5 sm:p-6 space-y-3.5">
                     <Link href={`/courses/${course.slug}`} prefetch={true}>
@@ -195,10 +195,6 @@ export function CourseGrid() {
                       <span className="flex items-center gap-1 font-medium">
                         <BookOpen className="w-3.5 h-3.5 text-blue-600" />
                         {course.lessonsCount} lessons
-                      </span>
-                      <span className="flex items-center gap-1 font-medium">
-                        <Users className="w-3.5 h-3.5 text-blue-600" />
-                        {course.studentsEnrolled.toLocaleString()} students
                       </span>
                     </div>
 

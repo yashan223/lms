@@ -34,23 +34,20 @@ function VerifyEmailContent() {
   const [countdown, setCountdown] = useState<number>(0);
   const [autoRedirectSecs, setAutoRedirectSecs] = useState<number | null>(null);
 
-  const tokenFetchRef = React.useRef(false);
-
   // Handle Token Verification
   useEffect(() => {
-    if (!token || tokenFetchRef.current) return;
-    tokenFetchRef.current = true;
+    if (!token) {
+      setVerifying(false);
+      return;
+    }
 
     let isMounted = true;
+    setVerifying(true);
+    setErrorMessage(null);
 
-    async function verifyToken() {
-      setVerifying(true);
-      setErrorMessage(null);
-
-      try {
-        const res = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token!)}`);
-        const data = await res.json();
-
+    fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
         if (!isMounted) return;
 
         if (res.ok && (data.success || data.alreadyVerified)) {
@@ -62,18 +59,15 @@ function VerifyEmailContent() {
             setEmailInput(data.email);
           }
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!isMounted) return;
         console.error("Token verification error:", err);
         setErrorMessage("Network connection error. Please try again.");
-      } finally {
-        if (isMounted) {
-          setVerifying(false);
-        }
-      }
-    }
-
-    verifyToken();
+      })
+      .finally(() => {
+        setVerifying(false);
+      });
 
     return () => {
       isMounted = false;
@@ -82,20 +76,18 @@ function VerifyEmailContent() {
 
   // Auto redirect countdown on success
   useEffect(() => {
-    if (autoRedirectSecs === null || autoRedirectSecs <= 0) return;
+    if (autoRedirectSecs === null) return;
 
-    const timer = setInterval(() => {
-      setAutoRedirectSecs((prev) => {
-        if (prev !== null && prev <= 1) {
-          clearInterval(timer);
-          router.push("/dashboard");
-          return 0;
-        }
-        return prev !== null ? prev - 1 : null;
-      });
+    if (autoRedirectSecs <= 0) {
+      router.push("/dashboard");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setAutoRedirectSecs((prev) => (prev !== null ? prev - 1 : null));
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, [autoRedirectSecs, router]);
 
   // Resend cooldown timer

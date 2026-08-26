@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 async function findCourseBySlugOrId(rawSlug: string) {
   if (!rawSlug) return null;
@@ -62,11 +63,24 @@ export async function GET(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
+    let isEnrolled = false;
+    try {
+      const auth = await getAuthenticatedUser(request);
+      if (auth.user) {
+        isEnrolled = course.enrollments.some((e) => e.userId === auth.user.id);
+      }
+    } catch {
+      // Unauthenticated visitor
+    }
+
     return NextResponse.json(
-      { course },
+      {
+        course,
+        isEnrolled,
+      },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=180",
+          "Cache-Control": "no-store, max-age=0",
         },
       }
     );

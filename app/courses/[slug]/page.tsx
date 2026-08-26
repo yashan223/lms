@@ -41,8 +41,10 @@ import {
   Calculator,
   FlaskConical,
   FileCode,
+  Sparkles,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
 
 interface CourseMaterial {
   id: string;
@@ -94,8 +96,9 @@ export default function CourseDetailPage({
   const [activeModuleIdx, setActiveModuleIdx] = useState<number | null>(0);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(initialCached?.modules?.[0]?.lessons?.[0] || null);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
-  const [isEnrolled, setIsEnrolled] = useState(Boolean(initialCached?.enrollments?.length));
+  const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   const [isStaff, setIsStaff] = useState(false);
   useEffect(() => {
@@ -146,8 +149,10 @@ export default function CourseDetailPage({
 
           setCourse(formatted);
 
-          if (data.course.enrollments && data.course.enrollments.length > 0) {
-            setIsEnrolled(true);
+          if (typeof data.isEnrolled === "boolean") {
+            setIsEnrolled(data.isEnrolled);
+          } else {
+            setIsEnrolled(false);
           }
 
           if (data.course.modules?.[0]?.lessons?.[0]) {
@@ -430,11 +435,11 @@ export default function CourseDetailPage({
                 ) : (
                   <div className="space-y-2">
                     <Button
-                      onClick={handleEnroll}
-                      disabled={enrollLoading}
+                      onClick={() => setShowPurchaseModal(true)}
                       className="w-full py-3.5 h-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
                     >
-                      <span>{enrollLoading ? "Enrolling..." : "Enroll & Unlock All Materials"}</span>
+                      <Lock className="w-4 h-4 text-blue-200" />
+                      <span>Purchase & Unlock All Materials (${course?.price || 95})</span>
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                     <button
@@ -494,7 +499,7 @@ export default function CourseDetailPage({
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Curriculum & Video Lessons</span>
+                <span>Syllabus & Video Lessons</span>
                 <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "curriculum" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
                   {totalLessons}
                 </span>
@@ -583,6 +588,32 @@ export default function CourseDetailPage({
               </div>
             </div>
 
+            {/* Locked Gate Banner for Unenrolled Students */}
+            {!isEnrolled && !isStaff && (
+              <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-amber-950">
+                      Study Materials & Downloads are Locked
+                    </h4>
+                    <p className="text-[11px] text-amber-800 mt-0.5">
+                      Purchase this course to unlock complete download access to all {materialsList.length} verified handbooks, formula booklets, and worked solutions.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowPurchaseModal(true)}
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 rounded-xl shadow-xs shrink-0 cursor-pointer gap-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5 text-blue-200" />
+                  <span>Purchase Course (${course?.price || 95})</span>
+                </Button>
+              </div>
+            )}
+
             {filteredMaterials.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-2xs space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
@@ -643,33 +674,45 @@ export default function CourseDetailPage({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <a
-                          href={material.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-                          <span>View Online</span>
-                        </a>
+                        {isEnrolled || isStaff ? (
+                          <>
+                            <a
+                              href={material.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                              <span>View Online</span>
+                            </a>
 
-                        <a
-                          href={material.fileUrl}
-                          download
-                          className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Download</span>
-                        </a>
+                            <a
+                              href={material.fileUrl}
+                              download
+                              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download</span>
+                            </a>
 
-                        {isStaff && (
-                          <button
-                            onClick={() => handleDeleteMaterial(material.id)}
-                            title="Delete material"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            {isStaff && (
+                              <button
+                                onClick={() => handleDeleteMaterial(material.id)}
+                                title="Delete material"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <Button
+                            onClick={() => setShowPurchaseModal(true)}
+                            className="px-3.5 py-1.5 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                            <Lock className="w-3.5 h-3.5" />
+                            <span>Unlock File</span>
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -687,25 +730,51 @@ export default function CourseDetailPage({
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xs space-y-5">
                   {selectedLesson ? (
                     <>
-                      <div className="w-full aspect-video rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center text-white relative overflow-hidden group shadow-inner">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-                        <div className="relative z-10 text-center space-y-3 p-6">
-                          <div className="w-16 h-16 rounded-full bg-blue-600/90 text-white flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 transition-transform cursor-pointer">
-                            <PlayCircle className="w-8 h-8" />
+                      {isEnrolled || isStaff || selectedLesson.isFreePreview ? (
+                        <div className="w-full aspect-video rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center text-white relative overflow-hidden group shadow-inner">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+                          <div className="relative z-10 text-center space-y-3 p-6">
+                            <div className="w-16 h-16 rounded-full bg-blue-600/90 text-white flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 transition-transform cursor-pointer">
+                              <PlayCircle className="w-8 h-8" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-sky-400 font-bold uppercase tracking-wider">
+                                {selectedLesson.isFreePreview ? "Free Lesson Preview" : "Interactive Lecture Player"}
+                              </div>
+                              <h3 className="text-base sm:text-lg font-bold text-white max-w-md">
+                                {selectedLesson.title}
+                              </h3>
+                            </div>
+                            <span className="inline-block text-[11px] bg-white/20 backdrop-blur-xs px-3 py-1 rounded-full text-white font-medium">
+                              Duration: {selectedLesson.durationMin} Minutes • Stream Enabled
+                            </span>
                           </div>
-                          <div>
-                            <div className="text-xs text-sky-400 font-bold uppercase tracking-wider">
-                              Interactive Lecture Player
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-video rounded-2xl bg-[#0b1b3d] border border-blue-900/60 flex flex-col items-center justify-center text-white relative overflow-hidden p-6 text-center space-y-3 shadow-inner">
+                          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-400 flex items-center justify-center mx-auto shadow-lg">
+                            <Lock className="w-7 h-7" />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-xs text-amber-400 font-bold uppercase tracking-wider">
+                              Full Syllabus Lecture • Enrolled Students Only
                             </div>
                             <h3 className="text-base sm:text-lg font-bold text-white max-w-md">
                               {selectedLesson.title}
                             </h3>
+                            <p className="text-xs text-slate-300 max-w-sm mx-auto">
+                              Purchase this course to unlock complete streaming access to all modules, derivations, and exam walkthroughs.
+                            </p>
                           </div>
-                          <span className="inline-block text-[11px] bg-white/20 backdrop-blur-xs px-3 py-1 rounded-full text-white font-medium">
-                            Duration: {selectedLesson.durationMin} Minutes • Stream Enabled
-                          </span>
+                          <Button
+                            onClick={() => setShowPurchaseModal(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md cursor-pointer gap-2"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-blue-200" />
+                            <span>Purchase Course to Unlock (${course?.price || 95})</span>
+                          </Button>
                         </div>
-                      </div>
+                      )}
 
                       <div className="space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1029,6 +1098,17 @@ export default function CourseDetailPage({
         initialCourseId={course?.id}
         initialTutorId={course?.instructorId}
         allCourses={course ? [course] : []}
+      />
+
+      <CoursePurchaseModal
+        isOpen={showPurchaseModal}
+        onClose={() => setShowPurchaseModal(false)}
+        course={course}
+        onSuccess={() => {
+          setIsEnrolled(true);
+          setActiveTab("materials");
+          loadCourse(true);
+        }}
       />
 
       <Footer />

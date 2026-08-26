@@ -81,8 +81,9 @@ export default function AdminDashboardPage() {
   const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
   const [liveClassSearch, setLiveClassSearch] = useState("");
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
+  const [purchaseSearch, setPurchaseSearch] = useState("");
+  const [purchaseCourseFilter, setPurchaseCourseFilter] = useState("ALL");
 
   const [newClassTitle, setNewClassTitle] = useState("");
   const [newClassCourseId, setNewClassCourseId] = useState("");
@@ -374,6 +375,35 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       console.error("Error enrolling user:", err);
+    }
+  };
+
+  const handleUnenrollUser = async (userId: string, courseId: string, enrollmentId?: string) => {
+    try {
+      await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "unenroll_user",
+          enrollmentId,
+          userId,
+          courseId,
+        }),
+      });
+      await fetchAdminData();
+      if (selectedUserForEdit && selectedUserForEdit.id === userId) {
+        setSelectedUserForEdit((prev: any) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            enrollments: (prev.enrollments || []).filter((e: any) =>
+              enrollmentId ? e.id !== enrollmentId : e.courseId !== courseId
+            ),
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Error unenrolling user:", err);
     }
   };
 
@@ -688,34 +718,6 @@ export default function AdminDashboardPage() {
     });
   };
 
-  const handleStartClass = async (event: any) => {
-    try {
-      setStartingClassId(event.id);
-      const res = await fetch("/api/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "start_class",
-          eventId: event.id,
-          meetingLink: event.meetingLink,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        const linkToOpen = data.meetingLink || event.meetingLink;
-        if (linkToOpen) {
-          window.open(linkToOpen, "_blank");
-        }
-        await fetchAdminData();
-      }
-    } catch (err) {
-      console.error("Error starting live class:", err);
-    } finally {
-      setStartingClassId(null);
-    }
-  };
-
   const handleEndClass = async (event: any) => {
     try {
       setEndingClassId(event.id);
@@ -803,6 +805,56 @@ export default function AdminDashboardPage() {
     });
   };
 
+  const purchasesList = useMemo(() => {
+    const allPurchases: any[] = [];
+    coursesList.forEach((c) => {
+      (c.enrollments || []).forEach((enr: any) => {
+        const student = enr.user || allUsersList.find((u) => u.id === enr.userId);
+        allPurchases.push({
+          id: enr.id,
+          enrollmentId: enr.id,
+          userId: student?.id || enr.userId,
+          studentName: student?.name || "Enrolled Student",
+          studentEmail: student?.email || "student@edupulse.uk",
+          studentPhone: student?.phone || null,
+          studentAvatar: student?.avatar || null,
+          courseId: c.id,
+          courseTitle: c.title,
+          courseSlug: c.slug,
+          courseSubjectCode: c.subjectCode || "LONDON-AL",
+          courseCategory: c.category,
+          price: Number(c.price) || 95,
+          enrolledAt: enr.enrolledAt,
+        });
+      });
+    });
+
+    allPurchases.sort((a, b) => new Date(b.enrolledAt).getTime() - new Date(a.enrolledAt).getTime());
+
+    return allPurchases.filter((p) => {
+      const matchSearch =
+        !purchaseSearch ||
+        p.studentName.toLowerCase().includes(purchaseSearch.toLowerCase()) ||
+        p.studentEmail.toLowerCase().includes(purchaseSearch.toLowerCase()) ||
+        p.courseTitle.toLowerCase().includes(purchaseSearch.toLowerCase()) ||
+        p.courseSubjectCode.toLowerCase().includes(purchaseSearch.toLowerCase());
+
+      const matchCourse = purchaseCourseFilter === "ALL" || p.courseId === purchaseCourseFilter;
+      return matchSearch && matchCourse;
+    });
+  }, [coursesList, allUsersList, purchaseSearch, purchaseCourseFilter]);
+
+  const uniquePayingStudentsCount = useMemo(() => {
+    const userIds = new Set<string>();
+    coursesList.forEach((c) => {
+      (c.enrollments || []).forEach((enr: any) => {
+        if (enr.userId) userIds.add(enr.userId);
+        if (enr.user?.id) userIds.add(enr.user.id);
+      });
+    });
+    return userIds.size;
+  }, [coursesList]);
+
   const liveClassesList = useMemo(() => {
     return eventsList.filter((ev) => {
       const matchSearch =
@@ -846,7 +898,7 @@ export default function AdminDashboardPage() {
     },
     { id: "users", label: "User Management", icon: Users, badge: allUsersList.length },
     { id: "courses", label: "Course Management", icon: BookOpen, badge: coursesList.length },
-    { id: "finances", label: "Financials & Tuition", icon: DollarSign },
+    { id: "finances", label: "Course Purchases & Revenue", icon: DollarSign, badge: totalEnrollmentsCount },
   ];
 
   return (
@@ -1522,19 +1574,17 @@ export default function AdminDashboardPage() {
                               </>
                             ) : (
                               <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleStartClass(ev)}
-                                  disabled={startingClassId === ev.id}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl h-8 gap-1.5 shadow-2xs cursor-pointer"
-                                >
-                                  {startingClassId === ev.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <PlayCircle className="w-3.5 h-3.5" />
-                                  )}
-                                  <span>Start Class</span>
-                                </Button>
+                                {meetLink && (
+                                  <a
+                                    href={meetLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs flex items-center gap-1.5 border border-blue-200 shadow-2xs transition-all"
+                                  >
+                                    <Video className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>Google Meet</span>
+                                  </a>
+                                )}
 
                                 <a
                                   href={buildGoogleCalendarUrl({
@@ -1874,82 +1924,304 @@ export default function AdminDashboardPage() {
 
           {activeTab === "finances" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-slate-500">Gross Collected Tuition</span>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
+              {/* Top Financial KPI Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Gross Course Revenue</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
                     ${totalCalculatedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[11px] text-emerald-600 font-semibold">100% Verified Bank Clearance</div>
+                  <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>100% Cleared Student Tuition</span>
+                  </div>
                 </div>
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-blue-600">Total Active Enrollments</span>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{totalEnrollmentsCount} Students</div>
-                  <div className="text-[11px] text-slate-500">Across {coursesList.length} published courses</div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Total Course Purchases</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {totalEnrollmentsCount} {totalEnrollmentsCount === 1 ? "Purchase" : "Purchases"}
+                  </div>
+                  <div className="text-[11px] text-blue-600 font-semibold">
+                    Across {coursesList.length} Published Courses
+                  </div>
                 </div>
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-indigo-600">Faculty Honorarium Pool</span>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Active Paying Students</span>
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <Users className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {uniquePayingStudentsCount} Students
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Enrolled with Full Material Access
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Faculty Honorarium Pool</span>
+                    <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                      <Award className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
                     ${(totalCalculatedRevenue * 0.3).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[11px] text-slate-500">Allocated to Senior Lecturers</div>
+                  <div className="text-[11px] text-purple-600 font-semibold">
+                    30% Pool for Senior Lecturers
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-3 p-5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              {/* Course Purchases Ledger Table */}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-4 p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
-                    <h3 className="font-bold text-sm text-slate-900">Student Tuition & Enrollment Ledger</h3>
-                    <p className="text-xs text-slate-500">Official transaction log for student registrations and course enrollments</p>
+                    <h3 className="font-bold text-sm text-slate-900">Course Purchases & Student Enrollments</h3>
+                    <p className="text-xs text-slate-500">
+                      Live transaction ledger of verified student course purchases and unlocked study materials
+                    </p>
                   </div>
+
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => alert("Financial statement exported successfully!")}
-                    className="text-xs font-bold text-slate-700 h-8 rounded-xl gap-1 cursor-pointer"
+                    onClick={() => {
+                      const headers = "Student Name,Student Email,Course Title,Subject Code,Tuition Fee,Payment Status,Purchase Date\n";
+                      const rows = purchasesList
+                        .map(
+                          (p) =>
+                            `"${p.studentName}","${p.studentEmail}","${p.courseTitle}","${p.courseSubjectCode}",$${p.price},PAID,"${new Date(p.enrolledAt).toLocaleString()}"`
+                        )
+                        .join("\n");
+                      const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.setAttribute("download", `edupulse_course_purchases_${new Date().toISOString().slice(0, 10)}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="text-xs font-bold text-slate-700 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs border-slate-200 hover:bg-slate-50"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Export Statement</span>
+                    <span>Export CSV Statement</span>
                   </Button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                      <tr>
-                        <th className="py-3 px-4">Student</th>
-                        <th className="py-3 px-4">Course Enrolled</th>
-                        <th className="py-3 px-4">Tuition Fee</th>
-                        <th className="py-3 px-4">Payment Status</th>
-                        <th className="py-3 px-4">Enrolled Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {coursesList.flatMap(c => (c.enrollments || []).map((en: any) => ({
-                        student: en.user?.name || "Student",
-                        email: en.user?.email || "student@edupulse.uk",
-                        course: c.title,
-                        price: c.price,
-                        date: en.enrolledAt,
-                        id: en.id,
-                      }))).map((tx: any) => (
-                        <tr key={tx.id} className="hover:bg-slate-50">
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900">{tx.student}</div>
-                            <div className="text-[11px] text-slate-400">{tx.email}</div>
-                          </td>
-                          <td className="py-3 px-4 text-slate-700 font-medium">{tx.course}</td>
-                          <td className="py-3 px-4 font-bold text-slate-900">${tx.price}</td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                              PAID
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-500">{new Date(tx.date).toLocaleDateString("en-US")}</td>
-                        </tr>
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Input
+                      placeholder="Search student, email, course..."
+                      value={purchaseSearch}
+                      onChange={(e) => setPurchaseSearch(e.target.value)}
+                      className="pl-8 h-9 text-xs rounded-xl border-slate-200"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <select
+                      value={purchaseCourseFilter}
+                      onChange={(e) => setPurchaseCourseFilter(e.target.value)}
+                      className="w-full sm:w-auto h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-700 cursor-pointer"
+                    >
+                      <option value="ALL">All Courses ({purchasesList.length} Purchases)</option>
+                      {coursesList.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.title} ({c.enrollments?.length || 0} enrolled)
+                        </option>
                       ))}
-                    </tbody>
-                  </table>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Table */}
+                {purchasesList.length === 0 ? (
+                  <div className="py-12 text-center space-y-2 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+                    <p className="text-xs font-bold text-slate-700">No Course Purchases Found</p>
+                    <p className="text-[11px] text-slate-400">
+                      {purchaseSearch || purchaseCourseFilter !== "ALL"
+                        ? "Try clearing your search query or course filter."
+                        : "New student course purchases will appear here in real-time."}
+                    </p>
+                    {(purchaseSearch || purchaseCourseFilter !== "ALL") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setPurchaseSearch("");
+                          setPurchaseCourseFilter("ALL");
+                        }}
+                        className="text-xs font-bold rounded-xl mt-2"
+                      >
+                        Reset Filters
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                        <tr>
+                          <th className="py-3 px-4">Student / Buyer</th>
+                          <th className="py-3 px-4">Course Purchased</th>
+                          <th className="py-3 px-4">Tuition Fee</th>
+                          <th className="py-3 px-4">Payment & Access</th>
+                          <th className="py-3 px-4">Purchase Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {purchasesList.map((tx: any) => (
+                          <tr key={tx.id} className="hover:bg-blue-50/20 transition-colors">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <Avatar className="w-8 h-8 ring-1 ring-slate-200">
+                                  {tx.studentAvatar && <AvatarImage src={tx.studentAvatar} />}
+                                  <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">
+                                    {tx.studentName.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900">{tx.studentName}</div>
+                                  <div className="text-[11px] text-slate-400 truncate">{tx.studentEmail}</div>
+                                  {tx.studentPhone && (
+                                    <div className="text-[10px] text-slate-400">{tx.studentPhone}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4 max-w-xs">
+                              <div className="space-y-0.5">
+                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                                  {tx.courseSubjectCode}
+                                </span>
+                                <div className="font-bold text-slate-900 line-clamp-1">{tx.courseTitle}</div>
+                                <div className="text-[10px] text-slate-400">{tx.courseCategory}</div>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <span className="text-sm font-black text-slate-900">${tx.price}</span>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>PAID & UNLOCKED</span>
+                              </span>
+                            </td>
+
+                            <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                              <div>{new Date(tx.enrolledAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                              <div className="text-[10px] text-slate-400">
+                                {new Date(tx.enrolledAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Link
+                                  href={`/courses/${tx.courseSlug}`}
+                                  target="_blank"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                  title="View Course Syllabus & Materials"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </Link>
+
+                                <button
+                                  onClick={() => {
+                                    setConfirmModalData({
+                                      isOpen: true,
+                                      title: `Revoke Course Access?`,
+                                      description: `Are you sure you want to remove ${tx.studentName} from "${tx.courseTitle}"? Their enrollment will be cancelled and material access will be locked.`,
+                                      variant: "danger",
+                                      onConfirm: async () => {
+                                        await handleUnenrollUser(tx.userId, tx.courseId, tx.id);
+                                      },
+                                    });
+                                  }}
+                                  className="px-2 py-1 rounded-lg text-[11px] font-bold text-red-600 hover:bg-red-50 border border-red-200/80 transition-colors cursor-pointer"
+                                  title="Revoke student course access"
+                                >
+                                  Revoke
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Course Revenue Breakdown Grid */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="font-bold text-sm text-slate-900">Revenue Breakdown by Course</h3>
+                  <p className="text-xs text-slate-500">
+                    Gross performance and tuition collection volume per syllabus unit
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {coursesList.map((c) => {
+                    const enrCount = c.enrollments?.length || 0;
+                    const cRevenue = enrCount * (Number(c.price) || 95);
+                    const percentOfTotal = totalCalculatedRevenue > 0 ? (cRevenue / totalCalculatedRevenue) * 100 : 0;
+
+                    return (
+                      <div key={c.id} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                              {c.subjectCode || "LONDON-AL"}
+                            </span>
+                            <h4 className="font-bold text-xs text-slate-900 truncate mt-1">{c.title}</h4>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-black text-sm text-slate-900">${cRevenue.toLocaleString()}</div>
+                            <div className="text-[10px] text-slate-500">${c.price || 95} / seat</div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+                            <span>{enrCount} {enrCount === 1 ? "Student" : "Students"} Enrolled</span>
+                            <span>{percentOfTotal.toFixed(1)}% Share</span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                              style={{ width: `${percentOfTotal}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2053,34 +2325,82 @@ export default function AdminDashboardPage() {
 
       {showEnrollUserModal && selectedUserForEdit && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-bold text-base text-slate-900">Enroll Student</h3>
+                <h3 className="font-bold text-base text-slate-900">Manage Course Enrollments</h3>
                 <p className="text-xs text-slate-500">{selectedUserForEdit.name} ({selectedUserForEdit.email})</p>
               </div>
               <button onClick={() => setShowEnrollUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
-            <form onSubmit={handleEnrollUserSubmit} className="space-y-4 text-xs">
+            {/* Current Active Enrollments List */}
+            <div className="space-y-2">
+              <label className="font-bold text-xs text-slate-700 block">
+                Current Active Enrollments ({selectedUserForEdit.enrollments?.length || 0})
+              </label>
+
+              {selectedUserForEdit.enrollments && selectedUserForEdit.enrollments.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {selectedUserForEdit.enrollments.map((enr: any) => {
+                    const matchedCourse = coursesList.find((c) => c.id === enr.courseId) || enr.course;
+                    return (
+                      <div
+                        key={enr.id || enr.courseId}
+                        className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 truncate">
+                            {matchedCourse?.title || "Enrolled Course"}
+                          </div>
+                          {matchedCourse?.subjectCode && (
+                            <span className="text-[10px] font-mono text-blue-600">
+                              {matchedCourse.subjectCode}
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleUnenrollUser(selectedUserForEdit.id, enr.courseId, enr.id)}
+                          className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 font-bold text-xs h-7 rounded-lg shrink-0 cursor-pointer"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 text-xs italic text-center">
+                  This student is not currently enrolled in any courses.
+                </div>
+              )}
+            </div>
+
+            {/* Add New Enrollment Form */}
+            <form onSubmit={handleEnrollUserSubmit} className="space-y-3 pt-2 border-t border-slate-100 text-xs">
               <div>
-                <label className="font-bold block mb-1">Select Course to Enroll</label>
+                <label className="font-bold block mb-1">Enroll in Additional Course</label>
                 <select
                   value={selectedCourseToEnroll}
                   onChange={(e) => setSelectedCourseToEnroll(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold"
                 >
                   {coursesList.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.title} ({c.category})
+                      {c.title} ({c.subjectCode || c.category})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowEnrollUserModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
-                <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Enroll Student</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowEnrollUserModal(false)} className="rounded-xl cursor-pointer">Done</Button>
+                <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer">
+                  + Enroll Student
+                </Button>
               </div>
             </form>
           </div>

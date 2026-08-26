@@ -292,6 +292,19 @@ function TutorDashboardContent() {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
+  const [trialFilter, setTrialFilter] = useState<"ALL" | "PENDING" | "CONFIRMED" | "CANCELLED">("ALL");
+  const [showConfirmTrialModal, setShowConfirmTrialModal] = useState(false);
+  const [confirmingTrial, setConfirmingTrial] = useState<any | null>(null);
+  const [confirmDate, setConfirmDate] = useState("");
+  const [confirmMeetLink, setConfirmMeetLink] = useState("");
+  const [confirmNotes, setConfirmNotes] = useState("");
+  const [isSubmittingConfirmTrial, setIsSubmittingConfirmTrial] = useState(false);
+  const [confirmTrialStatusMsg, setConfirmTrialStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showDeclineTrialModal, setShowDeclineTrialModal] = useState(false);
+  const [decliningTrial, setDecliningTrial] = useState<any | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
+  const [isSubmittingDeclineTrial, setIsSubmittingDeclineTrial] = useState(false);
+
   const [profileName, setProfileName] = useState("");
   const [profileHeadline, setProfileHeadline] = useState("");
   const [profileAbout, setProfileAbout] = useState("");
@@ -491,6 +504,44 @@ function TutorDashboardContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUnenrollStudent = (studentId: string, studentName: string, courseId: string, courseTitle: string) => {
+    setConfirmModalData({
+      isOpen: true,
+      title: "Remove Student from Course",
+      description: `Are you sure you want to remove ${studentName} from "${courseTitle}"? They will no longer have access to this course's syllabus and live classes.`,
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch("/api/tutor", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "unenroll_student",
+              studentId,
+              courseId,
+            }),
+          });
+          if (res.ok) {
+            await fetchTutorData();
+            if (selectedStudentForModal && selectedStudentForModal.id === studentId) {
+              setSelectedStudentForModal((prev) => {
+                if (!prev) return null;
+                return {
+                  ...prev,
+                  enrolledCourses: prev.enrolledCourses.filter((c) => c.courseId !== courseId),
+                };
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error unenrolling student:", err);
+        } finally {
+          setConfirmModalData((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
   };
 
   useEffect(() => {
@@ -1042,6 +1093,82 @@ function TutorDashboardContent() {
       });
     } finally {
       setRescheduling(false);
+    }
+  };
+
+  const openConfirmTrialModal = (trial: any) => {
+    setConfirmingTrial(trial);
+    setConfirmDate(formatForDateTimeInput(new Date(trial.preferredDate)));
+    setConfirmMeetLink(trial.meetingLink || "https://meet.google.com/new");
+    setConfirmNotes(trial.notes || "");
+    setConfirmTrialStatusMsg(null);
+    setShowConfirmTrialModal(true);
+  };
+
+  const handleConfirmTrialSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmingTrial || !confirmDate) return;
+    try {
+      setIsSubmittingConfirmTrial(true);
+      setConfirmTrialStatusMsg(null);
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "confirm_trial",
+          trialId: confirmingTrial.id,
+          confirmedDate: new Date(confirmDate).toISOString(),
+          meetingLink: normalizeGoogleMeetLink(confirmMeetLink),
+          notes: confirmNotes,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setConfirmTrialStatusMsg({ type: "success", text: "Trial session confirmed and scheduled on calendar!" });
+        fetchTutorData();
+        setTimeout(() => {
+          setShowConfirmTrialModal(false);
+          setConfirmingTrial(null);
+        }, 1200);
+      } else {
+        setConfirmTrialStatusMsg({ type: "error", text: data.error || "Failed to confirm trial session." });
+      }
+    } catch (err) {
+      setConfirmTrialStatusMsg({ type: "error", text: "Network error while confirming trial." });
+    } finally {
+      setIsSubmittingConfirmTrial(false);
+    }
+  };
+
+  const openDeclineTrialModal = (trial: any) => {
+    setDecliningTrial(trial);
+    setDeclineReason("");
+    setShowDeclineTrialModal(true);
+  };
+
+  const handleDeclineTrialSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!decliningTrial) return;
+    try {
+      setIsSubmittingDeclineTrial(true);
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "decline_trial",
+          trialId: decliningTrial.id,
+          reason: declineReason,
+        }),
+      });
+      if (res.ok) {
+        setShowDeclineTrialModal(false);
+        setDecliningTrial(null);
+        fetchTutorData();
+      }
+    } catch (err) {
+      console.error("Failed to decline trial:", err);
+    } finally {
+      setIsSubmittingDeclineTrial(false);
     }
   };
 
@@ -2070,12 +2197,25 @@ function TutorDashboardContent() {
 
                           <div className="flex flex-wrap gap-1">
                             {st.enrolledCourses.map((c, idx) => (
-                              <span
+                              <div
                                 key={idx}
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700 font-medium truncate max-w-[160px]"
+                                className="inline-flex items-center gap-1 text-[10px] pl-2 pr-1 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-900 font-semibold"
                               >
-                                {c.courseTitle}
-                              </span>
+                                <span className="truncate max-w-[130px]" title={c.courseTitle}>
+                                  {c.courseTitle}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUnenrollStudent(st.id, st.name, c.courseId, c.courseTitle);
+                                  }}
+                                  className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded transition-colors cursor-pointer"
+                                  title={`Remove ${st.name} from ${c.courseTitle}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
                             ))}
                           </div>
 
@@ -2104,83 +2244,205 @@ function TutorDashboardContent() {
             )}
 
             {centerTab === "trials" && (
-              <div className="space-y-4">
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-                      Student 1-on-1 Free Trial Bookings ({trials.length})
-                    </h3>
-                    <Badge className="bg-amber-100 text-amber-800 text-xs font-bold">
-                      30-Min Sessions
-                    </Badge>
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <CalendarCheck className="w-5 h-5 text-[#0c2461]" />
+                        <span>Student 1-on-1 Free Trial Bookings</span>
+                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 text-xs font-bold font-mono">
+                          {trials.length}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Review incoming student requests, set/confirm official session dates, and launch 1-on-1 Google Meet trial sessions.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                      {[
+                        { key: "ALL", label: "All Bookings", count: trials.length },
+                        { key: "PENDING", label: "⏳ Pending", count: trials.filter((t) => t.status === "PENDING").length },
+                        { key: "CONFIRMED", label: "✓ Confirmed", count: trials.filter((t) => t.status === "CONFIRMED").length },
+                        { key: "CANCELLED", label: "Cancelled", count: trials.filter((t) => t.status === "CANCELLED").length },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setTrialFilter(tab.key as any)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                            trialFilter === tab.key
+                              ? "bg-[#0c2461] text-white shadow-xs"
+                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          <span>{tab.label}</span>
+                          <span className={`px-1.5 py-0.2 rounded-md text-[10px] ${
+                            trialFilter === tab.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                          }`}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {trials.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-slate-400 italic">
-                      No trial booking inquiries received.
+                  {trials.filter((t) => trialFilter === "ALL" || t.status === trialFilter).length === 0 ? (
+                    <div className="text-center py-12 text-xs text-slate-400 italic bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
+                      <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                      <span>No trial bookings found under &quot;{trialFilter.toLowerCase()}&quot; filter.</span>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {trials.map((tr) => (
-                        <div
-                          key={tr.id}
-                          className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-xs text-slate-900">
-                                {tr.studentName}
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-semibold">
-                                ({tr.course?.title || "London A/L"})
-                              </span>
-                            </div>
+                    <div className="space-y-3.5">
+                      {trials
+                        .filter((t) => trialFilter === "ALL" || t.status === trialFilter)
+                        .map((tr) => {
+                          const isPending = tr.status === "PENDING";
+                          const isConfirmed = tr.status === "CONFIRMED";
+                          const isCancelled = tr.status === "CANCELLED";
 
-                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
-                              <span className="flex items-center gap-1 font-mono text-blue-700 font-bold">
-                                <Clock className="w-3 h-3 text-blue-600" />
-                                {new Date(tr.preferredDate).toLocaleDateString("en-US", {
-                                  day: "numeric",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-                              <span>{tr.studentEmail}</span>
-                              {tr.studentPhone && <span>{tr.studentPhone}</span>}
-                            </div>
-                          </div>
+                          return (
+                            <div
+                              key={tr.id}
+                              className={`p-4 rounded-2xl border transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+                                isPending
+                                  ? "bg-amber-50/40 border-amber-200/80 shadow-2xs hover:bg-amber-50/60"
+                                  : isConfirmed
+                                  ? "bg-white border-slate-200 shadow-2xs hover:border-blue-300"
+                                  : "bg-slate-50 border-slate-200 opacity-60"
+                              }`}
+                            >
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-bold text-sm text-slate-900">
+                                    {tr.studentName}
+                                  </span>
+                                  <Badge className="bg-blue-50 text-blue-900 border-blue-200 font-bold text-[11px]">
+                                    {tr.course?.title || "London A/L Tutorial"}
+                                  </Badge>
 
-                          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                            <button
-                              onClick={() => openRescheduleForTrial(tr)}
-                              className="px-2.5 py-1 rounded-md border border-slate-200 text-xs font-semibold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
-                              title="Reschedule Consultation"
-                            >
-                              <Clock className="w-3.5 h-3.5 text-amber-600" />
-                              <span>Reschedule</span>
-                            </button>
-                            <a
-                              href={`mailto:${tr.studentEmail}?subject=EduPulse Trial Session&body=Dear ${tr.studentName},`}
-                              className="px-2.5 py-1 rounded-md border border-slate-200 text-xs font-semibold hover:bg-slate-50"
-                            >
-                              Email
-                            </a>
-                            <a
-                              href={buildGoogleCalendarUrl({
-                                title: `30-Min Trial: ${tr.studentName}`,
-                                description: `1-on-1 Consultation for ${tr.course?.title || "London A/L"}`,
-                                dueDate: tr.preferredDate,
-                              })}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-2.5 py-1 rounded-md bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold"
-                            >
-                              Add to Calendar
-                            </a>
-                          </div>
-                        </div>
-                      ))}
+                                  {isPending && (
+                                    <Badge className="bg-amber-500 text-white font-bold text-[10px] animate-pulse">
+                                      ⏳ PENDING TUTOR CONFIRMATION
+                                    </Badge>
+                                  )}
+                                  {isConfirmed && (
+                                    <Badge className="bg-emerald-600 text-white font-bold text-[10px]">
+                                      ✓ CONFIRMED & SCHEDULED
+                                    </Badge>
+                                  )}
+                                  {isCancelled && (
+                                    <Badge className="bg-slate-500 text-white font-bold text-[10px]">
+                                      CANCELLED
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+                                  <span className="flex items-center gap-1 font-mono text-blue-800 font-bold">
+                                    <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>{isPending ? "Requested:" : "Confirmed:"}</span>
+                                    {new Date(tr.preferredDate).toLocaleDateString("en-US", {
+                                      weekday: "short",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                    {" "}(30 mins)
+                                  </span>
+
+                                  <span className="flex items-center gap-1">
+                                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>{tr.studentEmail}</span>
+                                  </span>
+
+                                  {tr.studentPhone && (
+                                    <span className="flex items-center gap-1 font-mono">
+                                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                      <span>{tr.studentPhone}</span>
+                                    </span>
+                                  )}
+                                </div>
+
+                                {tr.topic && (
+                                  <p className="text-xs text-slate-700 bg-white/80 border border-slate-200/80 rounded-xl px-3 py-1.5">
+                                    <strong>Topic/Focus:</strong> {tr.topic}
+                                    {tr.notes && <span className="text-slate-500"> • Note: {tr.notes}</span>}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2 self-end lg:self-center shrink-0">
+                                {isPending ? (
+                                  <>
+                                    <button
+                                      onClick={() => openConfirmTrialModal(tr)}
+                                      className="h-8.5 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                      title="Review and confirm trial session date"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-200" />
+                                      <span>✓ Confirm & Set Date</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => openDeclineTrialModal(tr)}
+                                      className="h-8.5 px-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                      <span>Decline</span>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    {tr.meetingLink && (
+                                      <a
+                                        href={tr.meetingLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="h-8.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs"
+                                      >
+                                        <Video className="w-3.5 h-3.5" />
+                                        <span>Google Meet</span>
+                                      </a>
+                                    )}
+
+                                    <button
+                                      onClick={() => openRescheduleForTrial(tr)}
+                                      className="h-8.5 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+                                      title="Reschedule session date"
+                                    >
+                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                      <span>Reschedule</span>
+                                    </button>
+
+                                    <a
+                                      href={buildGoogleCalendarUrl({
+                                        title: `30-Min Trial: ${tr.studentName}`,
+                                        description: `1-on-1 Consultation for ${tr.course?.title || "London A/L"}\nMeet: ${tr.meetingLink || ""}`,
+                                        dueDate: tr.preferredDate,
+                                      })}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="h-8.5 px-3 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold inline-flex items-center gap-1 transition-all"
+                                    >
+                                      <Calendar className="w-3.5 h-3.5" />
+                                      <span>Google Cal</span>
+                                    </a>
+                                  </>
+                                )}
+
+                                <a
+                                  href={`mailto:${tr.studentEmail}?subject=EduPulse Free Trial Consultation&body=Dear ${tr.studentName},`}
+                                  className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1"
+                                >
+                                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>Email</span>
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   )}
                 </div>
@@ -3409,11 +3671,22 @@ function TutorDashboardContent() {
                 <div className="font-bold text-slate-700">Enrolled Courses ({selectedStudentForModal.enrolledCourses.length}):</div>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {selectedStudentForModal.enrolledCourses.map((c, idx) => (
-                    <div key={idx} className="p-2 rounded-lg bg-blue-50/60 border border-blue-100 flex items-center justify-between">
-                      <span className="font-semibold text-blue-900 truncate mr-2">{c.courseTitle}</span>
-                      <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                        {new Date(c.enrolledAt).toLocaleDateString("en-US")}
-                      </span>
+                    <div key={idx} className="p-2 rounded-lg bg-blue-50/60 border border-blue-100 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="font-semibold text-blue-900 truncate block">{c.courseTitle}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          Enrolled: {new Date(c.enrolledAt).toLocaleDateString("en-US")}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleUnenrollStudent(selectedStudentForModal.id, selectedStudentForModal.name, c.courseId, c.courseTitle)}
+                        className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 font-bold text-xs h-7 rounded-lg shrink-0 cursor-pointer"
+                      >
+                        Remove
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -3441,6 +3714,210 @@ function TutorDashboardContent() {
                 <span>Open Chat</span>
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm & Set Date Trial Modal */}
+      {showConfirmTrialModal && confirmingTrial && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Confirm & Schedule Free Trial
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Set official date & time and send to student’s live calendar
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConfirmTrialModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {confirmTrialStatusMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  confirmTrialStatusMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}
+              >
+                {confirmTrialStatusMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span>{confirmTrialStatusMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmTrialSubmit} className="space-y-4 text-xs">
+              <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-blue-950 text-xs">
+                    {confirmingTrial.studentName}
+                  </span>
+                  <span className="text-[11px] text-blue-700 font-semibold font-mono">
+                    {confirmingTrial.studentEmail}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  Course: <strong>{confirmingTrial.course?.title || "London A/L Masterclass"}</strong>
+                </div>
+                {confirmingTrial.topic && (
+                  <div className="text-[11px] text-slate-600">
+                    Topic: {confirmingTrial.topic}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  Confirmed Session Date & Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={confirmDate}
+                  onChange={(e) => setConfirmDate(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-slate-500">
+                  You can keep the student&apos;s requested slot or adjust to your availability.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700 block">
+                    Google Meet Classroom Link (Optional)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Create on Google Meet</span>
+                  </button>
+                </div>
+                <Input
+                  placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                  value={confirmMeetLink}
+                  onChange={(e) => setConfirmMeetLink(e.target.value)}
+                  className="rounded-xl h-10 text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  Faculty Preparation Notes (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Please have your Unit 3 past paper ready with questions marked."
+                  value={confirmNotes}
+                  onChange={(e) => setConfirmNotes(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowConfirmTrialModal(false)}
+                  className="rounded-xl text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingConfirmTrial}
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
+                >
+                  {isSubmittingConfirmTrial ? "Confirming & Scheduling..." : "✓ Confirm & Schedule Session"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Decline Trial Modal */}
+      {showDeclineTrialModal && decliningTrial && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center shadow-sm">
+                  <X className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Decline Trial Request
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Notify student and cancel request
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeclineTrialModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleDeclineTrialSubmit} className="space-y-4 text-xs">
+              <p className="text-xs text-slate-600">
+                Are you sure you want to decline the trial booking from <strong>{decliningTrial.studentName}</strong>?
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  Reason for Declining (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Schedule fully booked on requested day. Please request next week."
+                  value={declineReason}
+                  onChange={(e) => setDeclineReason(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeclineTrialModal(false)}
+                  className="rounded-xl text-xs"
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingDeclineTrial}
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
+                >
+                  {isSubmittingDeclineTrial ? "Declining..." : "Confirm Decline"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

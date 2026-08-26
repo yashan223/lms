@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { EventType, Role } from "@prisma/client";
+import { EventType, Role, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -402,6 +402,153 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (action === "confirm_trial") {
+      const { trialId, confirmedDate, scheduledDate, meetingLink, notes } = body;
+      if (!trialId) {
+        return NextResponse.json({ error: "Trial ID is required." }, { status: 400 });
+      }
+
+      const existingTrial = await prisma.trialRequest.findUnique({
+        where: { id: trialId },
+        include: { course: true, tutor: true, student: true },
+      });
+
+      if (!existingTrial) {
+        return NextResponse.json({ error: "Trial not found." }, { status: 404 });
+      }
+
+      const rawDate = confirmedDate || scheduledDate;
+      const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
+      const link = getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
+
+      const updatedTrial = await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: {
+          preferredDate: targetDate,
+          meetingLink: link,
+          notes: notes !== undefined ? notes?.trim() || null : existingTrial.notes,
+          status: TrialStatus.CONFIRMED,
+        },
+        include: { course: true, tutor: true, student: true },
+      });
+
+      const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Masterclass";
+      const courseCode = updatedTrial.course?.subjectCode || "";
+      const eventTitle = `30-Min Free Trial: ${courseTitle} (${updatedTrial.studentName})`;
+      const eventDescription = [
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+        `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
+        `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
+        `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
+        `Classroom Link: ${link}`,
+        updatedTrial.notes ? `Faculty Notes: ${updatedTrial.notes}` : "",
+      ].filter(Boolean).join("\n\n");
+
+      if (updatedTrial.courseId) {
+        await prisma.event.deleteMany({
+          where: {
+            courseId: updatedTrial.courseId,
+            title: { contains: updatedTrial.studentName },
+          },
+        });
+      }
+
+      await prisma.event.create({
+        data: {
+          title: eventTitle,
+          description: eventDescription,
+          dueDate: targetDate,
+          type: EventType.LIVE_SEMINAR,
+          courseId: updatedTrial.courseId || null,
+          userId: updatedTrial.studentId || updatedTrial.tutorId || null,
+        },
+      });
+
+      if (updatedTrial.studentId) {
+        const dateStr = targetDate.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        await prisma.notification.create({
+          data: {
+            userId: updatedTrial.studentId,
+            title: "🎉 Free Trial Confirmed!",
+            message: `Your 30-min trial session for "${courseTitle}" has been confirmed for ${dateStr}. Google Meet link is ready on your calendar!`,
+            type: "SUCCESS",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updatedTrial.studentId });
+      }
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Trial session confirmed and scheduled on the calendar!",
+        trial: updatedTrial,
+      });
+    }
+
+    if (action === "decline_trial") {
+      const { trialId, reason } = body;
+      if (!trialId) {
+        return NextResponse.json({ error: "Trial ID is required." }, { status: 400 });
+      }
+
+      const existingTrial = await prisma.trialRequest.findUnique({
+        where: { id: trialId },
+        include: { course: true },
+      });
+
+      if (!existingTrial) {
+        return NextResponse.json({ error: "Trial session not found." }, { status: 404 });
+      }
+
+      const updatedTrial = await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: {
+          status: TrialStatus.CANCELLED,
+          notes: reason?.trim() ? `[Declined: ${reason.trim()}]` : existingTrial.notes,
+        },
+      });
+
+      if (existingTrial.courseId) {
+        await prisma.event.deleteMany({
+          where: {
+            courseId: existingTrial.courseId,
+            title: { contains: existingTrial.studentName },
+          },
+        });
+      }
+
+      if (existingTrial.studentId) {
+        await prisma.notification.create({
+          data: {
+            userId: existingTrial.studentId,
+            title: "Trial Request Update",
+            message: `Your trial request for "${existingTrial.course?.title || "London A/L"}" was declined. ${reason ? `Reason: ${reason}` : "Please request another session slot."}`,
+            type: "INFO",
+            link: "/courses",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: existingTrial.studentId });
+      }
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Trial session has been declined.",
+        trial: updatedTrial,
+      });
+    }
+
     if (action === "reschedule_trial") {
       const { trialId, preferredDate, notes } = body;
       if (!trialId || !preferredDate) {
@@ -424,6 +571,7 @@ export async function POST(request: NextRequest) {
         data: {
           preferredDate: parsedDate,
           notes: notes !== undefined ? notes.trim() : undefined,
+          status: TrialStatus.CONFIRMED,
         },
         include: { course: true, tutor: true, student: true },
       });
@@ -449,6 +597,32 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "1-on-1 consultation rescheduled successfully.",
         trial: updatedTrial,
+      });
+    }
+
+    if (action === "unenroll_student") {
+      const { studentId, courseId, enrollmentId } = body;
+
+      if (enrollmentId) {
+        await prisma.enrollment.delete({ where: { id: enrollmentId } });
+      } else if (studentId && courseId) {
+        await prisma.enrollment.deleteMany({
+          where: { userId: studentId, courseId },
+        });
+      } else {
+        return NextResponse.json(
+          { error: "Student ID and Course ID are required to unenroll student." },
+          { status: 400 }
+        );
+      }
+
+      broadcastLMSEvent("ENROLLMENTS_CHANGED");
+      broadcastLMSEvent("USERS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Student successfully removed from the course.",
       });
     }
 

@@ -27,10 +27,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setUnverifiedEmail(null);
     setLoading(true);
 
     try {
@@ -46,7 +48,12 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error || "Invalid email or password. Please check your credentials.");
+        if (data.requireEmailVerification) {
+          setUnverifiedEmail(data.email || email);
+          setErrorMsg(data.error || "Please verify your email address to access your courses.");
+        } else {
+          setErrorMsg(data.error || "Invalid email or password. Please check your credentials.");
+        }
         setLoading(false);
         return;
       }
@@ -95,8 +102,8 @@ export default function LoginPage() {
                   className="w-full h-full object-contain drop-shadow-xs"
                 />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Sign In to Portal
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                Academic Member Sign In
               </h1>
               <p className="text-xs text-slate-500 max-w-xs mx-auto">
                 Enter your email address and password to access your dashboard.
@@ -104,9 +111,27 @@ export default function LoginPage() {
             </div>
 
             {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
+              <div
+                className={`p-3.5 rounded-xl text-xs space-y-2 animate-in fade-in ${
+                  unverifiedEmail
+                    ? "bg-amber-50 border border-amber-200 text-amber-900"
+                    : "bg-red-50 border border-red-200 text-red-700"
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="font-medium leading-relaxed">{errorMsg}</span>
+                </div>
+                {unverifiedEmail && (
+                  <div className="pt-1 pl-6">
+                    <Link
+                      href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`}
+                      className="inline-flex items-center gap-1.5 font-bold text-amber-950 underline hover:text-blue-700 transition-colors"
+                    >
+                      <span>Resend Verification Email &rarr;</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { hashPassword, attachSessionCookies } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { sendVerificationEmail } from "@/lib/email";
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
@@ -27,9 +29,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password.length < 8) {
+    if (password.length < 6) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters long" },
+        { error: "Password must be at least 6 characters long" },
         { status: 400 }
       );
     }
@@ -56,47 +58,64 @@ export async function POST(request: Request) {
         passwordHash: hashedPassword,
         phone: phone ? phone.trim() : null,
         role: Role.STUDENT,
+        emailVerified: null, // Requires email verification via Resend
         headline: `${qualification || "London A/L"} Student (${targetSeries || "Spring / Summer 2026"})`,
         bio: `Enrolled student studying ${examBoard || "London A/L & O/L"} curriculum.`,
         avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
       },
     });
 
-    const sampleCourse = await prisma.course.findFirst({
-      where: { status: "PUBLISHED" },
-    });
-
-    if (sampleCourse) {
-      await prisma.enrollment.create({
-        data: {
-          userId: newUser.id,
-          courseId: sampleCourse.id,
-        },
+    try {
+      const sampleCourse = await prisma.course.findFirst({
+        where: { status: "PUBLISHED" },
       });
+
+      if (sampleCourse) {
+        await prisma.enrollment.create({
+          data: {
+            userId: newUser.id,
+            courseId: sampleCourse.id,
+          },
+        });
+      }
+    } catch (enrollErr) {
+      console.warn("Non-critical initial enrollment skip:", enrollErr);
     }
 
-    const safeUser = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      headline: newUser.headline,
-    };
+    // Generate 32-byte secure verification token (valid for 24 hours)
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    const response = NextResponse.json({
-      success: true,
-      user: safeUser,
-      redirectTo: "/dashboard",
+    await prisma.emailVerificationToken.create({
+      data: {
+        token: verificationToken,
+        userId: newUser.id,
+        expiresAt,
+      },
     });
 
-    // Attach HMAC-signed HttpOnly session token + client UI sync cookies
-    attachSessionCookies(response, newUser);
+    // Send verification email via Resend (safeguarded against email provider issues)
+    try {
+      await sendVerificationEmail({
+        email: newUser.email,
+        name: newUser.name,
+        token: verificationToken,
+      });
+    } catch (emailErr) {
+      console.error("Non-fatal registration verification email send error:", emailErr);
+    }
 
-    return response;
-  } catch (error) {
+    return NextResponse.json({
+      success: true,
+      requireVerification: true,
+      email: newUser.email,
+      redirectTo: `/verify-email?email=${encodeURIComponent(newUser.email)}&sent=true`,
+      message: "Registration successful! A verification email has been sent to your inbox.",
+    });
+  } catch (error: any) {
     console.error("Register API error:", error);
     return NextResponse.json(
-      { error: "Registration failed. Please try again." },
+      { error: error?.message || "Registration failed. Please try again." },
       { status: 500 }
     );
   }

@@ -53,6 +53,7 @@ model User {
   headline      String?
   bio           String?
   phone         String?
+  emailVerified DateTime?      // Date & time student verified their email address
   publicKey     String?        // E2EE Public Key for client-side encryption
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -69,6 +70,7 @@ model User {
   badges         BadgeAward[]
   events         Event[]
   passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   tutorTrials    TrialRequest[] @relation("TutorTrials")
   studentTrials  TrialRequest[] @relation("StudentTrials")
 
@@ -267,6 +269,18 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("email_verification_tokens")
 }
 
 enum TrialStatus {

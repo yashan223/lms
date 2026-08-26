@@ -60,6 +60,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if student has verified their academic email
+    if (user.role === "STUDENT" && !user.emailVerified) {
+      return NextResponse.json(
+        {
+          error: "Please verify your academic email address before logging in.",
+          requireEmailVerification: true,
+          email: user.email,
+        },
+        { status: 403 }
+      );
+    }
+
     // Seamlessly upgrade legacy/plaintext password hashes to cryptographic scrypt
     if (isLegacyPasswordHash(user.passwordHash)) {
       try {

@@ -27,6 +27,8 @@ async function main() {
   const instructorPassHash = hashPassword("InstructorPass123!");
   const studentPassHash = hashPassword("StudentPass123!");
 
+  const now = new Date();
+
   // 1. Single Admin Account
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@edupulse.uk" },
@@ -34,6 +36,7 @@ async function main() {
       name: "Dr. Alastair Vance",
       passwordHash: adminPassHash,
       role: Role.ADMIN,
+      emailVerified: now,
       headline: "System Administrator",
       bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
@@ -43,6 +46,7 @@ async function main() {
       name: "Dr. Alastair Vance",
       passwordHash: adminPassHash,
       role: Role.ADMIN,
+      emailVerified: now,
       headline: "System Administrator",
       bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
@@ -56,6 +60,7 @@ async function main() {
       name: "Dr. Sarah Jenkins",
       passwordHash: instructorPassHash,
       role: Role.INSTRUCTOR,
+      emailVerified: now,
       headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
@@ -65,6 +70,7 @@ async function main() {
       name: "Dr. Sarah Jenkins",
       passwordHash: instructorPassHash,
       role: Role.INSTRUCTOR,
+      emailVerified: now,
       headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
@@ -78,6 +84,7 @@ async function main() {
       name: "S.Y.T. Perera",
       passwordHash: studentPassHash,
       role: Role.STUDENT,
+      emailVerified: now,
       phone: "+44 7700 900142",
       headline: "London A/L Mathematics & Science Student",
       bio: "Enrolled in Pure Mathematics (P1-P4), Physics, and Chemistry.",
@@ -88,6 +95,7 @@ async function main() {
       name: "S.Y.T. Perera",
       passwordHash: studentPassHash,
       role: Role.STUDENT,
+      emailVerified: now,
       phone: "+44 7700 900142",
       headline: "London A/L Mathematics & Science Student",
       bio: "Enrolled in Pure Mathematics (P1-P4), Physics, and Chemistry.",

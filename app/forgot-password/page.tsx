@@ -37,13 +37,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between">
-      <header className="bg-white border-b border-slate-200 py-2.5 px-4 sm:px-8 shadow-xs">
+      <header className="bg-white border-b border-slate-200 py-3 px-4 sm:px-8 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <img
               src="/logo-wide.png"
               alt="EduPulse London A/L & O/L Academy"
-              className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+              className="h-11 sm:h-13 w-auto object-contain transition-transform group-hover:scale-[1.02]"
             />
           </Link>
           <Link href="/login" className="text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors">
@@ -56,11 +56,11 @@ export default function ForgotPasswordPage() {
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
           <div className="p-6 sm:p-8 space-y-6">
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-2xl bg-transparent flex items-center justify-center mx-auto mb-1 overflow-hidden">
+              <div className="w-20 h-20 rounded-2xl bg-transparent flex items-center justify-center mx-auto mb-1 overflow-hidden">
                 <img
                   src="/logo-square.png"
                   alt="EduPulse Emblem"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain drop-shadow-xs"
                 />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">Forgot Password?</h1>

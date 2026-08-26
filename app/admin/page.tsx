@@ -892,7 +892,7 @@ export default function AdminDashboardPage() {
             <img
               src="/logo-wide.png"
               alt="EduPulse London A/L & O/L Academy"
-              className="h-9 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+              className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-[1.02]"
             />
           </Link>
 

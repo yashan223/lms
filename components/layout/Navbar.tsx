@@ -92,13 +92,13 @@ export function Navbar() {
 
   return (
     <header className="w-full z-40 bg-white/95 backdrop-blur-md text-slate-800 shadow-2xs relative border-b border-slate-200">
-      <div className="max-w-[1440px] mx-auto flex items-center justify-between min-h-[72px] px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto flex items-center justify-between min-h-[76px] px-4 sm:px-6 lg:px-8">
         {/* Left Brand */}
-        <Link href="/" className="flex items-center gap-2.5 group py-1.5">
+        <Link href="/" className="flex items-center gap-2.5 group py-2">
           <img
             src="/logo-wide.png"
             alt="EduPulse London A/L & O/L Academy"
-            className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+            className="h-12 sm:h-14 md:h-16 w-auto object-contain transition-transform group-hover:scale-[1.02]"
           />
         </Link>
 

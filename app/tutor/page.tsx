@@ -1045,7 +1045,7 @@ function TutorDashboardContent() {
               <img
                 src="/logo-wide.png"
                 alt="EduPulse London A/L & O/L Academy"
-                className="h-9 sm:h-10 w-auto object-contain transition-transform hover:scale-[1.02]"
+                className="h-11 sm:h-12 w-auto object-contain transition-transform hover:scale-[1.02]"
               />
             </Link>
 

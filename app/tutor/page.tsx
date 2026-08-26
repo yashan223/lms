@@ -65,6 +65,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
+import { getSafeMeetingLink } from "@/lib/utils";
 
 const formatForDateTimeInput = (date: Date) => {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -74,15 +75,6 @@ const formatForDateTimeInput = (date: Date) => {
   const hh = pad(date.getHours());
   const mm = pad(date.getMinutes());
   return `${y}-${m}-${d}T${hh}:${mm}`;
-};
-
-const getSafeMeetingLink = (link?: string | null) => {
-  if (!link || !link.trim()) return "https://meet.google.com/new";
-  const trimmed = link.trim();
-  if (trimmed.includes("edupulse-live") || trimmed.includes("xxx-yyyy-zzz")) {
-    return "https://meet.google.com/new";
-  }
-  return trimmed;
 };
 
 const formatSessionDuration = (startedAt?: string | Date | null, endedAt?: string | Date | null) => {
@@ -1621,7 +1613,7 @@ function TutorDashboardContent() {
                                 </span>
                                 {ev.meetingLink && (
                                   <a
-                                    href={getSafeMeetingLink(ev.meetingLink)}
+                                    href={getSafeMeetingLink(ev.meetingLink, ev.id)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:underline truncate max-w-[180px]"
@@ -1663,7 +1655,7 @@ function TutorDashboardContent() {
                               {isLive ? (
                                 <>
                                   <a
-                                    href={getSafeMeetingLink(ev.meetingLink)}
+                                    href={getSafeMeetingLink(ev.meetingLink, ev.id)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"

@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
+import { getSafeMeetingLink } from "@/lib/utils";
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -388,10 +389,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Class event not found" }, { status: 404 });
       }
 
-      let meetLink = meetingLink?.trim() || existing.meetingLink;
-      if (!meetLink || meetLink.includes("edupulse-live")) {
-        meetLink = "https://meet.google.com/new";
-      }
+      const meetLink = getSafeMeetingLink(meetingLink || existing.meetingLink, existing.id);
 
       const updated = await prisma.event.update({
         where: { id: eventId },
@@ -449,10 +447,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Class title and scheduled date are required." }, { status: 400 });
       }
 
-      let meetLink = meetingLink?.trim();
-      if (!meetLink) {
-        meetLink = "https://meet.google.com/new";
-      }
+      const meetLink = getSafeMeetingLink(
+        meetingLink,
+        `admin-class-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      );
 
       const fullDescription = [
         description?.trim() || "Live curriculum masterclass with Faculty.",

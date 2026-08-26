@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
+import { getSafeMeetingLink } from "@/lib/utils";
 import { EventType, TrialStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const meetingLink = "https://meet.google.com/new";
+      const meetingLink = getSafeMeetingLink(null, `trial-${studentEmail.trim()}-${Date.now()}`);
 
       const trial = await prisma.trialRequest.create({
         data: {
@@ -217,15 +218,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Trial session not found." }, { status: 404 });
       }
 
+      const link = getSafeMeetingLink(meetingLink || existingTrial.meetingLink, existingTrial.id);
+
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },
         data: {
           status: (status as TrialStatus) || undefined,
-          meetingLink: meetingLink?.trim() || undefined,
-          notes: notes?.trim() || undefined,
+          meetingLink: link,
+          notes: notes?.trim() || existingTrial.notes,
         },
         include: {
-          course: true,
+          course: {
+            include: { instructor: true },
+          },
           tutor: true,
           student: true,
         },
@@ -242,34 +247,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "reschedule_trial") {
-      const { trialId, preferredDate, notes } = body;
-      if (!trialId || !preferredDate) {
+      const { trialId, scheduledDate, meetingLink, notes } = body;
+      if (!trialId || !scheduledDate) {
         return NextResponse.json(
           { error: "Trial ID and preferred date & time are required." },
           { status: 400 }
         );
       }
 
-      const parsedDate = new Date(preferredDate);
-      if (isNaN(parsedDate.getTime())) {
-        return NextResponse.json(
-          { error: "Invalid date format provided." },
-          { status: 400 }
-        );
+      const existing = await prisma.trialRequest.findUnique({ where: { id: trialId } });
+      if (!existing) {
+        return NextResponse.json({ error: "Trial not found." }, { status: 404 });
       }
+
+      const link = getSafeMeetingLink(meetingLink || existing.meetingLink, existing.id);
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },
         data: {
-          preferredDate: parsedDate,
-          notes: notes !== undefined ? notes.trim() : undefined,
+          preferredDate: new Date(scheduledDate),
+          meetingLink: link,
+          notes: notes?.trim() || existing.notes,
           status: TrialStatus.CONFIRMED,
         },
         include: {
           course: {
-            include: {
-              instructor: true,
-            },
+            include: { instructor: true },
           },
           tutor: true,
           student: true,
@@ -283,7 +286,8 @@ export async function POST(request: NextRequest) {
             title: { contains: updatedTrial.studentName },
           },
           data: {
-            dueDate: parsedDate,
+            dueDate: new Date(scheduledDate),
+            meetingLink: link,
             status: "SCHEDULED",
             endedAt: null,
           },

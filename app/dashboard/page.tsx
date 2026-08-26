@@ -49,6 +49,7 @@ import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
+import { getSafeMeetingLink } from "@/lib/utils";
 
 const formatForDateTimeInput = (date: Date) => {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -58,15 +59,6 @@ const formatForDateTimeInput = (date: Date) => {
   const hh = pad(date.getHours());
   const mm = pad(date.getMinutes());
   return `${y}-${m}-${d}T${hh}:${mm}`;
-};
-
-const getSafeMeetingLink = (link?: string | null) => {
-  if (!link || !link.trim()) return "https://meet.google.com/new";
-  const trimmed = link.trim();
-  if (trimmed.includes("edupulse-live") || trimmed.includes("xxx-yyyy-zzz")) {
-    return "https://meet.google.com/new";
-  }
-  return trimmed;
 };
 
 interface UserProfile {
@@ -264,7 +256,7 @@ function DashboardContent() {
       setSeenLiveEventIds((prev) => new Set(prev).add(liveEv.id));
       setLiveClassBanner({
         title: liveEv.title,
-        meetingLink: liveEv.meetingLink || "https://meet.google.com/new",
+        meetingLink: getSafeMeetingLink(liveEv.meetingLink, liveEv.id),
       });
       setBannerVisible(true);
     }
@@ -1184,7 +1176,7 @@ function DashboardContent() {
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                           {ev.status === "LIVE" ? (
                             <a
-                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
+                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0], ev.id)}
                               target="_blank"
                               rel="noreferrer"
                               className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/25 inline-flex items-center gap-1.5 animate-pulse"
@@ -1206,7 +1198,7 @@ function DashboardContent() {
                             </span>
                           ) : (ev.description?.includes("http") || ev.meetingLink) ? (
                             <a
-                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
+                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0], ev.id)}
                               target="_blank"
                               rel="noreferrer"
                               className="px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-semibold text-xs border border-emerald-200 transition-all shadow-2xs inline-flex items-center gap-1"

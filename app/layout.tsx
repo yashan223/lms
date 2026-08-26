@@ -13,16 +13,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduPulse | Accredited Learning Platform for Students, Instructors & Admins",
+  title: "EduPulse | London A/L & O/L Academy",
   description:
     "Unified multi-role learning platform with accredited courses, interactive faculty curriculum studio, and system administrator control center.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
+      { url: "/logo-square.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/logo-square.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   keywords: [
     "LMS",
     "Learning Management System",
     "Accredited Courses",
     "University Education",
     "Academic Governance",
-    "Tutor Studio",
+    "Instructor Studio",
     "Student Learning",
     "Admin Portal",
   ],

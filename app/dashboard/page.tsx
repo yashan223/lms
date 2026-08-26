@@ -165,6 +165,17 @@ function DashboardContent() {
   const [eventSuccess, setEventSuccess] = useState<string | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
+  // Student Reschedule Modal State
+  const [showStudentRescheduleModal, setShowStudentRescheduleModal] = useState(false);
+  const [rescheduleTargetEvent, setRescheduleTargetEvent] = useState<any | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [reschedulingSession, setReschedulingSession] = useState(false);
+  const [rescheduleStatusMsg, setRescheduleStatusMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   // Real File Upload State
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -178,6 +189,60 @@ function DashboardContent() {
   } | null>(null);
   const [bannerVisible, setBannerVisible] = useState(false);
   const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
+
+  // Open Student Reschedule Modal
+  const openStudentReschedule = (event: any) => {
+    setRescheduleTargetEvent(event);
+    const d = new Date(event.dueDate);
+    setRescheduleDate(formatForDateTimeInput(d));
+    setRescheduleReason("");
+    setRescheduleStatusMsg(null);
+    setShowStudentRescheduleModal(true);
+  };
+
+  // Submit Student Reschedule
+  const handleStudentConfirmReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rescheduleDate || !rescheduleTargetEvent) return;
+
+    try {
+      setReschedulingSession(true);
+      setRescheduleStatusMsg(null);
+
+      const res = await fetch("/api/dashboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "reschedule_event",
+          eventId: rescheduleTargetEvent.id,
+          scheduledDate: rescheduleDate,
+          reason: rescheduleReason,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setRescheduleStatusMsg({
+          type: "success",
+          text: "Session rescheduled successfully! Your calendar has been updated.",
+        });
+        fetchDashboardData();
+        setTimeout(() => setShowStudentRescheduleModal(false), 1200);
+      } else {
+        setRescheduleStatusMsg({
+          type: "error",
+          text: data.error || "Failed to reschedule session.",
+        });
+      }
+    } catch (err) {
+      setRescheduleStatusMsg({
+        type: "error",
+        text: "Network error while rescheduling session.",
+      });
+    } finally {
+      setReschedulingSession(false);
+    }
+  };
 
   // Fetch real records from server
   const fetchDashboardData = async () => {
@@ -1219,6 +1284,15 @@ function DashboardContent() {
                             </a>
                           ) : null}
 
+                          <button
+                            onClick={() => openStudentReschedule(ev)}
+                            className="px-2.5 py-1 rounded-md border border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-600 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                            title="Reschedule Session"
+                          >
+                            <Clock className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Reschedule</span>
+                          </button>
+
                           <a
                             href={buildGoogleCalendarUrl({
                               title: ev.title,
@@ -1317,15 +1391,24 @@ function DashboardContent() {
                             minute: "2-digit",
                           })}
                         </span>
-                        <span className="text-blue-600 font-semibold">
-                          {ev.type === "LIVE_SEMINAR"
-                            ? "Live Seminar"
-                            : ev.type === "DEADLINE"
-                            ? "Deadline"
-                            : ev.type === "WORKSHOP"
-                            ? "Workshop"
-                            : ev.type?.replace("_", " ")}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => openStudentReschedule(ev)}
+                            className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer"
+                          >
+                            Reschedule
+                          </button>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-slate-600 font-semibold">
+                            {ev.type === "LIVE_SEMINAR"
+                              ? "Live Seminar"
+                              : ev.type === "DEADLINE"
+                              ? "Deadline"
+                              : ev.type === "WORKSHOP"
+                              ? "Workshop"
+                              : ev.type?.replace("_", " ")}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -1783,6 +1866,129 @@ function DashboardContent() {
           fetchDashboardData();
         }}
       />
+
+      {/* MODAL 4: STUDENT RESCHEDULE SESSION MODAL */}
+      {showStudentRescheduleModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center shadow-sm">
+                  <CalendarCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Reschedule Session
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Select a new preferred date & time for this class or consultation
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowStudentRescheduleModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {rescheduleStatusMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  rescheduleStatusMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}
+              >
+                {rescheduleStatusMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span>{rescheduleStatusMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleStudentConfirmReschedule} className="space-y-4 text-xs">
+              {/* Target event details */}
+              <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 space-y-1">
+                <div className="font-bold text-blue-950 text-xs">
+                  {rescheduleTargetEvent?.title || "Live Academic Session"}
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  {rescheduleTargetEvent?.course?.title || "London A/L Curriculum"}
+                </div>
+                {rescheduleTargetEvent?.dueDate && (
+                  <div className="text-[10px] text-slate-500 font-mono">
+                    Currently Scheduled: {new Date(rescheduleTargetEvent.dueDate).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  New Preferred Date & Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  Reason for Rescheduling / Note to Instructor (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Schedule clash with school examination, requesting to move to tomorrow afternoon..."
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowStudentRescheduleModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={reschedulingSession || !rescheduleDate}
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
+                >
+                  {reschedulingSession ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating Schedule...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CalendarCheck className="w-3.5 h-3.5" />
+                      <span>Confirm Reschedule</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* End-to-End Encrypted Chat Drawer */}
       {user && (

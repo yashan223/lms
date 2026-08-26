@@ -232,6 +232,19 @@ function TutorDashboardContent() {
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
+  // Reschedule Modal State
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleTargetEvent, setRescheduleTargetEvent] = useState<ScheduledClassEvent | null>(null);
+  const [rescheduleTargetTrial, setRescheduleTargetTrial] = useState<any | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleMeetingLink, setRescheduleMeetingLink] = useState("");
+  const [rescheduleNotes, setRescheduleNotes] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduleStatusMsg, setRescheduleStatusMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   // Student Details Modal & Chat
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<StudentRecord | null>(null);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
@@ -896,6 +909,98 @@ function TutorDashboardContent() {
     d.setHours(10, 0, 0, 0);
     setNewClassDate(formatForDateTimeInput(d));
     setShowScheduleModal(true);
+  };
+
+  const openRescheduleForClass = (event: ScheduledClassEvent) => {
+    setRescheduleTargetEvent(event);
+    setRescheduleTargetTrial(null);
+    setRescheduleDate(formatForDateTimeInput(new Date(event.dueDate)));
+    setRescheduleMeetingLink(event.meetingLink || "");
+    setRescheduleNotes(event.description || "");
+    setRescheduleStatusMsg(null);
+    setShowRescheduleModal(true);
+  };
+
+  const openRescheduleForTrial = (trial: any) => {
+    setRescheduleTargetTrial(trial);
+    setRescheduleTargetEvent(null);
+    setRescheduleDate(formatForDateTimeInput(new Date(trial.preferredDate)));
+    setRescheduleMeetingLink(trial.meetingLink || "");
+    setRescheduleNotes(trial.notes || "");
+    setRescheduleStatusMsg(null);
+    setShowRescheduleModal(true);
+  };
+
+  const handleConfirmReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rescheduleDate) return;
+
+    try {
+      setRescheduling(true);
+      setRescheduleStatusMsg(null);
+
+      if (rescheduleTargetEvent) {
+        const res = await fetch("/api/tutor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reschedule_class",
+            eventId: rescheduleTargetEvent.id,
+            scheduledDate: rescheduleDate,
+            meetingLink: rescheduleMeetingLink,
+            description: rescheduleNotes,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          setRescheduleStatusMsg({
+            type: "success",
+            text: "Class session rescheduled successfully!",
+          });
+          fetchTutorData();
+          setTimeout(() => setShowRescheduleModal(false), 1200);
+        } else {
+          setRescheduleStatusMsg({
+            type: "error",
+            text: data.error || "Failed to reschedule class.",
+          });
+        }
+      } else if (rescheduleTargetTrial) {
+        const res = await fetch("/api/tutor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reschedule_trial",
+            trialId: rescheduleTargetTrial.id,
+            preferredDate: rescheduleDate,
+            notes: rescheduleNotes,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          setRescheduleStatusMsg({
+            type: "success",
+            text: "1-on-1 consultation rescheduled successfully!",
+          });
+          fetchTutorData();
+          setTimeout(() => setShowRescheduleModal(false), 1200);
+        } else {
+          setRescheduleStatusMsg({
+            type: "error",
+            text: data.error || "Failed to reschedule consultation.",
+          });
+        }
+      }
+    } catch (err) {
+      setRescheduleStatusMsg({
+        type: "error",
+        text: "Network error while rescheduling session.",
+      });
+    } finally {
+      setRescheduling(false);
+    }
   };
 
   if (loading && !tutor) {
@@ -1619,6 +1724,14 @@ function TutorDashboardContent() {
                                   >
                                     Start
                                   </button>
+                                  <button
+                                    onClick={() => openRescheduleForClass(ev)}
+                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                    title="Reschedule Class"
+                                  >
+                                    <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>Reschedule</span>
+                                  </button>
                                   <a
                                     href={buildGoogleCalendarUrl({
                                       title: ev.title,
@@ -1805,6 +1918,14 @@ function TutorDashboardContent() {
                           </div>
 
                           <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                            <button
+                              onClick={() => openRescheduleForTrial(tr)}
+                              className="px-2.5 py-1 rounded-md border border-slate-200 text-xs font-semibold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                              title="Reschedule Consultation"
+                            >
+                              <Clock className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Reschedule</span>
+                            </button>
                             <a
                               href={`mailto:${tr.studentEmail}?subject=EduPulse Trial Session&body=Dear ${tr.studentName},`}
                               className="px-2.5 py-1 rounded-md border border-slate-200 text-xs font-semibold hover:bg-slate-50"
@@ -2854,6 +2975,132 @@ function TutorDashboardContent() {
       )}
 
 
+
+      {/* Reschedule Class / Trial Session Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center shadow-sm">
+                  <CalendarCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    {rescheduleTargetEvent ? "Reschedule Live Class Session" : "Reschedule 1-on-1 Consultation"}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Update scheduled date & time and automatically notify students
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRescheduleModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {rescheduleStatusMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  rescheduleStatusMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}
+              >
+                {rescheduleStatusMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span>{rescheduleStatusMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmReschedule} className="space-y-4 text-xs">
+              {/* Target info card */}
+              <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 space-y-1">
+                <div className="font-bold text-blue-950 text-xs">
+                  {rescheduleTargetEvent?.title || rescheduleTargetTrial?.topic || "Consultation Session"}
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  {rescheduleTargetEvent?.course?.title || rescheduleTargetTrial?.course?.title || "London A/L Masterclass"}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  New Scheduled Date & Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {rescheduleTargetEvent && (
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700 block">
+                    Google Meet / Zoom URL (Optional)
+                  </label>
+                  <Input
+                    placeholder="https://meet.google.com/..."
+                    value={rescheduleMeetingLink}
+                    onChange={(e) => setRescheduleMeetingLink(e.target.value)}
+                    className="rounded-xl h-9 text-xs font-mono"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  Reschedule Notes / Reason (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Session moved by 1 hour due to student schedule adjustment..."
+                  value={rescheduleNotes}
+                  onChange={(e) => setRescheduleNotes(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRescheduleModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={rescheduling || !rescheduleDate}
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
+                >
+                  {rescheduling ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Rescheduling...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CalendarCheck className="w-3.5 h-3.5" />
+                      <span>Confirm Reschedule</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Student Details Inspection Modal */}
       {selectedStudentForModal && (

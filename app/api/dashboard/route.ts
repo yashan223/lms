@@ -309,6 +309,56 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (action === "reschedule_event") {
+      const { eventId, scheduledDate, reason } = body;
+      if (!eventId || !scheduledDate) {
+        return NextResponse.json(
+          { error: "Event ID and new scheduled date & time are required." },
+          { status: 400 }
+        );
+      }
+
+      const parsedDate = new Date(scheduledDate);
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid date format provided." },
+          { status: 400 }
+        );
+      }
+
+      const existing = await prisma.event.findUnique({ where: { id: eventId } });
+      if (!existing) {
+        return NextResponse.json({ error: "Session event not found." }, { status: 404 });
+      }
+
+      let updatedDesc = existing.description || "";
+      if (reason && reason.trim()) {
+        updatedDesc = `${updatedDesc}\n\n[Rescheduled by Student: ${reason.trim()}]`.trim();
+      }
+
+      const updatedEvent = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          dueDate: parsedDate,
+          description: updatedDesc,
+          status: "SCHEDULED",
+          endedAt: null,
+        },
+        include: {
+          course: true,
+          user: true,
+        },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Class session rescheduled successfully.",
+        event: updatedEvent,
+      });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
     console.error("Dashboard POST error:", error);

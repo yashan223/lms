@@ -248,6 +248,67 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 3. RESCHEDULE TRIAL (STUDENTS & INSTRUCTORS)
+    if (action === "reschedule_trial") {
+      const { trialId, preferredDate, notes } = body;
+      if (!trialId || !preferredDate) {
+        return NextResponse.json(
+          { error: "Trial ID and preferred date & time are required." },
+          { status: 400 }
+        );
+      }
+
+      const parsedDate = new Date(preferredDate);
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid date format provided." },
+          { status: 400 }
+        );
+      }
+
+      const updatedTrial = await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: {
+          preferredDate: parsedDate,
+          notes: notes !== undefined ? notes.trim() : undefined,
+          status: TrialStatus.CONFIRMED,
+        },
+        include: {
+          course: {
+            include: {
+              instructor: true,
+            },
+          },
+          tutor: true,
+          student: true,
+        },
+      });
+
+      // Synchronize linked event if present
+      if (updatedTrial.courseId) {
+        await prisma.event.updateMany({
+          where: {
+            courseId: updatedTrial.courseId,
+            title: { contains: updatedTrial.studentName },
+          },
+          data: {
+            dueDate: parsedDate,
+            status: "SCHEDULED",
+            endedAt: null,
+          },
+        });
+      }
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Trial session rescheduled successfully.",
+        trial: updatedTrial,
+      });
+    }
+
     return NextResponse.json({ error: "Invalid action specified." }, { status: 400 });
   } catch (error: any) {
     console.error("Trials API POST error:", error);

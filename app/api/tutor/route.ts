@@ -388,6 +388,105 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 6. RESCHEDULE CLASS SESSION
+    if (action === "reschedule_class") {
+      const { eventId, scheduledDate, meetingLink, description, title } = body;
+      if (!eventId || !scheduledDate) {
+        return NextResponse.json(
+          { error: "Event ID and new scheduled date & time are required." },
+          { status: 400 }
+        );
+      }
+
+      const parsedDate = new Date(scheduledDate);
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid date format provided." },
+          { status: 400 }
+        );
+      }
+
+      const existing = await prisma.event.findUnique({ where: { id: eventId } });
+      if (!existing) {
+        return NextResponse.json({ error: "Class session not found." }, { status: 404 });
+      }
+
+      let updatedDesc = description !== undefined ? description.trim() : existing.description;
+
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          dueDate: parsedDate,
+          title: title ? title.trim() : undefined,
+          meetingLink: meetingLink ? meetingLink.trim() : undefined,
+          description: updatedDesc,
+          status: "SCHEDULED",
+          endedAt: null,
+        },
+        include: { course: true, user: true },
+      });
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Class session rescheduled successfully.",
+        event: updated,
+      });
+    }
+
+    // 7. RESCHEDULE 1-ON-1 TRIAL SESSION
+    if (action === "reschedule_trial") {
+      const { trialId, preferredDate, notes } = body;
+      if (!trialId || !preferredDate) {
+        return NextResponse.json(
+          { error: "Trial ID and preferred date & time are required." },
+          { status: 400 }
+        );
+      }
+
+      const parsedDate = new Date(preferredDate);
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid date format provided." },
+          { status: 400 }
+        );
+      }
+
+      const updatedTrial = await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: {
+          preferredDate: parsedDate,
+          notes: notes !== undefined ? notes.trim() : undefined,
+        },
+        include: { course: true, tutor: true, student: true },
+      });
+
+      // Also update linked calendar event if present
+      if (updatedTrial.courseId) {
+        await prisma.event.updateMany({
+          where: {
+            courseId: updatedTrial.courseId,
+            title: { contains: updatedTrial.studentName },
+          },
+          data: {
+            dueDate: parsedDate,
+            status: "SCHEDULED",
+            endedAt: null,
+          },
+        });
+      }
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "1-on-1 consultation rescheduled successfully.",
+        trial: updatedTrial,
+      });
+    }
+
     return NextResponse.json({ error: "Invalid action." }, { status: 400 });
   } catch (error: any) {
     console.error("Tutor API POST error:", error);

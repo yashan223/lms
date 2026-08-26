@@ -818,7 +818,7 @@ function DashboardContent() {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group py-1">
               <img
-                src="/logo-wide.jpg"
+                src="/logo-wide.png"
                 alt="EduPulse London A/L & O/L Academy"
                 className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-[1.02]"
               />

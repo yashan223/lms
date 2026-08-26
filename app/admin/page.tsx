@@ -890,7 +890,7 @@ export default function AdminDashboardPage() {
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <img
-              src="/logo-wide.jpg"
+              src="/logo-wide.png"
               alt="EduPulse London A/L & O/L Academy"
               className="h-9 w-auto object-contain transition-transform group-hover:scale-[1.02]"
             />

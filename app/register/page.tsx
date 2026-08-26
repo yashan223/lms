@@ -92,7 +92,7 @@ export default function RegisterPage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <img
-              src="/logo-wide.jpg"
+              src="/logo-wide.png"
               alt="EduPulse London A/L & O/L Academy"
               className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-[1.02]"
             />
@@ -113,11 +113,11 @@ export default function RegisterPage() {
           <div className="p-6 sm:p-10 space-y-6">
             {/* Title & Subtitle */}
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-1 overflow-hidden shadow-sm border border-slate-100">
+              <div className="w-16 h-16 rounded-2xl bg-transparent flex items-center justify-center mx-auto mb-1 overflow-hidden">
                 <img
-                  src="/logo-square.jpg"
+                  src="/logo-square.png"
                   alt="EduPulse Emblem"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">

@@ -96,7 +96,7 @@ export function Navbar() {
         {/* Left Brand */}
         <Link href="/" className="flex items-center gap-2.5 group py-1.5">
           <img
-            src="/logo-wide.jpg"
+            src="/logo-wide.png"
             alt="EduPulse London A/L & O/L Academy"
             className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
           />

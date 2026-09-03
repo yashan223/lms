@@ -1178,7 +1178,7 @@ function TutorDashboardContent() {
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
         <p className="text-sm font-semibold tracking-wider uppercase text-blue-200">
-          Loading Instructor Studio...
+          Loading Tutor Studio...
         </p>
       </div>
     );
@@ -1206,14 +1206,14 @@ function TutorDashboardContent() {
                 href="/tutor"
                 className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
               >
-                Instructor Studio
+                Tutor
               </Link>
             </nav>
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge variant="roleInstructor" className="text-[11px] px-2.5 py-1 font-bold">
-              Instructor
+            <Badge variant="roleTutor" className="text-[11px] px-2.5 py-1 font-bold">
+              Tutor
             </Badge>
 
             <button
@@ -1225,7 +1225,7 @@ function TutorDashboardContent() {
               <span className="hidden sm:inline">Messages</span>
             </button>
 
-            <NotificationBell userRole="INSTRUCTOR" />
+            <NotificationBell userRole="TUTOR" />
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
@@ -3446,7 +3446,11 @@ function TutorDashboardContent() {
                   type="datetime-local"
                   required
                   value={newClassDate}
-                  onChange={(e) => setNewClassDate(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewClassDate(val);
+                    if (val) (e.target as HTMLInputElement).blur();
+                  }}
                   className="rounded-xl h-9 text-xs"
                 />
               </div>
@@ -3568,7 +3572,11 @@ function TutorDashboardContent() {
                   type="datetime-local"
                   required
                   value={rescheduleDate}
-                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRescheduleDate(val);
+                    if (val) (e.target as HTMLInputElement).blur();
+                  }}
                   className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
@@ -3791,7 +3799,11 @@ function TutorDashboardContent() {
                   type="datetime-local"
                   required
                   value={confirmDate}
-                  onChange={(e) => setConfirmDate(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setConfirmDate(val);
+                    if (val) (e.target as HTMLInputElement).blur();
+                  }}
                   className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <p className="text-[11px] text-slate-500">
@@ -3963,7 +3975,7 @@ export default function TutorDashboardPage() {
         <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
           <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
           <p className="text-sm font-semibold tracking-wider uppercase text-blue-200">
-            Initializing Instructor Studio...
+            Initializing Tutor Studio...
           </p>
         </div>
       }

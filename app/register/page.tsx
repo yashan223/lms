@@ -17,6 +17,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { CountrySelector } from "@/components/ui/CountrySelector";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
+  const [country, setCountry] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -63,6 +65,7 @@ export default function RegisterPage() {
           phone,
           password,
           qualification,
+          country,
         }),
       });
 
@@ -185,12 +188,27 @@ export default function RegisterPage() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Qualification Program
+                    Country of Residence
                   </label>
+                  <CountrySelector
+                    value={country}
+                    onChange={(selected) => setCountry(selected)}
+                    placeholder="Select country..."
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Qualification Program
+                </label>
+                <div className="relative">
+                  <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <select
                     value={qualification}
                     onChange={(e) => setQualification(e.target.value)}
-                    className="w-full h-11 rounded-xl border border-slate-200 px-3 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
+                    className="w-full h-11 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
                   >
                     <option value="London A/L (IAL)">London A/L (IAL AS & A2)</option>
                     <option value="London O/L (IGCSE)">London O/L (IGCSE Foundation)</option>
@@ -279,7 +297,7 @@ export default function RegisterPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmedRegister}
         title="Confirm Student Registration"
-        description={`You are registering as a ${qualification} student. Your official student profile will be registered with the academy.`}
+        description={`You are registering as a ${qualification} student${country ? ` from ${country}` : ""}. Your official student profile will be registered with the academy.`}
         confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"

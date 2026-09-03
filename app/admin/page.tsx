@@ -2965,7 +2965,11 @@ export default function AdminDashboardPage() {
                     type="datetime-local"
                     required
                     value={newClassDate}
-                    onChange={(e) => setNewClassDate(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewClassDate(val);
+                      if (val) (e.target as HTMLInputElement).blur();
+                    }}
                     className="w-full h-9 px-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500"
                   />
                 </div>

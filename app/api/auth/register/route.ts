@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, phone, qualification, examBoard, targetSeries } = await request.json();
+    const { name, email, password, phone, qualification, examBoard, targetSeries, country } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -59,8 +59,8 @@ export async function POST(request: Request) {
         phone: phone ? phone.trim() : null,
         role: Role.STUDENT,
         emailVerified: null, // Requires email verification via Resend
-        headline: `${qualification || "London A/L"} Student (${targetSeries || "Spring / Summer 2026"})`,
-        bio: `Enrolled student studying ${examBoard || "London A/L & O/L"} curriculum.`,
+        headline: `${qualification || "London A/L"} Student${country ? ` • ${country}` : ""} (${targetSeries || "Spring / Summer 2026"})`,
+        bio: `Enrolled student ${country ? `from ${country} ` : ""}studying ${examBoard || "London A/L & O/L"} curriculum.`,
         avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
       },
     });

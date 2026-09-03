@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           include: {
             transactions: {
               orderBy: { createdAt: "desc" },
-              take: 10,
+              take: 50,
             },
           },
         },

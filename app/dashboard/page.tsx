@@ -44,6 +44,10 @@ import {
   Coins,
   CreditCard,
   History,
+  Receipt,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ShoppingBag,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -141,6 +145,8 @@ function DashboardContent() {
   const [tokenBalance, setTokenBalance] = useState<number>(40);
   const [tokenTransactions, setTokenTransactions] = useState<any[]>([]);
   const [showBuyTokensModal, setShowBuyTokensModal] = useState(false);
+  const [showPurchaseHistoryModal, setShowPurchaseHistoryModal] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<"ALL" | "PURCHASE" | "SPEND">("ALL");
   const [tokenPurchasing, setTokenPurchasing] = useState(false);
   const [tokenFeedbackMsg, setTokenFeedbackMsg] = useState("");
 
@@ -955,6 +961,19 @@ function DashboardContent() {
                 >
                   Top Up Packs &gt;
                 </button>
+              </div>
+
+              <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  onClick={() => setShowPurchaseHistoryModal(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-blue-700 transition-colors cursor-pointer group"
+                >
+                  <History className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-600" />
+                  <span>Purchasing History</span>
+                </button>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono font-bold">
+                  {tokenTransactions.length} records
+                </span>
               </div>
             </div>
 
@@ -2094,6 +2113,250 @@ function DashboardContent() {
                 <span>Zero transaction fees. Instant credit to your balance.</span>
               </div>
               <span className="font-mono font-bold text-slate-700">Current: {tokenBalance} Hrs</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Purchasing & Token Transaction History Modal */}
+      {showPurchaseHistoryModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 space-y-5 max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-700 flex items-center justify-center shadow-2xs">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    Purchasing & Token History
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Complete audit ledger of your token packages, hour allocations, and credits.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPurchaseHistoryModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Summary Cards */}
+            <div className="grid grid-cols-3 gap-3 shrink-0">
+              <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80">
+                <div className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Available Balance</div>
+                <div className="text-xl font-black text-amber-950 flex items-baseline gap-1 mt-0.5">
+                  <span>{tokenBalance}</span>
+                  <span className="text-xs font-bold text-amber-700">Hours</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
+                <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Total Purchased</div>
+                <div className="text-xl font-black text-emerald-950 flex items-baseline gap-1 mt-0.5">
+                  <span>
+                    +{tokenTransactions
+                      .filter((tx) => tx.type === "PURCHASE" || tx.type === "BONUS" || tx.amount > 0)
+                      .reduce((acc, tx) => acc + Math.abs(tx.amount || 0), 0)}
+                  </span>
+                  <span className="text-xs font-bold text-emerald-700">Hours</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Total Allocated</div>
+                <div className="text-xl font-black text-slate-900 flex items-baseline gap-1 mt-0.5">
+                  <span>
+                    {tokenTransactions
+                      .filter((tx) => tx.type === "SPEND" || tx.amount < 0)
+                      .reduce((acc, tx) => acc + Math.abs(tx.amount || 0), 0)}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">Hours</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center justify-between gap-2 shrink-0 pt-1">
+              <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-bold">
+                <button
+                  onClick={() => setHistoryFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    historyFilter === "ALL"
+                      ? "bg-white text-slate-900 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  All ({tokenTransactions.length})
+                </button>
+                <button
+                  onClick={() => setHistoryFilter("PURCHASE")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    historyFilter === "PURCHASE"
+                      ? "bg-white text-emerald-700 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Purchases ({tokenTransactions.filter((t) => t.type === "PURCHASE" || t.type === "BONUS" || t.amount > 0).length})
+                </button>
+                <button
+                  onClick={() => setHistoryFilter("SPEND")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    historyFilter === "SPEND"
+                      ? "bg-white text-blue-700 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Spent ({tokenTransactions.filter((t) => t.type === "SPEND" || t.amount < 0).length})
+                </button>
+              </div>
+
+              <Button
+                size="sm"
+                onClick={() => {
+                  setShowPurchaseHistoryModal(false);
+                  setShowBuyTokensModal(true);
+                }}
+                className="bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold rounded-xl px-3 cursor-pointer shadow-2xs h-8 flex items-center gap-1.5"
+              >
+                <Coins className="w-3.5 h-3.5 fill-amber-400 text-amber-300" />
+                <span>Top Up Hours</span>
+              </Button>
+            </div>
+
+            {/* Transaction List */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 min-h-[220px]">
+              {tokenTransactions.length === 0 ? (
+                <div className="py-12 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                    <Receipt className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-sm text-slate-800">No transactions recorded yet</h4>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Purchase a 6h, 16h, or 24h learning token bundle to begin scheduling 1-on-1 tutoring sessions.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setShowPurchaseHistoryModal(false);
+                      setShowBuyTokensModal(true);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    View Hour Packages
+                  </Button>
+                </div>
+              ) : (
+                tokenTransactions
+                  .filter((tx) => {
+                    if (historyFilter === "PURCHASE") {
+                      return tx.type === "PURCHASE" || tx.type === "BONUS" || tx.amount > 0;
+                    }
+                    if (historyFilter === "SPEND") {
+                      return tx.type === "SPEND" || tx.amount < 0;
+                    }
+                    return true;
+                  })
+                  .map((tx) => {
+                    const isCredit = tx.amount > 0 || tx.type === "PURCHASE" || tx.type === "BONUS";
+                    return (
+                      <div
+                        key={tx.id}
+                        className="p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50/50 transition-colors flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl shrink-0 flex items-center justify-center ${
+                              isCredit
+                                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                                : "bg-blue-50 text-blue-600 border border-blue-200"
+                            }`}
+                          >
+                            {isCredit ? (
+                              <ArrowDownLeft className="w-4 h-4" />
+                            ) : (
+                              <ArrowUpRight className="w-4 h-4" />
+                            )}
+                          </div>
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-bold text-xs text-slate-900 truncate">
+                                {tx.description || (isCredit ? "Purchased Hour Tokens" : "Spent Hour Tokens")}
+                              </h5>
+                              <span
+                                className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
+                                  tx.type === "PURCHASE"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : tx.type === "BONUS"
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "bg-slate-100 text-slate-700"
+                                }`}
+                              >
+                                {tx.type || (isCredit ? "PURCHASE" : "SPEND")}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                              <span>
+                                {tx.createdAt
+                                  ? new Date(tx.createdAt).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : "Recently"}
+                              </span>
+                              {tx.referenceId && (
+                                <>
+                                  <span>•</span>
+                                  <span className="font-mono text-[10px] text-slate-400 truncate">
+                                    Ref: {tx.referenceId}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div
+                            className={`text-sm font-black font-mono ${
+                              isCredit ? "text-emerald-600" : "text-slate-800"
+                            }`}
+                          >
+                            {isCredit ? `+${Math.abs(tx.amount)}` : `-${Math.abs(tx.amount)}`} Hrs
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-medium">
+                            {isCredit ? "Credited" : "Allocated"}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center justify-between text-xs text-slate-600 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-slate-500" />
+                <span>Showing {tokenTransactions.length} transaction entries</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPurchaseHistoryModal(false)}
+                className="h-7 text-xs rounded-xl cursor-pointer"
+              >
+                Close
+              </Button>
             </div>
           </div>
         </div>

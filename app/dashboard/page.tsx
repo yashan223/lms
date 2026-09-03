@@ -1330,10 +1330,10 @@ function DashboardContent() {
                           ) : userRole === "STUDENT" ? (
                             <span
                               className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold inline-flex items-center gap-1 cursor-default select-none"
-                              title="The meeting room will automatically unlock when your instructor starts the session"
+                              title="The meeting room will automatically unlock when your tutor starts the session"
                             >
                               <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Waiting for Instructor</span>
+                              <span>Waiting for Tutor</span>
                             </span>
                           ) : (ev.description?.includes("http") || ev.meetingLink) ? (
                             <a

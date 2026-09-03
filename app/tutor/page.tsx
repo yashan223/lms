@@ -1200,15 +1200,6 @@ function TutorDashboardContent() {
                 className="h-11 sm:h-12 w-auto object-contain transition-transform hover:scale-[1.02]"
               />
             </Link>
-
-            <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
-              <Link
-                href="/tutor"
-                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold"
-              >
-                Tutor
-              </Link>
-            </nav>
           </div>
 
           <div className="flex items-center gap-3">

@@ -94,6 +94,7 @@ export function EncryptedChatDrawer({
   };
 
   const fetchConversations = async () => {
+    if (!currentUser?.id) return;
     try {
       setLoadingConversations(true);
       const res = await fetch("/api/chat?action=conversations");
@@ -109,6 +110,7 @@ export function EncryptedChatDrawer({
   };
 
   const fetchContacts = async () => {
+    if (!currentUser?.id) return;
     try {
       const res = await fetch("/api/chat?action=contacts");
       if (res.ok) {
@@ -121,16 +123,17 @@ export function EncryptedChatDrawer({
   };
 
   useEffect(() => {
-    fetchConversations();
-    fetchContacts();
-  }, []);
+    if (currentUser?.id) {
+      fetchConversations();
+    }
+  }, [currentUser?.id]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && currentUser?.id) {
       fetchConversations();
       fetchContacts();
     }
-  }, [isOpen]);
+  }, [isOpen, currentUser?.id]);
 
   useEffect(() => {
     if (isOpen && initialRecipientId) {

@@ -51,7 +51,6 @@ import {
   Radio,
   Coins,
 } from "lucide-react";
-import { buildGoogleCalendarUrl } from "@/lib/calendar";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -1496,36 +1495,32 @@ export default function AdminDashboardPage() {
                                 )}
                               </div>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2.5 mt-1 border-t border-slate-100 text-[11px]">
-                                <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex flex-col justify-center">
-                                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
-                                    Session Started
-                                  </span>
-                                  <span className="font-bold text-emerald-950 font-mono text-xs">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 mt-1 border-t border-slate-100 text-xs text-slate-600">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Started:</span>
+                                  <span className="font-mono text-[11px] font-semibold text-slate-700">
                                     {ev.startedAt
                                       ? new Date(ev.startedAt).toLocaleString("en-US", {
                                           month: "short",
                                           day: "numeric",
                                           hour: "2-digit",
                                           minute: "2-digit",
-                                          second: "2-digit",
                                         })
                                       : "Not started yet"}
                                   </span>
                                 </div>
 
-                                <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-200/60 flex flex-col justify-center">
-                                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">
-                                    Session Ended
-                                  </span>
-                                  <span className="font-bold text-blue-950 font-mono text-xs">
+                                <span className="text-slate-200 hidden sm:inline">•</span>
+
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ended:</span>
+                                  <span className={`font-mono text-[11px] font-semibold ${isLive ? "text-emerald-600 font-bold" : "text-slate-700"}`}>
                                     {ev.endedAt
                                       ? new Date(ev.endedAt).toLocaleString("en-US", {
                                           month: "short",
                                           day: "numeric",
                                           hour: "2-digit",
                                           minute: "2-digit",
-                                          second: "2-digit",
                                         })
                                       : isLive
                                       ? "● Live in Session"
@@ -1533,11 +1528,11 @@ export default function AdminDashboardPage() {
                                   </span>
                                 </div>
 
-                                <div className="p-2 rounded-xl bg-indigo-50/70 border border-indigo-200/60 flex flex-col justify-center">
-                                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">
-                                    Total Recorded Duration
-                                  </span>
-                                  <span className="font-bold text-indigo-950 font-mono text-xs">
+                                <span className="text-slate-200 hidden sm:inline">•</span>
+
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration:</span>
+                                  <span className="font-mono text-[11px] font-semibold text-slate-800">
                                     {formatSessionDuration(ev.startedAt, ev.endedAt)}
                                   </span>
                                 </div>
@@ -1574,46 +1569,13 @@ export default function AdminDashboardPage() {
                                 </Button>
                               </>
                             ) : (
-                              <>
-                                {meetLink && (
-                                  <a
-                                    href={meetLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs flex items-center gap-1.5 border border-blue-200 shadow-2xs transition-all"
-                                  >
-                                    <Video className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>Google Meet</span>
-                                  </a>
-                                )}
-
-                                <a
-                                  href={buildGoogleCalendarUrl({
-                                    title: ev.title,
-                                    description: ev.description || "",
-                                    dueDate: ev.dueDate,
-                                    courseTitle: ev.course?.title,
-                                    location: meetLink,
-                                    durationMinutes: 60,
-                                  })}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-sky-700 font-semibold text-xs flex items-center gap-1 shadow-2xs transition-colors"
-                                  title="Add to Google Calendar"
-                                >
-                                  <Calendar className="w-3.5 h-3.5 text-sky-600" />
-                                  <span className="hidden sm:inline">Google Cal</span>
-                                  <ExternalLink className="w-2.5 h-2.5 text-sky-400" />
-                                </a>
-
-                                <button
-                                  onClick={() => handleDeleteLiveClass(ev)}
-                                  className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                  title="Cancel / Delete Class"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </>
+                              <button
+                                onClick={() => handleDeleteLiveClass(ev)}
+                                className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                title="Cancel / Delete Class"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             )}
                           </div>
                         </div>

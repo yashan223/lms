@@ -2085,15 +2085,14 @@ function TutorDashboardContent() {
                             )}
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-slate-100 text-xs">
-                            <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-100">
-                              <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider block">Session Started</span>
-                              <span className="font-bold text-emerald-950 font-mono text-xs">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Started:</span>
+                              <span className="font-mono text-[11px] font-semibold text-slate-700">
                                 {ev.startedAt
                                   ? new Date(ev.startedAt).toLocaleString("en-US", {
                                       hour: "2-digit",
                                       minute: "2-digit",
-                                      second: "2-digit",
                                       month: "short",
                                       day: "numeric",
                                     })
@@ -2101,14 +2100,15 @@ function TutorDashboardContent() {
                               </span>
                             </div>
 
-                            <div className="p-2 rounded-lg bg-blue-50/70 border border-blue-100">
-                              <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wider block">Session Ended</span>
-                              <span className="font-bold text-blue-950 font-mono text-xs">
+                            <span className="text-slate-200 hidden sm:inline">•</span>
+
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ended:</span>
+                              <span className="font-mono text-[11px] font-semibold text-slate-700">
                                 {ev.endedAt
                                   ? new Date(ev.endedAt).toLocaleString("en-US", {
                                       hour: "2-digit",
                                       minute: "2-digit",
-                                      second: "2-digit",
                                       month: "short",
                                       day: "numeric",
                                     })
@@ -2116,9 +2116,11 @@ function TutorDashboardContent() {
                               </span>
                             </div>
 
-                            <div className="p-2 rounded-lg bg-indigo-50/70 border border-indigo-100">
-                              <span className="text-[10px] text-indigo-700 font-bold uppercase tracking-wider block">Recorded Duration</span>
-                              <span className="font-bold text-indigo-950 font-mono text-xs">
+                            <span className="text-slate-200 hidden sm:inline">•</span>
+
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration:</span>
+                              <span className="font-mono text-[11px] font-semibold text-slate-800">
                                 {formatSessionDuration(ev.startedAt, ev.endedAt)}
                               </span>
                             </div>

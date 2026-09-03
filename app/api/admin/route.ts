@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     try {
       courses = await prisma.course.findMany({
         include: {
-          instructor: true,
+          tutor: true,
           modules: {
             include: { lessons: true },
             orderBy: { position: "asc" },
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       events = await prisma.event.findMany({
         include: {
           course: {
-            include: { instructor: true },
+            include: { tutor: true },
           },
           user: true,
         },
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     }
 
     const candidates = allUsers.filter((u) => u.role === Role.STUDENT);
-    const faculty = allUsers.filter((u) => u.role === Role.INSTRUCTOR);
+    const faculty = allUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
     const admins = allUsers.filter((u) => u.role === Role.ADMIN);
 
     return NextResponse.json({
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       const { name, email, password, phone, role, headline, bio, initialCourseId } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
-      const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.INSTRUCTOR ? "InstructorPass123!" : "StudentPass123!");
+      const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "TutorPass123!" : "StudentPass123!");
       const hashedPassword = hashPassword(rawPassword);
 
       const newUser = await prisma.user.create({
@@ -135,11 +135,11 @@ export async function POST(request: NextRequest) {
           passwordHash: hashedPassword,
           role: assignedRole,
           phone: phone ? phone.trim() : null,
-          headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.INSTRUCTOR ? "Senior Faculty Lecturer" : "London A/L Student"),
+          headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Faculty Tutor" : "London A/L Student"),
           bio: bio || `Registered academic member of EduPulse Academy.`,
           avatar: assignedRole === Role.ADMIN
             ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-            : assignedRole === Role.INSTRUCTOR
+            : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR"
             ? "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
             : "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
         },
@@ -232,15 +232,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create_course") {
-      const { title, slug, subtitle, description, category, subjectCode, price, instructorId, level, status } = body;
+      const { title, slug, subtitle, description, category, subjectCode, price, tokens, tutorId, instructorId, level, status } = body;
 
-      let finalInstructorId = instructorId;
-      if (!finalInstructorId) {
-        const firstInst = await prisma.user.findFirst({ where: { role: Role.INSTRUCTOR } });
-        finalInstructorId = firstInst?.id;
+      let finalTutorId = tutorId || instructorId;
+      if (!finalTutorId) {
+        const firstTutor = await prisma.user.findFirst({ where: { role: Role.TUTOR } }) || await prisma.user.findFirst({ where: { role: (Role as any).INSTRUCTOR } });
+        finalTutorId = firstTutor?.id;
       }
 
       const generatedSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + `-${Date.now()}`;
+      const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 10.0);
 
       const newCourse = await prisma.course.create({
         data: {
@@ -250,10 +251,10 @@ export async function POST(request: NextRequest) {
           description: description || "Comprehensive lecture walkthroughs, unit proofs, and coursework solutions.",
           category: category || "School of Mathematics & Computing",
           subjectCode: subjectCode || "MATH-101",
-          price: parseFloat(price) || 85.0,
+          price: isNaN(tokenValue) ? 10.0 : tokenValue,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,
-          instructorId: finalInstructorId,
+          tutorId: finalTutorId,
           modules: {
             create: [
               {
@@ -275,7 +276,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_course") {
-      const { courseId, title, subtitle, description, category, subjectCode, price, level, status, instructorId } = body;
+      const { courseId, title, subtitle, description, category, subjectCode, price, tokens, level, status, tutorId, instructorId } = body;
+      const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 10.0);
       const updatedCourse = await prisma.course.update({
         where: { id: courseId },
         data: {
@@ -284,10 +286,10 @@ export async function POST(request: NextRequest) {
           description,
           category,
           subjectCode,
-          price: parseFloat(price) || 85.0,
+          price: isNaN(tokenValue) ? 10.0 : tokenValue,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,
-          instructorId: instructorId || undefined,
+          tutorId: tutorId || instructorId || undefined,
         },
       });
       broadcastLMSEvent("COURSES_CHANGED");
@@ -419,7 +421,7 @@ export async function POST(request: NextRequest) {
         },
         include: {
           course: {
-            include: { instructor: true },
+            include: { tutor: true },
           },
           user: true,
         },
@@ -445,7 +447,7 @@ export async function POST(request: NextRequest) {
         },
         include: {
           course: {
-            include: { instructor: true },
+            include: { tutor: true },
           },
           user: true,
         },
@@ -486,7 +488,7 @@ export async function POST(request: NextRequest) {
         },
         include: {
           course: {
-            include: { instructor: true },
+            include: { tutor: true },
           },
           user: true,
         },

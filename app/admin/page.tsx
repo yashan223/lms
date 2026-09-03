@@ -49,6 +49,7 @@ import {
   RefreshCw,
   Video,
   Radio,
+  Coins,
 } from "lucide-react";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 
@@ -122,7 +123,7 @@ export default function AdminDashboardPage() {
   const [courseFormTitle, setCourseFormTitle] = useState("");
   const [courseFormCode, setCourseFormCode] = useState("");
   const [courseFormCategory, setCourseFormCategory] = useState("School of Mathematics & Computing");
-  const [courseFormPrice, setCourseFormPrice] = useState("95");
+  const [courseFormPrice, setCourseFormPrice] = useState("10");
   const [courseFormLevel, setCourseFormLevel] = useState("ADVANCED");
   const [courseFormStatus, setCourseFormStatus] = useState("PUBLISHED");
   const [courseFormSubtitle, setCourseFormSubtitle] = useState("");
@@ -411,7 +412,7 @@ export default function AdminDashboardPage() {
     setCourseFormTitle("");
     setCourseFormCode("MATH-AS-01");
     setCourseFormCategory("School of Mathematics & Computing");
-    setCourseFormPrice("95");
+    setCourseFormPrice("10");
     setCourseFormLevel("ADVANCED");
     setCourseFormStatus("PUBLISHED");
     setCourseFormSubtitle("Comprehensive syllabus lecture walkthroughs, unit proofs, and problem sets.");
@@ -1653,9 +1654,9 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-sky-600">Faculty & Lecturers</span>
+                  <span className="text-xs font-medium text-sky-600">Faculty Tutors</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
-                    {allUsersList.filter((u) => u.role === "INSTRUCTOR").length} Lecturers
+                    {allUsersList.filter((u) => u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR").length} Tutors
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -1682,7 +1683,7 @@ export default function AdminDashboardPage() {
                     {[
                       { id: "ALL", label: "All Users" },
                       { id: "STUDENT", label: "Students" },
-                      { id: "INSTRUCTOR", label: "Lecturers" },
+                      { id: "TUTOR", label: "Tutors" },
                       { id: "ADMIN", label: "Admins" },
                     ].map((rf) => (
                       <button
@@ -1748,12 +1749,12 @@ export default function AdminDashboardPage() {
                               className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
                                 u.role === "ADMIN"
                                   ? "bg-slate-900 text-white"
-                                  : u.role === "INSTRUCTOR"
+                                  : u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR"
                                   ? "bg-sky-100 text-sky-800"
                                   : "bg-blue-100 text-blue-800"
                               }`}
                             >
-                              {u.role}
+                              {u.role === "INSTRUCTOR" ? "TUTOR" : u.role}
                             </span>
                           </td>
                           <td className="py-3.5 px-4 font-medium text-slate-700">
@@ -1872,7 +1873,10 @@ export default function AdminDashboardPage() {
                         <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> {course.modules?.length || 0} Modules</span>
                         <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-slate-400" /> {course.materials?.length || 0} Files</span>
                         <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-slate-400" /> {course.enrollments?.length || 0} Enrolled</span>
-                        <span className="font-bold text-slate-900">${course.price}</span>
+                        <span className="font-bold text-amber-600 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
+                          <Coins className="w-3.5 h-3.5" />
+                          {course.price} Tokens
+                        </span>
                       </div>
                     </div>
 
@@ -2203,7 +2207,7 @@ export default function AdminDashboardPage() {
                           </div>
                           <div className="text-right shrink-0">
                             <div className="font-black text-sm text-slate-900">${cRevenue.toLocaleString()}</div>
-                            <div className="text-[10px] text-slate-500">${c.price || 95} / seat</div>
+                            <div className="text-[10px] text-slate-500">{c.price || 10} Tokens / seat</div>
                           </div>
                         </div>
 
@@ -2257,7 +2261,7 @@ export default function AdminDashboardPage() {
                   <label className="font-bold block mb-1">Role</label>
                   <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
                     <option value="STUDENT">Student</option>
-                    <option value="INSTRUCTOR">Faculty Lecturer</option>
+                    <option value="TUTOR">Faculty Tutor</option>
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
@@ -2306,7 +2310,7 @@ export default function AdminDashboardPage() {
                 <label className="font-bold block mb-1">Role</label>
                 <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
                   <option value="STUDENT">Student</option>
-                  <option value="INSTRUCTOR">Faculty Lecturer</option>
+                  <option value="TUTOR">Faculty Tutor</option>
                   <option value="ADMIN">Administrator</option>
                 </select>
               </div>
@@ -2426,8 +2430,8 @@ export default function AdminDashboardPage() {
                   <Input placeholder="Subject code" value={courseFormCode} onChange={(e) => setCourseFormCode(e.target.value)} className="rounded-xl" />
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Tuition Price ($)</label>
-                  <Input type="number" required value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
+                  <label className="font-bold block mb-1">Tokens Required (Tokens)</label>
+                  <Input type="number" required min="0" placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
               <div>
@@ -2488,8 +2492,8 @@ export default function AdminDashboardPage() {
                   <Input value={courseFormCode} onChange={(e) => setCourseFormCode(e.target.value)} className="rounded-xl" />
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Tuition Price ($)</label>
-                  <Input type="number" required value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
+                  <label className="font-bold block mb-1">Tokens Required (Tokens)</label>
+                  <Input type="number" required min="0" placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
               <div>

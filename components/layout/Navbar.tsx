@@ -70,11 +70,12 @@ export function Navbar() {
           avatarGradient: "from-indigo-600 via-purple-600 to-pink-600",
           icon: ShieldCheck,
         };
+      case "TUTOR":
       case "INSTRUCTOR":
         return {
-          label: "Faculty Instructor",
-          shortRole: "Instructor",
-          badgeVariant: "roleInstructor" as const,
+          label: "Faculty Tutor",
+          shortRole: "Tutor",
+          badgeVariant: "roleTutor" as const,
           avatarGradient: "from-blue-600 via-indigo-600 to-blue-700",
           icon: BookOpen,
         };
@@ -122,9 +123,11 @@ export function Navbar() {
           </Link>
         </nav>
 
-        <div className="hidden md:flex items-center gap-2.5">
+        {/* Right Navigation & Authenticated Profile Hub */}
+        <div className="hidden lg:flex items-center gap-3">
           {userRole ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
+              {/* Fast Direct Dashboard Link based on Role */}
               {userRole === "ADMIN" ? (
                 <Link
                   href="/admin"
@@ -134,14 +137,14 @@ export function Navbar() {
                   <ShieldCheck className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
                   <span>Admin Console</span>
                 </Link>
-              ) : userRole === "INSTRUCTOR" ? (
+              ) : userRole === "TUTOR" || userRole === "INSTRUCTOR" ? (
                 <Link
                   href="/tutor"
-                  title="Faculty Instructor Studio"
+                  title="Faculty Tutor Studio"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
                 >
                   <GraduationCap className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
-                  <span>Instructor Studio</span>
+                  <span>Tutor Studio</span>
                 </Link>
               ) : (
                 <Link
@@ -187,14 +190,14 @@ export function Navbar() {
 
         <div className="flex lg:hidden items-center gap-2">
           <Link
-            href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : userRole ? "/dashboard" : "/login"}
+            href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : userRole ? "/dashboard" : "/login"}
             className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs whitespace-nowrap"
           >
             <span className="hidden sm:inline">
-              {userRole === "ADMIN" ? "Admin Console" : userRole === "INSTRUCTOR" ? "Instructor Studio" : userRole ? "Dashboard" : "Sign In"}
+              {userRole === "ADMIN" ? "Admin Console" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "Tutor Studio" : userRole ? "Dashboard" : "Sign In"}
             </span>
             <span className="sm:hidden">
-              {userRole === "ADMIN" ? "Admin" : userRole === "INSTRUCTOR" ? "Studio" : userRole ? "Dashboard" : "Sign In"}
+              {userRole === "ADMIN" ? "Admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "Studio" : userRole ? "Dashboard" : "Sign In"}
             </span>
           </Link>
           <button
@@ -211,7 +214,7 @@ export function Navbar() {
         <div className="lg:hidden bg-white border-t border-slate-200 px-5 py-4 space-y-4 animate-in slide-in-from-top-2 shadow-lg">
           {userRole && (
             <Link
-              href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : "/dashboard"}
+              href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : "/dashboard"}
               onClick={() => setMobileMenuOpen(false)}
               className="p-3 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 border border-slate-200/80 flex items-center gap-3 hover:border-blue-300 transition-colors"
             >
@@ -239,11 +242,11 @@ export function Navbar() {
           <div className="flex flex-col gap-2 text-xs font-bold tracking-wider uppercase">
             {userRole && (
               <Link
-                href={userRole === "ADMIN" ? "/admin" : userRole === "INSTRUCTOR" ? "/tutor" : "/dashboard"}
+                href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : "/dashboard"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-purple-700 hover:text-purple-800 py-1.5 px-2 rounded-lg hover:bg-purple-50/50 font-black"
               >
-                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : userRole === "INSTRUCTOR" ? "FACULTY INSTRUCTOR STUDIO" : "MY DASHBOARD"}
+                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "FACULTY TUTOR STUDIO" : "MY DASHBOARD"}
               </Link>
             )}
             <Link

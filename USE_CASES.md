@@ -8,9 +8,9 @@ This document provides a comprehensive use case specification, UML diagrams, act
 
 | Actor | Description |
 | :--- | :--- |
-| **🎓 Student** | Enrolls in courses, accesses syllabus materials & past papers, attends live interactive classes, manages study calendar, reschedules sessions, books 1-on-1 consultations, and messages faculty tutors. |
-| **👨‍🏫 Faculty Instructor** | Curates course syllabus and lesson materials, schedules and launches live video seminars, reviews enrolled student cohorts, conducts 1-on-1 consultations, and communicates with students. |
-| **🛡️ System Administrator** | Manages courses, subjects, pricing, and curriculum publication; administers user accounts, credentials, and roles; monitors live sessions; and audits platform analytics & clearances. |
+| **🎓 Student** | Purchases learning hour tokens, allocates hours across 1-on-1 private tutoring and live classes, enrolls in courses, accesses syllabus materials & past papers, attends live interactive classes, manages study calendar, reschedules sessions, and messages faculty tutors. |
+| **👨‍🏫 Faculty Tutor** | Curates course syllabus and lesson materials, schedules and launches live video seminars, reviews enrolled student cohorts, conducts 1-on-1 consultations, and communicates with students. |
+| **🛡️ System Administrator** | Manages courses, subjects, token pricing, and curriculum publication; administers user accounts, credentials, and roles; monitors live sessions; and audits platform analytics & clearances. |
 
 ---
 
@@ -22,7 +22,7 @@ flowchart LR
     subgraph Actors ["👥 System Actors"]
         direction TB
         Student["🎓 Student"]
-        Instructor["👨‍🏫 Faculty Instructor"]
+        Tutor["👨‍🏫 Faculty Tutor"]
         Admin["🛡️ System Admin"]
     end
 
@@ -38,8 +38,10 @@ flowchart LR
             UC_Chat(["Direct Academic Messaging"])
         end
 
-        subgraph StudentArea ["🎓 Student Learning Portal"]
+        subgraph StudentArea ["🎓 Student Learning Portal & Wallet"]
             direction TB
+            UC_Tokens(["Purchase & Manage Hour Tokens"])
+            UC_Spend(["Allocate Hours (1-on-1 / Masterclass)"])
             UC_Browse(["Browse & Enroll in Courses"])
             UC_Materials(["Access Lessons & Study Guides"])
             UC_JoinLive(["Join Live Class / Meet Room"])
@@ -48,7 +50,7 @@ flowchart LR
             UC_Vault(["Manage Private Study Vault"])
         end
 
-        subgraph InstructorArea ["👨‍🏫 Faculty Instructor Studio"]
+        subgraph TutorArea ["👨‍🏫 Faculty Tutor Studio"]
             direction TB
             UC_Schedule(["Schedule & Host Live Classes"])
             UC_Syllabus(["Manage Syllabus & Course Materials"])
@@ -70,6 +72,8 @@ flowchart LR
     Student --> UC_Profile
     Student --> UC_Notif
     Student --> UC_Chat
+    Student --> UC_Tokens
+    Student --> UC_Spend
     Student --> UC_Browse
     Student --> UC_Materials
     Student --> UC_JoinLive
@@ -77,16 +81,16 @@ flowchart LR
     Student --> UC_Trial
     Student --> UC_Vault
 
-    %% Instructor Connections
-    Instructor --> UC_Auth
-    Instructor --> UC_Profile
-    Instructor --> UC_Notif
-    Instructor --> UC_Chat
-    Instructor --> UC_Schedule
-    Instructor --> UC_Syllabus
-    Instructor --> UC_Roster
-    Instructor --> UC_ConductTrial
-    Instructor --> UC_JoinLive
+    %% Tutor Connections
+    Tutor --> UC_Auth
+    Tutor --> UC_Profile
+    Tutor --> UC_Notif
+    Tutor --> UC_Chat
+    Tutor --> UC_Schedule
+    Tutor --> UC_Syllabus
+    Tutor --> UC_Roster
+    Tutor --> UC_ConductTrial
+    Tutor --> UC_JoinLive
 
     %% Admin Connections
     Admin --> UC_Auth
@@ -109,6 +113,7 @@ flowchart LR
 
     subgraph StudentPortal ["Student Learning Portal (/dashboard)"]
         direction TB
+        UC_S0(["Purchase Token Hours Pack"])
         UC_S1(["Browse Subject Courses"])
         UC_S2(["Enroll in Curriculum Unit"])
         UC_S3(["Access Lecture Notes & Video Materials"])
@@ -120,6 +125,7 @@ flowchart LR
         UC_S9(["Send & Receive Direct Messages"])
     end
 
+    Student --> UC_S0
     Student --> UC_S1
     Student --> UC_S2
     Student --> UC_S3
@@ -133,13 +139,13 @@ flowchart LR
 
 ---
 
-## 👨‍🏫 3. Faculty Instructor Studio Use Case Diagram
+## 👨‍🏫 3. Faculty Tutor Studio Use Case Diagram
 
 ```mermaid
 flowchart LR
-    Instructor["👨‍🏫 Faculty Instructor"]
+    Tutor["👨‍🏫 Faculty Tutor"]
 
-    subgraph TutorStudio ["Instructor Studio (/tutor)"]
+    subgraph TutorStudio ["Tutor Studio (/tutor)"]
         direction TB
         UC_T1(["Schedule Live Masterclass / Seminar"])
         UC_T2(["Launch & Host Google Meet Class"])
@@ -151,14 +157,14 @@ flowchart LR
         UC_T8(["Direct Academic Messaging with Students"])
     end
 
-    Instructor --> UC_T1
-    Instructor --> UC_T2
-    Instructor --> UC_T3
-    Instructor --> UC_T4
-    Instructor --> UC_T5
-    Instructor --> UC_T6
-    Instructor --> UC_T7
-    Instructor --> UC_T8
+    Tutor --> UC_T1
+    Tutor --> UC_T2
+    Tutor --> UC_T3
+    Tutor --> UC_T4
+    Tutor --> UC_T5
+    Tutor --> UC_T6
+    Tutor --> UC_T7
+    Tutor --> UC_T8
 ```
 
 ---
@@ -196,19 +202,20 @@ flowchart LR
 ## 📋 Summary of Functional Modules
 
 ### 1. Authentication & Identity
-- **Sign In / Sign Up**: Email-based authentication with role-based routing (`/dashboard` for Student, `/tutor` for Instructor, `/admin` for Admin).
+- **Sign In / Sign Up**: Email-based authentication with role-based routing (`/dashboard` for Student, `/tutor` for Tutor, `/admin` for Admin).
 - **Password Recovery**: Secure reset workflow with token verification.
-- **Direct Messaging**: Real-time communication between students and faculty.
+- **Direct Messaging**: Real-time communication between students and faculty tutors.
 - **Real-Time Sync**: Server-Sent Events (SSE) for instant calendar and notification updates.
 
-### 2. Student Learning Portal (`/dashboard`)
+### 2. Student Learning & Token Economy (`/dashboard`)
+- **Token Purchase & Hours Economy**: Students purchase token bundles (6h, 16h, 24h) and receive 1 token per hour. Students freely manage their time and decide where to spend their tokens (1-on-1 private tutoring, interactive masterclasses, topic drills, or exam past paper reviews).
 - **Course Enrollment**: Instant enrollment into accredited Pearson Edexcel and Cambridge units.
-- **Study Materials**: Access to course modules, lesson videos, and downloadable handouts.
+- **Study Materials**: Access to course modules, lesson videos, and downloadable handouts (no assignment submissions or grading).
 - **Live Class Participation**: Direct Google Meet room integration with live status indicators.
 - **Self-Service Rescheduling**: Interactive reschedule modal for class sessions.
 - **Private File Vault**: Cloud storage for personal homework and study notes.
 
-### 3. Faculty Instructor Studio (`/tutor`)
+### 3. Faculty Tutor Studio (`/tutor`)
 - **Live Class Orchestration**: Schedule live seminars, launch video rooms, and record class durations.
 - **Curriculum Management**: Add and manage modules, lessons, and course attachments.
 - **Student Roster**: Filter and review enrolled students by course, initiate direct contact, and schedule 1-on-1 consultations.
@@ -216,6 +223,6 @@ flowchart LR
 
 ### 4. Admin Command Console (`/admin`)
 - **Course Administration**: Full CRUD on syllabus courses, level categorization, and pricing.
-- **User Governance**: Create and edit student/lecturer/admin accounts and credentials.
+- **User Governance**: Create and edit student/tutor/admin accounts and credentials.
 - **Live Session Monitoring**: Real-time overview of active classes across all faculties.
-- **Financial Analytics**: Automated calculation of platform revenues, instructor honorarium clearances, and enrollment metrics.
+- **Financial Analytics**: Automated calculation of platform revenues, tutor honorarium clearances, and enrollment metrics.

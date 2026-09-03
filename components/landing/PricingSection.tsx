@@ -1,59 +1,34 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { PRICING_PLANS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ArrowRight, Award } from "lucide-react";
 
 export function PricingSection() {
-  const [isAnnual, setIsAnnual] = useState(true);
 
   return (
     <section id="pricing" className="py-20 bg-white border-t border-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
+          <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200 text-xs px-3 py-1 font-bold mb-3">
+            Token & Hours Academy Economy
+          </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Invest in Your Future with{" "}
+            Flexible Learning Hours with{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-600">
-              No Hidden Fees
+              Zero Hidden Constraints
             </span>
           </h2>
-          <p className="text-sm sm:text-base text-slate-600 mb-8">
-            Tailored tiers for solo learners, independent educators, and university campuses.
+          <p className="text-sm sm:text-base text-slate-600 mb-4 max-w-2xl mx-auto">
+            Purchase token packs based on your study goals. <strong>1 Token = 1 Hour</strong> of learning credit. You decide how to spend your hours across 1-on-1 private tutoring, interactive masterclasses, and past paper clinics.
           </p>
-
-          <div className="inline-flex items-center gap-3 p-1.5 rounded-2xl bg-blue-50/80 border border-blue-100 shadow-sm">
-            <button
-              onClick={() => setIsAnnual(false)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                !isAnnual
-                  ? "bg-white text-blue-700 shadow-sm font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Monthly Billing
-            </button>
-
-            <button
-              onClick={() => setIsAnnual(true)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
-                isAnnual
-                  ? "bg-blue-600 text-white shadow-sm font-bold shadow-blue-500/25"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span>Annual Billing</span>
-              <span className="text-[10px] bg-sky-300 text-blue-900 font-bold px-2 py-0.5 rounded-full">
-                Save 20%
-              </span>
-            </button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           {PRICING_PLANS.map((plan) => {
-            const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
+            const price = plan.monthlyPrice;
             return (
               <div
                 key={plan.id}
@@ -100,7 +75,7 @@ export function PricingSection() {
                       ${price}
                     </span>
                     <span className="text-xs font-semibold text-slate-500">
-                      / month {isAnnual && "(billed annually)"}
+                      / package (one-time purchase)
                     </span>
                   </div>
 

@@ -31,11 +31,19 @@ export async function GET(request: NextRequest) {
     let user = await prisma.user.findFirst({
       where: targetWhere,
       include: {
+        tokenWallet: {
+          include: {
+            transactions: {
+              orderBy: { createdAt: "desc" },
+              take: 10,
+            },
+          },
+        },
         enrollments: {
           include: {
             course: {
               include: {
-                instructor: true,
+                tutor: true,
                 modules: {
                   include: {
                     lessons: true,
@@ -72,11 +80,19 @@ export async function GET(request: NextRequest) {
     if (!user) {
       user = await prisma.user.findFirst({
         include: {
+          tokenWallet: {
+            include: {
+              transactions: {
+                orderBy: { createdAt: "desc" },
+                take: 10,
+              },
+            },
+          },
           enrollments: {
             include: {
               course: {
                 include: {
-                  instructor: true,
+                  tutor: true,
                   modules: {
                     include: {
                       lessons: true,
@@ -113,7 +129,7 @@ export async function GET(request: NextRequest) {
 
     const allCourses = await prisma.course.findMany({
       include: {
-        instructor: true,
+        tutor: true,
         modules: {
           include: {
             lessons: true,
@@ -150,13 +166,13 @@ export async function GET(request: NextRequest) {
           },
         ],
       };
-    } else if (user?.role === "INSTRUCTOR") {
-      const instructorCourseIds = (user.createdCourses || []).map((c) => c.id);
+    } else if (user && (user.role === "TUTOR" || (user.role as any) === "INSTRUCTOR")) {
+      const tutorCourseIds = (user.createdCourses || []).map((c) => c.id);
       eventWhere = {
         OR: [
           { userId: user.id },
-          { courseId: { in: instructorCourseIds } },
-          { course: { instructorId: user.id } },
+          { courseId: { in: tutorCourseIds } },
+          { course: { tutorId: user.id } },
         ],
       };
     }

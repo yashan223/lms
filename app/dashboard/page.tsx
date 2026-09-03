@@ -41,6 +41,10 @@ import {
   Tag,
   MessageSquareLock,
   Radio,
+  Coins,
+  Sparkles,
+  CreditCard,
+  History,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -66,8 +70,18 @@ interface UserProfile {
   name: string;
   email: string;
   avatar: string | null;
-  role: "STUDENT" | "INSTRUCTOR" | "ADMIN";
+  role: "STUDENT" | "TUTOR" | "INSTRUCTOR" | "ADMIN";
   headline: string | null;
+  tokenWallet?: {
+    balance: number;
+    transactions: Array<{
+      id: string;
+      amount: number;
+      type: string;
+      description: string;
+      createdAt: string;
+    }>;
+  };
   createdCourses?: Array<{
     id: string;
     title: string;
@@ -85,6 +99,10 @@ interface UserProfile {
       slug: string;
       subjectCode: string | null;
       category: string;
+      tutorId?: string;
+      instructorId?: string;
+      tutor?: { id: string; name: string; avatar?: string };
+      instructor?: { id: string; name: string; avatar?: string };
       modules: Array<{
         lessons: Array<{ id: string; title: string }>;
       }>;
@@ -121,6 +139,11 @@ function DashboardContent() {
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
+  const [tokenBalance, setTokenBalance] = useState<number>(40);
+  const [tokenTransactions, setTokenTransactions] = useState<any[]>([]);
+  const [showBuyTokensModal, setShowBuyTokensModal] = useState(false);
+  const [tokenPurchasing, setTokenPurchasing] = useState(false);
+  const [tokenFeedbackMsg, setTokenFeedbackMsg] = useState("");
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -129,7 +152,7 @@ function DashboardContent() {
         .find((row) => row.startsWith("edupulse_user_role="))
         ?.split("=")[1];
 
-      if (roleCookie === "INSTRUCTOR") {
+      if (roleCookie === "TUTOR" || roleCookie === "INSTRUCTOR") {
         router.replace("/tutor");
       } else if (roleCookie === "ADMIN") {
         router.replace("/admin");
@@ -137,7 +160,7 @@ function DashboardContent() {
     }
   }, [router]);
 
-  const userRole: "STUDENT" | "INSTRUCTOR" | "ADMIN" = user?.role || "STUDENT";
+  const userRole: "STUDENT" | "TUTOR" | "INSTRUCTOR" | "ADMIN" = user?.role || "STUDENT";
 
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
   const [navSitePagesOpen, setNavSitePagesOpen] = useState(false);
@@ -253,7 +276,7 @@ function DashboardContent() {
       }
       const data = await res.json();
       if (data.user) {
-        if (data.user.role === "INSTRUCTOR") {
+        if (data.user.role === "TUTOR" || data.user.role === "INSTRUCTOR") {
           router.replace("/tutor");
           return;
         }
@@ -262,6 +285,10 @@ function DashboardContent() {
           return;
         }
         setUser(data.user);
+        if (data.user.tokenWallet) {
+          setTokenBalance(data.user.tokenWallet.balance ?? 40);
+          setTokenTransactions(data.user.tokenWallet.transactions || []);
+        }
       }
       setAllCourses(data.allCourses || []);
       setOnlineUsers(data.onlineUsers || []);
@@ -270,6 +297,37 @@ function DashboardContent() {
       console.error("Error fetching dashboard data:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePurchaseTokenPack = async (packageId: string) => {
+    try {
+      setTokenPurchasing(true);
+      setTokenFeedbackMsg("");
+      const res = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "purchase_tokens",
+          packageId,
+        }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setTokenBalance(result.balance);
+        setTokenFeedbackMsg(result.message || "Hours added successfully!");
+        setTimeout(() => {
+          setShowBuyTokensModal(false);
+          setTokenFeedbackMsg("");
+          fetchDashboardData();
+        }, 1500);
+      } else {
+        setTokenFeedbackMsg(result.error || "Failed to complete purchase.");
+      }
+    } catch (err) {
+      setTokenFeedbackMsg("Network error during token top-up.");
+    } finally {
+      setTokenPurchasing(false);
     }
   };
 
@@ -727,13 +785,13 @@ function DashboardContent() {
     };
   };
 
-  if (loading || !user || user.role === "INSTRUCTOR" || user.role === "ADMIN") {
+  if (loading || !user || user.role === "TUTOR" || user.role === "INSTRUCTOR" || user.role === "ADMIN") {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-800 space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
         <p className="text-sm font-semibold tracking-wider uppercase text-slate-500">
-          {user?.role === "INSTRUCTOR"
-            ? "Redirecting to Faculty Instructor Studio..."
+          {(user?.role === "TUTOR" || user?.role === "INSTRUCTOR")
+            ? "Redirecting to Faculty Tutor Studio..."
             : user?.role === "ADMIN"
             ? "Redirecting to Admin Console..."
             : "Loading Student Portal..."}
@@ -857,6 +915,54 @@ function DashboardContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           <aside className="lg:col-span-3 space-y-4 order-2 lg:order-1">
+            {/* Student Token / Hours Wallet Widget */}
+            <div className="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 rounded-2xl p-4 text-white shadow-lg border border-blue-800/60 relative overflow-hidden">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-amber-300">
+                    <Coins className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-blue-200 block">
+                      Learning Wallet
+                    </span>
+                    <h4 className="text-xs font-black text-white">Hour Credits</h4>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                  Active
+                </span>
+              </div>
+
+              <div className="my-3 bg-white/10 rounded-xl p-3 border border-white/10 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-blue-200 font-medium">Available Balance</div>
+                  <div className="text-2xl font-black text-white tracking-tight flex items-baseline gap-1">
+                    <span>{tokenBalance}</span>
+                    <span className="text-xs font-bold text-amber-300">Hours</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowBuyTokensModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs shadow-md hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Buy Hours</span>
+                </button>
+              </div>
+
+              <div className="text-[11px] text-blue-200/80 leading-snug flex items-center justify-between pt-1">
+                <span>1 Token = 1 Hour Tutoring</span>
+                <button
+                  onClick={() => setShowBuyTokensModal(true)}
+                  className="text-amber-300 hover:underline font-bold text-[10px] cursor-pointer"
+                >
+                  Top Up Packs &gt;
+                </button>
+              </div>
+            </div>
+
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
                 Navigation
@@ -1830,7 +1936,7 @@ function DashboardContent() {
 
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 block">
-                  Reason for Rescheduling / Note to Instructor (Optional)
+                  Reason for Rescheduling / Note to Tutor (Optional)
                 </label>
                 <textarea
                   rows={3}
@@ -1869,6 +1975,123 @@ function DashboardContent() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Buy Tokens / Learning Hours Top-Up Modal */}
+      {showBuyTokensModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    Purchase Tutoring Hours
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Buy token packages to spend flexibly on 1-on-1 tutoring and live sessions.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowBuyTokensModal(false);
+                  setTokenFeedbackMsg("");
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {tokenFeedbackMsg && (
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-800 text-center animate-in fade-in">
+                {tokenFeedbackMsg}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {[
+                {
+                  id: "pack-6",
+                  name: "6 Hours Flexi Pack",
+                  hours: 6,
+                  tokens: 6,
+                  price: 24,
+                  badge: "Starter",
+                  desc: "6 tokens / 6 hours. Ideal for targeted revision, consultation, or tricky problem solving.",
+                },
+                {
+                  id: "pack-16",
+                  name: "16 Hours Standard Bundle",
+                  hours: 16,
+                  tokens: 16,
+                  price: 58,
+                  badge: "Most Popular",
+                  desc: "16 tokens / 16 hours. Perfect for weekly tutoring sessions, unit mastery, and paper reviews.",
+                },
+                {
+                  id: "pack-24",
+                  name: "24 Hours Mastery Vault",
+                  hours: 24,
+                  tokens: 24,
+                  price: 84,
+                  badge: "Best Value",
+                  desc: "24 tokens / 24 hours. Full schedule control for comprehensive exam prep and unlimited session booking.",
+                },
+              ].map((pack) => (
+                <div
+                  key={pack.id}
+                  className="p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 transition-all flex items-center justify-between gap-4 group"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 group-hover:text-blue-700">
+                        {pack.name}
+                      </h4>
+                      {pack.badge && (
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-black uppercase tracking-wider">
+                          {pack.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-snug">{pack.desc}</p>
+                    <div className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{pack.hours} Hours Learning Credit</span>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <div className="text-lg font-black text-slate-900">${pack.price}</div>
+                    <Button
+                      size="sm"
+                      disabled={tokenPurchasing}
+                      onClick={() => handlePurchaseTokenPack(pack.id)}
+                      className="mt-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-3 cursor-pointer shadow-sm"
+                    >
+                      {tokenPurchasing ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        "Purchase"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-3 text-[11px] text-slate-500 border border-slate-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>Zero transaction fees. Instant credit to your balance.</span>
+              </div>
+              <span className="font-mono font-bold text-slate-700">Current: {tokenBalance} Hrs</span>
+            </div>
           </div>
         </div>
       )}

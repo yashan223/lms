@@ -13,6 +13,7 @@ import {
   Users,
   ArrowRight,
   ShieldCheck,
+  Coins,
 } from "lucide-react";
 
 export function CourseGrid() {
@@ -221,15 +222,18 @@ export function CourseGrid() {
                 </div>
 
                 <div className="px-5 sm:px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black text-slate-900">
-                      ${course.price}
-                    </span>
-                    {course.originalPrice && (
-                      <span className="text-xs text-slate-400 line-through">
-                        ${course.originalPrice}
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                      <Coins className="w-4 h-4" />
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-black text-slate-900">
+                        {course.price}
                       </span>
-                    )}
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Tokens
+                      </span>
+                    </div>
                   </div>
 
                   <Link

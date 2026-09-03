@@ -10,7 +10,7 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request, [Role.INSTRUCTOR, Role.ADMIN]);
+    const auth = await getAuthenticatedUser(request, [Role.TUTOR, Role.ADMIN]);
     if (!auth.user) {
       return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
     }
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const tutor = auth.user;
 
     let courses: any[] = await prisma.course.findMany({
-      where: { instructorId: tutor.id },
+      where: { tutorId: tutor.id },
       include: {
         modules: {
           include: { lessons: true },
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         OR: [
           { userId: tutor.id },
           { courseId: { in: courseIds } },
-          { course: { instructorId: tutor.id } },
+          { course: { tutorId: tutor.id } },
         ],
       },
       include: {
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request, [Role.INSTRUCTOR, Role.ADMIN]);
+    const auth = await getAuthenticatedUser(request, [Role.TUTOR, Role.ADMIN]);
     if (!auth.user) {
       return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
     }

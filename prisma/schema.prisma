@@ -10,7 +10,7 @@ datasource db {
 
 enum Role {
   ADMIN
-  INSTRUCTOR
+  TUTOR
   STUDENT
 }
 
@@ -33,7 +33,6 @@ enum EventType {
   DEADLINE
   WORKSHOP
   EXAM_MOCK
-  ASSIGNMENT
 }
 
 enum EventStatus {
@@ -41,6 +40,13 @@ enum EventStatus {
   LIVE
   COMPLETED
   CANCELLED
+}
+
+enum TransactionType {
+  PURCHASE
+  SPEND
+  REFUND
+  BONUS
 }
 
 model User {
@@ -58,8 +64,8 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  // Instructor relations
-  createdCourses Course[]      @relation("InstructorCourses")
+  // Tutor relations
+  createdCourses Course[]      @relation("TutorCourses")
   
   // Student relations
   enrollments    Enrollment[]
@@ -73,6 +79,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   tutorTrials    TrialRequest[] @relation("TutorTrials")
   studentTrials  TrialRequest[] @relation("StudentTrials")
+  tokenWallet    TokenWallet?
 
   // E2EE Chat Relations
   conversationsA Conversation[] @relation("ParticipantA")
@@ -84,6 +91,31 @@ model User {
   notifications  Notification[]
 
   @@map("users")
+}
+
+model TokenWallet {
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance      Int                @default(0) // Available tokens / hours
+  transactions TokenTransaction[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@map("token_wallets")
+}
+
+model TokenTransaction {
+  id          String          @id @default(cuid())
+  walletId    String
+  wallet      TokenWallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount      Int             // Positive for credit (+), negative for debit (-)
+  type        TransactionType
+  description String          // e.g., "Purchased 20 Hours Token Pack" or "1-on-1 Tutoring Session"
+  referenceId String?         // Related eventId, trialId, or paymentId
+  createdAt   DateTime        @default(now())
+
+  @@map("token_transactions")
 }
 
 model Course {
@@ -99,8 +131,8 @@ model Course {
   subjectCode   String?
   status        CourseStatus   @default(PUBLISHED)
   featured      Boolean        @default(false)
-  instructorId  String
-  instructor    User           @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Cascade)
+  tutorId       String
+  tutor         User           @relation("TutorCourses", fields: [tutorId], references: [id], onDelete: Cascade)
 
   modules       Module[]
   materials     CourseMaterial[]

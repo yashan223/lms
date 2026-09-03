@@ -42,6 +42,7 @@ import {
   FlaskConical,
   FileCode,
   Sparkles,
+  Coins,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
@@ -106,7 +107,7 @@ export default function CourseDetailPage({
       .split("; ")
       .find((r) => r.startsWith("edupulse_user_role="))
       ?.split("=")[1];
-    setIsStaff(role === "ADMIN" || role === "INSTRUCTOR");
+    setIsStaff(role === "ADMIN" || role === "TUTOR" || role === "INSTRUCTOR");
   }, []);
 
   const [materialCategory, setMaterialCategory] = useState<string>("ALL");
@@ -404,11 +405,16 @@ export default function CourseDetailPage({
 
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 text-slate-900 border border-slate-200 shadow-xl space-y-4">
                 <div className="flex items-baseline justify-between">
-                  <div>
-                    <span className="text-3xl font-black text-slate-900">${course?.price || 95}</span>
-                    <span className="text-xs text-slate-400 ml-2">Full Specification</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                      <Coins className="w-5 h-5" />
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black text-slate-900">{course?.price || 10}</span>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tokens</span>
+                    </div>
                   </div>
-                  <span className="text-xs text-slate-400 line-through">$160.00</span>
+                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">Full Specification</span>
                 </div>
 
                 {isEnrolled ? (
@@ -436,10 +442,10 @@ export default function CourseDetailPage({
                   <div className="space-y-2">
                     <Button
                       onClick={() => setShowPurchaseModal(true)}
-                      className="w-full py-3.5 h-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                      className="w-full py-3.5 h-auto rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
                     >
-                      <Lock className="w-4 h-4 text-blue-200" />
-                      <span>Purchase & Unlock All Materials (${course?.price || 95})</span>
+                      <Lock className="w-4 h-4 text-amber-300" />
+                      <span>Enroll & Unlock All Materials ({course?.price || 10} Tokens)</span>
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                     <button
@@ -608,8 +614,8 @@ export default function CourseDetailPage({
                   onClick={() => setShowPurchaseModal(true)}
                   className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 rounded-xl shadow-xs shrink-0 cursor-pointer gap-1.5"
                 >
-                  <Lock className="w-3.5 h-3.5 text-blue-200" />
-                  <span>Purchase Course (${course?.price || 95})</span>
+                  <Lock className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Enroll Course ({course?.price || 10} Tokens)</span>
                 </Button>
               </div>
             )}
@@ -768,10 +774,10 @@ export default function CourseDetailPage({
                           </div>
                           <Button
                             onClick={() => setShowPurchaseModal(true)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md cursor-pointer gap-2"
+                            className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md cursor-pointer gap-2"
                           >
-                            <Lock className="w-3.5 h-3.5 text-blue-200" />
-                            <span>Purchase Course to Unlock (${course?.price || 95})</span>
+                            <Lock className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Enroll Course to Unlock ({course?.price || 10} Tokens)</span>
                           </Button>
                         </div>
                       )}

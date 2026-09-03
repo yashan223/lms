@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import { hashPassword } from "../lib/auth";
 
 async function main() {
-  console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Instructor, and 1 Student...");
+  console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
 
   // Delete all users EXCEPT the 3 primary test accounts (and their dependent records)
   const allowedEmails = [
@@ -24,7 +24,7 @@ async function main() {
   }
 
   const adminPassHash = hashPassword("AdminPass123!");
-  const instructorPassHash = hashPassword("InstructorPass123!");
+  const tutorPassHash = hashPassword("TutorPass123!");
   const studentPassHash = hashPassword("StudentPass123!");
 
   const now = new Date();
@@ -53,25 +53,25 @@ async function main() {
     },
   });
 
-  // 2. Single Tutor / Instructor Account
+  // 2. Single Tutor Account
   const tutorUser = await prisma.user.upsert({
     where: { email: "tutor@edupulse.uk" },
     update: {
       name: "Dr. Sarah Jenkins",
-      passwordHash: instructorPassHash,
-      role: Role.INSTRUCTOR,
+      passwordHash: tutorPassHash,
+      role: Role.TUTOR,
       emailVerified: now,
-      headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
+      headline: "Senior Faculty Tutor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
     create: {
       email: "tutor@edupulse.uk",
       name: "Dr. Sarah Jenkins",
-      passwordHash: instructorPassHash,
-      role: Role.INSTRUCTOR,
+      passwordHash: tutorPassHash,
+      role: Role.TUTOR,
       emailVerified: now,
-      headline: "Senior Faculty Instructor in Pure Mathematics & Sciences",
+      headline: "Senior Faculty Tutor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
     },
@@ -103,15 +103,39 @@ async function main() {
     },
   });
 
+  // Initialize Token Wallet for student
+  await prisma.tokenWallet.upsert({
+    where: { userId: studentUser.id },
+    update: { balance: 18 },
+    create: {
+      userId: studentUser.id,
+      balance: 18,
+      transactions: {
+        create: [
+          {
+            amount: 24,
+            type: "PURCHASE",
+            description: "Purchased 24 Hours Mastery Vault (24 Tokens)",
+          },
+          {
+            amount: -6,
+            type: "SPEND",
+            description: "Allocated 6 Hours to 1-on-1 Pure Mathematics Tutoring",
+          },
+        ],
+      },
+    },
+  });
+
   console.log("✅ Exactly 3 Test Users Initialized:");
-  console.log("   👑 Admin:      admin@edupulse.uk   / AdminPass123!");
-  console.log("   🎓 Instructor: tutor@edupulse.uk   / InstructorPass123!");
-  console.log("   📚 Student:    student@edupulse.uk / StudentPass123!");
+  console.log("   👑 Admin:   admin@edupulse.uk   / AdminPass123!");
+  console.log("   🎓 Tutor:   tutor@edupulse.uk   / TutorPass123!");
+  console.log("   📚 Student: student@edupulse.uk / StudentPass123!");
 
   // 4. Update all courses to belong to the single Tutor
   await prisma.course.updateMany({
     data: {
-      instructorId: tutorUser.id,
+      tutorId: tutorUser.id,
     },
   });
 
@@ -129,7 +153,7 @@ async function main() {
       status: CourseStatus.PUBLISHED,
       featured: true,
       thumbnail: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
-      instructorId: tutorUser.id,
+      tutorId: tutorUser.id,
       modules: [
         {
           title: "Module 1: Pure Mathematics 1 & 2 (Algebra, Trigonometry & Calculus)",
@@ -340,7 +364,7 @@ async function main() {
           status: cData.status,
           featured: cData.featured,
           thumbnail: cData.thumbnail,
-          instructorId: tutorUser.id,
+          tutorId: tutorUser.id,
           modules: {
             create: cData.modules.map((m) => ({
               title: m.title,
@@ -361,7 +385,7 @@ async function main() {
     } else {
       course = await prisma.course.update({
         where: { id: existing.id },
-        data: { instructorId: tutorUser.id },
+        data: { tutorId: tutorUser.id },
       });
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -120,13 +121,13 @@ export async function GET(req: NextRequest) {
       if (userRole === "STUDENT") {
         const tutors = await prisma.user.findMany({
           where: {
-            role: "INSTRUCTOR",
+            role: { in: [Role.TUTOR, (Role as any).INSTRUCTOR] },
             id: { not: currentUserId },
           },
           select: { id: true, name: true, email: true, role: true, avatar: true, headline: true },
         });
         contacts = tutors;
-      } else if (userRole === "INSTRUCTOR") {
+      } else if (userRole === Role.TUTOR || (userRole as any) === "INSTRUCTOR") {
         const enrollments = await prisma.enrollment.findMany({
           include: {
             user: {
@@ -144,7 +145,7 @@ export async function GET(req: NextRequest) {
 
         const allStudents = await prisma.user.findMany({
           where: {
-            role: "STUDENT",
+            role: Role.STUDENT,
             id: { not: currentUserId },
           },
           select: { id: true, name: true, email: true, role: true, avatar: true, headline: true },
@@ -158,7 +159,7 @@ export async function GET(req: NextRequest) {
 
         const peers = await prisma.user.findMany({
           where: {
-            role: "INSTRUCTOR",
+            role: { in: [Role.TUTOR, (Role as any).INSTRUCTOR] },
             id: { not: currentUserId },
           },
           select: { id: true, name: true, email: true, role: true, avatar: true, headline: true },
@@ -284,7 +285,7 @@ export async function POST(req: NextRequest) {
         where: { id: receiverId },
         select: { role: true },
       });
-      const receiverLink = receiverUser?.role === "ADMIN" ? "/admin" : receiverUser?.role === "INSTRUCTOR" ? "/tutor" : "/dashboard";
+      const receiverLink = receiverUser?.role === "ADMIN" ? "/admin" : (receiverUser?.role === "TUTOR" || (receiverUser?.role as any) === "INSTRUCTOR") ? "/tutor" : "/dashboard";
 
       await prisma.notification.create({
         data: {

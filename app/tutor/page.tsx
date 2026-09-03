@@ -56,6 +56,7 @@ import {
   Briefcase,
   Share2,
   History,
+  Coins,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1740,8 +1741,9 @@ function TutorDashboardContent() {
                               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
                                 {c.subjectCode || "LONDON A/L"}
                               </span>
-                              <span className="text-xs font-bold text-slate-900 font-mono">
-                                ${c.price}
+                              <span className="text-xs font-bold text-amber-600 font-mono flex items-center gap-1">
+                                <Coins className="w-3 h-3" />
+                                {c.price} Tokens
                               </span>
                             </div>
 

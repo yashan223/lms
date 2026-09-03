@@ -327,7 +327,7 @@ export function EncryptedChatDrawer({
                 </h3>
                 <p className="text-[10px] text-slate-300 truncate">
                   {activeConversation
-                    ? (activeConversation.otherUser?.role === "INSTRUCTOR" ? "Faculty Instructor" : "Student")
+                    ? ((activeConversation.otherUser?.role === "TUTOR" || activeConversation.otherUser?.role === "INSTRUCTOR") ? "Faculty Tutor" : "Student")
                     : "Direct messaging"}
                 </p>
               </div>
@@ -495,7 +495,7 @@ export function EncryptedChatDrawer({
                                 {contact.name}
                               </h4>
                               <p className="text-[10px] text-slate-500 truncate">
-                                {contact.headline || (contact.role === "INSTRUCTOR" ? "Faculty Instructor" : "Student")}
+                                {contact.headline || ((contact.role === "TUTOR" || contact.role === "INSTRUCTOR") ? "Faculty Tutor" : "Student")}
                               </p>
                             </div>
                           </div>
@@ -532,7 +532,7 @@ export function EncryptedChatDrawer({
                                   {conv.otherUser?.name}
                                 </h4>
                                 <p className="text-[10px] text-slate-500 truncate">
-                                  {conv.otherUser?.headline || (conv.otherUser?.role === "INSTRUCTOR" ? "Faculty Instructor" : "Student")}
+                                  {conv.otherUser?.headline || ((conv.otherUser?.role === "TUTOR" || conv.otherUser?.role === "INSTRUCTOR") ? "Faculty Tutor" : "Student")}
                                 </p>
                               </div>
                             </div>

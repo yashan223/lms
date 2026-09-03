@@ -21,6 +21,8 @@ const badgeVariants = cva(
           "border-transparent bg-amber-50 text-amber-700 border border-amber-200/50",
         roleAdmin:
           "bg-indigo-100 text-indigo-800 border border-indigo-200/60 font-medium",
+        roleTutor:
+          "bg-blue-100 text-blue-800 border border-blue-200/60 font-medium",
         roleInstructor:
           "bg-blue-100 text-blue-800 border border-blue-200/60 font-medium",
         roleStudent:

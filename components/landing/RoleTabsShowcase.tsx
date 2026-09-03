@@ -55,11 +55,11 @@ export function RoleTabsShowcase() {
               </TabsTrigger>
 
               <TabsTrigger
-                value="INSTRUCTOR"
+                value="TUTOR"
                 className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold"
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Instructor Studio</span>
+                <span>Tutor Studio</span>
               </TabsTrigger>
 
               <TabsTrigger
@@ -96,8 +96,8 @@ export function RoleTabsShowcase() {
                         desc: "Seamlessly continue across tablet, smartphone, and desktop.",
                       },
                       {
-                        title: "24/7 AI Academic Tutor",
-                        desc: "Get instant conceptual summaries and guided study notes in real-time.",
+                        title: "24/7 Academic Tutor & Token Hours",
+                        desc: "Book 1-on-1 hours with expert faculty tutors and manage learning credits.",
                       },
                       {
                         title: "Accredited Verifiable Credentials",
@@ -180,21 +180,21 @@ export function RoleTabsShowcase() {
             </div>
           </TabsContent>
 
-          <TabsContent value="INSTRUCTOR">
+          <TabsContent value="TUTOR">
             <div className="bg-white rounded-3xl border border-blue-100 p-6 sm:p-10 shadow-xl shadow-blue-500/5">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-6 space-y-6">
                   <div className="flex items-center gap-2">
-                    <Badge variant="roleInstructor">Instructor Studio</Badge>
-                    <span className="text-xs text-slate-500">Instructor Workspace</span>
+                    <Badge variant="roleTutor">Tutor Studio</Badge>
+                    <span className="text-xs text-slate-500">Tutor Workspace</span>
                   </div>
 
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Design, publish, and evaluate world-class curriculum with ease.
+                    Design, publish, and teach world-class curriculum with ease.
                   </h3>
 
                   <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                    A comprehensive academic workspace that allows faculty to upload lecture modules, configure automated grading rubrics, broadcast live seminars, and monitor student engagement.
+                    A comprehensive academic workspace that allows faculty tutors to curate syllabus modules, host live video classes, manage 1-on-1 consultations, and track student mastery.
                   </p>
 
                   <div className="space-y-3">

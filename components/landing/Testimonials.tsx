@@ -9,7 +9,8 @@ import { Quote, CheckCircle2 } from "lucide-react";
 export function Testimonials() {
   const roleBadges = {
     STUDENT: { label: "Verified Student", variant: "roleStudent" as const },
-    INSTRUCTOR: { label: "Verified Instructor", variant: "roleInstructor" as const },
+    TUTOR: { label: "Verified Tutor", variant: "roleTutor" as const },
+    INSTRUCTOR: { label: "Verified Tutor", variant: "roleTutor" as const },
     ADMIN: { label: "University Admin", variant: "roleAdmin" as const },
   };
 
@@ -18,7 +19,7 @@ export function Testimonials() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Loved by Students, Instructors & Admins
+            Loved by Students, Tutors & Admins
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
             Real stories from members of our 140,000+ global learning community.

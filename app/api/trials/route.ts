@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     if (tutorId) {
       whereClause.OR = [
         { tutorId: tutorId },
-        { course: { instructorId: tutorId } },
+        { course: { tutorId: tutorId } },
       ];
     } else if (studentId) {
       whereClause.OR = [
@@ -27,14 +27,14 @@ export async function GET(request: NextRequest) {
         { studentEmail: emailCookie?.toLowerCase() },
       ];
     } else if (emailCookie) {
-      if (roleCookie === "INSTRUCTOR") {
+      if (roleCookie === "TUTOR" || roleCookie === "INSTRUCTOR") {
         const user = await prisma.user.findUnique({
           where: { email: emailCookie.toLowerCase() },
         });
         if (user) {
           whereClause.OR = [
             { tutorId: user.id },
-            { course: { instructorId: user.id } },
+            { course: { tutorId: user.id } },
           ];
         }
       } else if (roleCookie === "STUDENT") {
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const trials = await prisma.trialRequest.findMany({
+    const rawTrials = await prisma.trialRequest.findMany({
       where: whereClause,
       include: {
         course: {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
             slug: true,
             subjectCode: true,
             thumbnail: true,
-            instructor: {
+            tutor: {
               select: {
                 id: true,
                 name: true,
@@ -87,6 +87,11 @@ export async function GET(request: NextRequest) {
         preferredDate: "asc",
       },
     });
+
+    const trials = rawTrials.map((t) => ({
+      ...t,
+      course: t.course ? { ...t.course, instructor: (t.course as any).tutor } : null,
+    }));
 
     return NextResponse.json({ trials });
   } catch (error) {
@@ -163,10 +168,10 @@ export async function POST(request: NextRequest) {
       if (courseId) {
         const course = await prisma.course.findUnique({
           where: { id: courseId },
-          select: { id: true, title: true, subjectCode: true, instructorId: true },
+          select: { id: true, title: true, subjectCode: true, tutorId: true },
         });
         if (course) {
-          if (!resolvedTutorId) resolvedTutorId = course.instructorId;
+          if (!resolvedTutorId) resolvedTutorId = course.tutorId;
           courseTitle = course.title;
           courseSubjectCode = course.subjectCode || "";
         }
@@ -191,7 +196,7 @@ export async function POST(request: NextRequest) {
         include: {
           course: {
             include: {
-              instructor: true,
+              tutor: true,
             },
           },
           tutor: true,
@@ -237,7 +242,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "confirm_trial" || action === "update_trial_status") {
-      const auth = await getAuthenticatedUser(request, [Role.INSTRUCTOR, Role.ADMIN]);
+      const auth = await getAuthenticatedUser(request, [Role.TUTOR, Role.ADMIN]);
       if (!auth.user) {
         return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
       }
@@ -272,7 +277,7 @@ export async function POST(request: NextRequest) {
         },
         include: {
           course: {
-            include: { instructor: true },
+            include: { tutor: true },
           },
           tutor: true,
           student: true,
@@ -349,7 +354,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "decline_trial" || action === "cancel_trial") {
-      const auth = await getAuthenticatedUser(request, [Role.INSTRUCTOR, Role.ADMIN]);
+      const auth = await getAuthenticatedUser(request, [Role.TUTOR, Role.ADMIN]);
       if (!auth.user) {
         return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
       }
@@ -434,7 +439,7 @@ export async function POST(request: NextRequest) {
         },
         include: {
           course: {
-            include: { instructor: true },
+            include: { tutor: true },
           },
           tutor: true,
           student: true,

@@ -20,6 +20,7 @@ import {
   CalendarCheck,
   Video,
   Lock,
+  Coins,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
@@ -236,10 +237,18 @@ export default function CoursesPage() {
                   </div>
 
                   <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                    <div className="flex items-baseline gap-1 shrink-0">
-                      <span className="text-2xl font-black text-slate-900">
-                        ${course.price}
-                      </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                        <Coins className="w-4 h-4" />
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-slate-900">
+                          {course.price}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Tokens
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
@@ -248,11 +257,11 @@ export default function CoursesPage() {
                           setSelectedPurchaseCourse(course);
                           setShowPurchaseModal(true);
                         }}
-                        className="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                        title="Purchase course and unlock all study materials"
+                        className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                        title="Enroll in course using tokens and unlock all study materials"
                       >
-                        <Lock className="w-3.5 h-3.5 text-blue-200 shrink-0" />
-                        <span>Purchase</span>
+                        <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                        <span>Enroll ({course.price} Tokens)</span>
                       </button>
 
                       <button

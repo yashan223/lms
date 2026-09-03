@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     let redirectPath = "/dashboard";
     if (user.role === "ADMIN") {
       redirectPath = "/admin";
-    } else if (user.role === "INSTRUCTOR") {
+    } else if (user.role === "TUTOR" || (user.role as any) === "INSTRUCTOR") {
       redirectPath = "/tutor";
     }
 

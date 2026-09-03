@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const courses = await prisma.course.findMany({
+    const rawCourses = await prisma.course.findMany({
       where: { status: "PUBLISHED" },
       include: {
-        instructor: true,
+        tutor: true,
         modules: {
           include: {
             lessons: true,
@@ -17,6 +17,11 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    const courses = rawCourses.map((c) => ({
+      ...c,
+      instructor: c.tutor,
+    }));
 
     return NextResponse.json({ courses });
   } catch (error) {

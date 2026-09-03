@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   AlertCircle,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,7 +134,7 @@ export function CoursePurchaseModal({
                 </span>
               </div>
               <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-0.5 leading-snug">
-                {purchaseSuccess ? "Purchase Complete!" : "Course Checkout & Enrollment"}
+                {purchaseSuccess ? "Enrollment Complete!" : `Course Enrollment (${price} Tokens)`}
               </h3>
             </div>
           </div>
@@ -222,7 +223,11 @@ export function CoursePurchaseModal({
               </div>
 
               <div className="text-right shrink-0">
-                <div className="text-2xl font-black text-slate-900">${price}.00</div>
+                <div className="flex items-center justify-end gap-1.5">
+                  <Coins className="w-5 h-5 text-amber-500" />
+                  <span className="text-2xl font-black text-slate-900">{price}</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase">Tokens</span>
+                </div>
                 <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
                   Lifetime Access
                 </div>
@@ -348,15 +353,18 @@ export function CoursePurchaseModal({
             <div className="space-y-1.5 pt-1 text-slate-600 text-xs">
               <div className="flex items-center justify-between">
                 <span>Course Tuition Specification</span>
-                <span className="font-semibold text-slate-900">${price}.00</span>
+                <span className="font-semibold text-slate-900">{price} Tokens</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Platform & Registration Fee</span>
-                <span className="font-bold text-emerald-700">FREE ($0.00)</span>
+                <span className="font-bold text-emerald-700">FREE (0 Tokens)</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-sm font-extrabold text-slate-900">
-                <span>Total Amount Due</span>
-                <span className="text-blue-700">${price}.00</span>
+                <span>Total Tokens Required</span>
+                <span className="text-[#0c2461] flex items-center gap-1 font-black">
+                  <Coins className="w-4 h-4 text-amber-500" />
+                  {price} Tokens
+                </span>
               </div>
             </div>
 
@@ -390,8 +398,9 @@ export function CoursePurchaseModal({
                   </>
                 ) : (
                   <>
-                    <Lock className="w-3.5 h-3.5 text-blue-200" />
-                    <span>Complete Purchase (${price}.00)</span>
+                    <Coins className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Confirm Enrollment ({price} Tokens)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
               </Button>

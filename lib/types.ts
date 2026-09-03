@@ -1,4 +1,4 @@
-export type UserRole = "ADMIN" | "INSTRUCTOR" | "STUDENT";
+export type UserRole = "ADMIN" | "TUTOR" | "STUDENT";
 
 export type CourseLevel =
   | "London O/L (IGCSE)"
@@ -22,7 +22,7 @@ export type CourseCategory =
   | "Computer Science & ICT"
   | string;
 
-export interface Instructor {
+export interface Tutor {
   id: string;
   name: string;
   avatar: string;
@@ -32,6 +32,9 @@ export interface Instructor {
   rating?: number;
   studentsCount?: number;
 }
+
+// Alias for backward compatibility if needed
+export type Instructor = Tutor;
 
 export interface Course {
   id: string;
@@ -53,7 +56,9 @@ export interface Course {
   lessonsCount: number;
   featured?: boolean;
   bestseller?: boolean;
-  instructor: Instructor;
+  tutorId?: string;
+  tutor?: Tutor;
+  instructor?: Tutor; // backward compatibility
   tags: string[];
   skills: string[];
 }

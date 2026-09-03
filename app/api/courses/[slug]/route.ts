@@ -9,7 +9,7 @@ async function findCourseBySlugOrId(rawSlug: string) {
   const decoded = decodeURIComponent(rawSlug).trim();
 
   const includeOptions = {
-    instructor: {
+    tutor: {
       select: {
         id: true,
         name: true,
@@ -47,6 +47,10 @@ async function findCourseBySlugOrId(rawSlug: string) {
     },
     include: includeOptions,
   });
+
+  if (course) {
+    (course as any).instructor = course.tutor;
+  }
 
   return course;
 }

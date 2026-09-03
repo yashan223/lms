@@ -42,7 +42,6 @@ import {
   MessageSquareLock,
   Radio,
   Coins,
-  Sparkles,
   CreditCard,
   History,
 } from "lucide-react";
@@ -916,47 +915,43 @@ function DashboardContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           <aside className="lg:col-span-3 space-y-4 order-2 lg:order-1">
             {/* Student Token / Hours Wallet Widget */}
-            <div className="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 rounded-2xl p-4 text-white shadow-lg border border-blue-800/60 relative overflow-hidden">
-              <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-amber-300">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shadow-2xs">
                     <Coins className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-blue-200 block">
-                      Learning Wallet
-                    </span>
-                    <h4 className="text-xs font-black text-white">Hour Credits</h4>
+                    <h4 className="text-xs font-bold text-slate-900">Learning Wallet</h4>
+                    <span className="text-[10px] text-slate-500 font-medium">Hour Credits</span>
                   </div>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
                   Active
                 </span>
               </div>
 
-              <div className="my-3 bg-white/10 rounded-xl p-3 border border-white/10 flex items-center justify-between">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] text-blue-200 font-medium">Available Balance</div>
-                  <div className="text-2xl font-black text-white tracking-tight flex items-baseline gap-1">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Available Balance</div>
+                  <div className="text-2xl font-black text-slate-900 tracking-tight flex items-baseline gap-1">
                     <span>{tokenBalance}</span>
-                    <span className="text-xs font-bold text-amber-300">Hours</span>
+                    <span className="text-xs font-bold text-amber-600">Hours</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowBuyTokensModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs shadow-md hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-1"
+                  className="px-3.5 py-2 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-2xs hover:shadow-xs transition-all cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Buy Hours</span>
+                  Buy Hours
                 </button>
               </div>
 
-              <div className="text-[11px] text-blue-200/80 leading-snug flex items-center justify-between pt-1">
+              <div className="text-[11px] text-slate-500 flex items-center justify-between pt-0.5 font-medium">
                 <span>1 Token = 1 Hour Tutoring</span>
                 <button
                   onClick={() => setShowBuyTokensModal(true)}
-                  className="text-amber-300 hover:underline font-bold text-[10px] cursor-pointer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline font-bold text-[10px] cursor-pointer"
                 >
                   Top Up Packs &gt;
                 </button>

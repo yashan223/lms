@@ -12,9 +12,6 @@ export function PricingSection() {
     <section id="pricing" className="py-20 bg-white border-t border-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200 text-xs px-3 py-1 font-bold mb-3">
-            Token & Hours Academy Economy
-          </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
             Flexible Learning Hours with{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-600">

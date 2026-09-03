@@ -919,7 +919,7 @@ function DashboardContent() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shadow-2xs">
-                    <Coins className="w-4 h-4" />
+                    <Coins className="w-4 h-4 fill-amber-500/20" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900">Learning Wallet</h4>
@@ -1989,7 +1989,7 @@ function DashboardContent() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
-                  <Coins className="w-5 h-5" />
+                  <Coins className="w-5 h-5 fill-amber-500/20" />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900">

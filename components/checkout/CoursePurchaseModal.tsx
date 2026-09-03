@@ -33,7 +33,12 @@ interface CoursePurchaseModalProps {
     price: number;
     subjectCode?: string;
     level?: string;
-    category?: string;
+    tutor?: {
+      name: string;
+      avatar?: string;
+      headline?: string;
+      roleTitle?: string;
+    };
     instructor?: {
       name: string;
       avatar?: string;
@@ -209,14 +214,14 @@ export function CoursePurchaseModal({
                 <h4 className="font-extrabold text-sm text-slate-900 leading-snug truncate">
                   {course.title}
                 </h4>
-                {course.instructor && (
+                {(course.tutor || course.instructor) && (
                   <div className="flex items-center gap-2">
                     <Avatar className="w-5 h-5 ring-1 ring-slate-200">
-                      <AvatarImage src={course.instructor.avatar} />
-                      <AvatarFallback>{course.instructor.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={course.tutor?.avatar || course.instructor?.avatar} />
+                      <AvatarFallback>{(course.tutor?.name || course.instructor?.name || "T").charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span className="text-[11px] text-slate-600 font-medium">
-                      Taught by {course.instructor.name}
+                      Taught by {course.tutor?.name || course.instructor?.name}
                     </span>
                   </div>
                 )}
@@ -224,7 +229,7 @@ export function CoursePurchaseModal({
 
               <div className="text-right shrink-0">
                 <div className="flex items-center justify-end gap-1.5">
-                  <Coins className="w-5 h-5 text-amber-500" />
+                  <Coins className="w-5 h-5 text-amber-500 fill-amber-500/20" />
                   <span className="text-2xl font-black text-slate-900">{price}</span>
                   <span className="text-xs font-bold text-slate-500 uppercase">Tokens</span>
                 </div>

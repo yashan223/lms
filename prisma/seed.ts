@@ -5,9 +5,15 @@ import { hashPassword } from "../lib/auth";
 async function main() {
   console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
 
-  const adminEmail = (process.env.DEFAULT_ADMIN_EMAIL || "admin@edupulse.uk").trim().toLowerCase();
-  const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "AdminPass123!";
-  const adminName = process.env.DEFAULT_ADMIN_NAME || "Dr. Alastair Vance";
+  const adminEmail = process.env.DEFAULT_ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+  const adminName = process.env.DEFAULT_ADMIN_NAME?.trim();
+
+  if (!adminEmail || !adminPassword) {
+    throw new Error(
+      "Missing required environment variables: DEFAULT_ADMIN_EMAIL and DEFAULT_ADMIN_PASSWORD must be configured in .env."
+    );
+  }
 
   // Upsert the 3 default accounts without deleting existing user data
 
@@ -21,7 +27,7 @@ async function main() {
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {
-      name: adminName,
+      name: adminName || "Administrator",
       passwordHash: adminPassHash,
       role: Role.ADMIN,
       emailVerified: now,
@@ -31,7 +37,7 @@ async function main() {
     },
     create: {
       email: adminEmail,
-      name: adminName,
+      name: adminName || "Administrator",
       passwordHash: adminPassHash,
       role: Role.ADMIN,
       emailVerified: now,

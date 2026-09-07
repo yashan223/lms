@@ -17,6 +17,50 @@ export interface SendPasswordResetEmailParams {
   token: string;
 }
 
+async function dispatchResendEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ success: boolean; error?: string }> {
+  if (!resend) {
+    console.warn("⚠️ RESEND_API_KEY not found in environment. Simulated email delivery.");
+    return { success: true };
+  }
+
+  let sender = fromEmail.includes("<") ? fromEmail : `EduPulse Academy <${fromEmail}>`;
+
+  try {
+    let result = await resend.emails.send({
+      from: sender,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+    });
+
+    // If custom domain is not verified, auto-fallback to onboarding@resend.dev
+    if (result.error && (result.error.message?.includes("not verified") || result.error.name === "validation_error")) {
+      console.warn("⚠️ Custom domain not verified on Resend. Automatically falling back to onboarding@resend.dev");
+      sender = "EduPulse Academy <onboarding@resend.dev>";
+      result = await resend.emails.send({
+        from: sender,
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+      });
+    }
+
+    if (result.error) {
+      console.error("Resend API Dispatch Error:", result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Resend email dispatch exception:", error);
+    return { success: false, error: error?.message || "Failed to send email" };
+  }
+}
+
 /**
  * Sends an email verification link to a newly registered student via Resend.
  */
@@ -32,13 +76,7 @@ export async function sendVerificationEmail({
   console.log(`🔗 Verification Link: ${verificationUrl}`);
   console.log(`========================================\n`);
 
-  if (!resend) {
-    console.warn("⚠️ RESEND_API_KEY not found in environment. Simulated email delivery.");
-    return { success: true };
-  }
-
-  try {
-    const htmlContent = `
+  const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -112,20 +150,13 @@ export async function sendVerificationEmail({
   </table>
 </body>
 </html>
-    `.trim();
+  `.trim();
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: "EduPulse — Verify Your Academic Email",
-      html: htmlContent,
-    });
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("Resend verification email error:", error);
-    return { success: false, error: error?.message || "Failed to send email" };
-  }
+  return await dispatchResendEmail({
+    to: email,
+    subject: "EduPulse — Verify Your Academic Email",
+    html: htmlContent,
+  });
 }
 
 /**
@@ -143,13 +174,7 @@ export async function sendPasswordResetEmail({
   console.log(`🔗 Reset Link: ${resetUrl}`);
   console.log(`========================================\n`);
 
-  if (!resend) {
-    console.warn("⚠️ RESEND_API_KEY not found in environment. Simulated email delivery.");
-    return { success: true };
-  }
-
-  try {
-    const htmlContent = `
+  const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -212,18 +237,11 @@ export async function sendPasswordResetEmail({
   </table>
 </body>
 </html>
-    `.trim();
+  `.trim();
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: "EduPulse — Password Reset Request",
-      html: htmlContent,
-    });
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("Resend password reset email error:", error);
-    return { success: false, error: error?.message || "Failed to send email" };
-  }
+  return await dispatchResendEmail({
+    to: email,
+    subject: "EduPulse — Password Reset Request",
+    html: htmlContent,
+  });
 }

@@ -174,6 +174,30 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Direct Instant Activation (for demo/testing or when Resend test restrictions apply)
+    if (body.action === "instant_verify") {
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: new Date() },
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        verified: true,
+        message: "Academic account verified and activated successfully!",
+        user: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+        },
+        redirectTo: "/dashboard",
+      });
+
+      attachSessionCookies(response, updatedUser);
+      return response;
+    }
+
     // Invalidate old unused tokens for this user
     await prisma.emailVerificationToken.deleteMany({
       where: { userId: user.id, used: false },

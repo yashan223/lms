@@ -1,3 +1,6 @@
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { hashPassword } from "../lib/auth";

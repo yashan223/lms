@@ -1207,14 +1207,6 @@ function TutorDashboardContent() {
               Tutor
             </Badge>
 
-            <button
-              onClick={() => setIsChatDrawerOpen((prev) => !prev)}
-              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-600 transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
-              title="Messages"
-            >
-              <MessageSquareLock className="w-4 h-4 text-blue-600" />
-              <span className="hidden sm:inline">Messages</span>
-            </button>
 
             <NotificationBell userRole="TUTOR" />
 
@@ -1831,6 +1823,8 @@ function TutorDashboardContent() {
                       {filteredEvents.map((ev) => {
                         const isLive = ev.status === "LIVE";
                         const isCompleted = ev.status === "COMPLETED";
+                        const isPendingApproval = ev.status === "PENDING_APPROVAL";
+                        const isRejected = ev.status === "REJECTED";
 
                         return (
                           <div
@@ -1838,14 +1832,30 @@ function TutorDashboardContent() {
                             className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                               isLive
                                 ? "bg-red-50/50 border-red-200"
+                                : isPendingApproval
+                                ? "bg-amber-50/40 border-amber-200"
+                                : isRejected
+                                ? "bg-red-50/40 border-red-200"
                                 : "bg-white border-slate-200 hover:border-blue-200"
                             }`}
                           >
                             <div className="space-y-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-bold text-xs text-slate-900">
                                   {ev.title}
                                 </span>
+                                {isPendingApproval && (
+                                  <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-bold text-[9px] flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5" />
+                                    <span>⏳ Pending Admin Approval</span>
+                                  </Badge>
+                                )}
+                                {isRejected && (
+                                  <Badge className="bg-red-100 text-red-800 border-red-300 font-bold text-[9px] flex items-center gap-1">
+                                    <AlertCircle className="w-2.5 h-2.5" />
+                                    <span>❌ Declined by Admin</span>
+                                  </Badge>
+                                )}
                                 {isLive && (
                                   <Badge className="bg-red-600 text-white font-extrabold text-[9px] animate-pulse">
                                     ● LIVE
@@ -1856,7 +1866,18 @@ function TutorDashboardContent() {
                                     Ended
                                   </Badge>
                                 )}
+                                {!isPendingApproval && !isRejected && !isLive && !isCompleted && (
+                                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-[9px]">
+                                    ✓ Approved & Live
+                                  </Badge>
+                                )}
                               </div>
+
+                              {isRejected && (ev as any).rejectionReason && (
+                                <div className="p-2 rounded-lg bg-red-100/70 border border-red-200 text-red-800 text-[11px] font-medium">
+                                  <strong>Admin Note:</strong> {(ev as any).rejectionReason}
+                                </div>
+                              )}
 
                               <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 font-mono">
                                 <span className="flex items-center gap-1">
@@ -1908,6 +1929,45 @@ function TutorDashboardContent() {
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
+                              ) : isPendingApproval ? (
+                                <>
+                                  <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Awaiting Review</span>
+                                  </span>
+                                  <button
+                                    onClick={() => openRescheduleForClass(ev)}
+                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                    title="Edit Schedule"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>Edit</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteClass(ev.id)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                    title="Cancel Class"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              ) : isRejected ? (
+                                <>
+                                  <button
+                                    onClick={() => openRescheduleForClass(ev)}
+                                    className="px-3 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <RefreshCw className="w-3 h-3" />
+                                    <span>Resubmit</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteClass(ev.id)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                    title="Delete Request"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
                               ) : (
                                 <>
                                   <button
@@ -2258,9 +2318,10 @@ function TutorDashboardContent() {
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                       {[
                         { key: "ALL", label: "All Bookings", count: trials.length },
-                        { key: "PENDING", label: "⏳ Pending", count: trials.filter((t) => t.status === "PENDING").length },
-                        { key: "CONFIRMED", label: "✓ Confirmed", count: trials.filter((t) => t.status === "CONFIRMED").length },
-                        { key: "CANCELLED", label: "Cancelled", count: trials.filter((t) => t.status === "CANCELLED").length },
+                        { key: "PENDING", label: "⏳ Needs Date", count: trials.filter((t) => t.status === "PENDING").length },
+                        { key: "PENDING_APPROVAL", label: "⏳ In Admin Review", count: trials.filter((t) => t.status === "PENDING_APPROVAL").length },
+                        { key: "CONFIRMED", label: "✓ Approved & Live", count: trials.filter((t) => t.status === "CONFIRMED").length },
+                        { key: "CANCELLED", label: "Declined / Cancelled", count: trials.filter((t) => t.status === "CANCELLED" || t.status === "REJECTED").length },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -2282,7 +2343,7 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {trials.filter((t) => trialFilter === "ALL" || t.status === trialFilter).length === 0 ? (
+                  {trials.filter((t) => trialFilter === "ALL" || t.status === trialFilter || (trialFilter === "CANCELLED" && (t.status === "CANCELLED" || t.status === "REJECTED"))).length === 0 ? (
                     <div className="text-center py-12 text-xs text-slate-400 italic bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
                       <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                       <span>No trial bookings found under &quot;{trialFilter.toLowerCase()}&quot; filter.</span>
@@ -2290,11 +2351,12 @@ function TutorDashboardContent() {
                   ) : (
                     <div className="space-y-3.5">
                       {trials
-                        .filter((t) => trialFilter === "ALL" || t.status === trialFilter)
+                        .filter((t) => trialFilter === "ALL" || t.status === trialFilter || (trialFilter === "CANCELLED" && (t.status === "CANCELLED" || t.status === "REJECTED")))
                         .map((tr) => {
                           const isPending = tr.status === "PENDING";
+                          const isPendingApproval = tr.status === "PENDING_APPROVAL";
                           const isConfirmed = tr.status === "CONFIRMED";
-                          const isCancelled = tr.status === "CANCELLED";
+                          const isCancelled = tr.status === "CANCELLED" || tr.status === "REJECTED";
 
                           return (
                             <div
@@ -2302,6 +2364,8 @@ function TutorDashboardContent() {
                               className={`p-4 rounded-2xl border transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
                                 isPending
                                   ? "bg-amber-50/40 border-amber-200/80 shadow-2xs hover:bg-amber-50/60"
+                                  : isPendingApproval
+                                  ? "bg-amber-50/60 border-amber-300 shadow-2xs"
                                   : isConfirmed
                                   ? "bg-white border-slate-200 shadow-2xs hover:border-blue-300"
                                   : "bg-slate-50 border-slate-200 opacity-60"
@@ -2318,17 +2382,23 @@ function TutorDashboardContent() {
 
                                   {isPending && (
                                     <Badge className="bg-amber-500 text-white font-bold text-[10px] animate-pulse">
-                                      ⏳ PENDING TUTOR CONFIRMATION
+                                      ⏳ SET DATE & CONFIRM
+                                    </Badge>
+                                  )}
+                                  {isPendingApproval && (
+                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-bold text-[10px] flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      <span>⏳ AWAITING ADMIN APPROVAL</span>
                                     </Badge>
                                   )}
                                   {isConfirmed && (
                                     <Badge className="bg-emerald-600 text-white font-bold text-[10px]">
-                                      ✓ CONFIRMED & SCHEDULED
+                                      ✓ APPROVED & ON CALENDAR
                                     </Badge>
                                   )}
                                   {isCancelled && (
                                     <Badge className="bg-slate-500 text-white font-bold text-[10px]">
-                                      CANCELLED
+                                      DECLINED / CANCELLED
                                     </Badge>
                                   )}
                                 </div>
@@ -2336,7 +2406,7 @@ function TutorDashboardContent() {
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
                                   <span className="flex items-center gap-1 font-mono text-blue-800 font-bold">
                                     <Clock className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>{isPending ? "Requested:" : "Confirmed:"}</span>
+                                    <span>{isPending ? "Requested Slot:" : "Confirmed Slot:"}</span>
                                     {new Date(tr.preferredDate).toLocaleDateString("en-US", {
                                       weekday: "short",
                                       month: "short",
@@ -2366,6 +2436,12 @@ function TutorDashboardContent() {
                                     {tr.notes && <span className="text-slate-500"> • Note: {tr.notes}</span>}
                                   </p>
                                 )}
+
+                                {(tr as any).rejectionReason && (
+                                  <div className="p-2 rounded-lg bg-red-100/70 border border-red-200 text-red-800 text-xs font-medium">
+                                    <strong>Admin Feedback:</strong> {(tr as any).rejectionReason}
+                                  </div>
+                                )}
                               </div>
 
                               <div className="flex flex-wrap items-center gap-2 self-end lg:self-center shrink-0">
@@ -2374,10 +2450,10 @@ function TutorDashboardContent() {
                                     <button
                                       onClick={() => openConfirmTrialModal(tr)}
                                       className="h-8.5 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
-                                      title="Review and confirm trial session date"
+                                      title="Review and submit confirmed date for Admin approval"
                                     >
                                       <CheckCircle2 className="w-3.5 h-3.5 text-blue-200" />
-                                      <span>✓ Confirm & Set Date</span>
+                                      <span>✓ Set Date & Submit</span>
                                     </button>
 
                                     <button
@@ -2386,6 +2462,21 @@ function TutorDashboardContent() {
                                     >
                                       <X className="w-3.5 h-3.5" />
                                       <span>Decline</span>
+                                    </button>
+                                  </>
+                                ) : isPendingApproval ? (
+                                  <>
+                                    <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold inline-flex items-center gap-1">
+                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                      <span>Admin Reviewing</span>
+                                    </span>
+                                    <button
+                                      onClick={() => openRescheduleForTrial(tr)}
+                                      className="h-8.5 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+                                      title="Adjust session date"
+                                    >
+                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                      <span>Edit</span>
                                     </button>
                                   </>
                                 ) : (
@@ -3439,11 +3530,7 @@ function TutorDashboardContent() {
                   type="datetime-local"
                   required
                   value={newClassDate}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setNewClassDate(val);
-                    if (val) (e.target as HTMLInputElement).blur();
-                  }}
+                  onChange={(e) => setNewClassDate(e.target.value)}
                   className="rounded-xl h-9 text-xs"
                 />
               </div>
@@ -3497,7 +3584,7 @@ function TutorDashboardContent() {
                   disabled={schedulingClass}
                   className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
                 >
-                  {schedulingClass ? "Scheduling..." : "Confirm Schedule"}
+                  {schedulingClass ? "Submitting..." : "Submit for Admin Approval"}
                 </Button>
               </div>
             </form>
@@ -3565,11 +3652,7 @@ function TutorDashboardContent() {
                   type="datetime-local"
                   required
                   value={rescheduleDate}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setRescheduleDate(val);
-                    if (val) (e.target as HTMLInputElement).blur();
-                  }}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
                   className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
@@ -3732,10 +3815,10 @@ function TutorDashboardContent() {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900">
-                    Confirm & Schedule Free Trial
+                    Set Date & Submit Trial for Approval
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Set official date & time and send to student’s live calendar
+                    Set official slot and submit for Admin verification before publishing to student
                   </p>
                 </div>
               </div>
@@ -3792,11 +3875,7 @@ function TutorDashboardContent() {
                   type="datetime-local"
                   required
                   value={confirmDate}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setConfirmDate(val);
-                    if (val) (e.target as HTMLInputElement).blur();
-                  }}
+                  onChange={(e) => setConfirmDate(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <p className="text-[11px] text-slate-500">

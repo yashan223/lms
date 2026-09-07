@@ -18,6 +18,7 @@ import {
   Plus,
   ArrowLeft,
   Calendar,
+  CalendarCheck,
   DollarSign,
   Download,
   Layers,
@@ -68,7 +69,7 @@ function formatSessionDuration(startedAt?: string | Date | null, endedAt?: strin
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "users" | "courses" | "finances"
+    "overview" | "live_classes" | "users" | "courses" | "finances" | "approvals"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -77,6 +78,29 @@ export default function AdminDashboardPage() {
   const [coursesList, setCoursesList] = useState<any[]>([]);
   const [facultyList, setFacultyList] = useState<any[]>([]);
   const [eventsList, setEventsList] = useState<any[]>([]);
+
+  // Approvals State
+  const [pendingClassesList, setPendingClassesList] = useState<any[]>([]);
+  const [pendingTrialsList, setPendingTrialsList] = useState<any[]>([]);
+  const [pendingCoursesList, setPendingCoursesList] = useState<any[]>([]);
+  const [totalPendingApprovals, setTotalPendingApprovals] = useState<number>(0);
+  const [approvalSubTab, setApprovalSubTab] = useState<"ALL" | "CLASSES" | "TRIALS" | "COURSES">("ALL");
+  const [processingApprovalId, setProcessingApprovalId] = useState<string | null>(null);
+
+  const [rejectionModalData, setRejectionModalData] = useState<{
+    isOpen: boolean;
+    type: "CLASS" | "TRIAL" | "COURSE";
+    id: string;
+    title: string;
+    tutorName?: string;
+  }>({
+    isOpen: false,
+    type: "CLASS",
+    id: "",
+    title: "",
+  });
+  const [rejectionReasonInput, setRejectionReasonInput] = useState("");
+  const [isSubmittingReject, setIsSubmittingReject] = useState(false);
 
   const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
   const [liveClassSearch, setLiveClassSearch] = useState("");
@@ -186,6 +210,10 @@ export default function AdminDashboardPage() {
         setCoursesList(data.courses || []);
         setFacultyList(data.faculty || []);
         setEventsList(data.events || []);
+        setPendingClassesList(data.pendingClasses || []);
+        setPendingTrialsList(data.pendingTrials || []);
+        setPendingCoursesList(data.pendingCourses || []);
+        setTotalPendingApprovals(data.totalPendingApprovals || 0);
       } else {
         const errData = await res.json().catch(() => ({}));
         setFetchError(errData.error || "Failed to load academy records from server");
@@ -805,6 +833,100 @@ export default function AdminDashboardPage() {
     });
   };
 
+  const handleApproveClass = async (eventId: string) => {
+    try {
+      setProcessingApprovalId(eventId);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve_class", eventId }),
+      });
+      if (res.ok) {
+        await fetchAdminData();
+      }
+    } catch (err) {
+      console.error("Error approving class:", err);
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  };
+
+  const handleApproveTrial = async (trialId: string) => {
+    try {
+      setProcessingApprovalId(trialId);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve_trial", trialId }),
+      });
+      if (res.ok) {
+        await fetchAdminData();
+      }
+    } catch (err) {
+      console.error("Error approving trial:", err);
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  };
+
+  const handleApproveCourse = async (courseId: string) => {
+    try {
+      setProcessingApprovalId(courseId);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve_course", courseId }),
+      });
+      if (res.ok) {
+        await fetchAdminData();
+      }
+    } catch (err) {
+      console.error("Error approving course:", err);
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  };
+
+  const handleOpenRejectModal = (type: "CLASS" | "TRIAL" | "COURSE", id: string, title: string, tutorName?: string) => {
+    setRejectionModalData({ isOpen: true, type, id, title, tutorName });
+    setRejectionReasonInput("");
+  };
+
+  const handleConfirmReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectionModalData.id) return;
+    try {
+      setIsSubmittingReject(true);
+      let action = "reject_class";
+      let payload: any = { reason: rejectionReasonInput.trim() };
+      if (rejectionModalData.type === "CLASS") {
+        action = "reject_class";
+        payload.eventId = rejectionModalData.id;
+      } else if (rejectionModalData.type === "TRIAL") {
+        action = "reject_trial";
+        payload.trialId = rejectionModalData.id;
+      } else if (rejectionModalData.type === "COURSE") {
+        action = "reject_course";
+        payload.courseId = rejectionModalData.id;
+      }
+
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...payload }),
+      });
+
+      if (res.ok) {
+        setRejectionModalData((prev) => ({ ...prev, isOpen: false }));
+        await fetchAdminData();
+      }
+    } catch (err) {
+      console.error("Error rejecting item:", err);
+    } finally {
+      setIsSubmittingReject(false);
+    }
+  };
+
   const purchasesList = useMemo(() => {
     const allPurchases: any[] = [];
     coursesList.forEach((c) => {
@@ -889,6 +1011,13 @@ export default function AdminDashboardPage() {
 
   const navMenuItems = [
     { id: "overview", label: "Executive Overview", icon: Layers },
+    {
+      id: "approvals",
+      label: "Tutor Approvals",
+      icon: ShieldCheck,
+      badge: totalPendingApprovals > 0 ? `${totalPendingApprovals} Pending` : undefined,
+      badgeColor: totalPendingApprovals > 0 ? "bg-amber-500 text-white font-black animate-pulse" : undefined,
+    },
     {
       id: "live_classes",
       label: "Live Classes & Meets",
@@ -1017,7 +1146,9 @@ export default function AdminDashboardPage() {
 
               <div>
                 <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight capitalize">
-                  {activeTab === "live_classes"
+                  {activeTab === "approvals"
+                    ? "Tutor Approvals & Academic Verification"
+                    : activeTab === "live_classes"
                     ? "Live Classes & Google Meet Operations"
                     : activeTab === "users"
                     ? "User Management"
@@ -2192,6 +2323,412 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {activeTab === "approvals" && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Approvals Metric Strip */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className={`p-5 rounded-2xl bg-white border shadow-2xs space-y-1 ${totalPendingApprovals > 0 ? "border-amber-300 ring-2 ring-amber-500/20" : "border-slate-200"}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-600 flex items-center gap-1.5">
+                      <Clock className="w-4 h-4" />
+                      Total Awaiting Review
+                    </span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {totalPendingApprovals} Pending
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">Faculty actions requiring sign-off</div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
+                      <Video className="w-4 h-4" />
+                      Live Classes
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {pendingClassesList.length} Sessions
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">Scheduled / Rescheduled</div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-indigo-600 flex items-center gap-1.5">
+                      <CalendarCheck className="w-4 h-4" />
+                      Trial Consultations
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {pendingTrialsList.length} Requests
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">1-on-1 Student bookings</div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                      <BookOpen className="w-4 h-4" />
+                      Courses & Syllabi
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {pendingCoursesList.length} In Review
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">Syllabus unit submissions</div>
+                </div>
+              </div>
+
+              {/* Sub-tab filter buttons */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <button
+                  onClick={() => setApprovalSubTab("ALL")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    approvalSubTab === "ALL"
+                      ? "bg-[#0c2461] text-white shadow-xs"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  All Requests ({totalPendingApprovals})
+                </button>
+                <button
+                  onClick={() => setApprovalSubTab("CLASSES")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    approvalSubTab === "CLASSES"
+                      ? "bg-[#0c2461] text-white shadow-xs"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Live Classes ({pendingClassesList.length})
+                </button>
+                <button
+                  onClick={() => setApprovalSubTab("TRIALS")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    approvalSubTab === "TRIALS"
+                      ? "bg-[#0c2461] text-white shadow-xs"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Trials & Consultations ({pendingTrialsList.length})
+                </button>
+                <button
+                  onClick={() => setApprovalSubTab("COURSES")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    approvalSubTab === "COURSES"
+                      ? "bg-[#0c2461] text-white shadow-xs"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Courses ({pendingCoursesList.length})
+                </button>
+              </div>
+
+              {/* Approvals Content List */}
+              {totalPendingApprovals === 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 shadow-2xs">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                    <ShieldCheck className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900">All Tutor Actions Verified & Approved</h3>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                      No faculty live class proposals, session reschedules, or trial bookings are pending admin sign-off at this time.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Live Classes Pending */}
+                  {(approvalSubTab === "ALL" || approvalSubTab === "CLASSES") && pendingClassesList.map((cls) => {
+                    const tutorName = cls.course?.tutor?.name || cls.user?.name || "Senior Faculty";
+                    const isProcessing = processingApprovalId === cls.id;
+
+                    return (
+                      <div
+                        key={cls.id}
+                        className="bg-white rounded-2xl border border-amber-200/90 p-5 shadow-2xs space-y-4 hover:border-amber-300 transition-all"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
+                              <Video className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-800 uppercase tracking-wide">
+                                  ⏳ Live Class Proposal
+                                </span>
+                                {cls.course?.subjectCode && (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 font-mono">
+                                    {cls.course.subjectCode}
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="font-bold text-sm text-slate-900">{cls.title}</h4>
+                              <p className="text-xs text-slate-500">
+                                Course: <strong>{cls.course?.title || "London A/L Tutorial Masterclass"}</strong>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right sm:shrink-0 text-xs">
+                            <span className="font-bold text-slate-700 block">
+                              {new Date(cls.dueDate).toLocaleDateString("en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span className="text-blue-600 font-mono font-bold">
+                              {new Date(cls.dueDate).toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                          <div>
+                            <span className="text-[11px] font-medium text-slate-400 block">Proposed By Tutor:</span>
+                            <span className="font-bold text-slate-800">{tutorName}</span>
+                          </div>
+                          {cls.meetingLink && (
+                            <div className="min-w-0">
+                              <span className="text-[11px] font-medium text-slate-400 block">Classroom Link:</span>
+                              <a
+                                href={cls.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline font-mono truncate block"
+                              >
+                                {cls.meetingLink}
+                              </a>
+                            </div>
+                          )}
+                          {cls.description && (
+                            <div className="md:col-span-2 pt-1 border-t border-slate-200/50">
+                              <span className="text-[11px] font-medium text-slate-400 block">Session Notes / Agenda:</span>
+                              <p className="text-slate-600 whitespace-pre-line mt-0.5">{cls.description}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2.5 pt-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleOpenRejectModal("CLASS", cls.id, cls.title, tutorName)}
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Decline / Request Revision</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleApproveClass(cls.id)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-8.5 px-4 gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            {isProcessing ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                            <span>Approve & Publish to Students</span>
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Trials Pending */}
+                  {(approvalSubTab === "ALL" || approvalSubTab === "TRIALS") && pendingTrialsList.map((trial) => {
+                    const tutorName = trial.tutor?.name || trial.course?.tutor?.name || "Assigned Tutor";
+                    const isProcessing = processingApprovalId === trial.id;
+
+                    return (
+                      <div
+                        key={trial.id}
+                        className="bg-white rounded-2xl border border-blue-200 p-5 shadow-2xs space-y-4 hover:border-blue-300 transition-all"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0">
+                              <CalendarCheck className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-800 uppercase tracking-wide">
+                                  ⏳ 1-on-1 Consultation Confirmation
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-sm text-slate-900">
+                                30-Min Free Trial: {trial.studentName}
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                Course: <strong>{trial.course?.title || "London A/L"}</strong> {trial.topic ? `• Topic: ${trial.topic}` : ""}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right sm:shrink-0 text-xs">
+                            <span className="font-bold text-slate-700 block">
+                              {new Date(trial.preferredDate).toLocaleDateString("en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span className="text-blue-600 font-mono font-bold">
+                              {new Date(trial.preferredDate).toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                          <div>
+                            <span className="text-[11px] font-medium text-slate-400 block">Student:</span>
+                            <span className="font-bold text-slate-800">{trial.studentName}</span>
+                            <span className="text-[10px] text-slate-500 font-mono block">{trial.studentEmail}</span>
+                          </div>
+                          <div>
+                            <span className="text-[11px] font-medium text-slate-400 block">Confirmed Faculty:</span>
+                            <span className="font-bold text-slate-800">{tutorName}</span>
+                          </div>
+                          <div>
+                            <span className="text-[11px] font-medium text-slate-400 block">Meeting Room:</span>
+                            <span className="text-blue-600 font-mono text-[11px] truncate block">{trial.meetingLink || "meet.google.com/new"}</span>
+                          </div>
+                          {trial.notes && (
+                            <div className="sm:col-span-3 pt-1 border-t border-slate-200/50">
+                              <span className="text-[11px] font-medium text-slate-400 block">Faculty Notes:</span>
+                              <p className="text-slate-600 mt-0.5">{trial.notes}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2.5 pt-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleOpenRejectModal("TRIAL", trial.id, `Trial for ${trial.studentName}`, tutorName)}
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Decline</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleApproveTrial(trial.id)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl h-8.5 px-4 gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            {isProcessing ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                            <span>Approve & Add to Student Calendar</span>
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Courses Pending */}
+                  {(approvalSubTab === "ALL" || approvalSubTab === "COURSES") && pendingCoursesList.map((course) => {
+                    const tutorName = course.tutor?.name || "Faculty Lecturer";
+                    const isProcessing = processingApprovalId === course.id;
+
+                    return (
+                      <div
+                        key={course.id}
+                        className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-2xs space-y-4 hover:border-emerald-300 transition-all"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0">
+                              <BookOpen className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-800 uppercase tracking-wide">
+                                  ⏳ Course Review Required
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
+                                  {course.subjectCode || "LONDON-AL"}
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-sm text-slate-900">{course.title}</h4>
+                              <p className="text-xs text-slate-500">{course.subtitle || course.category}</p>
+                            </div>
+                          </div>
+
+                          <div className="text-right sm:shrink-0 text-xs">
+                            <span className="font-black text-sm text-emerald-600 block">{course.price || 10} Tokens</span>
+                            <span className="text-[10px] text-slate-400 font-medium">Standard Tuition</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                          <div>
+                            <span className="text-[11px] font-medium text-slate-400 block">Submitted By Tutor:</span>
+                            <span className="font-bold text-slate-800">{tutorName}</span>
+                          </div>
+                          <div>
+                            <span className="text-[11px] font-medium text-slate-400 block">Category:</span>
+                            <span className="font-semibold text-slate-700">{course.category}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2.5 pt-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleOpenRejectModal("COURSE", course.id, course.title, tutorName)}
+                            className="text-amber-600 border-amber-200 hover:bg-amber-50 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer"
+                          >
+                            <span>Return to Draft</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleApproveCourse(course.id)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-8.5 px-4 gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            {isProcessing ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                            <span>Approve & Publish Masterclass</span>
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
 
@@ -2927,11 +3464,7 @@ export default function AdminDashboardPage() {
                     type="datetime-local"
                     required
                     value={newClassDate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewClassDate(val);
-                      if (val) (e.target as HTMLInputElement).blur();
-                    }}
+                    onChange={(e) => setNewClassDate(e.target.value)}
                     className="w-full h-9 px-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -2987,6 +3520,84 @@ export default function AdminDashboardPage() {
                     <>
                       <Video className="w-3.5 h-3.5" />
                       <span>Publish Live Class</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Feedback Modal */}
+      {rejectionModalData.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center shadow-xs">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Decline & Request Revisions</h3>
+                  <p className="text-[11px] text-slate-500">Provide feedback reason to the faculty tutor</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRejectionModalData((prev) => ({ ...prev, isOpen: false }))}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmReject} className="space-y-3.5 text-xs">
+              <div className="p-3 bg-red-50/70 border border-red-100 rounded-xl space-y-0.5">
+                <div className="font-bold text-red-950 text-xs">{rejectionModalData.title}</div>
+                {rejectionModalData.tutorName && (
+                  <div className="text-[11px] text-red-700">Tutor: {rejectionModalData.tutorName}</div>
+                )}
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Reason for Declining / Revision Notes <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="e.g. Please reschedule by 30 mins to prevent clash with mock examination..."
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRejectionModalData((prev) => ({ ...prev, isOpen: false }))}
+                  className="rounded-xl text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmittingReject || !rejectionReasonInput.trim()}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer gap-1.5"
+                >
+                  {isSubmittingReject ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-3.5 h-3.5" />
+                      <span>Confirm Decline</span>
                     </>
                   )}
                 </Button>

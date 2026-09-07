@@ -265,13 +265,7 @@ export function TrialRequestModal({
                 type="datetime-local"
                 required
                 value={preferredDate}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setPreferredDate(val);
-                  if (val) {
-                    (e.target as HTMLInputElement).blur();
-                  }
-                }}
+                onChange={(e) => setPreferredDate(e.target.value)}
                 className="w-full h-9 px-2.5 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>

@@ -4,7 +4,7 @@ import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
-import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
+import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -89,9 +89,61 @@ export async function GET(request: NextRequest) {
       privateFiles = [];
     }
 
+    let pendingClasses: any[] = [];
+    let pendingTrials: any[] = [];
+    let pendingCourses: any[] = [];
+
+    try {
+      pendingClasses = await prisma.event.findMany({
+        where: { status: EventStatus.PENDING_APPROVAL },
+        include: {
+          course: {
+            include: { tutor: true },
+          },
+          user: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (pcErr) {
+      console.error("Error fetching pending classes:", pcErr);
+      pendingClasses = [];
+    }
+
+    try {
+      pendingTrials = await prisma.trialRequest.findMany({
+        where: { status: TrialStatus.PENDING_APPROVAL },
+        include: {
+          course: {
+            include: { tutor: true },
+          },
+          tutor: true,
+          student: true,
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+    } catch (ptErr) {
+      console.error("Error fetching pending trials:", ptErr);
+      pendingTrials = [];
+    }
+
+    try {
+      pendingCourses = await prisma.course.findMany({
+        where: { status: CourseStatus.PENDING_REVIEW },
+        include: {
+          tutor: true,
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+    } catch (pcrErr) {
+      console.error("Error fetching pending courses:", pcrErr);
+      pendingCourses = [];
+    }
+
     const candidates = allUsers.filter((u) => u.role === Role.STUDENT);
     const faculty = allUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
     const admins = allUsers.filter((u) => u.role === Role.ADMIN);
+
+    const totalPendingApprovals = pendingClasses.length + pendingTrials.length + pendingCourses.length;
 
     return NextResponse.json({
       allUsers,
@@ -101,6 +153,10 @@ export async function GET(request: NextRequest) {
       courses,
       events,
       privateFiles,
+      pendingClasses,
+      pendingTrials,
+      pendingCourses,
+      totalPendingApprovals,
     });
   } catch (error: any) {
     console.error("Admin API GET error:", error);
@@ -504,7 +560,290 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    if (action === "approve_class") {
+      const { eventId } = body;
+      const existing = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: { course: { include: { tutor: true } }, user: true },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Class event not found" }, { status: 404 });
+      }
+
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          status: EventStatus.SCHEDULED,
+          approvalStatus: "APPROVED",
+          rejectionReason: null,
+        },
+        include: { course: { include: { tutor: true } }, user: true },
+      });
+
+      // Notify tutor
+      const tutorId = existing.requestedBy || existing.course?.tutorId;
+      if (tutorId) {
+        await prisma.notification.create({
+          data: {
+            userId: tutorId,
+            title: "✅ Live Class Approved!",
+            message: `Your class session "${updated.title}" scheduled for ${new Date(updated.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} was approved by Admin and is now live on student calendars.`,
+            type: "SUCCESS",
+            link: "/tutor",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tutorId });
+      }
+
+      // Notify enrolled students
+      if (updated.courseId) {
+        const enrollments = await prisma.enrollment.findMany({
+          where: { courseId: updated.courseId },
+          select: { userId: true },
+        });
+        if (enrollments.length > 0) {
+          await prisma.notification.createMany({
+            data: enrollments.map((e) => ({
+              userId: e.userId,
+              title: "📅 New Live Class Scheduled",
+              message: `"${updated.title}" has been approved and scheduled for ${new Date(updated.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}.`,
+              type: "INFO",
+              link: "/dashboard",
+            })),
+          });
+          enrollments.forEach((e) => broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: e.userId }));
+        }
+      } else if (updated.userId) {
+        await prisma.notification.create({
+          data: {
+            userId: updated.userId,
+            title: "📅 Live Session Scheduled",
+            message: `"${updated.title}" has been approved and scheduled for ${new Date(updated.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}.`,
+            type: "INFO",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.userId });
+      }
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+      return NextResponse.json({ success: true, message: "Live class approved and published successfully!", event: updated });
+    }
+
+    if (action === "reject_class") {
+      const { eventId, reason } = body;
+      const existing = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: { course: { include: { tutor: true } } },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Class event not found" }, { status: 404 });
+      }
+
+      const rejectionReason = reason?.trim() || "Class session proposal was declined by administrator.";
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          status: EventStatus.REJECTED,
+          approvalStatus: "REJECTED",
+          rejectionReason,
+        },
+      });
+
+      const tutorId = existing.requestedBy || existing.course?.tutorId;
+      if (tutorId) {
+        await prisma.notification.create({
+          data: {
+            userId: tutorId,
+            title: "❌ Live Class Request Declined",
+            message: `Your schedule request for "${existing.title}" was declined by Admin. Reason: ${rejectionReason}`,
+            type: "ALERT",
+            link: "/tutor",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tutorId });
+      }
+
+      broadcastLMSEvent("EVENTS_CHANGED");
+      return NextResponse.json({ success: true, message: "Class session declined.", event: updated });
+    }
+
+    if (action === "approve_trial") {
+      const { trialId } = body;
+      const existing = await prisma.trialRequest.findUnique({
+        where: { id: trialId },
+        include: { course: true, tutor: true, student: true },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Trial request not found" }, { status: 404 });
+      }
+
+      const updated = await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: {
+          status: TrialStatus.CONFIRMED,
+          approvalStatus: "APPROVED",
+          rejectionReason: null,
+        },
+        include: { course: true, tutor: true, student: true },
+      });
+
+      const courseTitle = updated.course?.title || "London A/L Tutorial Masterclass";
+      const courseCode = updated.course?.subjectCode || "";
+      const eventTitle = `30-Min Free Trial: ${courseTitle} (${updated.studentName})`;
+      const link = updated.meetingLink || "https://meet.google.com/new";
+      const eventDescription = [
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+        `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
+        `Topic / Focus: ${updated.topic || "30-Min Free Trial & Syllabus Overview"}`,
+        `Student: ${updated.studentName} (${updated.studentEmail})`,
+        `Classroom Link: ${link}`,
+        updated.notes ? `Faculty Notes: ${updated.notes}` : "",
+      ].filter(Boolean).join("\n\n");
+
+      if (updated.courseId) {
+        await prisma.event.deleteMany({
+          where: {
+            courseId: updated.courseId,
+            title: { contains: updated.studentName },
+          },
+        });
+      }
+
+      await prisma.event.create({
+        data: {
+          title: eventTitle,
+          description: eventDescription,
+          dueDate: updated.preferredDate,
+          type: EventType.LIVE_SEMINAR,
+          status: EventStatus.SCHEDULED,
+          approvalStatus: "APPROVED",
+          meetingLink: link,
+          courseId: updated.courseId || null,
+          userId: updated.studentId || updated.tutorId || null,
+        },
+      });
+
+      if (updated.studentId) {
+        const dateStr = new Date(updated.preferredDate).toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        await prisma.notification.create({
+          data: {
+            userId: updated.studentId,
+            title: "🎉 Free Trial Confirmed!",
+            message: `Your trial session for "${courseTitle}" has been approved and confirmed for ${dateStr}. Google Meet link is ready on your calendar!`,
+            type: "SUCCESS",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.studentId });
+      }
+
+      if (updated.tutorId) {
+        await prisma.notification.create({
+          data: {
+            userId: updated.tutorId,
+            title: "✅ Trial Session Approved by Admin",
+            message: `Trial session with ${updated.studentName} has been approved and scheduled on the student's calendar.`,
+            type: "SUCCESS",
+            link: "/tutor",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.tutorId });
+      }
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
+      return NextResponse.json({ success: true, message: "Trial session approved and scheduled successfully!", trial: updated });
+    }
+
+    if (action === "reject_trial") {
+      const { trialId, reason } = body;
+      const existing = await prisma.trialRequest.findUnique({
+        where: { id: trialId },
+        include: { course: true, tutor: true },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Trial request not found" }, { status: 404 });
+      }
+
+      const rejectionReason = reason?.trim() || "Trial session declined by administrator.";
+      const updated = await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: {
+          status: TrialStatus.REJECTED,
+          approvalStatus: "REJECTED",
+          rejectionReason,
+        },
+      });
+
+      if (existing.tutorId) {
+        await prisma.notification.create({
+          data: {
+            userId: existing.tutorId,
+            title: "❌ Trial Request Declined",
+            message: `Trial request for ${existing.studentName} was declined by Admin. Reason: ${rejectionReason}`,
+            type: "ALERT",
+            link: "/tutor",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: existing.tutorId });
+      }
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      return NextResponse.json({ success: true, message: "Trial request declined.", trial: updated });
+    }
+
+    if (action === "approve_course") {
+      const { courseId } = body;
+      const updated = await prisma.course.update({
+        where: { id: courseId },
+        data: { status: CourseStatus.PUBLISHED },
+        include: { tutor: true },
+      });
+      if (updated.tutorId) {
+        await prisma.notification.create({
+          data: {
+            userId: updated.tutorId,
+            title: "🎉 Course Approved & Published!",
+            message: `Your course "${updated.title}" has been approved and is now live for student enrollments.`,
+            type: "SUCCESS",
+            link: "/tutor",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.tutorId });
+      }
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, message: "Course published successfully!", course: updated });
+    }
+
+    if (action === "reject_course") {
+      const { courseId, reason } = body;
+      const updated = await prisma.course.update({
+        where: { id: courseId },
+        data: { status: CourseStatus.DRAFT },
+        include: { tutor: true },
+      });
+      if (updated.tutorId) {
+        await prisma.notification.create({
+          data: {
+            userId: updated.tutorId,
+            title: "📝 Course Review Feedback",
+            message: `Your course "${updated.title}" requires revisions before publishing. Feedback: ${reason || "Please review syllabus content."}`,
+            type: "ALERT",
+            link: "/tutor",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.tutorId });
+      }
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, message: "Course returned to draft status.", course: updated });
+    }
   } catch (error) {
     console.error("Admin API POST error:", error);
     return NextResponse.json({ error: "Failed to process admin action" }, { status: 500 });

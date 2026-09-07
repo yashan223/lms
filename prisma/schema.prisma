@@ -12,6 +12,7 @@ enum Role {
   ADMIN
   TUTOR
   STUDENT
+  INSTRUCTOR
 }
 
 enum CourseLevel {
@@ -33,13 +34,16 @@ enum EventType {
   DEADLINE
   WORKSHOP
   EXAM_MOCK
+  ASSIGNMENT
 }
 
 enum EventStatus {
+  PENDING_APPROVAL
   SCHEDULED
   LIVE
   COMPLETED
   CANCELLED
+  REJECTED
 }
 
 enum TransactionType {
@@ -97,7 +101,7 @@ model TokenWallet {
   id           String             @id @default(cuid())
   userId       String             @unique
   user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance      Int                @default(0) // Available tokens / hours
+  balance      Float              @default(0) // Available tokens / hours
   transactions TokenTransaction[]
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -109,7 +113,7 @@ model TokenTransaction {
   id          String          @id @default(cuid())
   walletId    String
   wallet      TokenWallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  amount      Int             // Positive for credit (+), negative for debit (-)
+  amount      Float             // Positive for credit (+), negative for debit (-)
   type        TransactionType
   description String          // e.g., "Purchased 20 Hours Token Pack" or "1-on-1 Tutoring Session"
   referenceId String?         // Related eventId, trialId, or paymentId
@@ -207,20 +211,23 @@ model UserProgress {
 }
 
 model Event {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  type        EventType   @default(LIVE_SEMINAR)
-  status      EventStatus @default(SCHEDULED)
-  meetingLink String?
-  startedAt   DateTime?
-  endedAt     DateTime?
-  dueDate     DateTime
-  courseId    String?
-  course      Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  userId      String?
-  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime    @default(now())
+  id              String      @id @default(cuid())
+  title           String
+  description     String?
+  type            EventType   @default(LIVE_SEMINAR)
+  status          EventStatus @default(SCHEDULED)
+  meetingLink     String?
+  startedAt       DateTime?
+  endedAt         DateTime?
+  dueDate         DateTime
+  courseId        String?
+  course          Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestedBy     String?
+  approvalStatus  String?     @default("APPROVED")
+  rejectionReason String?
+  createdAt       DateTime    @default(now())
 
   @@map("events")
 }
@@ -317,9 +324,11 @@ model EmailVerificationToken {
 
 enum TrialStatus {
   PENDING
+  PENDING_APPROVAL
   CONFIRMED
   COMPLETED
   CANCELLED
+  REJECTED
 }
 
 model TrialRequest {
@@ -338,6 +347,8 @@ model TrialRequest {
   status          TrialStatus  @default(PENDING)
   meetingLink     String?
   notes           String?
+  approvalStatus  String?      @default("APPROVED")
+  rejectionReason String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 

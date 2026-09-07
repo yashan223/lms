@@ -153,15 +153,18 @@ export async function GET(request: NextRequest) {
     if (user?.role === "STUDENT") {
       const enrolledCourseIds = (user.enrollments || []).map((e) => e.courseId);
       eventWhere = {
-        OR: [
-
-          { userId: user.id },
-
+        AND: [
+          { status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] } },
           {
-            courseId: { in: enrolledCourseIds },
             OR: [
-              { userId: null },
               { userId: user.id },
+              {
+                courseId: { in: enrolledCourseIds },
+                OR: [
+                  { userId: null },
+                  { userId: user.id },
+                ],
+              },
             ],
           },
         ],

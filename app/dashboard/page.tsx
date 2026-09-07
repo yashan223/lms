@@ -1811,11 +1811,7 @@ function DashboardContent() {
                   type="datetime-local"
                   required
                   value={newEventDate}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setNewEventDate(val);
-                    if (val) (e.target as HTMLInputElement).blur();
-                  }}
+                  onChange={(e) => setNewEventDate(e.target.value)}
                   className="w-full h-8 px-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
@@ -1947,11 +1943,7 @@ function DashboardContent() {
                   type="datetime-local"
                   required
                   value={rescheduleDate}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setRescheduleDate(val);
-                    if (val) (e.target as HTMLInputElement).blur();
-                  }}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
                   className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>

@@ -2,6 +2,7 @@ import fs from "fs";
 import { promises as fsPromises } from "fs";
 import path from "path";
 import crypto from "crypto";
+import { put, del } from "@vercel/blob";
 
 export const STORAGE_ROOT =
   process.env.STORAGE_DIR || path.join(process.cwd(), "storage", "uploads");
@@ -122,8 +123,6 @@ export async function saveUploadedFile(
   mimeType: string,
   options: SaveFileOptions = {}
 ): Promise<SavedFileResult> {
-  await ensureStorageDirectories();
-
   const { category = "general", isPrivate = false, customPrefix } = options;
 
   const maxLimit = SIZE_LIMITS[category] || SIZE_LIMITS.default;
@@ -145,8 +144,36 @@ export async function saveUploadedFile(
   const uniqueId = crypto.randomBytes(16).toString("hex");
   const prefix = customPrefix ? `${customPrefix}_` : "";
   const storedFileName = `${prefix}${Date.now()}_${uniqueId}${detectedExt}`;
-
   const folder = isPrivate ? "private" : "public";
+  const contentType = mimeType || EXTENSION_TO_MIME[detectedExt] || "application/octet-stream";
+
+  // Use Vercel Blob if BLOB_READ_WRITE_TOKEN is configured
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const blobPathname = `${folder}/${storedFileName}`;
+      const blob = await put(blobPathname, fileBuffer, {
+        access: "public",
+        contentType,
+      });
+
+      return {
+        fileKey: blob.url,
+        fileName: cleanOriginalName,
+        originalName: originalFileName,
+        fileSize: formatBytes(fileBuffer.length),
+        fileSizeBytes: fileBuffer.length,
+        fileType: contentType,
+        fileUrl: blob.url,
+        isPrivate,
+      };
+    } catch (blobErr) {
+      console.error("Vercel Blob upload failed, attempting local fallback:", blobErr);
+    }
+  }
+
+  // Fallback to local filesystem storage
+  await ensureStorageDirectories();
+
   const targetDir = path.join(STORAGE_ROOT, folder);
   await fsPromises.mkdir(targetDir, { recursive: true });
 
@@ -162,13 +189,31 @@ export async function saveUploadedFile(
     originalName: originalFileName,
     fileSize: formatBytes(fileBuffer.length),
     fileSizeBytes: fileBuffer.length,
-    fileType: mimeType || EXTENSION_TO_MIME[detectedExt] || "application/octet-stream",
+    fileType: contentType,
     fileUrl,
     isPrivate,
   };
 }
 
 export async function deleteStorageFile(fileKey: string): Promise<boolean> {
+  if (!fileKey || typeof fileKey !== "string") return false;
+
+  // Handle Vercel Blob URL deletion
+  if (
+    fileKey.startsWith("http://") ||
+    fileKey.startsWith("https://") ||
+    fileKey.includes("blob.vercel-storage.com")
+  ) {
+    try {
+      await del(fileKey);
+      return true;
+    } catch (err) {
+      console.error(`Error deleting Vercel Blob file (${fileKey}):`, err);
+      return false;
+    }
+  }
+
+  // Fallback for local disk storage
   const safePath = resolveSafeStoragePath(fileKey);
   if (!safePath) return false;
 

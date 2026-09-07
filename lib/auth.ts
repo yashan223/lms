@@ -261,3 +261,93 @@ export function clearSessionCookies(response: NextResponse): void {
   response.cookies.set("edupulse_user_role", "", { path: "/", maxAge: 0 });
   response.cookies.set("edupulse_user_email", "", { path: "/", maxAge: 0 });
 }
+
+// ==========================================
+// 5. Automatic .env Admin Synchronization
+// ==========================================
+
+let lastSyncTimestamp = 0;
+const SYNC_COOLDOWN_MS = 2000; // Throttle DB lookups to at most once per 2 seconds
+
+/**
+ * Automatically synchronizes the default admin user in the database
+ * whenever DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, or DEFAULT_ADMIN_NAME
+ * are updated in .env / environment variables.
+ */
+export async function syncDefaultAdminFromEnv(force = false): Promise<void> {
+  const now = Date.now();
+  if (!force && now - lastSyncTimestamp < SYNC_COOLDOWN_MS) {
+    return;
+  }
+  lastSyncTimestamp = now;
+
+  const envEmail = process.env.DEFAULT_ADMIN_EMAIL?.trim().toLowerCase();
+  const envPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+  const envName = process.env.DEFAULT_ADMIN_NAME?.trim();
+
+  if (!envEmail || !envPassword) {
+    return;
+  }
+
+  try {
+    const existingByEmail = await prisma.user.findUnique({
+      where: { email: envEmail },
+    });
+
+    if (existingByEmail) {
+      const isPasswordValid = verifyPassword(envPassword, existingByEmail.passwordHash);
+      const isNameMismatch = envName ? existingByEmail.name !== envName : false;
+      const isRoleMismatch = existingByEmail.role !== Role.ADMIN;
+      const isUnverified = !existingByEmail.emailVerified;
+
+      if (!isPasswordValid || isNameMismatch || isRoleMismatch || isUnverified) {
+        await prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: {
+            ...(!isPasswordValid ? { passwordHash: hashPassword(envPassword) } : {}),
+            ...(isNameMismatch ? { name: envName } : {}),
+            ...(isRoleMismatch ? { role: Role.ADMIN } : {}),
+            ...(isUnverified ? { emailVerified: new Date() } : {}),
+          },
+        });
+      }
+      return;
+    }
+
+    // If no user exists with this specific email, check if an existing primary ADMIN exists
+    const existingAdmin = await prisma.user.findFirst({
+      where: { role: Role.ADMIN },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (existingAdmin) {
+      await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: {
+          email: envEmail,
+          passwordHash: hashPassword(envPassword),
+          ...(envName ? { name: envName } : {}),
+          emailVerified: existingAdmin.emailVerified || new Date(),
+        },
+      });
+      return;
+    }
+
+    // If no admin exists at all in the database, create one
+    await prisma.user.create({
+      data: {
+        email: envEmail,
+        name: envName || "System Administrator",
+        passwordHash: hashPassword(envPassword),
+        role: Role.ADMIN,
+        emailVerified: new Date(),
+        headline: "System Administrator",
+        bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      },
+    });
+  } catch (error) {
+    console.error("Failed to sync default admin from environment:", error);
+  }
+}
+

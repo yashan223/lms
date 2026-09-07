@@ -5,9 +5,13 @@ import { hashPassword } from "../lib/auth";
 async function main() {
   console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
 
+  const adminEmail = (process.env.DEFAULT_ADMIN_EMAIL || "admin@edupulse.uk").trim().toLowerCase();
+  const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "AdminPass123!";
+  const adminName = process.env.DEFAULT_ADMIN_NAME || "Dr. Alastair Vance";
+
   // Delete all users EXCEPT the 3 primary test accounts (and their dependent records)
   const allowedEmails = [
-    "admin@edupulse.uk",
+    adminEmail,
     "tutor@edupulse.uk",
     "student@edupulse.uk",
   ];
@@ -23,7 +27,7 @@ async function main() {
     console.log(`🧹 Removed ${deletedUsers.count} extra test user(s) and their records.`);
   }
 
-  const adminPassHash = hashPassword("AdminPass123!");
+  const adminPassHash = hashPassword(adminPassword);
   const tutorPassHash = hashPassword("TutorPass123!");
   const studentPassHash = hashPassword("StudentPass123!");
 
@@ -31,9 +35,9 @@ async function main() {
 
   // 1. Single Admin Account
   const adminUser = await prisma.user.upsert({
-    where: { email: "admin@edupulse.uk" },
+    where: { email: adminEmail },
     update: {
-      name: "Dr. Alastair Vance",
+      name: adminName,
       passwordHash: adminPassHash,
       role: Role.ADMIN,
       emailVerified: now,
@@ -42,8 +46,8 @@ async function main() {
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     },
     create: {
-      email: "admin@edupulse.uk",
-      name: "Dr. Alastair Vance",
+      email: adminEmail,
+      name: adminName,
       passwordHash: adminPassHash,
       role: Role.ADMIN,
       emailVerified: now,

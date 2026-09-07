@@ -5,6 +5,7 @@ import {
   hashPassword,
   isLegacyPasswordHash,
   attachSessionCookies,
+  syncDefaultAdminFromEnv,
 } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -32,6 +33,9 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Automatically synchronize default admin from .env if credentials changed
+    await syncDefaultAdminFromEnv();
 
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },

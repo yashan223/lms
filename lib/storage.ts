@@ -4,8 +4,11 @@ import path from "path";
 import crypto from "crypto";
 import { put, del } from "@vercel/blob";
 
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
 export const STORAGE_ROOT =
-  process.env.STORAGE_DIR || path.join(process.cwd(), "storage", "uploads");
+  process.env.STORAGE_DIR ||
+  (isServerless ? path.join("/tmp", "storage", "uploads") : path.join(process.cwd(), "storage", "uploads"));
 
 export const MIME_MAP: Record<string, string> = {
 
@@ -80,13 +83,17 @@ export function formatBytes(bytes: number, decimals = 1): string {
 }
 
 export async function ensureStorageDirectories(): Promise<void> {
-  const publicDir = path.join(process.cwd(), "storage", "uploads", "public");
-  const privateDir = path.join(process.cwd(), "storage", "uploads", "private");
-  if (fs.existsSync(/*turbopackIgnore: true*/ publicDir) === false) {
-    await fsPromises.mkdir(/*turbopackIgnore: true*/ publicDir, { recursive: true });
-  }
-  if (fs.existsSync(/*turbopackIgnore: true*/ privateDir) === false) {
-    await fsPromises.mkdir(/*turbopackIgnore: true*/ privateDir, { recursive: true });
+  const publicDir = path.join(STORAGE_ROOT, "public");
+  const privateDir = path.join(STORAGE_ROOT, "private");
+  try {
+    if (fs.existsSync(/*turbopackIgnore: true*/ publicDir) === false) {
+      await fsPromises.mkdir(/*turbopackIgnore: true*/ publicDir, { recursive: true });
+    }
+    if (fs.existsSync(/*turbopackIgnore: true*/ privateDir) === false) {
+      await fsPromises.mkdir(/*turbopackIgnore: true*/ privateDir, { recursive: true });
+    }
+  } catch (err) {
+    console.warn("Storage directories initialization notice:", err);
   }
 }
 

@@ -11,13 +11,19 @@ const globalForPrisma = globalThis as unknown as {
   pool?: Pool;
 };
 
+const isLocalhost =
+  connectionString.includes("localhost") ||
+  connectionString.includes("127.0.0.1") ||
+  connectionString.includes("host.docker.internal");
+
 const pool =
   globalForPrisma.pool ||
   new Pool({
     connectionString,
-    max: 20,
+    ssl: isLocalhost ? false : { rejectUnauthorized: false },
+    max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 10000,
   });
 
 const adapter = new PrismaPg(pool);

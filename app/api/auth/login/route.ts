@@ -34,8 +34,12 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Automatically synchronize default admin from .env if credentials changed
-    await syncDefaultAdminFromEnv();
+    // Safely sync default admin from .env
+    try {
+      await syncDefaultAdminFromEnv();
+    } catch (syncErr) {
+      console.warn("Non-fatal syncDefaultAdminFromEnv warning:", syncErr);
+    }
 
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -120,10 +124,24 @@ export async function POST(request: Request) {
     attachSessionCookies(response, user);
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login API error:", error);
+    const msg = error?.message || "";
+    const isDbError =
+      msg.includes("connect") ||
+      msg.includes("SSL") ||
+      msg.includes("relation") ||
+      msg.includes("does not exist") ||
+      error?.code === "P2021" ||
+      error?.code === "P1001" ||
+      error?.code === "ECONNREFUSED";
+
     return NextResponse.json(
-      { error: "Authentication system error" },
+      {
+        error: isDbError
+          ? "Database not initialized or unreachable. Please run 'npx prisma db push' and 'npx prisma db seed' on your remote database."
+          : "Authentication system error",
+      },
       { status: 500 }
     );
   }

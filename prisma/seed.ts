@@ -9,23 +9,7 @@ async function main() {
   const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "AdminPass123!";
   const adminName = process.env.DEFAULT_ADMIN_NAME || "Dr. Alastair Vance";
 
-  // Delete all users EXCEPT the 3 primary test accounts (and their dependent records)
-  const allowedEmails = [
-    adminEmail,
-    "tutor@edupulse.uk",
-    "student@edupulse.uk",
-  ];
-
-  // Clean up all other users (cascade deletes enrollments, events, messages, etc.)
-  const deletedUsers = await prisma.user.deleteMany({
-    where: {
-      email: { notIn: allowedEmails },
-    },
-  });
-
-  if (deletedUsers.count > 0) {
-    console.log(`🧹 Removed ${deletedUsers.count} extra test user(s) and their records.`);
-  }
+  // Upsert the 3 default accounts without deleting existing user data
 
   const adminPassHash = hashPassword(adminPassword);
   const tutorPassHash = hashPassword("TutorPass123!");

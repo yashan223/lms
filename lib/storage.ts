@@ -80,18 +80,22 @@ export function formatBytes(bytes: number, decimals = 1): string {
 }
 
 export async function ensureStorageDirectories(): Promise<void> {
-  const publicDir = path.join(STORAGE_ROOT, "public");
-  const privateDir = path.join(STORAGE_ROOT, "private");
-  await fsPromises.mkdir(publicDir, { recursive: true });
-  await fsPromises.mkdir(privateDir, { recursive: true });
+  const publicDir = path.join(process.cwd(), "storage", "uploads", "public");
+  const privateDir = path.join(process.cwd(), "storage", "uploads", "private");
+  if (fs.existsSync(/*turbopackIgnore: true*/ publicDir) === false) {
+    await fsPromises.mkdir(/*turbopackIgnore: true*/ publicDir, { recursive: true });
+  }
+  if (fs.existsSync(/*turbopackIgnore: true*/ privateDir) === false) {
+    await fsPromises.mkdir(/*turbopackIgnore: true*/ privateDir, { recursive: true });
+  }
 }
 
 export function resolveSafeStoragePath(fileKey: string): string | null {
   if (!fileKey || typeof fileKey !== "string") return null;
 
   const sanitizedKey = fileKey.replace(/\0/g, "").replace(/^[\/\\]+/, "");
-  const normalizedRoot = path.resolve(STORAGE_ROOT);
-  const resolvedPath = path.resolve(STORAGE_ROOT, sanitizedKey);
+  const normalizedRoot = path.resolve(/*turbopackIgnore: true*/ STORAGE_ROOT);
+  const resolvedPath = path.resolve(/*turbopackIgnore: true*/ STORAGE_ROOT, sanitizedKey);
 
   if (!resolvedPath.startsWith(normalizedRoot + path.sep) && resolvedPath !== normalizedRoot) {
     return null;
@@ -174,11 +178,11 @@ export async function saveUploadedFile(
   // Fallback to local filesystem storage
   await ensureStorageDirectories();
 
-  const targetDir = path.join(STORAGE_ROOT, folder);
-  await fsPromises.mkdir(targetDir, { recursive: true });
+  const targetDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, folder);
+  await fsPromises.mkdir(/*turbopackIgnore: true*/ targetDir, { recursive: true });
 
-  const finalPath = path.join(targetDir, storedFileName);
-  await fsPromises.writeFile(finalPath, fileBuffer);
+  const finalPath = path.join(/*turbopackIgnore: true*/ targetDir, storedFileName);
+  await fsPromises.writeFile(/*turbopackIgnore: true*/ finalPath, fileBuffer);
 
   const fileKey = `${folder}/${storedFileName}`;
   const fileUrl = `/api/files/${fileKey}`;
@@ -218,8 +222,8 @@ export async function deleteStorageFile(fileKey: string): Promise<boolean> {
   if (!safePath) return false;
 
   try {
-    if (fs.existsSync(safePath)) {
-      await fsPromises.unlink(safePath);
+    if (fs.existsSync(/*turbopackIgnore: true*/ safePath)) {
+      await fsPromises.unlink(/*turbopackIgnore: true*/ safePath);
       return true;
     }
     return false;
@@ -231,11 +235,11 @@ export async function deleteStorageFile(fileKey: string): Promise<boolean> {
 
 export function getFileStream(fileKey: string, rangeHeader: string | null = null) {
   const safePath = resolveSafeStoragePath(fileKey);
-  if (!safePath || !fs.existsSync(safePath)) {
+  if (!safePath || !fs.existsSync(/*turbopackIgnore: true*/ safePath)) {
     return null;
   }
 
-  const stat = fs.statSync(safePath);
+  const stat = fs.statSync(/*turbopackIgnore: true*/ safePath);
   if (!stat.isFile()) {
     return null;
   }
@@ -257,7 +261,7 @@ export function getFileStream(fileKey: string, rangeHeader: string | null = null
     }
 
     const chunkSize = end - start + 1;
-    const stream = fs.createReadStream(safePath, { start, end });
+    const stream = fs.createReadStream(/*turbopackIgnore: true*/ safePath, { start, end });
 
     return {
       stream,
@@ -271,7 +275,7 @@ export function getFileStream(fileKey: string, rangeHeader: string | null = null
     };
   }
 
-  const stream = fs.createReadStream(safePath);
+  const stream = fs.createReadStream(/*turbopackIgnore: true*/ safePath);
   return {
     stream,
     isPartial: false,

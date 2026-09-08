@@ -142,7 +142,7 @@ function DashboardContent() {
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
-  const [tokenBalance, setTokenBalance] = useState<number>(40);
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
   const [tokenTransactions, setTokenTransactions] = useState<any[]>([]);
   const [showBuyTokensModal, setShowBuyTokensModal] = useState(false);
   const [showPurchaseHistoryModal, setShowPurchaseHistoryModal] = useState(false);
@@ -293,8 +293,11 @@ function DashboardContent() {
         }
         setUser(data.user);
         if (data.user.tokenWallet) {
-          setTokenBalance(data.user.tokenWallet.balance ?? 40);
+          setTokenBalance(data.user.tokenWallet.balance ?? 0);
           setTokenTransactions(data.user.tokenWallet.transactions || []);
+        } else {
+          setTokenBalance(0);
+          setTokenTransactions([]);
         }
       }
       setAllCourses(data.allCourses || []);

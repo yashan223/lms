@@ -60,16 +60,7 @@ export async function GET(request: NextRequest) {
       wallet = await prisma.tokenWallet.create({
         data: {
           userId: auth.user.id,
-          balance: auth.user.role === Role.STUDENT ? 20 : 0,
-          transactions: {
-            create: [
-              {
-                amount: auth.user.role === Role.STUDENT ? 20 : 0,
-                type: "BONUS",
-                description: "Welcome Academic Credit — 20 Hours",
-              },
-            ],
-          },
+          balance: 0,
         },
         include: {
           transactions: true,

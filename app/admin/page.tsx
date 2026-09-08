@@ -1233,30 +1233,12 @@ export default function AdminDashboardPage() {
 
   const navMenuItems = [
     { id: "overview", label: "Executive Overview", icon: Layers },
-    {
-      id: "approvals",
-      label: "Tutor Approvals",
-      icon: ShieldCheck,
-      badge: totalPendingApprovals > 0 ? `${totalPendingApprovals} Pending` : undefined,
-      badgeColor: totalPendingApprovals > 0 ? "bg-amber-500 text-white font-black animate-pulse" : undefined,
-    },
-    {
-      id: "live_classes",
-      label: "Live Classes & Meets",
-      icon: Video,
-      badge: liveNowCount > 0 ? `${liveNowCount} LIVE` : activeLiveClassesCount,
-      badgeColor: liveNowCount > 0 ? "bg-red-500 text-white animate-pulse" : undefined,
-    },
-    { id: "users", label: "User Management", icon: Users, badge: allUsersList.length },
-    { id: "courses", label: "Course Management", icon: BookOpen, badge: coursesList.length },
-    { id: "finances", label: "Course Purchases & Revenue", icon: DollarSign, badge: totalEnrollmentsCount },
-    {
-      id: "pricing",
-      label: "Pricing & Token Bundles",
-      icon: Coins,
-      badge: `${bundlesList.length > 0 ? bundlesList.length : 3} Packs`,
-      badgeColor: "bg-blue-600 text-white font-black",
-    },
+    { id: "approvals", label: "Tutor Approvals", icon: ShieldCheck },
+    { id: "live_classes", label: "Live Classes & Meets", icon: Video },
+    { id: "users", label: "User Management", icon: Users },
+    { id: "courses", label: "Course Management", icon: BookOpen },
+    { id: "finances", label: "Course Purchases & Revenue", icon: DollarSign },
+    { id: "pricing", label: "Pricing & Token Bundles", icon: Coins },
   ];
 
   return (
@@ -1298,25 +1280,14 @@ export default function AdminDashboardPage() {
                   setActiveTab(item.id as any);
                   setSidebarOpen(false);
                 }}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 group ${
                   isActive
                     ? "bg-blue-500 text-white shadow-sm shadow-blue-500/30"
                     : "text-slate-600 hover:bg-blue-50 hover:text-blue-600"
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-blue-500 group-hover:text-blue-600"}`} />
-                  <span>{item.label}</span>
-                </div>
-                {item.badge !== undefined && (
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
-                      isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 group-hover:bg-blue-100/70 group-hover:text-blue-700"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
+                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-blue-500 group-hover:text-blue-600"}`} />
+                <span>{item.label}</span>
               </button>
             );
           })}

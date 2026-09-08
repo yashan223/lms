@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`reset-pass:${ip}`, 5, 300); // 5 attempts per 5 minutes
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many attempts. Please try again in ${rateLimit.resetSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const { token, password } = await request.json();
 
     if (!token || !password || password.length < 8) {

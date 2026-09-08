@@ -1,9 +1,18 @@
 import { Resend } from "resend";
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
+
+function getAppUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+}
+
+function getFromEmail() {
+  return process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+}
 
 export interface SendVerificationEmailParams {
   email: string;
@@ -21,10 +30,14 @@ async function dispatchResendEmail(params: {
   to: string;
   subject: string;
   html: string;
-}): Promise<{ success: boolean; error?: string }> {
+  directUrl?: string;
+}): Promise<{ success: boolean; error?: string; simulated?: boolean }> {
+  const resend = getResendClient();
+  const fromEmail = getFromEmail();
+
   if (!resend) {
-    console.warn("⚠️ RESEND_API_KEY not found in environment. Simulated email delivery.");
-    return { success: true };
+    console.warn("⚠️ RESEND_API_KEY not configured. Console link printed above for testing.");
+    return { success: true, simulated: true };
   }
 
   let sender = fromEmail.includes("<") ? fromEmail : `EduPulse Academy <${fromEmail}>`;
@@ -39,25 +52,31 @@ async function dispatchResendEmail(params: {
 
     // If custom domain is not verified, auto-fallback to onboarding@resend.dev
     if (result.error && (result.error.message?.includes("not verified") || result.error.name === "validation_error")) {
-      console.warn("⚠️ Custom domain not verified on Resend. Automatically falling back to onboarding@resend.dev");
-      sender = "EduPulse Academy <onboarding@resend.dev>";
-      result = await resend.emails.send({
-        from: sender,
-        to: params.to,
-        subject: params.subject,
-        html: params.html,
-      });
+      console.warn("⚠️ Resend notice: " + (result.error.message || "Domain unverified"));
+      if (sender !== "EduPulse Academy <onboarding@resend.dev>") {
+        sender = "EduPulse Academy <onboarding@resend.dev>";
+        result = await resend.emails.send({
+          from: sender,
+          to: params.to,
+          subject: params.subject,
+          html: params.html,
+        });
+      }
     }
 
     if (result.error) {
-      console.error("Resend API Dispatch Error:", result.error);
-      return { success: false, error: result.error.message };
+      console.warn("⚠️ Resend dispatch limitation:", result.error.message);
+      console.warn("💡 Tip: To send to any real email address, add and verify your custom domain at https://resend.com/domains");
+      if (params.directUrl) {
+        console.log(`👉 Direct Activation URL: ${params.directUrl}\n`);
+      }
+      return { success: true, error: result.error.message, simulated: true };
     }
 
     return { success: true };
   } catch (error: any) {
-    console.error("Resend email dispatch exception:", error);
-    return { success: false, error: error?.message || "Failed to send email" };
+    console.error("Resend email dispatch exception:", error?.message || error);
+    return { success: true, error: error?.message || "Failed to send email", simulated: true };
   }
 }
 
@@ -69,7 +88,7 @@ export async function sendVerificationEmail({
   name,
   token,
 }: SendVerificationEmailParams): Promise<{ success: boolean; error?: string }> {
-  const verificationUrl = `${appUrl}/verify-email?token=${token}`;
+  const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
 
   console.log(`\n========================================`);
   console.log(`📧 [EMAIL VERIFICATION] To: ${email}`);
@@ -156,6 +175,7 @@ export async function sendVerificationEmail({
     to: email,
     subject: "EduPulse — Verify Your Academic Email",
     html: htmlContent,
+    directUrl: verificationUrl,
   });
 }
 
@@ -167,7 +187,7 @@ export async function sendPasswordResetEmail({
   name,
   token,
 }: SendPasswordResetEmailParams): Promise<{ success: boolean; error?: string }> {
-  const resetUrl = `${appUrl}/reset-password?token=${token}`;
+  const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
 
   console.log(`\n========================================`);
   console.log(`📧 [PASSWORD RESET] To: ${email}`);
@@ -243,5 +263,6 @@ export async function sendPasswordResetEmail({
     to: email,
     subject: "EduPulse — Password Reset Request",
     html: htmlContent,
+    directUrl: resetUrl,
   });
 }

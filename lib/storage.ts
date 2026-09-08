@@ -128,6 +128,41 @@ export interface SavedFileResult {
   isPrivate: boolean;
 }
 
+const DANGEROUS_EXTENSIONS = new Set([
+  ".exe", ".bat", ".cmd", ".sh", ".php", ".phtml", ".jsp", ".asp", ".aspx",
+  ".js", ".mjs", ".ts", ".jsx", ".tsx", ".html", ".htm", ".xhtml", ".shtml",
+  ".dll", ".so", ".dylib", ".vbs", ".ps1", ".svgz", ".scr", ".com"
+]);
+
+export function validateFileSafety(buffer: Buffer, originalFileName: string, mimeType: string): string {
+  const ext = path.extname(originalFileName).toLowerCase();
+  
+  if (DANGEROUS_EXTENSIONS.has(ext)) {
+    throw new Error(`Security Violation: Uploading ${ext} executable or script files is prohibited.`);
+  }
+
+  // Magic bytes inspection
+  if (buffer.length >= 4) {
+    if ((ext === ".pdf" || mimeType === "application/pdf") && buffer.slice(0, 4).toString("ascii") !== "%PDF") {
+      throw new Error("Invalid PDF file format: header signature mismatch.");
+    }
+    if ((ext === ".png" || mimeType === "image/png") && (buffer[0] !== 0x89 || buffer[1] !== 0x50 || buffer[2] !== 0x4e || buffer[3] !== 0x47)) {
+      throw new Error("Invalid PNG image format: header signature mismatch.");
+    }
+    if ((ext === ".jpg" || ext === ".jpeg" || mimeType === "image/jpeg") && (buffer[0] !== 0xff || buffer[1] !== 0xd8 || buffer[2] !== 0xff)) {
+      throw new Error("Invalid JPEG image format: header signature mismatch.");
+    }
+    if ((ext === ".gif" || mimeType === "image/gif") && buffer.slice(0, 4).toString("ascii") !== "GIF8") {
+      throw new Error("Invalid GIF image format: header signature mismatch.");
+    }
+    if ((ext === ".webp" || mimeType === "image/webp") && (buffer.length < 12 || buffer.slice(0, 4).toString("ascii") !== "RIFF" || buffer.slice(8, 12).toString("ascii") !== "WEBP")) {
+      throw new Error("Invalid WebP image format: header signature mismatch.");
+    }
+  }
+
+  return ext;
+}
+
 export async function saveUploadedFile(
   fileBuffer: Buffer,
   originalFileName: string,
@@ -144,8 +179,8 @@ export async function saveUploadedFile(
   }
 
   const detectedExt =
+    validateFileSafety(fileBuffer, originalFileName, mimeType) ||
     MIME_MAP[mimeType.toLowerCase()] ||
-    path.extname(originalFileName).toLowerCase() ||
     ".bin";
 
   const cleanOriginalName = path

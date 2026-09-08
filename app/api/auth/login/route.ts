@@ -59,11 +59,7 @@ export async function POST(request: Request) {
       );
     }
 
-    let isValid = verifyPassword(password, user.passwordHash);
-
-    if (!isValid && normalizedEmail === "tutor@edupulse.uk" && (password === "TutorPass123!" || password === "InstructorPass123!")) {
-      isValid = true;
-    }
+    const isValid = verifyPassword(password, user.passwordHash);
 
     if (!isValid) {
       return NextResponse.json(

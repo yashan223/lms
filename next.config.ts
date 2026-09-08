@@ -28,7 +28,11 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(self), microphone=(self), geolocation=()",
+            value: "camera=(self 'https://meet.google.com'), microphone=(self 'https://meet.google.com'), geolocation=(), payment=(self)",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
           },
           {
             key: "X-XSS-Protection",

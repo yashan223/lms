@@ -8,8 +8,13 @@ const SESSION_SECRET =
   process.env.AUTH_SECRET ||
   "edupulse_academic_secure_session_secret_key_v1_2026";
 
-const SESSION_COOKIE_NAME = "edupulse_session";
+export const SESSION_COOKIE_NAME = "edupulse_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+
+// Validate secret on startup
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET && !process.env.AUTH_SECRET) {
+  console.warn("⚠️ SECURITY WARNING: SESSION_SECRET or AUTH_SECRET is not set in environment variables!");
+}
 
 // ==========================================
 // 1. Cryptographic Password Hashing (scrypt)
@@ -160,41 +165,13 @@ export async function getAuthenticatedUser(
 ): Promise<AuthResult> {
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
-  let sessionPayload: SessionPayload | null = null;
-
-  if (sessionCookie) {
-    sessionPayload = verifySessionToken(sessionCookie);
+  if (!sessionCookie) {
+    return { error: "Unauthorized: Active session required", status: 401 };
   }
 
-  // Fallback check for transition / cookie migration if needed
+  const sessionPayload = verifySessionToken(sessionCookie);
   if (!sessionPayload) {
-    const emailCookie = request.cookies.get("edupulse_user_email")?.value;
-
-    if (emailCookie) {
-      const dbUser = await prisma.user.findUnique({
-        where: { email: emailCookie.toLowerCase() },
-        select: USER_SELECT_FIELDS,
-      });
-
-      if (dbUser) {
-        if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(dbUser.role)) {
-          return { error: "Forbidden: Insufficient privileges", status: 403 };
-        }
-
-        return {
-          user: dbUser,
-          payload: {
-            userId: dbUser.id,
-            email: dbUser.email,
-            role: dbUser.role,
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
-          },
-        };
-      }
-    }
-
-    return { error: "Unauthorized: Active session required", status: 401 };
+    return { error: "Unauthorized: Invalid or expired session", status: 401 };
   }
 
   // Verify user still exists in DB

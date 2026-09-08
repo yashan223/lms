@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFileStream } from "@/lib/storage";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 import { Readable } from "stream";
 import path from "path";
 
@@ -51,12 +53,29 @@ export async function GET(
     const isPrivate = fileKey.startsWith("private/");
     if (isPrivate) {
       const auth = await getAuthenticatedUser(request);
-      if (auth.error) {
+      if (auth.error || !auth.user) {
         return new NextResponse("Unauthorized to access private file", { status: 401 });
+      }
+
+      // Enforce ownership: only owner, Admin, or Tutor can access private files
+      if (auth.user.role !== Role.ADMIN && auth.user.role !== Role.TUTOR) {
+        const storedFile = await prisma.privateFile.findFirst({
+          where: {
+            OR: [
+              { fileUrl: { contains: fileKey } },
+              { fileName: path.basename(safePath) },
+            ],
+          },
+        });
+
+        if (storedFile && storedFile.userId !== auth.user.id) {
+          return new NextResponse("Forbidden: Access denied to private file", { status: 403 });
+        }
       }
     }
 
     const filename = path.basename(safePath);
+    const isSvg = mimeType.includes("svg");
 
     const webStream = Readable.toWeb(stream) as ReadableStream<Uint8Array>;
 
@@ -65,10 +84,13 @@ export async function GET(
       "Accept-Ranges": "bytes",
       "Content-Length": chunkSize.toString(),
       "X-Content-Type-Options": "nosniff",
-      "Content-Disposition": `inline; filename="${filename}"`,
+      "Content-Disposition": isSvg
+        ? `attachment; filename="${filename}"`
+        : `inline; filename="${filename}"`,
       "Cache-Control": isPrivate
         ? "private, no-cache"
         : "public, max-age=31536000, immutable",
+      ...(isSvg ? { "Content-Security-Policy": "default-src 'none'; sandbox" } : {}),
     };
 
     if (isPartial) {

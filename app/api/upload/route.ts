@@ -3,6 +3,7 @@ import { saveUploadedFile, SaveFileOptions } from "@/lib/storage";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,15 @@ export async function POST(request: NextRequest) {
     const auth = await getAuthenticatedUser(request);
     if (!auth.user) {
       return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+    }
+
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`upload:${auth.user.id}:${ip}`, 15, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: `Upload rate limit exceeded. Please wait ${rateLimit.resetSeconds}s before uploading again.` },
+        { status: 429 }
+      );
     }
 
     const formData = await request.formData();

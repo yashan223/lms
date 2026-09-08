@@ -84,6 +84,8 @@ model User {
   tutorTrials    TrialRequest[] @relation("TutorTrials")
   studentTrials  TrialRequest[] @relation("StudentTrials")
   tokenWallet    TokenWallet?
+  tutorAvailabilities TutorAvailability[] @relation("TutorAvailabilities")
+  studentAvailabilities StudentAvailability[] @relation("StudentAvailabilities")
 
   // E2EE Chat Relations
   conversationsA Conversation[] @relation("ParticipantA")
@@ -163,6 +165,7 @@ model Course {
   certificates  Certificate[]
   events        Event[]
   trialRequests TrialRequest[]
+  availabilities TutorAvailability[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -431,5 +434,53 @@ model Message {
   @@index([receiverId, isRead])
   @@map("messages")
 }
+
+// ========================================================
+// TUTOR AVAILABILITY SYSTEM
+// ========================================================
+model TutorAvailability {
+  id           String    @id @default(cuid())
+  tutorId      String
+  tutor        User      @relation("TutorAvailabilities", fields: [tutorId], references: [id], onDelete: Cascade)
+  courseId     String?
+  course       Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int?      // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (for recurring weekly slots)
+  specificDate DateTime? // For specific date slots
+  startTime    String    // "HH:mm" e.g. "09:00", "14:30"
+  endTime      String    // "HH:mm" e.g. "10:30", "16:00"
+  slotType     String    @default("ALL") // "ALL", "CLASS", "TRIAL"
+  isRecurring  Boolean   @default(false)
+  isActive     Boolean   @default(true)
+  title        String?   // Optional label e.g., "Morning Masterclass", "Evening 1-on-1"
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([tutorId])
+  @@index([courseId])
+  @@map("tutor_availabilities")
+}
+
+// ========================================================
+// STUDENT AVAILABILITY / STUDY HOURS SYSTEM
+// ========================================================
+model StudentAvailability {
+  id           String    @id @default(cuid())
+  studentId    String
+  student      User      @relation("StudentAvailabilities", fields: [studentId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int?      // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (for weekly recurring study hours)
+  specificDate DateTime? // For specific available dates
+  startTime    String    // "HH:mm" e.g. "16:00"
+  endTime      String    // "HH:mm" e.g. "20:00"
+  isRecurring  Boolean   @default(true)
+  isActive     Boolean   @default(true)
+  title        String?   // Optional label e.g., "After-School Study Window", "Weekend Revision"
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([studentId])
+  @@map("student_availabilities")
+}
+
 
 

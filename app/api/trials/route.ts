@@ -9,10 +9,58 @@ import { EventType, Role, TrialStatus } from "@prisma/client";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const singleTrialId = searchParams.get("trialId") || searchParams.get("id");
     const tutorId = searchParams.get("tutorId");
     const studentId = searchParams.get("studentId");
     const emailCookie = request.cookies.get("edupulse_user_email")?.value;
     const roleCookie = request.cookies.get("edupulse_user_role")?.value;
+
+    if (singleTrialId) {
+      const trial = await prisma.trialRequest.findUnique({
+        where: { id: singleTrialId },
+        include: {
+          course: {
+            include: {
+              tutor: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                  headline: true,
+                  email: true,
+                  phone: true,
+                },
+              },
+            },
+          },
+          tutor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              headline: true,
+              phone: true,
+            },
+          },
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      if (!trial) {
+        return NextResponse.json({ error: "Trial session not found." }, { status: 404 });
+      }
+
+      return NextResponse.json({ trial });
+    }
 
     let whereClause: any = {};
 
@@ -422,9 +470,62 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const existing = await prisma.trialRequest.findUnique({ where: { id: trialId } });
+      const existing = await prisma.trialRequest.findUnique({
+        where: { id: trialId },
+        include: { course: true, tutor: true, student: true },
+      });
       if (!existing) {
         return NextResponse.json({ error: "Trial not found." }, { status: 404 });
+      }
+
+      const targetDate = new Date(scheduledDate);
+      if (isNaN(targetDate.getTime())) {
+        return NextResponse.json({ error: "Invalid scheduled date provided." }, { status: 400 });
+      }
+
+      const effectiveTutorId = existing.tutorId || existing.course?.tutorId;
+
+      // Check conflict with scheduled classes if tutor is known
+      if (effectiveTutorId && !body.force) {
+        const slotStart = targetDate;
+        const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
+
+        const tutorCourseIds = existing.courseId ? [existing.courseId] : [];
+        const conflictingClass = await prisma.event.findFirst({
+          where: {
+            OR: [
+              { userId: effectiveTutorId },
+              { requestedBy: effectiveTutorId },
+              ...(tutorCourseIds.length > 0 ? [{ courseId: { in: tutorCourseIds } }] : []),
+            ],
+            dueDate: {
+              gte: new Date(slotStart.getTime() - 2 * 60 * 60 * 1000), // Within 2 hours before
+              lte: slotEnd,
+            },
+            status: { notIn: ["CANCELLED", "REJECTED"] as any },
+          },
+        });
+
+        if (conflictingClass) {
+          const classStart = new Date(conflictingClass.dueDate);
+          const duration = conflictingClass.title.toLowerCase().includes("2h") ? 120 : 60;
+          const classEnd = new Date(classStart.getTime() + duration * 60 * 1000);
+
+          if (slotStart.getTime() < classEnd.getTime() && slotEnd.getTime() > classStart.getTime()) {
+            return NextResponse.json(
+              {
+                error: `Schedule conflict: Tutor already has a class scheduled ("${conflictingClass.title}") from ${classStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} to ${classEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Please select another time slot.`,
+                conflict: {
+                  id: conflictingClass.id,
+                  title: conflictingClass.title,
+                  start: classStart.toISOString(),
+                  end: classEnd.toISOString(),
+                },
+              },
+              { status: 409 }
+            );
+          }
+        }
       }
 
       const link = getSafeMeetingLink(meetingLink || existing.meetingLink);

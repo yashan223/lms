@@ -70,6 +70,7 @@ export function TrialRequestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdTrial, setCreatedTrial] = useState<any | null>(null);
+  const [openSlots, setOpenSlots] = useState<Array<{ startTime: string; timeDisplay: string; dateLabel: string }>>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -86,8 +87,37 @@ export function TrialRequestModal({
 
       setError(null);
       setCreatedTrial(null);
+
+      // Fetch availability
+      const targetTutorId = initialTutorId || allCourses.find((c) => c.id === (initialCourseId || courseId))?.instructor?.id;
+      const targetCourseId = initialCourseId || courseId;
+      const params = new URLSearchParams();
+      if (targetTutorId) params.set("tutorId", targetTutorId);
+      if (targetCourseId) params.set("courseId", targetCourseId);
+      params.set("days", "7");
+
+      fetch(`/api/tutor/availability?${params.toString()}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.days) {
+            const collected: Array<{ startTime: string; timeDisplay: string; dateLabel: string }> = [];
+            for (const day of d.days) {
+              for (const s of day.slots || []) {
+                if (s.isAvailable && collected.length < 5) {
+                  collected.push({
+                    startTime: s.startTime,
+                    timeDisplay: s.timeDisplay,
+                    dateLabel: day.dateLabel,
+                  });
+                }
+              }
+            }
+            setOpenSlots(collected);
+          }
+        })
+        .catch(() => {});
     }
-  }, [isOpen, initialCourseId, allCourses, courseId]);
+  }, [isOpen, initialCourseId, allCourses, courseId, initialTutorId]);
 
   if (!isOpen) return null;
 
@@ -258,9 +288,37 @@ export function TrialRequestModal({
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Preferred Date &amp; Time <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-bold text-slate-700 block">
+                  Preferred Date &amp; Time <span className="text-red-500">*</span>
+                </label>
+                <span className="text-[10px] text-slate-400">Verified against class schedule</span>
+              </div>
+
+              {openSlots.length > 0 && (
+                <div className="mb-2 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Quick Available Faculty Slots:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {openSlots.map((s, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const d = new Date(s.startTime);
+                          setPreferredDate(formatForDateTimeInput(d));
+                        }}
+                        className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[10px] font-bold text-emerald-800 transition-all cursor-pointer inline-flex items-center gap-1"
+                      >
+                        <Clock className="w-2.5 h-2.5 text-emerald-600" />
+                        <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <input
                 type="datetime-local"
                 required

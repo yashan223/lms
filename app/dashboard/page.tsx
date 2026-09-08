@@ -54,6 +54,7 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Button } from "@/components/ui/button";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink } from "@/lib/utils";
@@ -184,6 +185,7 @@ function DashboardContent() {
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
+  const [showStudentAvailabilityModal, setShowStudentAvailabilityModal] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
@@ -220,6 +222,10 @@ function DashboardContent() {
   const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
 
   const openStudentReschedule = (event: any) => {
+    if (event?.title?.toLowerCase().includes("trial") || event?.title?.toLowerCase().includes("consultation")) {
+      router.push("/trials/reschedule");
+      return;
+    }
     setRescheduleTargetEvent(event);
     const d = new Date(event.dueDate);
     setRescheduleDate(formatForDateTimeInput(d));
@@ -996,6 +1002,21 @@ function DashboardContent() {
                   {tokenTransactions.length} records
                 </span>
               </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-2xs">
+              <button
+                onClick={() => setShowStudentAvailabilityModal(true)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100/70 transition-all text-xs font-bold text-blue-950 cursor-pointer shadow-2xs group"
+              >
+                <span className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                  <span>My Study Availability</span>
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-bold">
+                  Set Hours
+                </span>
+              </button>
             </div>
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
@@ -1893,6 +1914,15 @@ function DashboardContent() {
         allCourses={allCourses}
         currentUser={user}
         onSuccess={() => {
+          fetchDashboardData();
+        }}
+      />
+
+      <StudentAvailabilityModal
+        isOpen={showStudentAvailabilityModal}
+        onClose={() => setShowStudentAvailabilityModal(false)}
+        currentUser={user}
+        onUpdated={() => {
           fetchDashboardData();
         }}
       />

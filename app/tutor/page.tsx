@@ -57,6 +57,7 @@ import {
   Share2,
   History,
   Coins,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
 import { getSafeMeetingLink, normalizeGoogleMeetLink } from "@/lib/utils";
+import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
 
 const formatForDateTimeInput = (date: Date) => {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -184,7 +186,7 @@ function TutorDashboardContent() {
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
 
   const [centerTab, setCenterTab] = useState<
-    "courses" | "classes" | "history" | "students" | "trials" | "earnings" | "profile"
+    "courses" | "classes" | "history" | "students" | "trials" | "earnings" | "profile" | "availability"
   >("courses");
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState<"ALL" | "CLASSES" | "STUDENTS">("ALL");
@@ -198,7 +200,8 @@ function TutorDashboardContent() {
       tab === "history" ||
       tab === "students" ||
       tab === "trials" ||
-      tab === "earnings"
+      tab === "earnings" ||
+      tab === "availability"
     ) {
       setCenterTab(tab);
     }
@@ -270,6 +273,59 @@ function TutorDashboardContent() {
   const [newClassDesc, setNewClassDesc] = useState("");
   const [newClassType, setNewClassType] = useState("LIVE_SEMINAR");
   const [schedulingClass, setSchedulingClass] = useState(false);
+  const [selectedStudentAvailabilities, setSelectedStudentAvailabilities] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (newClassStudentId) {
+      fetch(`/api/student/availability?studentId=${newClassStudentId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          setSelectedStudentAvailabilities(d.availabilities || []);
+        })
+        .catch(() => setSelectedStudentAvailabilities([]));
+    } else {
+      setSelectedStudentAvailabilities([]);
+    }
+  }, [newClassStudentId]);
+
+  const applyStudentSlotToClassDate = (av: any) => {
+    const [hh, mm] = (av.startTime || "16:00").split(":").map(Number);
+    const now = new Date();
+    let target = new Date();
+    if (av.specificDate) {
+      target = new Date(av.specificDate);
+    } else if (av.dayOfWeek !== null && av.dayOfWeek !== undefined) {
+      const targetDay = Number(av.dayOfWeek);
+      const currentDay = now.getDay();
+      let diff = (targetDay - currentDay + 7) % 7;
+      if (diff === 0) diff = 7;
+      target.setDate(now.getDate() + diff);
+    } else {
+      target.setDate(now.getDate() + 1);
+    }
+    target.setHours(hh, mm, 0, 0);
+    setNewClassDate(formatForDateTimeInput(target));
+  };
+
+  const scheduleClassConflict = useMemo(() => {
+    if (!newClassDate) return null;
+    const targetStart = new Date(newClassDate);
+    if (isNaN(targetStart.getTime())) return null;
+    const targetEnd = new Date(targetStart.getTime() + 60 * 60 * 1000);
+
+    for (const ev of events) {
+      if (ev.status === "CANCELLED" || ev.status === "REJECTED") continue;
+      const evStart = new Date(ev.dueDate);
+      const duration = ev.title.toLowerCase().includes("2h") ? 120 : 60;
+      const evEnd = new Date(evStart.getTime() + duration * 60 * 1000);
+
+      if (targetStart.getTime() < evEnd.getTime() && targetEnd.getTime() > evStart.getTime()) {
+        return { title: ev.title, start: evStart, end: evEnd };
+      }
+    }
+    return null;
+  }, [newClassDate, events]);
+
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
@@ -1022,13 +1078,7 @@ function TutorDashboardContent() {
   };
 
   const openRescheduleForTrial = (trial: any) => {
-    setRescheduleTargetTrial(trial);
-    setRescheduleTargetEvent(null);
-    setRescheduleDate(formatForDateTimeInput(new Date(trial.preferredDate)));
-    setRescheduleMeetingLink(trial.meetingLink || "");
-    setRescheduleNotes(trial.notes || "");
-    setRescheduleStatusMsg(null);
-    setShowRescheduleModal(true);
+    router.push(`/trials/reschedule?trialId=${trial.id}`);
   };
 
   const handleConfirmReschedule = async (e: React.FormEvent) => {
@@ -1378,6 +1428,23 @@ function TutorDashboardContent() {
                 </button>
 
                 <button
+                  onClick={() => setCenterTab("availability")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "availability"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Availability &amp; Timeslots</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 font-bold">
+                    Slots
+                  </span>
+                </button>
+
+                <button
                   onClick={() => setCenterTab("profile")}
                   className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
                     centerTab === "profile"
@@ -1593,6 +1660,18 @@ function TutorDashboardContent() {
               >
                 <CalendarCheck className="w-3.5 h-3.5" />
                 <span>Trials ({trials.length})</span>
+              </button>
+
+              <button
+                onClick={() => setCenterTab("availability")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  centerTab === "availability"
+                    ? "bg-[#0c2461] text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Availability &amp; Timeslots</span>
               </button>
 
               <button
@@ -2538,6 +2617,18 @@ function TutorDashboardContent() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {centerTab === "availability" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <TutorAvailabilityManager
+                  tutor={tutor}
+                  courses={courses}
+                  events={events}
+                  trials={trials}
+                  onRefresh={fetchTutorData}
+                />
               </div>
             )}
 
@@ -3512,6 +3603,44 @@ function TutorDashboardContent() {
                       </option>
                     ))}
                   </select>
+
+                  {newClassStudentId && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-purple-600" />
+                          <span>Student&apos;s Preferred Study Hours</span>
+                        </span>
+                        {selectedStudentAvailabilities.length > 0 && (
+                          <span className="text-[10px] text-purple-700 font-semibold">Click slot to auto-fill</span>
+                        )}
+                      </div>
+
+                      {selectedStudentAvailabilities.length === 0 ? (
+                        <div className="text-[11px] text-purple-800/80 italic">
+                          This student has not set custom study hours yet.
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {selectedStudentAvailabilities.map((av, idx) => {
+                            const daysMap: Record<number, string> = { 0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
+                            const dayName = av.dayOfWeek !== null ? daysMap[Number(av.dayOfWeek)] || "Day" : av.specificDate?.slice(0, 10);
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => applyStudentSlotToClassDate(av)}
+                                className="px-2 py-1 rounded-lg bg-white hover:bg-purple-100 border border-purple-200 text-[10px] font-bold text-purple-900 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                title="Click to auto-schedule on student's study day & time"
+                              >
+                                <span>{dayName}: {av.startTime} – {av.endTime}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -3539,6 +3668,16 @@ function TutorDashboardContent() {
                   onChange={(e) => setNewClassDate(e.target.value)}
                   className="rounded-xl h-9 text-xs"
                 />
+                {scheduleClassConflict && (
+                  <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2 mt-1.5 animate-in fade-in">
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>
+                      ⚠️ Conflict: &ldquo;{scheduleClassConflict.title}&rdquo; is already scheduled from{" "}
+                      {scheduleClassConflict.start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} to{" "}
+                      {scheduleClassConflict.end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div>

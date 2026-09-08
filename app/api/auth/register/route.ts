@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, attachSessionCookies } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { sendVerificationEmail } from "@/lib/email";
-import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
@@ -58,7 +56,7 @@ export async function POST(request: Request) {
         passwordHash: hashedPassword,
         phone: phone ? phone.trim() : null,
         role: Role.STUDENT,
-        emailVerified: null, // Requires email verification via Resend
+        emailVerified: new Date(), // Instant account activation (verification disabled)
         headline: `${qualification || "London A/L"} Student${country ? ` • ${country}` : ""} (${targetSeries || "Spring / Summer 2026"})`,
         bio: `Enrolled student ${country ? `from ${country} ` : ""}studying ${examBoard || "London A/L & O/L"} curriculum.`,
         avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
@@ -70,36 +68,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // Generate 32-byte secure verification token (valid for 24 hours)
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    await prisma.emailVerificationToken.create({
-      data: {
-        token: verificationToken,
-        userId: newUser.id,
-        expiresAt,
-      },
-    });
-
-    // Send verification email via Resend (safeguarded against email provider issues)
-    try {
-      await sendVerificationEmail({
-        email: newUser.email,
-        name: newUser.name,
-        token: verificationToken,
-      });
-    } catch (emailErr) {
-      console.error("Non-fatal registration verification email send error:", emailErr);
-    }
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      requireVerification: true,
       email: newUser.email,
-      redirectTo: `/verify-email?email=${encodeURIComponent(newUser.email)}&sent=true`,
-      message: "Registration successful! A verification email has been sent to your inbox.",
+      redirectTo: "/dashboard",
+      message: "Registration successful! Welcome to EduPulse Academy.",
     });
+
+    attachSessionCookies(response, newUser);
+    return response;
   } catch (error: any) {
     console.error("Register API error:", error);
     return NextResponse.json(

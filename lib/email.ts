@@ -1,13 +1,25 @@
 import { Resend } from "resend";
 
 function getResendClient() {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY || "re_MSjYqKHq_DSn9cGST1Cc9owYERFQ2BiXP";
   if (!apiKey) return null;
   return new Resend(apiKey);
 }
 
 function getAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
 function getFromEmail() {
@@ -36,8 +48,11 @@ async function dispatchResendEmail(params: {
   const fromEmail = getFromEmail();
 
   if (!resend) {
-    console.warn("⚠️ RESEND_API_KEY not configured. Console link printed above for testing.");
-    return { success: true, simulated: true };
+    console.error("❌ RESEND_API_KEY is not configured.");
+    return {
+      success: false,
+      error: "Email service is not configured. Please add RESEND_API_KEY to your environment variables.",
+    };
   }
 
   let sender = fromEmail.includes("<") ? fromEmail : `EduPulse Academy <${fromEmail}>`;
@@ -65,18 +80,22 @@ async function dispatchResendEmail(params: {
     }
 
     if (result.error) {
-      console.warn("⚠️ Resend dispatch limitation:", result.error.message);
-      console.warn("💡 Tip: To send to any real email address, add and verify your custom domain at https://resend.com/domains");
-      if (params.directUrl) {
-        console.log(`👉 Direct Activation URL: ${params.directUrl}\n`);
+      console.error("❌ Resend dispatch limitation:", result.error.message);
+      let userFriendlyError = result.error.message;
+      if (
+        result.error.message?.includes("only send testing emails to your own email address") ||
+        result.error.name === "validation_error"
+      ) {
+        userFriendlyError =
+          "Resend test sandbox restriction: onboarding@resend.dev can only deliver emails to your registered Resend email address (yashanpererax200302@gmail.com). To send to all students, please verify your custom domain in your Resend dashboard (resend.com/domains) and set RESEND_FROM_EMAIL.";
       }
-      return { success: true, error: result.error.message, simulated: true };
+      return { success: false, error: userFriendlyError };
     }
 
     return { success: true };
   } catch (error: any) {
     console.error("Resend email dispatch exception:", error?.message || error);
-    return { success: true, error: error?.message || "Failed to send email", simulated: true };
+    return { success: false, error: error?.message || "Failed to deliver email" };
   }
 }
 

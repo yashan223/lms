@@ -11,7 +11,6 @@ import {
   Loader2,
   ArrowRight,
   RefreshCw,
-  Sparkles,
   ShieldCheck,
 } from "lucide-react";
 
@@ -33,34 +32,6 @@ function VerifyEmailContent() {
   );
   const [countdown, setCountdown] = useState<number>(0);
   const [autoRedirectSecs, setAutoRedirectSecs] = useState<number | null>(null);
-  const [instantActivating, setInstantActivating] = useState(false);
-
-  const handleInstantVerify = async () => {
-    if (!emailInput || instantActivating) return;
-    setInstantActivating(true);
-    setErrorMessage(null);
-
-    try {
-      const res = await fetch("/api/auth/verify-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput.trim().toLowerCase(), action: "instant_verify" }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setErrorMessage(data.error || "Instant activation failed.");
-      } else {
-        setVerificationSuccess(true);
-        setAutoRedirectSecs(3);
-      }
-    } catch (err) {
-      console.error("Instant activation error:", err);
-      setErrorMessage("Network error during activation.");
-    } finally {
-      setInstantActivating(false);
-    }
-  };
 
   // Handle Token Verification
   useEffect(() => {
@@ -317,30 +288,6 @@ function VerifyEmailContent() {
                     )}
                   </Button>
                 </form>
-
-                <div className="pt-2 border-t border-slate-100 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                    <span>Evaluating or in testing mode?</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleInstantVerify}
-                    disabled={instantActivating || !emailInput}
-                    className="w-full h-10 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
-                  >
-                    {instantActivating ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700" />
-                        <span>Activating account...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                        <span>Instant Activate Account (Demo / Test)</span>
-                      </>
-                    )}
-                  </button>
-                </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 leading-relaxed space-y-1">
                   <p className="font-semibold text-slate-700">💡 Helpful Tips:</p>

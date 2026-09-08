@@ -1266,17 +1266,6 @@ export default function AdminDashboardPage() {
                 </Button>
               )}
 
-              {activeTab === "users" && (
-                <Button
-                  size="sm"
-                  onClick={handleOpenAddUser}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
-                >
-                  <UserPlus className="w-3.5 h-3.5 text-blue-100" />
-                  <span>+ Add New User</span>
-                </Button>
-              )}
-
               {activeTab === "courses" && (
                 <Button
                   size="sm"

@@ -48,6 +48,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ShoppingBag,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -221,11 +222,32 @@ function DashboardContent() {
   const [bannerVisible, setBannerVisible] = useState(false);
   const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
 
+  const [studentAvailabilitiesCount, setStudentAvailabilitiesCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user?.id && user?.role === "STUDENT") {
+      fetch(`/api/student/availability?studentId=${user.id}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.availabilities && Array.isArray(d.availabilities)) {
+            setStudentAvailabilitiesCount(d.availabilities.length);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user?.id, user?.role, showStudentAvailabilityModal]);
+
   const openStudentReschedule = (event: any) => {
     if (event?.title?.toLowerCase().includes("trial") || event?.title?.toLowerCase().includes("consultation")) {
       router.push("/trials/reschedule");
       return;
     }
+
+    if (user?.role === "STUDENT" && studentAvailabilitiesCount === 0) {
+      setShowStudentAvailabilityModal(true);
+      return;
+    }
+
     setRescheduleTargetEvent(event);
     const d = new Date(event.dueDate);
     setRescheduleDate(formatForDateTimeInput(d));
@@ -262,6 +284,11 @@ function DashboardContent() {
         fetchDashboardData(false);
         setTimeout(() => setShowStudentRescheduleModal(false), 1200);
       } else {
+        if (res.status === 428 || data.code === "STUDY_AVAILABILITY_REQUIRED") {
+          setShowStudentRescheduleModal(false);
+          setShowStudentAvailabilityModal(true);
+          return;
+        }
         setRescheduleStatusMsg({
           type: "error",
           text: data.error || "Failed to reschedule session.",
@@ -944,6 +971,33 @@ function DashboardContent() {
       </header>
 
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1">
+        {user?.role === "STUDENT" && studentAvailabilitiesCount === 0 && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs text-amber-950 flex items-center gap-1.5">
+                  Set Up Your Study Availability
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    Prerequisite
+                  </span>
+                </h4>
+                <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                  Configure your weekly study hours to unlock 1-on-1 class scheduling, free faculty trial requests, and clash-free calendar bookings.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={() => setShowStudentAvailabilityModal(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl px-4 py-2 shrink-0 cursor-pointer shadow-sm"
+            >
+              ⚡ Configure Study Hours
+            </Button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           <aside className="lg:col-span-3 space-y-4 order-2 lg:order-1">

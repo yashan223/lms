@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 
 interface TutorAvailabilitySlot {
   startTime: string;
@@ -80,6 +81,7 @@ interface TrialDetail {
   meetingLink?: string | null;
   notes?: string | null;
   tutorId?: string | null;
+  studentId?: string | null;
   courseId?: string | null;
   course?: {
     id: string;
@@ -142,6 +144,7 @@ function RescheduleContent() {
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
 
   // 1. Fetch Trial & Tutor Availability
   useEffect(() => {
@@ -269,6 +272,15 @@ function RescheduleContent() {
       return;
     }
 
+    if (studentStudySlots.length === 0) {
+      setShowAvailabilityModal(true);
+      setStatusMsg({
+        type: "error",
+        text: "Please configure your study availability first so faculty knows your preferred study hours.",
+      });
+      return;
+    }
+
     if (activeConflict) {
       setStatusMsg({
         type: "error",
@@ -295,6 +307,9 @@ function RescheduleContent() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 428 || data.code === "STUDY_AVAILABILITY_REQUIRED") {
+          setShowAvailabilityModal(true);
+        }
         throw new Error(data.error || "Failed to reschedule trial session.");
       }
 
@@ -499,6 +514,34 @@ function RescheduleContent() {
               </div>
               <p className="text-xs leading-relaxed">{statusMsg.text}</p>
             </div>
+          </div>
+        )}
+
+        {studentStudySlots.length === 0 && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs text-amber-950 flex items-center gap-1.5">
+                  Study Availability Required
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                    Step Required
+                  </span>
+                </h4>
+                <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                  Please configure your study availability so faculty tutors can coordinate your session times without schedule clashes.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={() => setShowAvailabilityModal(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl px-4 py-2 shrink-0 cursor-pointer shadow-sm"
+            >
+              ⚡ Set Study Availability
+            </Button>
           </div>
         )}
 
@@ -1004,6 +1047,22 @@ function RescheduleContent() {
             </form>
           </div>
         </div>
+
+        <StudentAvailabilityModal
+          isOpen={showAvailabilityModal}
+          onClose={() => setShowAvailabilityModal(false)}
+          currentUser={trial?.student || (trial?.studentId ? { id: trial.studentId } : undefined)}
+          onUpdated={() => {
+            const tutorId = trial?.tutorId || trial?.course?.tutor?.id || "";
+            fetch(`/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&days=14`)
+              .then((r) => r.json())
+              .then((d) => {
+                if (d.days) setAvailabilityDays(d.days);
+                if (d.student?.availabilities) setStudentStudySlots(d.student.availabilities);
+              })
+              .catch(() => {});
+          }}
+        />
       </main>
     </div>
   );

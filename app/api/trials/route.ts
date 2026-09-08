@@ -186,13 +186,45 @@ export async function POST(request: NextRequest) {
       const resolvedStudentName = (auth.user?.name || studentName || "").trim();
       const resolvedStudentEmail = (auth.user?.email || studentEmail || "").trim().toLowerCase();
       const resolvedStudentPhone = (auth.user?.phone || studentPhone || "").trim() || null;
-      const resolvedStudentId = auth.user?.id || studentId || null;
+      let resolvedStudentId = auth.user?.id || studentId || null;
 
       if (!resolvedStudentName || !resolvedStudentEmail) {
         return NextResponse.json(
           { error: "Please log in to your student account to request a free trial session." },
           { status: 401 }
         );
+      }
+
+      // Resolve student user if ID was not directly provided
+      if (!resolvedStudentId && resolvedStudentEmail) {
+        const studentUser = await prisma.user.findUnique({
+          where: { email: resolvedStudentEmail },
+          select: { id: true },
+        });
+        if (studentUser) {
+          resolvedStudentId = studentUser.id;
+        }
+      }
+
+      // Gating: Require student to have configured study availability
+      if (resolvedStudentId) {
+        const studentAvailCount = await prisma.studentAvailability.count({
+          where: {
+            studentId: resolvedStudentId,
+            isActive: true,
+          },
+        });
+
+        if (studentAvailCount === 0) {
+          return NextResponse.json(
+            {
+              error: "You must set up your study availability before requesting a free trial session. This ensures faculty tutors know your available hours to coordinate classes.",
+              code: "STUDY_AVAILABILITY_REQUIRED",
+              requiresAvailabilitySetup: true,
+            },
+            { status: 428 }
+          );
+        }
       }
 
       if (!preferredDate) {
@@ -484,6 +516,24 @@ export async function POST(request: NextRequest) {
       }
 
       const effectiveTutorId = existing.tutorId || existing.course?.tutorId;
+      const effectiveStudentId = existing.studentId;
+
+      // Gating: Require student to have configured study availability
+      if (effectiveStudentId && !body.force) {
+        const studentAvailCount = await prisma.studentAvailability.count({
+          where: { studentId: effectiveStudentId, isActive: true },
+        });
+        if (studentAvailCount === 0) {
+          return NextResponse.json(
+            {
+              error: "Please configure your study availability before rescheduling your trial session.",
+              code: "STUDY_AVAILABILITY_REQUIRED",
+              requiresAvailabilitySetup: true,
+            },
+            { status: 428 }
+          );
+        }
+      }
 
       // Check conflict with scheduled classes if tutor is known
       if (effectiveTutorId && !body.force) {

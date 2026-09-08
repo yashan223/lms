@@ -343,6 +343,23 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "reschedule_event") {
+      const auth = await getAuthenticatedUser(request);
+      if (auth.user && auth.user.role === "STUDENT") {
+        const studentAvailCount = await prisma.studentAvailability.count({
+          where: { studentId: auth.user.id, isActive: true },
+        });
+        if (studentAvailCount === 0) {
+          return NextResponse.json(
+            {
+              error: "Please configure your study availability before requesting to reschedule classes.",
+              code: "STUDY_AVAILABILITY_REQUIRED",
+              requiresAvailabilitySetup: true,
+            },
+            { status: 428 }
+          );
+        }
+      }
+
       const { eventId, scheduledDate, reason } = body;
       if (!eventId || !scheduledDate) {
         return NextResponse.json(

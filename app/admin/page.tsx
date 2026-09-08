@@ -135,6 +135,15 @@ export default function AdminDashboardPage() {
   const [formUserBio, setFormUserBio] = useState("");
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
+  // Grant Free Credit Modal State
+  const [showGrantTokensModal, setShowGrantTokensModal] = useState(false);
+  const [selectedStudentForTokens, setSelectedStudentForTokens] = useState<any>(null);
+  const [grantTokensAmount, setGrantTokensAmount] = useState<number>(6);
+  const [grantTokensReason, setGrantTokensReason] = useState<string>("Free Trial Consultation Grant");
+  const [grantTokensMode, setGrantTokensMode] = useState<"ADD" | "SET">("ADD");
+  const [isGrantingTokens, setIsGrantingTokens] = useState(false);
+  const [grantFeedbackMsg, setGrantFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const [courseSearch, setCourseSearch] = useState("");
   const [courseCatFilter, setCourseCatFilter] = useState("ALL");
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
@@ -375,6 +384,74 @@ export default function AdminDashboardPage() {
         }
       },
     });
+  };
+
+  const handleOpenGrantTokens = (student?: any) => {
+    if (student) {
+      setSelectedStudentForTokens(student);
+    } else {
+      const firstStudent = allUsersList.find((u) => u.role === "STUDENT") || null;
+      setSelectedStudentForTokens(firstStudent);
+    }
+    setGrantTokensAmount(6);
+    setGrantTokensReason("Free Trial Consultation Grant");
+    setGrantTokensMode("ADD");
+    setGrantFeedbackMsg(null);
+    setShowGrantTokensModal(true);
+  };
+
+  const handleGrantTokens = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudentForTokens) {
+      setGrantFeedbackMsg({ type: "error", text: "Please select a student." });
+      return;
+    }
+    if (grantTokensAmount <= 0) {
+      setGrantFeedbackMsg({ type: "error", text: "Please enter a valid credit amount (> 0)." });
+      return;
+    }
+
+    try {
+      setIsGrantingTokens(true);
+      setGrantFeedbackMsg(null);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "grant_tokens",
+          userId: selectedStudentForTokens.id,
+          amount: grantTokensAmount,
+          reason: grantTokensReason,
+          mode: grantTokensMode,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setGrantFeedbackMsg({
+          type: "success",
+          text: data.message || `Successfully credited ${grantTokensAmount} free hours to ${selectedStudentForTokens.name}!`,
+        });
+        await fetchAdminData(false);
+        setTimeout(() => {
+          setShowGrantTokensModal(false);
+          setGrantFeedbackMsg(null);
+        }, 1300);
+      } else {
+        setGrantFeedbackMsg({
+          type: "error",
+          text: data.error || "Failed to grant credit to student.",
+        });
+      }
+    } catch (err: any) {
+      console.error("Grant credit error:", err);
+      setGrantFeedbackMsg({
+        type: "error",
+        text: err.message || "Network error connecting to server.",
+      });
+    } finally {
+      setIsGrantingTokens(false);
+    }
   };
 
   const handleOpenEnrollUser = (user: any) => {
@@ -1749,15 +1826,16 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-sky-600">Faculty Tutors</span>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
-                    {allUsersList.filter((u) => u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR").length} Tutors
+                  <span className="text-xs font-medium text-amber-600">Student Credit Pool</span>
+                  <div className="text-2xl font-semibold tracking-tight text-amber-900 font-mono flex items-center gap-1.5">
+                    <Coins className="w-5 h-5 text-amber-500 shrink-0" />
+                    <span>{allUsersList.filter((u) => u.role === "STUDENT").reduce((acc, u) => acc + (u.tokenWallet?.balance || 0), 0)} Hrs</span>
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-indigo-600">System Admins</span>
+                  <span className="text-xs font-medium text-indigo-600">Faculty & Admins</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
-                    {allUsersList.filter((u) => u.role === "ADMIN").length} Admins
+                    {allUsersList.filter((u) => u.role !== "STUDENT").length} Staff
                   </div>
                 </div>
               </div>
@@ -1796,13 +1874,22 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={handleOpenAddUser}
-                  className="w-full md:w-auto text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
-                >
-                  <UserPlus className="w-4 h-4 text-blue-100" />
-                  <span>+ Add New User</span>
-                </Button>
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  <Button
+                    onClick={() => handleOpenGrantTokens()}
+                    className="w-full sm:w-auto text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-amber-600/20 cursor-pointer"
+                  >
+                    <Coins className="w-4 h-4 text-amber-100" />
+                    <span>+ Grant Free Credit</span>
+                  </Button>
+                  <Button
+                    onClick={handleOpenAddUser}
+                    className="w-full sm:w-auto text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
+                  >
+                    <UserPlus className="w-4 h-4 text-blue-100" />
+                    <span>+ Add New User</span>
+                  </Button>
+                </div>
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
@@ -1812,6 +1899,7 @@ export default function AdminDashboardPage() {
                       <tr>
                         <th className="py-3.5 px-4">User Member</th>
                         <th className="py-3.5 px-4">System Role</th>
+                        <th className="py-3.5 px-4">Learning Credit</th>
                         <th className="py-3.5 px-4">Academic Title / Headline</th>
                         <th className="py-3.5 px-4">Enrolled / Taught Courses</th>
                         <th className="py-3.5 px-4">Registration Date</th>
@@ -1852,6 +1940,21 @@ export default function AdminDashboardPage() {
                               {u.role === "INSTRUCTOR" ? "TUTOR" : u.role}
                             </span>
                           </td>
+                          <td className="py-3.5 px-4">
+                            {u.role === "STUDENT" ? (
+                              <button
+                                onClick={() => handleOpenGrantTokens(u)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer group"
+                                title="Click to Grant / Adjust Student Credit"
+                              >
+                                <Coins className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+                                <span className="font-mono">{u.tokenWallet?.balance ?? 0} Hrs</span>
+                                <Plus className="w-3 h-3 text-amber-700 opacity-60 group-hover:opacity-100" />
+                              </button>
+                            ) : (
+                              <span className="text-slate-400 text-xs font-mono">—</span>
+                            )}
+                          </td>
                           <td className="py-3.5 px-4 font-medium text-slate-700">
                             {u.headline || "Active Member"}
                           </td>
@@ -1866,13 +1969,23 @@ export default function AdminDashboardPage() {
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               {u.role === "STUDENT" && (
-                                <button
-                                  onClick={() => handleOpenEnrollUser(u)}
-                                  className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-[11px] cursor-pointer"
-                                  title="Enroll in Course"
-                                >
-                                  Enroll
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => handleOpenGrantTokens(u)}
+                                    className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                                    title="Grant Free Credit / Hours"
+                                  >
+                                    <Coins className="w-3 h-3 text-amber-600" />
+                                    <span>+ Credit</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenEnrollUser(u)}
+                                    className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-[11px] cursor-pointer"
+                                    title="Enroll in Course"
+                                  >
+                                    Enroll
+                                  </button>
+                                </>
                               )}
                               <button
                                 onClick={() => handleOpenEditUser(u)}
@@ -3600,6 +3713,274 @@ export default function AdminDashboardPage() {
                     <>
                       <X className="w-3.5 h-3.5" />
                       <span>Confirm Decline</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Grant Free Credit Modal */}
+      {showGrantTokensModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Grant Free Learning Credit
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Allocate free tokens/learning hours directly to student wallets
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGrantTokensModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {grantFeedbackMsg && (
+              <div
+                className={`p-3.5 rounded-2xl text-xs flex items-center gap-2.5 animate-in fade-in ${
+                  grantFeedbackMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}
+              >
+                {grantFeedbackMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                )}
+                <span className="font-medium">{grantFeedbackMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleGrantTokens} className="space-y-4 text-xs">
+              {/* Target Student Selection */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1.5">
+                  Select Student <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedStudentForTokens?.id || ""}
+                  onChange={(e) => {
+                    const found = allUsersList.find((u) => u.id === e.target.value);
+                    setSelectedStudentForTokens(found || null);
+                  }}
+                  required
+                  className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                >
+                  <option value="" disabled>Choose a student...</option>
+                  {allUsersList
+                    .filter((u) => u.role === "STUDENT")
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.email}) — Current Balance: {s.tokenWallet?.balance ?? 0} Hrs
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Selected Student Card */}
+              {selectedStudentForTokens && (
+                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar className="w-9 h-9 ring-1 ring-amber-300 shrink-0">
+                      <AvatarImage src={selectedStudentForTokens.avatar || undefined} />
+                      <AvatarFallback className="bg-amber-200 text-amber-900 font-bold text-xs">
+                        {selectedStudentForTokens.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 truncate">
+                        {selectedStudentForTokens.name}
+                      </div>
+                      <div className="text-[11px] text-slate-500 truncate">
+                        {selectedStudentForTokens.email}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+                      Current Wallet
+                    </span>
+                    <span className="font-mono text-sm font-black text-amber-950">
+                      {selectedStudentForTokens.tokenWallet?.balance ?? 0} Hours
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Grant Mode */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1.5">
+                  Allocation Mode
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGrantTokensMode("ADD")}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      grantTokensMode === "ADD"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add / Grant Free Hours</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGrantTokensMode("SET")}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      grantTokensMode === "SET"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Coins className="w-3.5 h-3.5" />
+                    <span>Set Exact Balance</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Preset Amount Buttons */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1.5">
+                  Quick Amount Presets (Hours / Tokens)
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                  {[
+                    { amount: 2, label: "+2 Hrs (Trial)" },
+                    { amount: 6, label: "+6 Hrs (Starter)" },
+                    { amount: 10, label: "+10 Hrs" },
+                    { amount: 16, label: "+16 Hrs (Bundle)" },
+                    { amount: 24, label: "+24 Hrs (Vault)" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.amount}
+                      type="button"
+                      onClick={() => setGrantTokensAmount(preset.amount)}
+                      className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        grantTokensAmount === preset.amount
+                          ? "bg-amber-600 text-white ring-2 ring-amber-400/40 shadow-xs"
+                          : "bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Amount Input */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Credit Amount (Hours / Tokens) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Coins className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    step="1"
+                    required
+                    placeholder="Enter number of hours"
+                    value={grantTokensAmount}
+                    onChange={(e) => setGrantTokensAmount(Math.max(1, parseInt(e.target.value, 10) || 0))}
+                    className="pl-9 h-10 text-xs rounded-xl font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Grant Reason / Note */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Reason / Administrative Note <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-1.5">
+                  <Input
+                    required
+                    placeholder="e.g. Free Trial Consultation Grant"
+                    value={grantTokensReason}
+                    onChange={(e) => setGrantTokensReason(e.target.value)}
+                    className="h-10 text-xs rounded-xl"
+                  />
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      "Free Trial Consultation Grant",
+                      "Academic Scholarship & Financial Aid",
+                      "Welcome Promotional Gift",
+                      "Session Rescheduling Compensation",
+                    ].map((reasonChip) => (
+                      <button
+                        key={reasonChip}
+                        type="button"
+                        onClick={() => setGrantTokensReason(reasonChip)}
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium cursor-pointer transition-colors"
+                      >
+                        {reasonChip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview Summary Calculation */}
+              {selectedStudentForTokens && (
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 font-medium">Updated Wallet Balance:</span>
+                  <div className="flex items-center gap-1.5 font-mono font-bold text-slate-900">
+                    <span className="text-slate-400">{selectedStudentForTokens.tokenWallet?.balance ?? 0} Hrs</span>
+                    <span className="text-amber-600 font-bold">&rarr;</span>
+                    <span className="text-emerald-700 font-black text-sm">
+                      {grantTokensMode === "ADD"
+                        ? (selectedStudentForTokens.tokenWallet?.balance ?? 0) + grantTokensAmount
+                        : grantTokensAmount}{" "}
+                      Hours
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowGrantTokensModal(false)}
+                  className="rounded-xl text-xs cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isGrantingTokens || !selectedStudentForTokens || grantTokensAmount <= 0}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs shadow-amber-600/20 cursor-pointer gap-1.5 h-9 px-4"
+                >
+                  {isGrantingTokens ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Crediting Student...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Coins className="w-3.5 h-3.5" />
+                      <span>Grant Free Credit</span>
                     </>
                   )}
                 </Button>

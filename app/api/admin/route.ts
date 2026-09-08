@@ -24,6 +24,14 @@ export async function GET(request: NextRequest) {
     try {
       allUsers = await prisma.user.findMany({
         include: {
+          tokenWallet: {
+            include: {
+              transactions: {
+                orderBy: { createdAt: "desc" },
+                take: 10,
+              },
+            },
+          },
           enrollments: {
             include: { course: true },
           },
@@ -248,6 +256,86 @@ export async function POST(request: NextRequest) {
       broadcastLMSEvent("USERS_CHANGED");
       broadcastLMSEvent("ENROLLMENTS_CHANGED");
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "grant_tokens" || action === "give_credit" || action === "adjust_tokens") {
+      const { userId, amount, reason, mode } = body;
+      const parsedAmount = parseFloat(amount);
+
+      if (!userId) {
+        return NextResponse.json({ error: "Student user ID is required." }, { status: 400 });
+      }
+
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        return NextResponse.json({ error: "Token / credit amount must be a positive number." }, { status: 400 });
+      }
+
+      const targetStudent = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!targetStudent) {
+        return NextResponse.json({ error: "Student user account not found." }, { status: 404 });
+      }
+
+      let wallet = await prisma.tokenWallet.findUnique({
+        where: { userId },
+      });
+
+      if (!wallet) {
+        wallet = await prisma.tokenWallet.create({
+          data: {
+            userId,
+            balance: 0,
+          },
+        });
+      }
+
+      const description = reason?.trim() || `Admin Grant: ${parsedAmount} Free Learning Hours Credit`;
+
+      const updatedWallet = await prisma.$transaction(async (tx) => {
+        let newBalance = wallet.balance;
+        let txAmount = parsedAmount;
+
+        if (mode === "SET") {
+          newBalance = parsedAmount;
+          txAmount = parsedAmount - wallet.balance;
+        } else if (mode === "DEDUCT") {
+          newBalance = Math.max(0, wallet.balance - parsedAmount);
+          txAmount = -parsedAmount;
+        } else {
+          // Default: GRANT / ADD
+          newBalance = wallet.balance + parsedAmount;
+          txAmount = parsedAmount;
+        }
+
+        const w = await tx.tokenWallet.update({
+          where: { id: wallet.id },
+          data: {
+            balance: newBalance,
+          },
+        });
+
+        await tx.tokenTransaction.create({
+          data: {
+            walletId: wallet.id,
+            amount: txAmount,
+            type: mode === "DEDUCT" ? "SPEND" : "BONUS",
+            description,
+          },
+        });
+
+        return w;
+      });
+
+      broadcastLMSEvent("USERS_CHANGED");
+      broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId });
+
+      return NextResponse.json({
+        success: true,
+        message: `Successfully granted ${parsedAmount} free learning hour tokens to ${targetStudent.name}! Updated balance: ${updatedWallet.balance} Hours.`,
+        wallet: updatedWallet,
+      });
     }
 
     if (action === "enroll_user") {

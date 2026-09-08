@@ -22,7 +22,7 @@ export function PhoneInputWithCountry({
   countryCode,
   onPhoneChange,
   onCountryCodeChange,
-  placeholder = "e.g. 7700 900142",
+  placeholder = "Enter phone number",
   required = false,
   disabled = false,
   className = "",

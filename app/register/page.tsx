@@ -206,7 +206,7 @@ export default function RegisterPage() {
                     countryCode={countryCode}
                     onPhoneChange={setPhone}
                     onCountryCodeChange={handleCountryCodeChange}
-                    placeholder="7700 900142"
+                    placeholder="Enter phone number"
                     required
                   />
                 </div>

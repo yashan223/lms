@@ -1428,7 +1428,7 @@ function TutorDashboardContent() {
                 </button>
 
                 <button
-                  onClick={() => setCenterTab("availability")}
+                  onClick={() => router.push("/tutor/availability")}
                   className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
                     centerTab === "availability"
                       ? "bg-blue-50 text-blue-700 font-bold"
@@ -1439,8 +1439,9 @@ function TutorDashboardContent() {
                     <Clock className="w-3.5 h-3.5 text-blue-600" />
                     <span>Availability &amp; Timeslots</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 font-bold">
-                    Slots
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center gap-1">
+                    <span>New Page</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
                   </span>
                 </button>
 
@@ -1663,7 +1664,7 @@ function TutorDashboardContent() {
               </button>
 
               <button
-                onClick={() => setCenterTab("availability")}
+                onClick={() => router.push("/tutor/availability")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                   centerTab === "availability"
                     ? "bg-[#0c2461] text-white shadow-2xs"
@@ -1672,6 +1673,7 @@ function TutorDashboardContent() {
               >
                 <Clock className="w-3.5 h-3.5" />
                 <span>Availability &amp; Timeslots</span>
+                <ExternalLink className="w-3 h-3 text-blue-300 ml-0.5" />
               </button>
 
               <button
@@ -2622,6 +2624,23 @@ function TutorDashboardContent() {
 
             {centerTab === "availability" && (
               <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-blue-700 shrink-0" />
+                    <div>
+                      <span className="font-bold text-blue-900">Dedicated Availability Studio: </span>
+                      <span className="text-blue-700">Open the full-screen page to set batch available times and configure clash-free slots.</span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => router.push("/tutor/availability")}
+                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-3.5 py-1.5 gap-1.5 shrink-0 cursor-pointer shadow-xs"
+                  >
+                    <span>Open as Full Page</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
                 <TutorAvailabilityManager
                   tutor={tutor}
                   courses={courses}

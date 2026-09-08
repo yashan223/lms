@@ -2098,8 +2098,8 @@ function DashboardContent() {
 
             <div className="bg-slate-50 rounded-2xl p-3 text-[11px] text-slate-500 border border-slate-200/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Zero transaction fees. Instant credit to your balance.</span>
+                <CreditCard className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>Secure Card Payment • Zero fees • Instant credit to balance.</span>
               </div>
               <span className="font-mono font-bold text-slate-700">Current: {tokenBalance} Hrs</span>
             </div>

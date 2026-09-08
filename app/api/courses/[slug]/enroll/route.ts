@@ -67,31 +67,83 @@ export async function POST(
       });
     }
 
-    const newEnrollment = await prisma.enrollment.create({
-      data: {
-        userId: user.id,
-        courseId: course.id,
-      },
+    const coursePrice = Number(course.price) || 0;
+
+    // Check student token wallet
+    let wallet = await prisma.tokenWallet.findUnique({
+      where: { userId: user.id },
     });
 
-    await prisma.event.create({
-      data: {
-        title: `Welcome to ${course.title}`,
-        description: `You have successfully purchased and enrolled in ${course.title}. All lecture modules and study handbooks are now unlocked.`,
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-        courseId: course.id,
-        userId: user.id,
-      },
-    });
+    if (!wallet) {
+      wallet = await prisma.tokenWallet.create({
+        data: {
+          userId: user.id,
+          balance: 0,
+        },
+      });
+    }
 
-    await prisma.notification.create({
-      data: {
-        userId: user.id,
-        title: "🎉 Course Unlocked & Enrolled",
-        message: `Your purchase of "${course.title}" was successful. All study materials and classes are now accessible.`,
-        type: "INFO",
-        link: `/courses/${course.slug}`,
-      },
+    if (coursePrice > 0 && user.role !== "ADMIN" && wallet.balance < coursePrice) {
+      return NextResponse.json(
+        {
+          error: `Insufficient tokens in your academic wallet. You have ${wallet.balance} Tokens, but this course requires ${coursePrice} Tokens.`,
+          required: coursePrice,
+          available: wallet.balance,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { newEnrollment, updatedBalance } = await prisma.$transaction(async (tx) => {
+      let currentBal = wallet.balance;
+      if (coursePrice > 0 && (user.role !== "ADMIN" || wallet.balance >= coursePrice)) {
+        const w = await tx.tokenWallet.update({
+          where: { id: wallet.id },
+          data: {
+            balance: { decrement: coursePrice },
+          },
+        });
+        currentBal = w.balance;
+
+        await tx.tokenTransaction.create({
+          data: {
+            walletId: wallet.id,
+            amount: -coursePrice,
+            type: "SPEND",
+            description: `Enrolled in Course: ${course.title} (${coursePrice} Tokens)`,
+            referenceId: course.id,
+          },
+        });
+      }
+
+      const enrollment = await tx.enrollment.create({
+        data: {
+          userId: user.id,
+          courseId: course.id,
+        },
+      });
+
+      await tx.event.create({
+        data: {
+          title: `Welcome to ${course.title}`,
+          description: `You have successfully enrolled in ${course.title} using ${coursePrice} Tokens. All lecture modules and study handbooks are now unlocked.`,
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          courseId: course.id,
+          userId: user.id,
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: user.id,
+          title: "🎉 Course Unlocked & Enrolled",
+          message: `Your enrollment in "${course.title}" with ${coursePrice} Tokens was successful. All study materials and classes are now accessible.`,
+          type: "INFO",
+          link: `/courses/${course.slug}`,
+        },
+      });
+
+      return { newEnrollment: enrollment, updatedBalance: currentBal };
     });
 
     broadcastLMSEvent("ENROLLMENTS_CHANGED");
@@ -103,7 +155,8 @@ export async function POST(
       success: true,
       alreadyEnrolled: false,
       enrollment: newEnrollment,
-      message: `Successfully purchased and enrolled in ${course.title}!`,
+      newBalance: updatedBalance,
+      message: `Successfully enrolled in ${course.title}!`,
     });
   } catch (error) {
     console.error("Course Enrollment API error:", error);

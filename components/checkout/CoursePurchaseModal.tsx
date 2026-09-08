@@ -68,7 +68,7 @@ export function CoursePurchaseModal({
 
   if (!isOpen || !course) return null;
 
-  const price = Number(course.price) || 95;
+  const price = Number(course.price) || 6;
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();

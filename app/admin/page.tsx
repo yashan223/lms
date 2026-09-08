@@ -193,9 +193,11 @@ export default function AdminDashboardPage() {
 
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial && coursesList.length === 0) {
+        setLoading(true);
+      }
       setFetchError(null);
       const res = await fetch("/api/admin", {
         cache: "no-store",
@@ -227,12 +229,12 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    fetchAdminData();
+    fetchAdminData(true);
   }, []);
 
   useRealtimeSync({
     onSync: () => {
-      fetchAdminData();
+      fetchAdminData(false);
     },
   });
 
@@ -265,7 +267,7 @@ export default function AdminDashboardPage() {
   const totalCalculatedRevenue = useMemo(() => {
     return coursesList.reduce((acc, c) => {
       const count = c.enrollments?.length || 0;
-      return acc + count * (c.price || 95);
+      return acc + count * (c.price || 6);
     }, 0);
   }, [coursesList]);
 
@@ -945,7 +947,7 @@ export default function AdminDashboardPage() {
           courseSlug: c.slug,
           courseSubjectCode: c.subjectCode || "LONDON-AL",
           courseCategory: c.category,
-          price: Number(c.price) || 95,
+          price: Number(c.price) || 6,
           enrolledAt: enr.enrolledAt,
         });
       });
@@ -2286,7 +2288,7 @@ export default function AdminDashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {coursesList.map((c) => {
                     const enrCount = c.enrollments?.length || 0;
-                    const cRevenue = enrCount * (Number(c.price) || 95);
+                    const cRevenue = enrCount * (Number(c.price) || 6);
                     const percentOfTotal = totalCalculatedRevenue > 0 ? (cRevenue / totalCalculatedRevenue) * 100 : 0;
 
                     return (

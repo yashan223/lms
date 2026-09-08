@@ -390,9 +390,11 @@ function TutorDashboardContent() {
     onConfirm: async () => {},
   });
 
-  const fetchTutorData = async () => {
+  const fetchTutorData = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial && !tutor) {
+        setLoading(true);
+      }
       const res = await fetch("/api/tutor");
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
@@ -546,13 +548,13 @@ function TutorDashboardContent() {
   };
 
   useEffect(() => {
-    fetchTutorData();
+    fetchTutorData(true);
   }, []);
 
   useRealtimeSync({
     events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED", "EVENTS_CHANGED", "USERS_CHANGED", "TRIALS_CHANGED"],
     onSync: () => {
-      fetchTutorData();
+      fetchTutorData(false);
     },
   });
 

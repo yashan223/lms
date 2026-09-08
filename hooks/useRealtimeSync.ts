@@ -90,7 +90,10 @@ export function useRealtimeSync({
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        triggerSync();
+        if (!eventSource || eventSource.readyState !== EventSource.OPEN) {
+          connect();
+          triggerSync();
+        }
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);

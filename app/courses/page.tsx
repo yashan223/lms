@@ -44,9 +44,11 @@ export default function CoursesPage() {
     "School of Economics & Commerce",
   ];
 
-  const loadCourses = async () => {
+  const loadCourses = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial && courses.length === 0) {
+        setLoading(true);
+      }
       const res = await fetch("/api/courses");
       if (res.ok) {
         const data = await res.json();
@@ -85,13 +87,13 @@ export default function CoursesPage() {
   };
 
   useEffect(() => {
-    loadCourses();
+    loadCourses(true);
   }, []);
 
   useRealtimeSync({
     events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED"],
     onSync: () => {
-      loadCourses();
+      loadCourses(false);
     },
   });
 

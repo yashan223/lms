@@ -100,10 +100,41 @@ async function main() {
     },
   });
 
-  // Initialize Token Wallet for student
+  // Initialize Token Wallet for student (1 Token = 1 Hour)
+  const existingWallet = await prisma.tokenWallet.findUnique({
+    where: { userId: studentUser.id },
+  });
+
+  if (existingWallet) {
+    await prisma.tokenTransaction.deleteMany({
+      where: { walletId: existingWallet.id },
+    });
+  }
+
   await prisma.tokenWallet.upsert({
     where: { userId: studentUser.id },
-    update: { balance: 18 },
+    update: {
+      balance: 18,
+      transactions: {
+        create: [
+          {
+            amount: 24,
+            type: "PURCHASE",
+            description: "Purchased 24 Hours Mastery Vault (24 Tokens — 1 Token = 1H)",
+          },
+          {
+            amount: -4,
+            type: "SPEND",
+            description: "Allocated 4 Hours (4 Tokens) to 1-on-1 Pure Mathematics Tutoring",
+          },
+          {
+            amount: -2,
+            type: "SPEND",
+            description: "Allocated 2 Hours (2 Tokens) to Live Masterclass: Pure Mathematics P3 Integration",
+          },
+        ],
+      },
+    },
     create: {
       userId: studentUser.id,
       balance: 18,
@@ -112,12 +143,17 @@ async function main() {
           {
             amount: 24,
             type: "PURCHASE",
-            description: "Purchased 24 Hours Mastery Vault (24 Tokens)",
+            description: "Purchased 24 Hours Mastery Vault (24 Tokens — 1 Token = 1H)",
           },
           {
-            amount: -6,
+            amount: -4,
             type: "SPEND",
-            description: "Allocated 6 Hours to 1-on-1 Pure Mathematics Tutoring",
+            description: "Allocated 4 Hours (4 Tokens) to 1-on-1 Pure Mathematics Tutoring",
+          },
+          {
+            amount: -2,
+            type: "SPEND",
+            description: "Allocated 2 Hours (2 Tokens) to Live Masterclass: Pure Mathematics P3 Integration",
           },
         ],
       },
@@ -127,7 +163,7 @@ async function main() {
   console.log("✅ Exactly 3 Test Users Initialized:");
   console.log("   👑 Admin:   admin@edupulse.uk   / AdminPass123!");
   console.log("   🎓 Tutor:   tutor@edupulse.uk   / TutorPass123!");
-  console.log("   📚 Student: student@edupulse.uk / StudentPass123!");
+  console.log("   📚 Student: student@edupulse.uk / StudentPass123! (Balance: 18 Tokens = 18 Hours)");
 
   // 4. Update all courses to belong to the single Tutor
   await prisma.course.updateMany({
@@ -136,7 +172,7 @@ async function main() {
     },
   });
 
-  // 5. Seed Complete London A/L and O/L Course Matrix
+  // 5. Seed Complete London A/L and O/L Course Matrix (1 Token = 1 Hour)
   const coursesData = [
     {
       title: "London A/L Pure Mathematics (P1, P2, P3, P4 & Mechanics M1)",
@@ -145,7 +181,7 @@ async function main() {
       description: "Comprehensive preparation for International Advanced Level Pure Mathematics. Covers P1-P4, integration by parts, parametric equations, differential equations, and kinematics.",
       category: "School of Mathematics & Computing",
       subjectCode: "WMA11-14 / WME01",
-      price: 95.0,
+      price: 6.0,
       level: CourseLevel.ADVANCED,
       status: CourseStatus.PUBLISHED,
       featured: true,
@@ -187,7 +223,7 @@ async function main() {
       description: "Master all 6 units of International Advanced Level Physics with step-by-step lecture walkthroughs and experimental lab demonstrations.",
       category: "School of Computing & Engineering",
       subjectCode: "WPH11-16",
-      price: 95.0,
+      price: 5.0,
       level: CourseLevel.ADVANCED,
       status: CourseStatus.PUBLISHED,
       featured: true,
@@ -221,7 +257,7 @@ async function main() {
       description: "Comprehensive unit-by-unit masterclass covering thermodynamic cycles, redox titrations, transition metals, organic reaction mechanisms, and NMR spectra.",
       category: "School of Science & O/L Academy",
       subjectCode: "WCH11-16",
-      price: 95.0,
+      price: 4.0,
       level: CourseLevel.ADVANCED,
       status: CourseStatus.PUBLISHED,
       featured: true,
@@ -253,7 +289,7 @@ async function main() {
       description: "Master evaluation essays, elasticity calculations, monetary/fiscal policy data analysis, and competitive business strategies.",
       category: "School of Economics & Commerce",
       subjectCode: "WEC11-14 / 9708",
-      price: 85.0,
+      price: 3.0,
       level: CourseLevel.ADVANCED,
       status: CourseStatus.PUBLISHED,
       featured: false,
@@ -285,7 +321,7 @@ async function main() {
       description: "A complete masterclass for London O/L (IGCSE) students covering foundation mathematics, mechanics, waves, and stoichiometry.",
       category: "School of Science & O/L Academy",
       subjectCode: "4MA1 / 0580",
-      price: 75.0,
+      price: 3.0,
       level: CourseLevel.INTERMEDIATE,
       status: CourseStatus.PUBLISHED,
       featured: true,
@@ -317,7 +353,7 @@ async function main() {
       description: "Complete syllabus coverage of cellular biology, enzyme kinetics, photosynthesis, cellular respiration, nervous coordination, and gene technology.",
       category: "School of Science & O/L Academy",
       subjectCode: "WBI11-16",
-      price: 90.0,
+      price: 3.0,
       level: CourseLevel.ADVANCED,
       status: CourseStatus.PUBLISHED,
       featured: false,
@@ -378,12 +414,25 @@ async function main() {
           },
         },
       });
-      console.log(`✅ Seeded Course: ${course.title}`);
+      console.log(`✅ Seeded Course: ${course.title} (${course.price} Tokens = ${course.price}H)`);
     } else {
       course = await prisma.course.update({
         where: { id: existing.id },
-        data: { tutorId: tutorUser.id },
+        data: {
+          title: cData.title,
+          subtitle: cData.subtitle,
+          description: cData.description,
+          category: cData.category,
+          subjectCode: cData.subjectCode,
+          price: cData.price,
+          level: cData.level,
+          status: cData.status,
+          featured: cData.featured,
+          thumbnail: cData.thumbnail,
+          tutorId: tutorUser.id,
+        },
       });
+      console.log(`🔄 Updated Course: ${course.title} (${course.price} Tokens = ${course.price}H)`);
     }
 
     // Enroll our 1 student in the course
@@ -547,8 +596,8 @@ async function main() {
   if (mathCourse) {
     await prisma.event.create({
       data: {
-        title: "Live Masterclass: Pure Mathematics P3 Integration by Parts & Proofs",
-        description: "Interactive live theory masterclass and worked mathematical proofs.\n\nClassroom Link: https://meet.google.com/edp-math-p3m",
+        title: "Live Masterclass: Pure Mathematics P3 Integration by Parts & Proofs (2H)",
+        description: "Interactive live theory masterclass and worked mathematical proofs (2 Hours / 2 Tokens).\n\nClassroom Link: https://meet.google.com/edp-math-p3m",
         meetingLink: "https://meet.google.com/edp-math-p3m",
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
@@ -559,8 +608,8 @@ async function main() {
 
     await prisma.event.create({
       data: {
-        title: "Virtual Workshop: Pure Mathematics P4 Differential Calculus",
-        description: "Interactive problem-solving workshop on pure mathematical methods.",
+        title: "Virtual Workshop: Pure Mathematics P4 Differential Calculus (1H)",
+        description: "Interactive problem-solving workshop on pure mathematical methods (1 Hour / 1 Token).",
         type: EventType.DEADLINE,
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         courseId: mathCourse.id,
@@ -572,8 +621,8 @@ async function main() {
   if (physicsCourse) {
     await prisma.event.create({
       data: {
-        title: "Live Lecture: Physics Unit 4 Circular Motion & Magnetic Fields",
-        description: "Theory walkthrough and virtual experimental calculations.\n\nClassroom Link: https://meet.google.com/edp-phys-u4m",
+        title: "Live Lecture: Physics Unit 4 Circular Motion & Magnetic Fields (2H)",
+        description: "Theory walkthrough and virtual experimental calculations (2 Hours / 2 Tokens).\n\nClassroom Link: https://meet.google.com/edp-phys-u4m",
         meetingLink: "https://meet.google.com/edp-phys-u4m",
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),

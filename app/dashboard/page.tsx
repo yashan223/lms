@@ -251,7 +251,7 @@ function DashboardContent() {
           type: "success",
           text: "Session rescheduled successfully! Your calendar has been updated.",
         });
-        fetchDashboardData();
+        fetchDashboardData(false);
         setTimeout(() => setShowStudentRescheduleModal(false), 1200);
       } else {
         setRescheduleStatusMsg({
@@ -269,9 +269,11 @@ function DashboardContent() {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial && !user) {
+        setLoading(true);
+      }
       const res = await fetch("/api/dashboard");
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
@@ -324,7 +326,7 @@ function DashboardContent() {
         setTimeout(() => {
           setShowBuyTokensModal(false);
           setTokenFeedbackMsg("");
-          fetchDashboardData();
+          fetchDashboardData(false);
         }, 1500);
       } else {
         setTokenFeedbackMsg(result.error || "Failed to complete purchase.");
@@ -337,7 +339,7 @@ function DashboardContent() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(true);
   }, []);
 
   useEffect(() => {
@@ -357,7 +359,7 @@ function DashboardContent() {
 
   const { isConnected: realtimeConnected } = useRealtimeSync({
     onSync: () => {
-      fetchDashboardData();
+      fetchDashboardData(false);
     },
   });
 

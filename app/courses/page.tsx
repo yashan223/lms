@@ -44,9 +44,9 @@ export default function CoursesPage() {
     "School of Economics & Commerce",
   ];
 
-  const loadCourses = async (isInitial = false) => {
+  const loadCourses = async (isInitial?: any) => {
     try {
-      if (isInitial && courses.length === 0) {
+      if (isInitial === true && courses.length === 0) {
         setLoading(true);
       }
       const res = await fetch("/api/courses");

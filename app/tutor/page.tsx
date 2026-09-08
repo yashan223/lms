@@ -390,9 +390,9 @@ function TutorDashboardContent() {
     onConfirm: async () => {},
   });
 
-  const fetchTutorData = async (isInitial = false) => {
+  const fetchTutorData = async (isInitial?: any) => {
     try {
-      if (isInitial && !tutor) {
+      if (isInitial === true && !tutor) {
         setLoading(true);
       }
       const res = await fetch("/api/tutor");

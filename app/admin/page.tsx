@@ -193,9 +193,9 @@ export default function AdminDashboardPage() {
 
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const fetchAdminData = async (isInitial = false) => {
+  const fetchAdminData = async (isInitial?: any) => {
     try {
-      if (isInitial && coursesList.length === 0) {
+      if (isInitial === true && coursesList.length === 0) {
         setLoading(true);
       }
       setFetchError(null);

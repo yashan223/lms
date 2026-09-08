@@ -18,6 +18,8 @@ import {
   EyeOff,
 } from "lucide-react";
 import { CountrySelector } from "@/components/ui/CountrySelector";
+import { PhoneInputWithCountry } from "@/components/ui/PhoneInputWithCountry";
+import { Country } from "@/lib/countries";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+44");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
@@ -36,9 +39,29 @@ export default function RegisterPage() {
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  const handleCountryChange = (selectedCountryName: string, selectedCountry?: Country) => {
+    setCountry(selectedCountryName);
+    if (selectedCountry?.dialCode) {
+      setCountryCode(selectedCountry.dialCode);
+    }
+  };
+
+  const handleCountryCodeChange = (code: string, selectedCountry?: Country) => {
+    setCountryCode(code);
+    if (selectedCountry && !country) {
+      setCountry(selectedCountry.name);
+    }
+  };
+
   const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    const cleanDigits = phone.replace(/[^\d]/g, "");
+    if (!cleanDigits || cleanDigits.length < 5) {
+      setErrorMsg("Please enter a valid contact phone number with country code.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setErrorMsg("Passwords do not match. Please re-enter your password.");
@@ -56,13 +79,17 @@ export default function RegisterPage() {
   const handleConfirmedRegister = async () => {
     setLoading(true);
     try {
+      const fullPhoneNumber = phone.trim().startsWith("+")
+        ? phone.trim()
+        : `${countryCode} ${phone.trim()}`;
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           email,
-          phone,
+          phone: fullPhoneNumber,
           password,
           qualification,
           country,
@@ -167,16 +194,14 @@ export default function RegisterPage() {
                   <label className="text-xs font-bold text-slate-700 block">
                     Contact / WhatsApp Number
                   </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <Input
-                      type="tel"
-                      placeholder="Enter phone number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="pl-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
-                    />
-                  </div>
+                  <PhoneInputWithCountry
+                    value={phone}
+                    countryCode={countryCode}
+                    onPhoneChange={setPhone}
+                    onCountryCodeChange={handleCountryCodeChange}
+                    placeholder="7700 900142"
+                    required
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -185,7 +210,7 @@ export default function RegisterPage() {
                   </label>
                   <CountrySelector
                     value={country}
-                    onChange={(selected) => setCountry(selected)}
+                    onChange={handleCountryChange}
                     placeholder="Select country..."
                     required
                   />
@@ -290,7 +315,7 @@ export default function RegisterPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmedRegister}
         title="Confirm Student Registration"
-        description={`You are registering as a ${qualification} student${country ? ` from ${country}` : ""}. Your official student profile will be registered with the academy.`}
+        description={`You are registering as a ${qualification} student${country ? ` from ${country}` : ""}. Contact: ${phone.trim().startsWith("+") ? phone.trim() : `${countryCode} ${phone.trim()}`}. Your official student profile will be registered with the academy.`}
         confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"

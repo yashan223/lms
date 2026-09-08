@@ -7,8 +7,13 @@ import { BentoFeatures } from "@/components/landing/BentoFeatures";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { Footer } from "@/components/layout/Footer";
+import { getBundles } from "@/lib/bundles";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const bundles = await getBundles();
+
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900">
       <Navbar />
@@ -22,7 +27,7 @@ export default function HomePage() {
 
         <BentoFeatures />
 
-        <PricingSection />
+        <PricingSection initialBundles={bundles} />
 
         <FaqSection />
       </main>

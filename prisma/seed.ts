@@ -681,6 +681,9 @@ async function main() {
         popular: bundle.popular,
         badge: bundle.badge,
         description: bundle.description,
+        roleTarget: bundle.roleTarget,
+        ctaText: bundle.ctaText,
+        features: bundle.features,
       },
       create: {
         id: bundle.id,
@@ -691,6 +694,9 @@ async function main() {
         popular: bundle.popular,
         badge: bundle.badge,
         description: bundle.description,
+        roleTarget: bundle.roleTarget,
+        ctaText: bundle.ctaText,
+        features: bundle.features,
       },
     });
   }

@@ -940,15 +940,44 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(bundles) || bundles.length === 0) {
         return NextResponse.json({ error: "Invalid bundles data. Must be a non-empty array." }, { status: 400 });
       }
-      // Validate each bundle has required fields
-      for (const b of bundles) {
-        if (!b.id || !b.name || typeof b.price !== "number" || typeof b.tokens !== "number") {
-          return NextResponse.json({ error: "Each bundle must have id, name, price, and tokens." }, { status: 400 });
-        }
-      }
-      await saveBundles(bundles);
+      // Validate and clean each bundle
+      const cleanBundles = bundles.map((b: any, index: number) => {
+        const id = b.id ? String(b.id).trim() : `pack-${Date.now()}-${index}`;
+        const name = String(b.name || `Bundle ${index + 1}`).trim();
+        const hours = parseInt(b.hours, 10) || parseInt(b.tokens, 10) || 1;
+        const tokens = parseInt(b.tokens, 10) || hours;
+        const price = parseFloat(b.price) || 0;
+        const popular = Boolean(b.popular);
+        const badge = String(b.badge || (popular ? "Most Popular" : "Standard")).trim();
+        const description = String(b.description || "").trim();
+        const roleTarget = String(b.roleTarget || `${tokens} Tokens (${hours} Hours Tutoring)`).trim();
+        const ctaText = String(b.ctaText || `Get ${hours} Hours Pack`).trim();
+        const features = Array.isArray(b.features)
+          ? b.features.map((f: any) => String(f).trim()).filter(Boolean)
+          : [];
+
+        return {
+          id,
+          name,
+          hours,
+          tokens,
+          price,
+          popular,
+          badge,
+          description,
+          roleTarget,
+          ctaText,
+          features,
+        };
+      });
+
+      await saveBundles(cleanBundles);
       broadcastLMSEvent("NOTIFICATIONS_CHANGED", {});
-      return NextResponse.json({ success: true, message: "Token bundle packages updated successfully!", bundles });
+      return NextResponse.json({
+        success: true,
+        message: "Token bundle packages updated successfully!",
+        bundles: cleanBundles,
+      });
     }
   } catch (error) {
     console.error("Admin API POST error:", error);

@@ -131,6 +131,9 @@ model TokenBundle {
   popular     Boolean  @default(false)
   badge       String   @default("Standard")
   description String
+  roleTarget  String?
+  ctaText     String?
+  features    String[] @default([])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

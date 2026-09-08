@@ -1,12 +1,38 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { PRICING_PLANS } from "@/lib/constants";
+import { TokenBundle, DEFAULT_BUNDLES } from "@/lib/bundle-types";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ArrowRight, Award } from "lucide-react";
 
-export function PricingSection() {
+interface PricingSectionProps {
+  initialBundles?: TokenBundle[];
+}
+
+export function PricingSection({ initialBundles }: PricingSectionProps) {
+  const [bundles, setBundles] = useState<TokenBundle[]>(
+    initialBundles && initialBundles.length > 0 ? initialBundles : DEFAULT_BUNDLES
+  );
+
+  useEffect(() => {
+    async function loadBundles() {
+      try {
+        const res = await fetch("/api/bundles");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.bundles && Array.isArray(data.bundles) && data.bundles.length > 0) {
+            setBundles(data.bundles);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load dynamic bundles in PricingSection:", err);
+      }
+    }
+    loadBundles();
+  }, []);
+
+  const displayPlans = bundles.length > 0 ? bundles : DEFAULT_BUNDLES;
 
   return (
     <section id="pricing" className="py-20 bg-white border-t border-blue-100">
@@ -24,8 +50,21 @@ export function PricingSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {PRICING_PLANS.map((plan) => {
-            const price = plan.monthlyPrice;
+          {displayPlans.map((plan) => {
+            const price = plan.price;
+            const roleTarget = plan.roleTarget || `${plan.tokens} Tokens (${plan.hours} Hours Tutoring)`;
+            const ctaText = plan.ctaText || `Get ${plan.hours} Hours Pack`;
+            const features = plan.features && plan.features.length > 0
+              ? plan.features
+              : [
+                  `${plan.tokens} tokens (1 token = 1 hour learning credit)`,
+                  "Book 1-on-1 private tutoring with Senior Tutors",
+                  "Join live interactive syllabus masterclasses",
+                  "Instant token crediting to student wallet",
+                  "Full flexibility: student decides when & how to spend",
+                  "Access to course materials & lecture notes",
+                ];
+
             return (
               <div
                 key={plan.id}
@@ -50,7 +89,7 @@ export function PricingSection() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
-                      {plan.roleTarget}
+                      {roleTarget}
                     </span>
                     {!plan.popular && plan.badge && (
                       <Badge variant="secondary" className="text-[10px]">
@@ -80,7 +119,7 @@ export function PricingSection() {
                     <div className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                       Included in this plan:
                     </div>
-                    {plan.features.map((feature, fIdx) => (
+                    {features.map((feature, fIdx) => (
                       <div key={fIdx} className="flex items-start gap-2.5">
                         <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                         <span className="text-xs text-slate-700 font-medium">
@@ -99,7 +138,7 @@ export function PricingSection() {
                       : "border border-blue-200 text-slate-800 hover:bg-blue-50 bg-white"
                   }`}
                 >
-                  <span>{plan.ctaText}</span>
+                  <span>{ctaText}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>

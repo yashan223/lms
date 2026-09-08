@@ -51,7 +51,11 @@ import {
   Video,
   Radio,
   Coins,
+  Sparkles,
+  ArrowRight,
+  PlusCircle,
 } from "lucide-react";
+import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -69,7 +73,7 @@ function formatSessionDuration(startedAt?: string | Date | null, endedAt?: strin
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "users" | "courses" | "finances" | "approvals"
+    "overview" | "live_classes" | "users" | "courses" | "finances" | "approvals" | "pricing"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -145,19 +149,11 @@ export default function AdminDashboardPage() {
   const [grantFeedbackMsg, setGrantFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Token Bundle Editor State
-  interface BundleItem {
-    id: string;
-    name: string;
-    hours: number;
-    tokens: number;
-    price: number;
-    popular: boolean;
-    badge: string;
-    description: string;
-  }
-  const [bundlesList, setBundlesList] = useState<BundleItem[]>([]);
+  const [bundlesList, setBundlesList] = useState<TokenBundle[]>([]);
   const [showBundleEditorModal, setShowBundleEditorModal] = useState(false);
-  const [editingBundles, setEditingBundles] = useState<BundleItem[]>([]);
+  const [editingBundles, setEditingBundles] = useState<TokenBundle[]>([]);
+  const [selectedBundleIndex, setSelectedBundleIndex] = useState<number>(0);
+  const [newFeatureInput, setNewFeatureInput] = useState<string>("");
   const [isSavingBundles, setIsSavingBundles] = useState(false);
   const [bundleSaveMsg, setBundleSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -474,21 +470,20 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleOpenBundleEditor = () => {
-    // Clone current bundles into editing state
-    setEditingBundles(
-      (bundlesList.length > 0 ? bundlesList : [
-        { id: "pack-6", name: "6 Hours Flexi Pack", hours: 6, tokens: 6, price: 24, popular: false, badge: "Starter", description: "6 hours of learning tokens." },
-        { id: "pack-16", name: "16 Hours Standard Bundle", hours: 16, tokens: 16, price: 58, popular: true, badge: "Most Popular", description: "16 hours of learning tokens." },
-        { id: "pack-24", name: "24 Hours Mastery Vault", hours: 24, tokens: 24, price: 84, popular: false, badge: "Best Value", description: "24 hours of learning tokens." },
-      ]).map((b) => ({ ...b }))
-    );
+  const handleOpenBundleEditor = (targetIndex?: any) => {
+    const source = (bundlesList.length > 0 ? bundlesList : DEFAULT_BUNDLES).map((b) => ({
+      ...b,
+      features: Array.isArray(b.features) ? [...b.features] : [],
+    }));
+    setEditingBundles(source);
+    setSelectedBundleIndex(typeof targetIndex === "number" ? targetIndex : 0);
+    setNewFeatureInput("");
     setBundleSaveMsg(null);
     setShowBundleEditorModal(true);
   };
 
-  const handleSaveBundles = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveBundles = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     try {
       setIsSavingBundles(true);
       setBundleSaveMsg(null);
@@ -499,19 +494,106 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setBundleSaveMsg({ type: "success", text: data.message || "Bundles updated successfully!" });
-        setBundlesList(editingBundles);
+        setBundleSaveMsg({ type: "success", text: data.message || "Packages updated successfully!" });
+        setBundlesList(data.bundles || editingBundles);
         setTimeout(() => {
           setShowBundleEditorModal(false);
           setBundleSaveMsg(null);
-        }, 1300);
+        }, 1200);
       } else {
-        setBundleSaveMsg({ type: "error", text: data.error || "Failed to save bundles." });
+        setBundleSaveMsg({ type: "error", text: data.error || "Failed to save packages." });
       }
     } catch (err: any) {
       setBundleSaveMsg({ type: "error", text: err.message || "Network error." });
     } finally {
       setIsSavingBundles(false);
+    }
+  };
+
+  const handleResetBundlesToDefault = async () => {
+    if (!confirm("Reset all token packages to official academy defaults?")) return;
+    try {
+      setIsSavingBundles(true);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_bundles", bundles: DEFAULT_BUNDLES }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBundlesList(data.bundles || DEFAULT_BUNDLES);
+        setEditingBundles(DEFAULT_BUNDLES.map((b) => ({ ...b, features: [...b.features] })));
+      }
+    } catch (err) {
+      console.error("Failed to reset bundles:", err);
+    } finally {
+      setIsSavingBundles(false);
+    }
+  };
+
+  const handleAddNewBundle = () => {
+    const newHours = 30;
+    const newPack: TokenBundle = {
+      id: `pack-${Date.now()}`,
+      name: `${newHours} Hours Advanced Pack`,
+      hours: newHours,
+      tokens: newHours,
+      price: 99,
+      popular: false,
+      badge: "Extended",
+      description: `${newHours} hours of comprehensive tutoring tokens for extensive revision and dedicated exam prep.`,
+      roleTarget: `${newHours} Tokens (${newHours} Hours Tutoring)`,
+      ctaText: `Get ${newHours} Hours Pack`,
+      features: [
+        `${newHours} tokens (1 token = 1 hour learning credit)`,
+        "Flexible 1-on-1 private tutoring with Faculty Tutors",
+        "Access to all live syllabus interactive classes",
+        "Instant wallet crediting with zero expiration",
+        "Full syllabus and past paper walkthrough clinics",
+      ],
+    };
+    const updated = [...editingBundles, newPack];
+    setEditingBundles(updated);
+    setSelectedBundleIndex(updated.length - 1);
+  };
+
+  const handleDeleteBundle = (indexToDelete: number) => {
+    if (editingBundles.length <= 1) {
+      alert("You must keep at least one token bundle package.");
+      return;
+    }
+    const updated = editingBundles.filter((_, idx) => idx !== indexToDelete);
+    setEditingBundles(updated);
+    setSelectedBundleIndex(Math.max(0, indexToDelete - 1));
+  };
+
+  const handleAddFeatureToBundle = (bundleIndex: number) => {
+    const text = newFeatureInput.trim();
+    if (!text) return;
+    const updated = [...editingBundles];
+    const target = updated[bundleIndex];
+    if (target) {
+      target.features = [...(target.features || []), text];
+      setEditingBundles(updated);
+      setNewFeatureInput("");
+    }
+  };
+
+  const handleRemoveFeatureFromBundle = (bundleIndex: number, featureIndex: number) => {
+    const updated = [...editingBundles];
+    const target = updated[bundleIndex];
+    if (target && target.features) {
+      target.features = target.features.filter((_, idx) => idx !== featureIndex);
+      setEditingBundles(updated);
+    }
+  };
+
+  const handleUpdateFeatureInBundle = (bundleIndex: number, featureIndex: number, text: string) => {
+    const updated = [...editingBundles];
+    const target = updated[bundleIndex];
+    if (target && target.features) {
+      target.features[featureIndex] = text;
+      setEditingBundles(updated);
     }
   };
 
@@ -1168,6 +1250,13 @@ export default function AdminDashboardPage() {
     { id: "users", label: "User Management", icon: Users, badge: allUsersList.length },
     { id: "courses", label: "Course Management", icon: BookOpen, badge: coursesList.length },
     { id: "finances", label: "Course Purchases & Revenue", icon: DollarSign, badge: totalEnrollmentsCount },
+    {
+      id: "pricing",
+      label: "Pricing & Token Bundles",
+      icon: Coins,
+      badge: `${bundlesList.length > 0 ? bundlesList.length : 3} Packs`,
+      badgeColor: "bg-blue-600 text-white font-black",
+    },
   ];
 
   return (
@@ -1296,6 +1385,8 @@ export default function AdminDashboardPage() {
                     ? "Course Management"
                     : activeTab === "finances"
                     ? "Financials & Tuition"
+                    : activeTab === "pricing"
+                    ? "Token & Pricing Packages Management"
                     : "Executive Overview"}
                 </h2>
                 <p className="text-[11px] text-slate-500 hidden sm:block">
@@ -1336,6 +1427,28 @@ export default function AdminDashboardPage() {
                   <Plus className="w-3.5 h-3.5 text-blue-100" />
                   <span>+ Create Course</span>
                 </Button>
+              )}
+
+              {activeTab === "pricing" && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResetBundlesToDefault}
+                    className="text-xs font-bold text-slate-700 h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="hidden sm:inline">Reset Defaults</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleOpenBundleEditor()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-600/20 cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-blue-100" />
+                    <span>Edit Packages</span>
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -2502,7 +2615,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <Button
                     size="sm"
-                    onClick={handleOpenBundleEditor}
+                    onClick={() => handleOpenBundleEditor()}
                     className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-amber-500/20 cursor-pointer shrink-0"
                   >
                     <Edit3 className="w-3.5 h-3.5 text-amber-100" />
@@ -2544,6 +2657,262 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "pricing" && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Top Pricing KPI Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Active Pricing Tiers</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Coins className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {bundlesList.length > 0 ? bundlesList.length : DEFAULT_BUNDLES.length} Packages
+                  </div>
+                  <div className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Live on Public Homepage & Wallet</span>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Featured / Most Popular</span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                      <Award className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-lg font-black tracking-tight text-slate-900 truncate">
+                    {(bundlesList.length > 0 ? bundlesList : DEFAULT_BUNDLES).find((b) => b.popular)?.name || "16 Hours Standard"}
+                  </div>
+                  <div className="text-[11px] text-amber-600 font-semibold">
+                    Highlighted with Featured Badge
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Lowest Hourly Rate</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    ${Math.min(
+                      ...(bundlesList.length > 0 ? bundlesList : DEFAULT_BUNDLES).map(
+                        (b) => b.price / (b.hours || b.tokens || 1)
+                      )
+                    ).toFixed(2)}
+                    <span className="text-xs font-semibold text-slate-400">/hr</span>
+                  </div>
+                  <div className="text-[11px] text-emerald-600 font-semibold">
+                    Best Value Student Rate
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Instant Publishing</span>
+                    <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    Synchronized
+                  </div>
+                  <div className="text-[11px] text-purple-600 font-semibold">
+                    Realtime DB & Client Sync
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Pricing Management Panel */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-lg text-slate-900">
+                        Public Landing Page & Student Pricing Cards
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Live Preview
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                      These cards are identical to what prospective students and parents see on the public homepage. Click <strong>Edit Package</strong> on any card to modify prices, descriptions, bulleted features, or badges.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        handleOpenBundleEditor();
+                        handleAddNewBundle();
+                      }}
+                      className="text-xs font-bold h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Add New Package</span>
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenBundleEditor()}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-600/20 cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit All Packages</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Cards Preview Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                  {(bundlesList.length > 0 ? bundlesList : DEFAULT_BUNDLES).map((plan, planIdx) => {
+                    const price = plan.price;
+                    const roleTarget = plan.roleTarget || `${plan.tokens} Tokens (${plan.hours} Hours Tutoring)`;
+                    const ctaText = plan.ctaText || `Get ${plan.hours} Hours Pack`;
+                    const features = plan.features && plan.features.length > 0
+                      ? plan.features
+                      : [
+                          `${plan.tokens} tokens (1 token = 1 hour learning credit)`,
+                          "Book 1-on-1 private tutoring with Senior Tutors",
+                          "Join live interactive syllabus masterclasses",
+                          "Instant token crediting to student wallet",
+                          "Full flexibility: student decides when & how to spend",
+                          "Access to course materials & lecture notes",
+                        ];
+
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`rounded-3xl p-7 flex flex-col justify-between transition-all duration-300 relative border-2 ${
+                          plan.popular
+                            ? "bg-gradient-to-b from-blue-50/50 via-white to-sky-50/30 border-blue-600 shadow-xl shadow-blue-500/10 scale-[1.02] z-10"
+                            : "bg-white border-slate-200 hover:border-blue-300 shadow-sm"
+                        }`}
+                      >
+                        {plan.popular && (
+                          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                            <Badge
+                              variant="default"
+                              className="bg-gradient-to-r from-blue-600 to-sky-600 text-white font-bold text-xs py-1 px-4 shadow-md shadow-blue-500/30 flex items-center gap-1"
+                            >
+                              <Award className="w-3.5 h-3.5" />
+                              <span>{plan.badge || "Most Popular"}</span>
+                            </Badge>
+                          </div>
+                        )}
+
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">
+                              {roleTarget}
+                            </span>
+                            {!plan.popular && plan.badge && (
+                              <Badge variant="secondary" className="text-[10px] font-bold">
+                                {plan.badge}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <h3 className="text-xl font-black text-slate-900 mb-1.5">
+                            {plan.name}
+                          </h3>
+
+                          <p className="text-xs text-slate-500 leading-relaxed mb-5 min-h-[36px]">
+                            {plan.description}
+                          </p>
+
+                          <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-slate-100">
+                            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                              ${price}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-500">
+                              / package
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400 ml-auto bg-slate-100 px-2 py-0.5 rounded-md">
+                              ${(price / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
+                            </span>
+                          </div>
+
+                          <div className="space-y-2.5 mb-6">
+                            <div className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                              Included in this plan:
+                            </div>
+                            {features.map((feature, fIdx) => (
+                              <div key={fIdx} className="flex items-start gap-2.5">
+                                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                                <span className="text-xs text-slate-700 font-medium leading-tight">
+                                  {feature}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2.5 pt-4 border-t border-slate-100">
+                          <div
+                            className={`w-full text-xs font-bold h-10 rounded-xl flex items-center justify-center gap-2 select-none opacity-80 ${
+                              plan.popular
+                                ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                                : "border border-blue-200 text-slate-700 bg-blue-50/50"
+                            }`}
+                          >
+                            <span>{ctaText}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleOpenBundleEditor(planIdx)}
+                              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl h-9 gap-1.5 cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-blue-300" />
+                              <span>Edit Package</span>
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const updated = (bundlesList.length > 0 ? bundlesList : DEFAULT_BUNDLES).map(
+                                  (b, i) => ({
+                                    ...b,
+                                    popular: i === planIdx ? !b.popular : false,
+                                  })
+                                );
+                                setEditingBundles(updated);
+                                fetch("/api/admin", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "update_bundles", bundles: updated }),
+                                })
+                                  .then((r) => r.json())
+                                  .then((d) => {
+                                    if (d.bundles) setBundlesList(d.bundles);
+                                  });
+                              }}
+                              className="text-xs h-9 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                              title="Toggle Most Popular status"
+                            >
+                              {plan.popular ? "⭐ Featured" : "Feature"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -3835,15 +4204,17 @@ export default function AdminDashboardPage() {
       {/* Token Bundle Editor Modal */}
       {showBundleEditorModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-3xl w-full max-h-[95vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
+          <div className="bg-white rounded-3xl p-6 max-w-4xl w-full max-h-[95vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
                   <Coins className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">Edit Token Bundle Packages</h3>
-                  <p className="text-xs text-slate-500">Adjust pricing, hours, names and descriptions for each student package</p>
+                  <h3 className="font-black text-base text-slate-900">Token & Pricing Packages Manager</h3>
+                  <p className="text-xs text-slate-500">
+                    Configure package pricing, hours, bulleted inclusions, and marketing copy for students
+                  </p>
                 </div>
               </div>
               <button
@@ -3872,162 +4243,365 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
-            <form onSubmit={handleSaveBundles} className="space-y-6">
-              {editingBundles.map((bundle, idx) => (
-                <div
-                  key={bundle.id}
-                  className={`rounded-2xl border p-5 space-y-4 ${bundle.popular ? "border-amber-300 bg-amber-50/20" : "border-slate-200 bg-slate-50/30"}`}
-                >
-                  {/* Bundle Header */}
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Bundle #{idx + 1}</span>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <span className="text-xs font-bold text-slate-600">Mark as Popular</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = editingBundles.map((b, i) => ({
-                            ...b,
-                            popular: i === idx ? !b.popular : false,
-                          }));
-                          setEditingBundles(updated);
-                        }}
-                        className={`w-10 h-5 rounded-full relative transition-colors ${bundle.popular ? "bg-amber-500" : "bg-slate-200"}`}
-                        aria-label="Toggle popular"
-                      >
-                        <span
-                          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${bundle.popular ? "translate-x-5" : "translate-x-0.5"}`}
-                        />
-                      </button>
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Name */}
-                    <div className="sm:col-span-2">
-                      <label className="font-bold text-slate-700 text-xs block mb-1">Bundle Name <span className="text-red-500">*</span></label>
-                      <Input
-                        required
-                        value={bundle.name}
-                        onChange={(e) => {
-                          const updated = [...editingBundles];
-                          updated[idx] = { ...updated[idx], name: e.target.value };
-                          setEditingBundles(updated);
-                        }}
-                        className="h-9 text-xs rounded-xl"
-                        placeholder="e.g. 16 Hours Standard Bundle"
-                      />
-                    </div>
-
-                    {/* Badge */}
-                    <div>
-                      <label className="font-bold text-slate-700 text-xs block mb-1">Badge Label</label>
-                      <Input
-                        value={bundle.badge}
-                        onChange={(e) => {
-                          const updated = [...editingBundles];
-                          updated[idx] = { ...updated[idx], badge: e.target.value };
-                          setEditingBundles(updated);
-                        }}
-                        className="h-9 text-xs rounded-xl"
-                        placeholder="e.g. Most Popular"
-                      />
-                    </div>
-
-                    {/* Hours / Tokens */}
-                    <div>
-                      <label className="font-bold text-slate-700 text-xs block mb-1">Hours / Tokens <span className="text-red-500">*</span></label>
-                      <Input
-                        required
-                        type="number"
-                        min="1"
-                        max="999"
-                        value={bundle.hours}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10) || 1;
-                          const updated = [...editingBundles];
-                          updated[idx] = { ...updated[idx], hours: val, tokens: val };
-                          setEditingBundles(updated);
-                        }}
-                        className="h-9 text-xs rounded-xl font-mono"
-                        placeholder="16"
-                      />
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                      <label className="font-bold text-slate-700 text-xs block mb-1">Price (USD) <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                        <Input
-                          required
-                          type="number"
-                          min="1"
-                          step="0.01"
-                          value={bundle.price}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 1;
-                            const updated = [...editingBundles];
-                            updated[idx] = { ...updated[idx], price: val };
-                            setEditingBundles(updated);
-                          }}
-                          className="pl-7 h-9 text-xs rounded-xl font-mono"
-                          placeholder="58"
-                        />
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-1 font-mono">
-                        ≈ ${bundle.hours > 0 ? (bundle.price / bundle.hours).toFixed(2) : "—"}/hr
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="sm:col-span-2">
-                      <label className="font-bold text-slate-700 text-xs block mb-1">Description</label>
-                      <Input
-                        value={bundle.description}
-                        onChange={(e) => {
-                          const updated = [...editingBundles];
-                          updated[idx] = { ...updated[idx], description: e.target.value };
-                          setEditingBundles(updated);
-                        }}
-                        className="h-9 text-xs rounded-xl"
-                        placeholder="Short description shown to students on the pricing page"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
-                <Button
+            {/* Package Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100">
+              {editingBundles.map((b, idx) => (
+                <button
+                  key={b.id || idx}
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowBundleEditorModal(false)}
-                  className="rounded-xl text-xs cursor-pointer"
+                  onClick={() => setSelectedBundleIndex(idx)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                    selectedBundleIndex === idx
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
                 >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={isSavingBundles}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs shadow-amber-500/20 cursor-pointer gap-1.5 h-9 px-4"
-                >
-                  {isSavingBundles ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Save Bundle Packages</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+                  {b.popular && <span>⭐</span>}
+                  <span>{b.name || `Package #${idx + 1}`}</span>
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={handleAddNewBundle}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Pack</span>
+              </button>
+            </div>
+
+            {/* Currently Selected Bundle Editing Form */}
+            {editingBundles[selectedBundleIndex] && (() => {
+              const curBundle = editingBundles[selectedBundleIndex];
+              return (
+                <form onSubmit={handleSaveBundles} className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Left Column: Form Controls (7 cols) */}
+                    <div className="lg:col-span-7 space-y-4">
+                      {/* Popular Switcher & Delete Option */}
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-xs font-bold text-slate-700">Most Popular / Featured Card</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = editingBundles.map((b, i) => ({
+                                ...b,
+                                popular: i === selectedBundleIndex ? !b.popular : false,
+                              }));
+                              setEditingBundles(updated);
+                            }}
+                            className={`w-10 h-5 rounded-full relative transition-colors ${curBundle.popular ? "bg-blue-600" : "bg-slate-300"}`}
+                          >
+                            <span
+                              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${curBundle.popular ? "translate-x-5" : "translate-x-0.5"}`}
+                            />
+                          </button>
+                        </label>
+
+                        {editingBundles.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteBundle(selectedBundleIndex)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-semibold h-8 px-2 gap-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Pack</span>
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="sm:col-span-2">
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Package Name <span className="text-red-500">*</span></label>
+                          <Input
+                            required
+                            value={curBundle.name}
+                            onChange={(e) => {
+                              const updated = [...editingBundles];
+                              updated[selectedBundleIndex] = { ...curBundle, name: e.target.value };
+                              setEditingBundles(updated);
+                            }}
+                            className="h-9 text-xs rounded-xl"
+                            placeholder="e.g. 16 Hours Standard Bundle"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Header / Role Target</label>
+                          <Input
+                            value={curBundle.roleTarget || ""}
+                            onChange={(e) => {
+                              const updated = [...editingBundles];
+                              updated[selectedBundleIndex] = { ...curBundle, roleTarget: e.target.value };
+                              setEditingBundles(updated);
+                            }}
+                            className="h-9 text-xs rounded-xl"
+                            placeholder="e.g. 16 Tokens (16 Hours Tutoring)"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Badge Text</label>
+                          <Input
+                            value={curBundle.badge || ""}
+                            onChange={(e) => {
+                              const updated = [...editingBundles];
+                              updated[selectedBundleIndex] = { ...curBundle, badge: e.target.value };
+                              setEditingBundles(updated);
+                            }}
+                            className="h-9 text-xs rounded-xl"
+                            placeholder="e.g. Most Popular"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Hours / Credit Tokens <span className="text-red-500">*</span></label>
+                          <Input
+                            required
+                            type="number"
+                            min="1"
+                            max="999"
+                            value={curBundle.hours}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10) || 1;
+                              const updated = [...editingBundles];
+                              updated[selectedBundleIndex] = { ...curBundle, hours: val, tokens: val };
+                              setEditingBundles(updated);
+                            }}
+                            className="h-9 text-xs rounded-xl font-mono"
+                            placeholder="16"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Price (USD) <span className="text-red-500">*</span></label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                            <Input
+                              required
+                              type="number"
+                              min="1"
+                              step="0.01"
+                              value={curBundle.price}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                const updated = [...editingBundles];
+                                updated[selectedBundleIndex] = { ...curBundle, price: val };
+                                setEditingBundles(updated);
+                              }}
+                              className="pl-7 h-9 text-xs rounded-xl font-mono"
+                              placeholder="58"
+                            />
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                            ≈ ${curBundle.hours > 0 ? (curBundle.price / curBundle.hours).toFixed(2) : "0.00"}/hr
+                          </div>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Button CTA Text</label>
+                          <Input
+                            value={curBundle.ctaText || ""}
+                            onChange={(e) => {
+                              const updated = [...editingBundles];
+                              updated[selectedBundleIndex] = { ...curBundle, ctaText: e.target.value };
+                              setEditingBundles(updated);
+                            }}
+                            className="h-9 text-xs rounded-xl"
+                            placeholder="e.g. Get 16 Hours Bundle"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Description</label>
+                          <textarea
+                            rows={2}
+                            value={curBundle.description}
+                            onChange={(e) => {
+                              const updated = [...editingBundles];
+                              updated[selectedBundleIndex] = { ...curBundle, description: e.target.value };
+                              setEditingBundles(updated);
+                            }}
+                            className="w-full text-xs rounded-xl border border-slate-200 p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Short description shown to students"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Features List / Perk Editor */}
+                      <div className="space-y-2.5 pt-3 border-t border-slate-100">
+                        <label className="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Included in this plan ({curBundle.features?.length || 0} Perks)</span>
+                        </label>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          {(curBundle.features || []).map((feature, fIdx) => (
+                            <div key={fIdx} className="flex items-center gap-2">
+                              <span className="text-blue-600 shrink-0 text-xs font-bold">✓</span>
+                              <Input
+                                value={feature}
+                                onChange={(e) => handleUpdateFeatureInBundle(selectedBundleIndex, fIdx, e.target.value)}
+                                className="h-8 text-xs rounded-lg flex-1"
+                                placeholder="Perk description"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFeatureFromBundle(selectedBundleIndex, fIdx)}
+                                className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 cursor-pointer"
+                                title="Delete perk"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Add Feature input row */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <Input
+                            value={newFeatureInput}
+                            onChange={(e) => setNewFeatureInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddFeatureToBundle(selectedBundleIndex);
+                              }
+                            }}
+                            placeholder="Add another perk / feature bullet point..."
+                            className="h-8 text-xs rounded-lg flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleAddFeatureToBundle(selectedBundleIndex)}
+                            className="h-8 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg cursor-pointer"
+                          >
+                            + Add Perk
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Live Card Preview (5 cols) */}
+                    <div className="lg:col-span-5 bg-slate-50/80 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                      <div>
+                        <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-3 flex items-center justify-between">
+                          <span>Live Card Preview</span>
+                          {curBundle.popular && <span className="text-blue-600 font-bold">⭐ Featured</span>}
+                        </div>
+
+                        <div
+                          className={`rounded-2xl p-5 bg-white border transition-all ${
+                            curBundle.popular
+                              ? "border-blue-600 shadow-md ring-1 ring-blue-500/20"
+                              : "border-slate-200 shadow-2xs"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                              {curBundle.roleTarget || `${curBundle.tokens} Tokens (${curBundle.hours} Hours Tutoring)`}
+                            </span>
+                            {curBundle.badge && (
+                              <Badge variant={curBundle.popular ? "default" : "secondary"} className="text-[9px] font-bold">
+                                {curBundle.badge}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <h4 className="text-base font-black text-slate-900 mb-1">
+                            {curBundle.name || "Package Name"}
+                          </h4>
+
+                          <p className="text-[11px] text-slate-500 mb-3 line-clamp-2">
+                            {curBundle.description || "Package description..."}
+                          </p>
+
+                          <div className="flex items-baseline gap-1 mb-3 pb-3 border-b border-slate-100">
+                            <span className="text-2xl font-black text-slate-900">${curBundle.price}</span>
+                            <span className="text-[10px] text-slate-500">/ package (one-time)</span>
+                          </div>
+
+                          <div className="space-y-1.5 mb-4">
+                            <div className="text-[10px] font-bold text-slate-700 uppercase">Included in this plan:</div>
+                            {(curBundle.features || []).slice(0, 5).map((f, i) => (
+                              <div key={i} className="flex items-start gap-1.5 text-[11px] text-slate-700">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                                <span className="line-clamp-1">{f}</span>
+                              </div>
+                            ))}
+                            {(curBundle.features?.length || 0) > 5 && (
+                              <div className="text-[10px] text-slate-400 italic">
+                                + {curBundle.features.length - 5} more perks...
+                              </div>
+                            )}
+                          </div>
+
+                          <div
+                            className={`w-full text-xs font-bold h-9 rounded-xl flex items-center justify-center gap-1.5 ${
+                              curBundle.popular ? "bg-blue-600 text-white" : "border border-blue-200 text-slate-700 bg-blue-50/50"
+                            }`}
+                          >
+                            <span>{curBundle.ctaText || `Get ${curBundle.hours} Hours Pack`}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-slate-400 text-center pt-3">
+                        Updates live as you type. Click "Save All Changes" to publish.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetBundlesToDefault}
+                      className="rounded-xl text-xs text-slate-600 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                      <span>Reset Academy Defaults</span>
+                    </Button>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowBundleEditorModal(false)}
+                        className="rounded-xl text-xs cursor-pointer"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={isSavingBundles}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs shadow-blue-600/20 cursor-pointer gap-1.5 h-9 px-4"
+                      >
+                        {isSavingBundles ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Saving Packages...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Save All Changes</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              );
+            })()}
           </div>
         </div>
       )}

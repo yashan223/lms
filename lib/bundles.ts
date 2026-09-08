@@ -1,51 +1,7 @@
 import { prisma } from "./prisma";
+import { TokenBundle, DEFAULT_BUNDLES } from "./bundle-types";
 
-export interface TokenBundle {
-  id: string;
-  name: string;
-  hours: number;
-  tokens: number;
-  price: number;
-  popular: boolean;
-  badge: string;
-  description: string;
-}
-
-export const DEFAULT_BUNDLES: TokenBundle[] = [
-  {
-    id: "pack-6",
-    name: "6 Hours Flexi Pack",
-    hours: 6,
-    tokens: 6,
-    price: 24,
-    popular: false,
-    badge: "Starter",
-    description:
-      "6 hours of learning tokens. Use anytime for 1-on-1 tutor consultations or topic revision.",
-  },
-  {
-    id: "pack-16",
-    name: "16 Hours Standard Bundle",
-    hours: 16,
-    tokens: 16,
-    price: 58,
-    popular: true,
-    badge: "Most Popular",
-    description:
-      "16 hours of learning tokens. Perfect for weekly tutoring sessions, past paper walkthroughs & unit mastery.",
-  },
-  {
-    id: "pack-24",
-    name: "24 Hours Mastery Vault",
-    hours: 24,
-    tokens: 24,
-    price: 84,
-    popular: false,
-    badge: "Best Value",
-    description:
-      "24 hours of learning tokens. Total flexibility for full London A/L & O/L examination preparation.",
-  },
-];
+export * from "./bundle-types";
 
 /** Read bundles from the database. Falls back to DEFAULT_BUNDLES if the table is empty or errors. */
 export async function getBundles(): Promise<TokenBundle[]> {
@@ -54,16 +10,32 @@ export async function getBundles(): Promise<TokenBundle[]> {
       orderBy: { hours: "asc" },
     });
     if (rows.length > 0) {
-      return rows.map((b) => ({
-        id: b.id,
-        name: b.name,
-        hours: b.hours,
-        tokens: b.tokens,
-        price: Number(b.price),
-        popular: b.popular,
-        badge: b.badge,
-        description: b.description,
-      }));
+      return rows.map((b) => {
+        const fallback = DEFAULT_BUNDLES.find((d) => d.id === b.id);
+        return {
+          id: b.id,
+          name: b.name,
+          hours: b.hours,
+          tokens: b.tokens,
+          price: Number(b.price),
+          popular: b.popular,
+          badge: b.badge,
+          description: b.description,
+          roleTarget: b.roleTarget || fallback?.roleTarget || `${b.tokens} Tokens (${b.hours} Hours Tutoring)`,
+          ctaText: b.ctaText || fallback?.ctaText || `Get ${b.hours} Hours Pack`,
+          features:
+            b.features && Array.isArray(b.features) && b.features.length > 0
+              ? b.features
+              : fallback?.features || [
+                  `${b.tokens} tokens (1 token = 1 hour learning credit)`,
+                  "1-on-1 private tutoring with Faculty Tutors",
+                  "Access to live syllabus masterclasses",
+                  "Instant token crediting to student wallet",
+                  "Full flexibility: student decides how to spend",
+                  "Access to course materials & lecture notes",
+                ],
+        };
+      });
     }
   } catch (err) {
     console.error("getBundles DB error, using defaults:", err);
@@ -85,6 +57,9 @@ export async function saveBundles(bundles: TokenBundle[]): Promise<void> {
         popular: b.popular,
         badge: b.badge,
         description: b.description,
+        roleTarget: b.roleTarget || `${b.tokens} Tokens (${b.hours} Hours Tutoring)`,
+        ctaText: b.ctaText || `Get ${b.hours} Hours Pack`,
+        features: Array.isArray(b.features) ? b.features : [],
       })),
     });
   });

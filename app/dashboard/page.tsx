@@ -57,6 +57,7 @@ import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink } from "@/lib/utils";
+import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 
 const formatForDateTimeInput = (date: Date) => {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -149,6 +150,7 @@ function DashboardContent() {
   const [historyFilter, setHistoryFilter] = useState<"ALL" | "PURCHASE" | "SPEND">("ALL");
   const [tokenPurchasing, setTokenPurchasing] = useState(false);
   const [tokenFeedbackMsg, setTokenFeedbackMsg] = useState("");
+  const [tokenBundles, setTokenBundles] = useState<TokenBundle[]>(DEFAULT_BUNDLES);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -303,6 +305,17 @@ function DashboardContent() {
       setAllCourses(data.allCourses || []);
       setOnlineUsers(data.onlineUsers || []);
       setTimelineEvents(data.timelineEvents || []);
+
+      // Fetch dynamic packages for wallet purchase
+      try {
+        const bundlesRes = await fetch("/api/bundles");
+        if (bundlesRes.ok) {
+          const bData = await bundlesRes.json();
+          if (bData.bundles && Array.isArray(bData.bundles) && bData.bundles.length > 0) {
+            setTokenBundles(bData.bundles);
+          }
+        }
+      } catch {}
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
@@ -2038,35 +2051,7 @@ function DashboardContent() {
             )}
 
             <div className="space-y-3">
-              {[
-                {
-                  id: "pack-6",
-                  name: "6 Hours Flexi Pack",
-                  hours: 6,
-                  tokens: 6,
-                  price: 24,
-                  badge: "Starter",
-                  desc: "6 tokens / 6 hours. Ideal for targeted revision, consultation, or tricky problem solving.",
-                },
-                {
-                  id: "pack-16",
-                  name: "16 Hours Standard Bundle",
-                  hours: 16,
-                  tokens: 16,
-                  price: 58,
-                  badge: "Most Popular",
-                  desc: "16 tokens / 16 hours. Perfect for weekly tutoring sessions, unit mastery, and paper reviews.",
-                },
-                {
-                  id: "pack-24",
-                  name: "24 Hours Mastery Vault",
-                  hours: 24,
-                  tokens: 24,
-                  price: 84,
-                  badge: "Best Value",
-                  desc: "24 tokens / 24 hours. Full schedule control for comprehensive exam prep and unlimited session booking.",
-                },
-              ].map((pack) => (
+              {(tokenBundles.length > 0 ? tokenBundles : DEFAULT_BUNDLES).map((pack) => (
                 <div
                   key={pack.id}
                   className="p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 transition-all flex items-center justify-between gap-4 group"
@@ -2082,10 +2067,10 @@ function DashboardContent() {
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-snug">{pack.desc}</p>
+                    <p className="text-[11px] text-slate-500 leading-snug">{pack.description}</p>
                     <div className="text-xs font-bold text-emerald-600 flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
-                      <span>{pack.hours} Hours Learning Credit</span>
+                      <span>{pack.hours || pack.tokens} Hours Learning Credit</span>
                     </div>
                   </div>
 

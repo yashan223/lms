@@ -234,9 +234,40 @@ export function attachSessionCookies(
 }
 
 export function clearSessionCookies(response: NextResponse): void {
-  response.cookies.set(SESSION_COOKIE_NAME, "", { path: "/", maxAge: 0 });
-  response.cookies.set("edupulse_user_role", "", { path: "/", maxAge: 0 });
-  response.cookies.set("edupulse_user_email", "", { path: "/", maxAge: 0 });
+  const isProd = process.env.NODE_ENV === "production";
+
+  // 1. Session Token (HTTP-only) - Must match path, sameSite, secure, and httpOnly to ensure RFC 6265 browser deletion
+  response.cookies.delete(SESSION_COOKIE_NAME);
+  response.cookies.set(SESSION_COOKIE_NAME, "", {
+    path: "/",
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: 0,
+    expires: new Date(0),
+  });
+
+  // 2. Client role sync cookie
+  response.cookies.delete("edupulse_user_role");
+  response.cookies.set("edupulse_user_role", "", {
+    path: "/",
+    httpOnly: false,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: 0,
+    expires: new Date(0),
+  });
+
+  // 3. Client email sync cookie
+  response.cookies.delete("edupulse_user_email");
+  response.cookies.set("edupulse_user_email", "", {
+    path: "/",
+    httpOnly: false,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: 0,
+    expires: new Date(0),
+  });
 }
 
 // ==========================================

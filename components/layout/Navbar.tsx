@@ -38,14 +38,20 @@ export function Navbar() {
     }
   }, []);
 
-  const handleSignOut = () => {
-    document.cookie = "edupulse_user_role=; path=/; max-age=0";
-    document.cookie = "edupulse_user_email=; path=/; max-age=0";
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
+    // Delete all client-accessible cookies with past expiration date
+    document.cookie = "edupulse_user_role=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "edupulse_user_email=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "edupulse_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     setUserRole(null);
     setUserEmail(null);
     setConfirmLogoutModalOpen(false);
-    router.push("/");
-    router.refresh();
+    window.location.href = "/";
   };
 
   const displayName = useMemo(() => {

@@ -105,6 +105,16 @@ export async function middleware(request: NextRequest) {
 
   // 4. Redirect already authenticated users away from auth pages
   if (pathname === "/login" || pathname === "/register") {
+    if (request.nextUrl.searchParams.has("logout")) {
+      const cleanUrl = new URL(pathname, request.url);
+      cleanUrl.searchParams.delete("logout");
+      const response = NextResponse.redirect(cleanUrl);
+      response.cookies.delete(SESSION_COOKIE_NAME);
+      response.cookies.delete("edupulse_user_role");
+      response.cookies.delete("edupulse_user_email");
+      return response;
+    }
+
     if (session) {
       if (session.role === "ADMIN") {
         return NextResponse.redirect(new URL("/admin", request.url));

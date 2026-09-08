@@ -2387,22 +2387,30 @@ function TutorDashboardContent() {
 
             {centerTab === "trials" && (
               <div className="space-y-4 animate-in fade-in duration-300">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                        <CalendarCheck className="w-5 h-5 text-[#0c2461]" />
-                        <span>Student 1-on-1 Free Trial Bookings</span>
-                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 text-xs font-bold font-mono">
-                          {trials.length}
-                        </span>
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Review incoming student requests, set/confirm official session dates, and launch 1-on-1 Google Meet trial sessions.
-                      </p>
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-6">
+                  {/* Header & Filter Tabs */}
+                  <div className="border-b border-slate-100 pb-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0c2461] flex items-center justify-center font-bold">
+                            <CalendarCheck className="w-5 h-5" />
+                          </div>
+                          <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                            <span>Student 1-on-1 Free Trial Bookings</span>
+                            <Badge className="bg-blue-100 text-blue-900 border-blue-200 text-xs font-bold font-mono">
+                              {trials.length}
+                            </Badge>
+                          </h3>
+                        </div>
+                        <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
+                          Review incoming student requests, set/confirm official session dates, and launch 1-on-1 Google Meet trial sessions.
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                    {/* Filter Pills with clean flex-wrap (no horizontal scrollbar / cutoffs) */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
                       {[
                         { key: "ALL", label: "All Bookings", count: trials.length },
                         { key: "PENDING", label: "⏳ Needs Date", count: trials.filter((t) => t.status === "PENDING").length },
@@ -2412,17 +2420,20 @@ function TutorDashboardContent() {
                       ].map((tab) => (
                         <button
                           key={tab.key}
+                          type="button"
                           onClick={() => setTrialFilter(tab.key as any)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                             trialFilter === tab.key
                               ? "bg-[#0c2461] text-white shadow-xs"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                           }`}
                         >
                           <span>{tab.label}</span>
-                          <span className={`px-1.5 py-0.2 rounded-md text-[10px] ${
-                            trialFilter === tab.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-                          }`}>
+                          <span
+                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold font-mono ${
+                              trialFilter === tab.key ? "bg-white/25 text-white" : "bg-slate-200/80 text-slate-700"
+                            }`}
+                          >
                             {tab.count}
                           </span>
                         </button>
@@ -2436,7 +2447,7 @@ function TutorDashboardContent() {
                       <span>No trial bookings found under &quot;{trialFilter.toLowerCase()}&quot; filter.</span>
                     </div>
                   ) : (
-                    <div className="space-y-3.5">
+                    <div className="space-y-4">
                       {trials
                         .filter((t) => trialFilter === "ALL" || t.status === trialFilter || (trialFilter === "CANCELLED" && (t.status === "CANCELLED" || t.status === "REJECTED")))
                         .map((tr) => {
@@ -2445,107 +2456,179 @@ function TutorDashboardContent() {
                           const isConfirmed = tr.status === "CONFIRMED";
                           const isCancelled = tr.status === "CANCELLED" || tr.status === "REJECTED";
 
+                          const slotDate = new Date(tr.preferredDate);
+                          const dateFormatted = slotDate.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          });
+                          const timeFormatted = slotDate.toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          });
+
+                          const initials = (tr.studentName || "Student")
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase();
+
                           return (
                             <div
                               key={tr.id}
-                              className={`p-4 rounded-2xl border transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+                              className={`rounded-2xl border transition-all p-5 sm:p-6 space-y-4 shadow-xs hover:shadow-sm ${
                                 isPending
-                                  ? "bg-amber-50/40 border-amber-200/80 shadow-2xs hover:bg-amber-50/60"
+                                  ? "bg-amber-50/30 border-amber-200"
                                   : isPendingApproval
-                                  ? "bg-amber-50/60 border-amber-300 shadow-2xs"
+                                  ? "bg-indigo-50/30 border-indigo-200"
                                   : isConfirmed
-                                  ? "bg-white border-slate-200 shadow-2xs hover:border-blue-300"
-                                  : "bg-slate-50 border-slate-200 opacity-60"
+                                  ? "bg-white border-slate-200 hover:border-blue-300"
+                                  : "bg-slate-50 border-slate-200 opacity-70"
                               }`}
                             >
-                              <div className="space-y-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="font-bold text-sm text-slate-900">
-                                    {tr.studentName}
-                                  </span>
-                                  <Badge className="bg-blue-50 text-blue-900 border-blue-200 font-bold text-[11px]">
-                                    {tr.course?.title || "London A/L Tutorial"}
-                                  </Badge>
+                              {/* Top Row: Student Avatar, Name, Course, & Status Badge */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0c2461] to-[#1e3799] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                                    {initials}
+                                  </div>
+                                  <div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <h4 className="font-extrabold text-base text-slate-900 leading-snug">
+                                        {tr.studentName}
+                                      </h4>
+                                      <Badge className="bg-blue-50 text-blue-900 border-blue-200 font-bold text-[11px] px-2.5 py-0.5">
+                                        {tr.course?.title || "London A/L Tutorial"}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                                      <span className="flex items-center gap-1">
+                                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                        <span>{tr.studentEmail}</span>
+                                      </span>
+                                      {tr.studentPhone && (
+                                        <span className="flex items-center gap-1 font-mono">
+                                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                          <span>{tr.studentPhone}</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
 
+                                <div className="shrink-0 self-start sm:self-center">
                                   {isPending && (
-                                    <Badge className="bg-amber-500 text-white font-bold text-[10px] animate-pulse">
-                                      ⏳ SET DATE & CONFIRM
+                                    <Badge className="bg-amber-500 text-white font-bold text-xs px-3 py-1 animate-pulse">
+                                      ⏳ Action Needed: Set Date
                                     </Badge>
                                   )}
                                   {isPendingApproval && (
-                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-bold text-[10px] flex items-center gap-1">
-                                      <Clock className="w-3 h-3" />
-                                      <span>⏳ AWAITING ADMIN APPROVAL</span>
+                                    <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs px-3 py-1 flex items-center gap-1.5">
+                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                      <span>Awaiting Admin Approval</span>
                                     </Badge>
                                   )}
                                   {isConfirmed && (
-                                    <Badge className="bg-emerald-600 text-white font-bold text-[10px]">
-                                      ✓ APPROVED & ON CALENDAR
+                                    <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1 flex items-center gap-1.5 shadow-2xs">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Approved &amp; on Calendar</span>
                                     </Badge>
                                   )}
                                   {isCancelled && (
-                                    <Badge className="bg-slate-500 text-white font-bold text-[10px]">
-                                      DECLINED / CANCELLED
+                                    <Badge className="bg-slate-200 text-slate-700 font-bold text-xs px-3 py-1">
+                                      Declined / Cancelled
                                     </Badge>
                                   )}
                                 </div>
-
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-                                  <span className="flex items-center gap-1 font-mono text-blue-800 font-bold">
-                                    <Clock className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>{isPending ? "Requested Slot:" : "Confirmed Slot:"}</span>
-                                    {new Date(tr.preferredDate).toLocaleDateString("en-US", {
-                                      weekday: "short",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                    {" "}(30 mins)
-                                  </span>
-
-                                  <span className="flex items-center gap-1">
-                                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                                    <span>{tr.studentEmail}</span>
-                                  </span>
-
-                                  {tr.studentPhone && (
-                                    <span className="flex items-center gap-1 font-mono">
-                                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>{tr.studentPhone}</span>
-                                    </span>
-                                  )}
-                                </div>
-
-                                {tr.topic && (
-                                  <p className="text-xs text-slate-700 bg-white/80 border border-slate-200/80 rounded-xl px-3 py-1.5">
-                                    <strong>Topic/Focus:</strong> {tr.topic}
-                                    {tr.notes && <span className="text-slate-500"> • Note: {tr.notes}</span>}
-                                  </p>
-                                )}
-
-                                {(tr as any).rejectionReason && (
-                                  <div className="p-2 rounded-lg bg-red-100/70 border border-red-200 text-red-800 text-xs font-medium">
-                                    <strong>Admin Feedback:</strong> {(tr as any).rejectionReason}
-                                  </div>
-                                )}
                               </div>
 
-                              <div className="flex flex-wrap items-center gap-2 self-end lg:self-center shrink-0">
+                              {/* Middle Row: Confirmed / Requested Timeslot Highlight Banner */}
+                              <div
+                                className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                                  isConfirmed
+                                    ? "bg-blue-50/70 border-blue-200/80 text-blue-950"
+                                    : isPending
+                                    ? "bg-amber-50/80 border-amber-200 text-amber-950"
+                                    : "bg-slate-50 border-slate-200 text-slate-800"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                                      isConfirmed
+                                        ? "bg-blue-100 text-blue-700"
+                                        : isPending
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-slate-200 text-slate-700"
+                                    }`}
+                                  >
+                                    <Clock className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <div
+                                      className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                                        isConfirmed ? "text-blue-700" : isPending ? "text-amber-700" : "text-slate-500"
+                                      }`}
+                                    >
+                                      {isPending ? "Student Requested Slot" : "Confirmed Consultation Slot"}
+                                    </div>
+                                    <div className="text-sm font-bold text-slate-900 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                      <span>{dateFormatted}</span>
+                                      <span className="text-slate-400">•</span>
+                                      <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
+                                      <span className="text-xs font-semibold text-slate-500">(30 mins)</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Topic & Notes (if available) */}
+                              {tr.topic && (
+                                <div className="text-xs text-slate-700 bg-slate-50/90 border border-slate-200/80 rounded-xl p-3.5 space-y-1">
+                                  <div>
+                                    <strong className="text-slate-900">Topic / Diagnostic Focus:</strong>{" "}
+                                    <span className="text-slate-700">{tr.topic}</span>
+                                  </div>
+                                  {tr.notes && (
+                                    <div className="text-slate-500 text-[11px] pt-1 border-t border-slate-200/60">
+                                      <strong>Session Notes:</strong> {tr.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Admin Rejection Reason (if rejected) */}
+                              {(tr as any).rejectionReason && (
+                                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
+                                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                                  <div>
+                                    <strong className="font-bold">Admin Feedback:</strong>{" "}
+                                    <span>{(tr as any).rejectionReason}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Action Toolbar */}
+                              <div className="border-t border-slate-100 pt-3.5 flex flex-wrap items-center justify-end gap-2.5">
                                 {isPending ? (
                                   <>
                                     <button
+                                      type="button"
                                       onClick={() => openConfirmTrialModal(tr)}
-                                      className="h-8.5 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
-                                      title="Review and submit confirmed date for Admin approval"
+                                      className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                      title="Review and set confirmed date for session"
                                     >
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-200" />
-                                      <span>✓ Set Date & Submit</span>
+                                      <CheckCircle2 className="w-4 h-4" />
+                                      <span>Set Date &amp; Confirm</span>
                                     </button>
 
                                     <button
+                                      type="button"
                                       onClick={() => openDeclineTrialModal(tr)}
-                                      className="h-8.5 px-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+                                      className="h-9 px-3.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                     >
                                       <X className="w-3.5 h-3.5" />
                                       <span>Decline</span>
@@ -2553,17 +2636,18 @@ function TutorDashboardContent() {
                                   </>
                                 ) : isPendingApproval ? (
                                   <>
-                                    <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold inline-flex items-center gap-1">
+                                    <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold inline-flex items-center gap-1.5">
                                       <Clock className="w-3.5 h-3.5 text-amber-600" />
                                       <span>Admin Reviewing</span>
                                     </span>
                                     <button
+                                      type="button"
                                       onClick={() => openRescheduleForTrial(tr)}
-                                      className="h-8.5 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+                                      className="h-9 px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                       title="Adjust session date"
                                     >
                                       <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                      <span>Edit</span>
+                                      <span>Edit Date</span>
                                     </button>
                                   </>
                                 ) : (
@@ -2573,7 +2657,7 @@ function TutorDashboardContent() {
                                         href={tr.meetingLink}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="h-8.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs"
+                                        className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs"
                                       >
                                         <Video className="w-3.5 h-3.5" />
                                         <span>Google Meet</span>
@@ -2581,9 +2665,10 @@ function TutorDashboardContent() {
                                     )}
 
                                     <button
-                                      onClick={() => openRescheduleForTrial(tr)}
-                                      className="h-8.5 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
-                                      title="Reschedule session date"
+                                      type="button"
+                                      onClick={() => router.push(`/trials/reschedule?trialId=${tr.id}`)}
+                                      className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                      title="Reschedule session on dedicated page"
                                     >
                                       <Clock className="w-3.5 h-3.5 text-amber-600" />
                                       <span>Reschedule</span>
@@ -2597,7 +2682,7 @@ function TutorDashboardContent() {
                                       })}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="h-8.5 px-3 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold inline-flex items-center gap-1 transition-all"
+                                      className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-2xs"
                                     >
                                       <Calendar className="w-3.5 h-3.5" />
                                       <span>Google Cal</span>
@@ -2607,10 +2692,10 @@ function TutorDashboardContent() {
 
                                 <a
                                   href={`mailto:${tr.studentEmail}?subject=EduPulse Free Trial Consultation&body=Dear ${tr.studentName},`}
-                                  className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1"
+                                  className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
                                 >
                                   <Mail className="w-3.5 h-3.5 text-slate-400" />
-                                  <span>Email</span>
+                                  <span>Email Student</span>
                                 </a>
                               </div>
                             </div>

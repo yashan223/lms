@@ -4,7 +4,7 @@ loadEnvConfig(process.cwd());
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { hashPassword } from "../lib/auth";
-import { getBundles, saveBundles } from "../lib/bundles";
+import { getBundles, saveBundles, DEFAULT_BUNDLES } from "../lib/bundles";
 
 async function main() {
   console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
@@ -669,10 +669,32 @@ async function main() {
     ],
   });
 
-  // 10. Initialize default token bundle packages (storage/bundles.json)
-  const existingBundles = getBundles();
-  saveBundles(existingBundles);
-  console.log(`💰 Token bundle packages initialized: ${existingBundles.map((b) => b.name).join(", ")}`);
+  // 10. Upsert default token bundle packages into the database
+  for (const bundle of DEFAULT_BUNDLES) {
+    await prisma.tokenBundle.upsert({
+      where: { id: bundle.id },
+      update: {
+        name: bundle.name,
+        hours: bundle.hours,
+        tokens: bundle.tokens,
+        price: bundle.price,
+        popular: bundle.popular,
+        badge: bundle.badge,
+        description: bundle.description,
+      },
+      create: {
+        id: bundle.id,
+        name: bundle.name,
+        hours: bundle.hours,
+        tokens: bundle.tokens,
+        price: bundle.price,
+        popular: bundle.popular,
+        badge: bundle.badge,
+        description: bundle.description,
+      },
+    });
+  }
+  console.log(`💰 Token bundle packages upserted into DB: ${DEFAULT_BUNDLES.map((b) => b.name).join(", ")}`);
 
   console.log("🚀 Database successfully seeded with 1 Admin, 1 Instructor, and 1 Student!");
 }

@@ -122,6 +122,21 @@ model TokenTransaction {
   @@map("token_transactions")
 }
 
+model TokenBundle {
+  id          String   @id
+  name        String
+  hours       Int
+  tokens      Int
+  price       Float
+  popular     Boolean  @default(false)
+  badge       String   @default("Standard")
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("token_bundles")
+}
+
 model Course {
   id            String         @id @default(cuid())
   title         String

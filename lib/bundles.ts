@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import { prisma } from "./prisma";
 
 export interface TokenBundle {
   id: string;
@@ -12,7 +11,7 @@ export interface TokenBundle {
   description: string;
 }
 
-const DEFAULT_BUNDLES: TokenBundle[] = [
+export const DEFAULT_BUNDLES: TokenBundle[] = [
   {
     id: "pack-6",
     name: "6 Hours Flexi Pack",
@@ -48,27 +47,45 @@ const DEFAULT_BUNDLES: TokenBundle[] = [
   },
 ];
 
-const BUNDLES_FILE = path.join(process.cwd(), "storage", "bundles.json");
-
-export function getBundles(): TokenBundle[] {
+/** Read bundles from the database. Falls back to DEFAULT_BUNDLES if the table is empty or errors. */
+export async function getBundles(): Promise<TokenBundle[]> {
   try {
-    if (fs.existsSync(BUNDLES_FILE)) {
-      const raw = fs.readFileSync(BUNDLES_FILE, "utf-8");
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed as TokenBundle[];
-      }
+    const rows = await prisma.tokenBundle.findMany({
+      orderBy: { hours: "asc" },
+    });
+    if (rows.length > 0) {
+      return rows.map((b) => ({
+        id: b.id,
+        name: b.name,
+        hours: b.hours,
+        tokens: b.tokens,
+        price: Number(b.price),
+        popular: b.popular,
+        badge: b.badge,
+        description: b.description,
+      }));
     }
-  } catch {
-    // fall through to defaults
+  } catch (err) {
+    console.error("getBundles DB error, using defaults:", err);
   }
   return DEFAULT_BUNDLES;
 }
 
-export function saveBundles(bundles: TokenBundle[]): void {
-  const dir = path.dirname(BUNDLES_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(BUNDLES_FILE, JSON.stringify(bundles, null, 2), "utf-8");
+/** Persist bundles to the database (replaces all existing rows atomically). */
+export async function saveBundles(bundles: TokenBundle[]): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await tx.tokenBundle.deleteMany({});
+    await tx.tokenBundle.createMany({
+      data: bundles.map((b) => ({
+        id: b.id,
+        name: b.name,
+        hours: b.hours,
+        tokens: b.tokens,
+        price: b.price,
+        popular: b.popular,
+        badge: b.badge,
+        description: b.description,
+      })),
+    });
+  });
 }

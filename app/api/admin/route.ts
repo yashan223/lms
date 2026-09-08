@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
       pendingTrials,
       pendingCourses,
       totalPendingApprovals,
-      bundles: getBundles(),
+      bundles: await getBundles(),
     });
   } catch (error: any) {
     console.error("Admin API GET error:", error);
@@ -946,7 +946,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: "Each bundle must have id, name, price, and tokens." }, { status: 400 });
         }
       }
-      saveBundles(bundles);
+      await saveBundles(bundles);
       broadcastLMSEvent("NOTIFICATIONS_CHANGED", {});
       return NextResponse.json({ success: true, message: "Token bundle packages updated successfully!", bundles });
     }

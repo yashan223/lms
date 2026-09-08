@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       success: true,
       balance: wallet.balance,
       transactions: wallet.transactions,
-      packages: getBundles(),
+      packages: await getBundles(),
     });
   } catch (error: any) {
     console.error("Token API GET error:", error);
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       let tokensToAdd = 0;
       let description = "Purchased Token Hours";
 
-      const selectedPack = getBundles().find((p) => p.id === packageId);
+      const selectedPack = (await getBundles()).find((p) => p.id === packageId);
       if (selectedPack) {
         tokensToAdd = selectedPack.tokens;
         description = `Purchased ${selectedPack.name} (${tokensToAdd} Hours Credit)`;

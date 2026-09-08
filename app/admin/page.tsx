@@ -1944,7 +1944,7 @@ export default function AdminDashboardPage() {
                             {u.role === "STUDENT" ? (
                               <button
                                 onClick={() => handleOpenGrantTokens(u)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer group"
+                                className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer group whitespace-nowrap shadow-2xs"
                                 title="Click to Grant / Adjust Student Credit"
                               >
                                 <Coins className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
@@ -1972,31 +1972,32 @@ export default function AdminDashboardPage() {
                                 <>
                                   <button
                                     onClick={() => handleOpenGrantTokens(u)}
-                                    className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                                    className="h-7 px-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[11px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
                                     title="Grant Free Credit / Hours"
                                   >
-                                    <Coins className="w-3 h-3 text-amber-600" />
+                                    <Coins className="w-3 h-3 text-amber-600 shrink-0" />
                                     <span>+ Credit</span>
                                   </button>
                                   <button
                                     onClick={() => handleOpenEnrollUser(u)}
-                                    className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-[11px] cursor-pointer"
+                                    className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-[11px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
                                     title="Enroll in Course"
                                   >
-                                    Enroll
+                                    <BookOpen className="w-3 h-3 text-blue-600 shrink-0" />
+                                    <span>Enroll</span>
                                   </button>
                                 </>
                               )}
                               <button
                                 onClick={() => handleOpenEditUser(u)}
-                                className="p-1 rounded text-slate-500 hover:text-blue-600 hover:bg-slate-100 cursor-pointer"
+                                className="h-7 w-7 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 border border-transparent hover:border-slate-200 inline-flex items-center justify-center shrink-0 cursor-pointer transition-colors"
                                 title="Edit User"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteUser(u)}
-                                className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                className="h-7 w-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 inline-flex items-center justify-center shrink-0 cursor-pointer transition-colors"
                                 title="Delete User"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

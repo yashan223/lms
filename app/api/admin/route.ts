@@ -4,6 +4,7 @@ import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
+import { getBundles, saveBundles } from "@/lib/bundles";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -165,6 +166,7 @@ export async function GET(request: NextRequest) {
       pendingTrials,
       pendingCourses,
       totalPendingApprovals,
+      bundles: getBundles(),
     });
   } catch (error: any) {
     console.error("Admin API GET error:", error);
@@ -931,6 +933,22 @@ export async function POST(request: NextRequest) {
       }
       broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true, message: "Course returned to draft status.", course: updated });
+    }
+
+    if (action === "update_bundles") {
+      const { bundles } = body;
+      if (!Array.isArray(bundles) || bundles.length === 0) {
+        return NextResponse.json({ error: "Invalid bundles data. Must be a non-empty array." }, { status: 400 });
+      }
+      // Validate each bundle has required fields
+      for (const b of bundles) {
+        if (!b.id || !b.name || typeof b.price !== "number" || typeof b.tokens !== "number") {
+          return NextResponse.json({ error: "Each bundle must have id, name, price, and tokens." }, { status: 400 });
+        }
+      }
+      saveBundles(bundles);
+      broadcastLMSEvent("NOTIFICATIONS_CHANGED", {});
+      return NextResponse.json({ success: true, message: "Token bundle packages updated successfully!", bundles });
     }
   } catch (error) {
     console.error("Admin API POST error:", error);

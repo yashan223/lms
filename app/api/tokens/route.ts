@@ -2,42 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
+import { getBundles } from "@/lib/bundles";
 import { Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
-
-export const TOKEN_PACKAGES = [
-  {
-    id: "pack-6",
-    name: "6 Hours Flexi Pack",
-    hours: 6,
-    tokens: 6,
-    price: 24,
-    popular: false,
-    badge: "Starter",
-    description: "6 hours of learning tokens. Use anytime for 1-on-1 tutor consultations or topic revision.",
-  },
-  {
-    id: "pack-16",
-    name: "16 Hours Standard Bundle",
-    hours: 16,
-    tokens: 16,
-    price: 58,
-    popular: true,
-    badge: "Most Popular",
-    description: "16 hours of learning tokens. Perfect for weekly tutoring sessions, past paper walkthroughs & unit mastery.",
-  },
-  {
-    id: "pack-24",
-    name: "24 Hours Mastery Vault",
-    hours: 24,
-    tokens: 24,
-    price: 84,
-    popular: false,
-    badge: "Best Value",
-    description: "24 hours of learning tokens. Total flexibility for full London A/L & O/L examination preparation.",
-  },
-];
 
 export async function GET(request: NextRequest) {
   try {
@@ -72,7 +40,7 @@ export async function GET(request: NextRequest) {
       success: true,
       balance: wallet.balance,
       transactions: wallet.transactions,
-      packages: TOKEN_PACKAGES,
+      packages: getBundles(),
     });
   } catch (error: any) {
     console.error("Token API GET error:", error);
@@ -108,7 +76,7 @@ export async function POST(request: NextRequest) {
       let tokensToAdd = 0;
       let description = "Purchased Token Hours";
 
-      const selectedPack = TOKEN_PACKAGES.find((p) => p.id === packageId);
+      const selectedPack = getBundles().find((p) => p.id === packageId);
       if (selectedPack) {
         tokensToAdd = selectedPack.tokens;
         description = `Purchased ${selectedPack.name} (${tokensToAdd} Hours Credit)`;

@@ -4,6 +4,7 @@ loadEnvConfig(process.cwd());
 import { Role, CourseLevel, CourseStatus, EventType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { hashPassword } from "../lib/auth";
+import { getBundles, saveBundles } from "../lib/bundles";
 
 async function main() {
   console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
@@ -667,6 +668,11 @@ async function main() {
       },
     ],
   });
+
+  // 10. Initialize default token bundle packages (storage/bundles.json)
+  const existingBundles = getBundles();
+  saveBundles(existingBundles);
+  console.log(`💰 Token bundle packages initialized: ${existingBundles.map((b) => b.name).join(", ")}`);
 
   console.log("🚀 Database successfully seeded with 1 Admin, 1 Instructor, and 1 Student!");
 }

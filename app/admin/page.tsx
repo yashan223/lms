@@ -144,6 +144,23 @@ export default function AdminDashboardPage() {
   const [isGrantingTokens, setIsGrantingTokens] = useState(false);
   const [grantFeedbackMsg, setGrantFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Token Bundle Editor State
+  interface BundleItem {
+    id: string;
+    name: string;
+    hours: number;
+    tokens: number;
+    price: number;
+    popular: boolean;
+    badge: string;
+    description: string;
+  }
+  const [bundlesList, setBundlesList] = useState<BundleItem[]>([]);
+  const [showBundleEditorModal, setShowBundleEditorModal] = useState(false);
+  const [editingBundles, setEditingBundles] = useState<BundleItem[]>([]);
+  const [isSavingBundles, setIsSavingBundles] = useState(false);
+  const [bundleSaveMsg, setBundleSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const [courseSearch, setCourseSearch] = useState("");
   const [courseCatFilter, setCourseCatFilter] = useState("ALL");
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
@@ -225,6 +242,9 @@ export default function AdminDashboardPage() {
         setPendingTrialsList(data.pendingTrials || []);
         setPendingCoursesList(data.pendingCourses || []);
         setTotalPendingApprovals(data.totalPendingApprovals || 0);
+        if (data.bundles && data.bundles.length > 0) {
+          setBundlesList(data.bundles);
+        }
       } else {
         const errData = await res.json().catch(() => ({}));
         setFetchError(errData.error || "Failed to load academy records from server");
@@ -451,6 +471,47 @@ export default function AdminDashboardPage() {
       });
     } finally {
       setIsGrantingTokens(false);
+    }
+  };
+
+  const handleOpenBundleEditor = () => {
+    // Clone current bundles into editing state
+    setEditingBundles(
+      (bundlesList.length > 0 ? bundlesList : [
+        { id: "pack-6", name: "6 Hours Flexi Pack", hours: 6, tokens: 6, price: 24, popular: false, badge: "Starter", description: "6 hours of learning tokens." },
+        { id: "pack-16", name: "16 Hours Standard Bundle", hours: 16, tokens: 16, price: 58, popular: true, badge: "Most Popular", description: "16 hours of learning tokens." },
+        { id: "pack-24", name: "24 Hours Mastery Vault", hours: 24, tokens: 24, price: 84, popular: false, badge: "Best Value", description: "24 hours of learning tokens." },
+      ]).map((b) => ({ ...b }))
+    );
+    setBundleSaveMsg(null);
+    setShowBundleEditorModal(true);
+  };
+
+  const handleSaveBundles = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsSavingBundles(true);
+      setBundleSaveMsg(null);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_bundles", bundles: editingBundles }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBundleSaveMsg({ type: "success", text: data.message || "Bundles updated successfully!" });
+        setBundlesList(editingBundles);
+        setTimeout(() => {
+          setShowBundleEditorModal(false);
+          setBundleSaveMsg(null);
+        }, 1300);
+      } else {
+        setBundleSaveMsg({ type: "error", text: data.error || "Failed to save bundles." });
+      }
+    } catch (err: any) {
+      setBundleSaveMsg({ type: "error", text: err.message || "Network error." });
+    } finally {
+      setIsSavingBundles(false);
     }
   };
 
@@ -2426,6 +2487,65 @@ export default function AdminDashboardPage() {
                   })}
                 </div>
               </div>
+
+              {/* Token Bundle Packages Manager */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                      <Coins className="w-4 h-4 text-amber-500" />
+                      Token Bundle Packages
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Configure the hour bundles available for students to purchase. Changes take effect immediately.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleOpenBundleEditor}
+                    className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-amber-500/20 cursor-pointer shrink-0"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-amber-100" />
+                    <span>Edit Bundles</span>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(bundlesList.length > 0 ? bundlesList : [
+                    { id: "pack-6", name: "6 Hours Flexi Pack", hours: 6, tokens: 6, price: 24, popular: false, badge: "Starter", description: "6 hours of learning tokens." },
+                    { id: "pack-16", name: "16 Hours Standard Bundle", hours: 16, tokens: 16, price: 58, popular: true, badge: "Most Popular", description: "16 hours of learning tokens." },
+                    { id: "pack-24", name: "24 Hours Mastery Vault", hours: 24, tokens: 24, price: 84, popular: false, badge: "Best Value", description: "24 hours of learning tokens." },
+                  ]).map((bundle) => (
+                    <div
+                      key={bundle.id}
+                      className={`p-4 rounded-xl border space-y-2.5 relative ${bundle.popular ? "border-amber-300 bg-amber-50/30 ring-1 ring-amber-300/50" : "border-slate-200 bg-slate-50/50"}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${bundle.popular ? "bg-amber-500 text-white" : "bg-slate-200 text-slate-600"}`}>
+                          {bundle.popular ? "⭐ " : ""}{bundle.badge}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-black text-slate-900 text-sm leading-tight">{bundle.name}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{bundle.description}</div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                        <div className="flex items-center gap-1.5 text-amber-700 font-bold text-sm">
+                          <Coins className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{bundle.tokens} Hours</span>
+                        </div>
+                        <div className="font-black text-slate-900 text-base">
+                          ${bundle.price}
+                          <span className="text-[10px] font-medium text-slate-400 ml-0.5">USD</span>
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        ${(bundle.price / bundle.tokens).toFixed(2)}/hr
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -3703,6 +3823,206 @@ export default function AdminDashboardPage() {
                     <>
                       <X className="w-3.5 h-3.5" />
                       <span>Confirm Decline</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Token Bundle Editor Modal */}
+      {showBundleEditorModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-3xl w-full max-h-[95vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">Edit Token Bundle Packages</h3>
+                  <p className="text-xs text-slate-500">Adjust pricing, hours, names and descriptions for each student package</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBundleEditorModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {bundleSaveMsg && (
+              <div
+                className={`p-3.5 rounded-2xl text-xs flex items-center gap-2.5 animate-in fade-in ${
+                  bundleSaveMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}
+              >
+                {bundleSaveMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span className="font-semibold">{bundleSaveMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveBundles} className="space-y-6">
+              {editingBundles.map((bundle, idx) => (
+                <div
+                  key={bundle.id}
+                  className={`rounded-2xl border p-5 space-y-4 ${bundle.popular ? "border-amber-300 bg-amber-50/20" : "border-slate-200 bg-slate-50/30"}`}
+                >
+                  {/* Bundle Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Bundle #{idx + 1}</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <span className="text-xs font-bold text-slate-600">Mark as Popular</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = editingBundles.map((b, i) => ({
+                            ...b,
+                            popular: i === idx ? !b.popular : false,
+                          }));
+                          setEditingBundles(updated);
+                        }}
+                        className={`w-10 h-5 rounded-full relative transition-colors ${bundle.popular ? "bg-amber-500" : "bg-slate-200"}`}
+                        aria-label="Toggle popular"
+                      >
+                        <span
+                          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${bundle.popular ? "translate-x-5" : "translate-x-0.5"}`}
+                        />
+                      </button>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Name */}
+                    <div className="sm:col-span-2">
+                      <label className="font-bold text-slate-700 text-xs block mb-1">Bundle Name <span className="text-red-500">*</span></label>
+                      <Input
+                        required
+                        value={bundle.name}
+                        onChange={(e) => {
+                          const updated = [...editingBundles];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setEditingBundles(updated);
+                        }}
+                        className="h-9 text-xs rounded-xl"
+                        placeholder="e.g. 16 Hours Standard Bundle"
+                      />
+                    </div>
+
+                    {/* Badge */}
+                    <div>
+                      <label className="font-bold text-slate-700 text-xs block mb-1">Badge Label</label>
+                      <Input
+                        value={bundle.badge}
+                        onChange={(e) => {
+                          const updated = [...editingBundles];
+                          updated[idx] = { ...updated[idx], badge: e.target.value };
+                          setEditingBundles(updated);
+                        }}
+                        className="h-9 text-xs rounded-xl"
+                        placeholder="e.g. Most Popular"
+                      />
+                    </div>
+
+                    {/* Hours / Tokens */}
+                    <div>
+                      <label className="font-bold text-slate-700 text-xs block mb-1">Hours / Tokens <span className="text-red-500">*</span></label>
+                      <Input
+                        required
+                        type="number"
+                        min="1"
+                        max="999"
+                        value={bundle.hours}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10) || 1;
+                          const updated = [...editingBundles];
+                          updated[idx] = { ...updated[idx], hours: val, tokens: val };
+                          setEditingBundles(updated);
+                        }}
+                        className="h-9 text-xs rounded-xl font-mono"
+                        placeholder="16"
+                      />
+                    </div>
+
+                    {/* Price */}
+                    <div>
+                      <label className="font-bold text-slate-700 text-xs block mb-1">Price (USD) <span className="text-red-500">*</span></label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                        <Input
+                          required
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={bundle.price}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 1;
+                            const updated = [...editingBundles];
+                            updated[idx] = { ...updated[idx], price: val };
+                            setEditingBundles(updated);
+                          }}
+                          className="pl-7 h-9 text-xs rounded-xl font-mono"
+                          placeholder="58"
+                        />
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                        ≈ ${bundle.hours > 0 ? (bundle.price / bundle.hours).toFixed(2) : "—"}/hr
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="sm:col-span-2">
+                      <label className="font-bold text-slate-700 text-xs block mb-1">Description</label>
+                      <Input
+                        value={bundle.description}
+                        onChange={(e) => {
+                          const updated = [...editingBundles];
+                          updated[idx] = { ...updated[idx], description: e.target.value };
+                          setEditingBundles(updated);
+                        }}
+                        className="h-9 text-xs rounded-xl"
+                        placeholder="Short description shown to students on the pricing page"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBundleEditorModal(false)}
+                  className="rounded-xl text-xs cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingBundles}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs shadow-amber-500/20 cursor-pointer gap-1.5 h-9 px-4"
+                >
+                  {isSavingBundles ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Save Bundle Packages</span>
                     </>
                   )}
                 </Button>

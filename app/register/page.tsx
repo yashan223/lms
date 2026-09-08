@@ -27,7 +27,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("+44");
+  const [countryCode, setCountryCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
@@ -59,7 +59,12 @@ export default function RegisterPage() {
 
     const cleanDigits = phone.replace(/[^\d]/g, "");
     if (!cleanDigits || cleanDigits.length < 5) {
-      setErrorMsg("Please enter a valid contact phone number with country code.");
+      setErrorMsg("Please enter a valid contact phone number.");
+      return;
+    }
+
+    if (!countryCode && !phone.trim().startsWith("+")) {
+      setErrorMsg("Please select your country dial code for the phone number.");
       return;
     }
 
@@ -81,7 +86,9 @@ export default function RegisterPage() {
     try {
       const fullPhoneNumber = phone.trim().startsWith("+")
         ? phone.trim()
-        : `${countryCode} ${phone.trim()}`;
+        : countryCode
+          ? `${countryCode} ${phone.trim()}`
+          : phone.trim();
 
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -315,7 +322,7 @@ export default function RegisterPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmedRegister}
         title="Confirm Student Registration"
-        description={`You are registering as a ${qualification} student${country ? ` from ${country}` : ""}. Contact: ${phone.trim().startsWith("+") ? phone.trim() : `${countryCode} ${phone.trim()}`}. Your official student profile will be registered with the academy.`}
+        description={`You are registering as a ${qualification} student${country ? ` from ${country}` : ""}. Contact: ${phone.trim().startsWith("+") ? phone.trim() : countryCode ? `${countryCode} ${phone.trim()}` : phone.trim()}. Your official student profile will be registered with the academy.`}
         confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { COUNTRIES, Country, findCountry, findCountryByDialCode } from "@/lib/countries";
-import { ChevronDown, Search, Phone, Check } from "lucide-react";
+import { ChevronDown, Search, Phone, Check, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface PhoneInputWithCountryProps {
@@ -35,10 +35,11 @@ export function PhoneInputWithCountry({
 
   // Active country matching the dial code
   const selectedCountry = useMemo(() => {
+    if (!countryCode) return null;
     return (
       COUNTRIES.find((c) => c.dialCode === countryCode) ||
       findCountryByDialCode(countryCode) ||
-      COUNTRIES[0] // Default to UK (+44)
+      null
     );
   }, [countryCode]);
 
@@ -110,8 +111,17 @@ export function PhoneInputWithCountry({
         aria-haspopup="listbox"
         className="h-11 px-2.5 sm:px-3 rounded-l-xl border border-r-0 border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:z-10"
       >
-        <span className="text-base leading-none">{selectedCountry.flag}</span>
-        <span className="font-mono text-slate-700">{selectedCountry.dialCode}</span>
+        {selectedCountry ? (
+          <>
+            <span className="text-base leading-none">{selectedCountry.flag}</span>
+            <span className="font-mono text-slate-700">{selectedCountry.dialCode}</span>
+          </>
+        ) : (
+          <>
+            <Globe className="w-4 h-4 text-slate-400" />
+            <span className="text-slate-500 font-semibold">Code</span>
+          </>
+        )}
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
@@ -151,7 +161,7 @@ export function PhoneInputWithCountry({
           <ul role="listbox" className="overflow-y-auto flex-1 p-1 space-y-0.5 text-xs">
             {filteredCountries.length > 0 ? (
               filteredCountries.map((c) => {
-                const isSelected = c.code === selectedCountry.code && c.dialCode === selectedCountry.dialCode;
+                const isSelected = selectedCountry?.code === c.code && selectedCountry?.dialCode === c.dialCode;
                 return (
                   <li key={`${c.code}-${c.dialCode}`}>
                     <button

@@ -12,7 +12,7 @@ import {
   X,
   ExternalLink,
   BookOpen,
-  Sparkles,
+  CalendarClock,
   ArrowRight,
   Sun,
   Moon,
@@ -298,7 +298,7 @@ export function TrialRequestModal({
             <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-200/90">
               <div className="flex items-start gap-2.5">
                 <div className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Sparkles className="w-4 h-4" />
+                  <CalendarClock className="w-4 h-4" />
                 </div>
                 <div className="space-y-0.5">
                   <h4 className="font-bold text-xs text-amber-950">

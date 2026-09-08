@@ -48,7 +48,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ShoppingBag,
-  Sparkles,
+  CalendarClock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -975,7 +975,7 @@ function DashboardContent() {
           <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-                <Sparkles className="w-4 h-4" />
+                <CalendarClock className="w-4 h-4" />
               </div>
               <div>
                 <h4 className="font-bold text-xs text-amber-950 flex items-center gap-1.5">

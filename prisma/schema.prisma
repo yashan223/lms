@@ -481,6 +481,15 @@ model StudentAvailability {
   @@index([studentId])
   @@map("student_availabilities")
 }
+// ========================================================
+// REALTIME EVENT LOG (Vercel-compatible cross-process SSE)
+// ========================================================
+model SystemEvent {
+  id        String   @id @default(cuid())
+  type      String   // e.g. "TRIALS_CHANGED", "CHAT_MESSAGE", "NOTIFICATIONS_CHANGED"
+  data      Json?    // optional payload (userId filter, classLive flag, etc.)
+  createdAt DateTime @default(now())
 
-
-
+  @@index([createdAt])
+  @@map("system_events")
+}

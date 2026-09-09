@@ -18,14 +18,11 @@ export function useRealtimeSync({
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const callbackRef = useRef(onSync);
   const eventsRef = useRef(events);
+  // Track the latest event timestamp so reconnects don't re-deliver old events
+  const sinceRef = useRef<number>(Date.now());
 
-  useEffect(() => {
-    callbackRef.current = onSync;
-  }, [onSync]);
-
-  useEffect(() => {
-    eventsRef.current = events;
-  }, [events]);
+  useEffect(() => { callbackRef.current = onSync; }, [onSync]);
+  useEffect(() => { eventsRef.current = events; }, [events]);
 
   const triggerSync = useCallback((payload?: LMSEventPayload) => {
     setLastSyncTime(new Date());
@@ -38,14 +35,16 @@ export function useRealtimeSync({
     if (!enabled || typeof window === "undefined") return;
 
     let eventSource: EventSource | null = null;
-    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
     let isCleanedUp = false;
 
     function connect() {
       if (isCleanedUp) return;
 
       try {
-        eventSource = new EventSource("/api/events");
+        // Pass current `since` so the server only sends events we haven't seen
+        const url = `/api/events?since=${sinceRef.current}`;
+        eventSource = new EventSource(url);
 
         eventSource.onopen = () => {
           setIsConnected(true);
@@ -54,9 +53,13 @@ export function useRealtimeSync({
         eventSource.onmessage = (e) => {
           try {
             const payload: LMSEventPayload = JSON.parse(e.data);
-            if (payload.type === "PING") {
-              return;
+
+            // Keep sinceRef up-to-date so reconnects don't miss or duplicate events
+            if (payload.timestamp && payload.timestamp > sinceRef.current) {
+              sinceRef.current = payload.timestamp;
             }
+
+            if (payload.type === "PING") return;
 
             const targetEvents = eventsRef.current;
             if (!targetEvents || targetEvents.length === 0 || targetEvents.includes(payload.type)) {
@@ -73,27 +76,28 @@ export function useRealtimeSync({
             eventSource.close();
             eventSource = null;
           }
-
+          // Reconnect immediately (server closes after ~25s intentionally)
           if (!isCleanedUp) {
-            reconnectTimeout = setTimeout(connect, 3000);
+            reconnectTimeout = setTimeout(connect, 500);
           }
         };
       } catch (err) {
         setIsConnected(false);
         if (!isCleanedUp) {
-          reconnectTimeout = setTimeout(connect, 5000);
+          reconnectTimeout = setTimeout(connect, 3000);
         }
       }
     }
 
     connect();
 
+    // Re-sync when user returns to tab
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         if (!eventSource || eventSource.readyState !== EventSource.OPEN) {
           connect();
-          triggerSync();
         }
+        triggerSync();
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -101,17 +105,11 @@ export function useRealtimeSync({
     return () => {
       isCleanedUp = true;
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (eventSource) {
-        eventSource.close();
-      }
+      if (eventSource) eventSource.close();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       setIsConnected(false);
     };
   }, [enabled, triggerSync]);
 
-  return {
-    isConnected,
-    lastSyncTime,
-    triggerSync,
-  };
+  return { isConnected, lastSyncTime, triggerSync };
 }

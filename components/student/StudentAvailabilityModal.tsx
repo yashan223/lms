@@ -220,17 +220,17 @@ export function StudentAvailabilityModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-5 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex">
+      <div className="bg-white w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-100 pb-3.5">
+        <div className="flex items-start justify-between border-b border-slate-200 px-8 py-5 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
               <Clock className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base text-slate-900">
+                <h3 className="font-extrabold text-lg text-slate-900">
                   My Study Hours &amp; Availability
                 </h3>
                 <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-[10px] font-bold">
@@ -244,21 +244,27 @@ export function StudentAvailabilityModal({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Informative Alert */}
-        <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2.5">
-          <GraduationCap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-          <div className="space-y-0.5 leading-relaxed">
-            <span className="font-bold">How Tutor Matching Works:</span> When faculty tutors schedule
-            or reschedule a 1-on-1 mentoring class or free trial session with you, your available hours will be
-            clearly shown to them, helping you both find a mutual time that fits.
+        {/* Body — two-column layout */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* LEFT COLUMN: form */}
+          <div className="flex-1 flex flex-col overflow-y-auto px-8 py-6 space-y-5 border-r border-slate-100">
+
+          {/* Informative Alert */}
+          <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2.5">
+            <GraduationCap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 leading-relaxed">
+              <span className="font-bold">How Tutor Matching Works:</span> When faculty tutors schedule
+              or reschedule a 1-on-1 mentoring class or free trial session with you, your available hours will be
+              clearly shown to them, helping you both find a mutual time that fits.
+            </div>
           </div>
-        </div>
 
         {/* Status Message */}
         {statusMsg && (
@@ -418,63 +424,82 @@ export function StudentAvailabilityModal({
           </Button>
         </form>
 
-        {/* Currently Configured Availability List */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-800">
-              Current Configured Study Hours ({availabilities.length})
-            </span>
-          </div>
+          </div>{/* end LEFT COLUMN */}
 
-          {availabilities.length === 0 ? (
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-400">
-              No custom study hours added yet. Use the form above to add your study schedule.
+          {/* RIGHT COLUMN: current slots */}
+          <div className="w-[400px] shrink-0 flex flex-col overflow-hidden px-8 py-6 bg-slate-50/50 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-extrabold text-slate-800">
+                Current Study Hours
+              </span>
+              <Badge className="bg-slate-200 text-slate-700 font-bold text-[10px]">
+                {availabilities.length} {availabilities.length === 1 ? "slot" : "slots"}
+              </Badge>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1">
-              {availabilities.map((av) => {
-                const dayObj =
-                  av.dayOfWeek !== null && av.dayOfWeek !== undefined
-                    ? DAYS_OF_WEEK.find((d) => d.value === av.dayOfWeek)
-                    : null;
-                return (
-                  <div
-                    key={av.id}
-                    className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2 text-xs shadow-2xs"
-                  >
-                    <div>
-                      <div className="font-extrabold text-slate-900">
-                        {dayObj ? `Every ${dayObj.label}` : av.specificDate?.slice(0, 10) || "Date"}
-                      </div>
-                      <div className="text-[11px] font-mono text-blue-700 font-bold flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-blue-500" />
-                        <span>{av.startTime} – {av.endTime}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-500 truncate max-w-[150px]">
-                        {av.title || "Study hours"}
-                      </div>
-                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSlot(av.id)}
-                      className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                      title="Delete slot"
+            {loading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+              </div>
+            ) : availabilities.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-400 flex items-center justify-center">
+                  <BookOpen className="w-7 h-7" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-slate-600">No study hours yet</p>
+                  <p className="text-xs text-slate-400 max-w-[220px]">
+                    Use the form on the left to add your available study windows.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                {availabilities.map((av) => {
+                  const dayObj =
+                    av.dayOfWeek !== null && av.dayOfWeek !== undefined
+                      ? DAYS_OF_WEEK.find((d) => d.value === av.dayOfWeek)
+                      : null;
+                  return (
+                    <div
+                      key={av.id}
+                      className="p-3.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2 text-xs shadow-sm hover:border-blue-300 transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                      <div>
+                        <div className="font-extrabold text-slate-900">
+                          {dayObj ? `Every ${dayObj.label}` : av.specificDate?.slice(0, 10) || "Date"}
+                        </div>
+                        <div className="text-[11px] font-mono text-blue-700 font-bold flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3 text-blue-500" />
+                          <span>{av.startTime} – {av.endTime}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate max-w-[200px] mt-0.5">
+                          {av.title || "Study hours"}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSlot(av.id)}
+                        className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                        title="Delete slot"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>{/* end RIGHT COLUMN */}
+
+        </div>{/* end body */}
 
         {/* Footer */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+        <div className="px-8 py-4 border-t border-slate-200 flex items-center justify-end shrink-0">
           <Button
             onClick={onClose}
-            className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl px-5 h-9"
+            className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl px-6 h-10"
           >
             Done
           </Button>

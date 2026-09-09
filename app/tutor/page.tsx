@@ -817,7 +817,7 @@ function TutorDashboardContent() {
       handleStartClass(ev.id, rawLink);
     } else {
       setStartClassTargetEvent(ev);
-      setStartClassMeetLink(rawLink && !rawLink.endsWith("/new") && !rawLink.includes("edp-") ? rawLink : "");
+      setStartClassMeetLink(rawLink && !rawLink.endsWith("/new") && !rawLink.includes("edp-") ? rawLink : "https://meet.google.com/new");
       setShowStartClassModal(true);
     }
   };
@@ -3598,11 +3598,20 @@ function TutorDashboardContent() {
 
               <form onSubmit={handleStartClassSubmit} className="space-y-3.5">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-800 block">
-                    Step 2: Paste Google Meet Link <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 block">
+                      Step 2: Paste Google Meet Link
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Create on Google Meet</span>
+                    </button>
+                  </div>
                   <Input
-                    required
                     placeholder="https://meet.google.com/xxx-yyyy-zzz"
                     value={startClassMeetLink}
                     onChange={(e) => setStartClassMeetLink(e.target.value)}
@@ -3624,7 +3633,7 @@ function TutorDashboardContent() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={!startClassMeetLink.trim() || startingClassId === startClassTargetEvent.id}
+                    disabled={startingClassId === startClassTargetEvent.id}
                     className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
                   >
                     {startingClassId === startClassTargetEvent.id ? "Starting..." : "Start & Notify Students"}

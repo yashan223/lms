@@ -225,8 +225,8 @@ export async function POST(request: NextRequest) {
           description: fullDescription,
           meetingLink: meetLink,
           dueDate: new Date(scheduledDate),
-          status: EventStatus.PENDING_APPROVAL,
-          approvalStatus: "PENDING",
+          status: EventStatus.SCHEDULED,
+          approvalStatus: "APPROVED",
           requestedBy: tutor.id,
           rejectionReason: null,
           type: (type as EventType) || EventType.LIVE_SEMINAR,
@@ -235,30 +235,11 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Notify Admins about the new class awaiting approval
-      try {
-        const admins = await prisma.user.findMany({ where: { role: Role.ADMIN }, select: { id: true } });
-        if (admins.length > 0) {
-          await prisma.notification.createMany({
-            data: admins.map((a) => ({
-              userId: a.id,
-              title: "⏳ Live Class Awaiting Approval",
-              message: `Tutor ${tutor.name} scheduled "${title.trim()}" for ${new Date(scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}. Please review and approve.`,
-              type: "INFO",
-              link: "/admin",
-            })),
-          });
-          admins.forEach((a) => broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: a.id }));
-        }
-      } catch (notifErr) {
-        console.error("Failed to notify admins of new class:", notifErr);
-      }
-
       broadcastLMSEvent("EVENTS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        message: "Live class session scheduled and submitted for Admin approval.",
+        message: "Live class session scheduled successfully.",
         event: newClassEvent,
         meetingLink: meetLink,
       });
@@ -412,38 +393,19 @@ export async function POST(request: NextRequest) {
           title: title ? title.trim() : undefined,
           meetingLink: meetingLink ? meetingLink.trim() : undefined,
           description: updatedDesc,
-          status: EventStatus.PENDING_APPROVAL,
-          approvalStatus: "PENDING",
+          status: EventStatus.SCHEDULED,
+          approvalStatus: "APPROVED",
           rejectionReason: null,
           endedAt: null,
         },
         include: { course: true, user: true },
       });
 
-      // Notify Admins about the reschedule request
-      try {
-        const admins = await prisma.user.findMany({ where: { role: Role.ADMIN }, select: { id: true } });
-        if (admins.length > 0) {
-          await prisma.notification.createMany({
-            data: admins.map((a) => ({
-              userId: a.id,
-              title: "⏳ Class Reschedule Awaiting Approval",
-              message: `Tutor ${tutor.name} requested to reschedule "${updated.title}" to ${parsedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}.`,
-              type: "INFO",
-              link: "/admin",
-            })),
-          });
-          admins.forEach((a) => broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: a.id }));
-        }
-      } catch (notifErr) {
-        console.error("Failed to notify admins of reschedule:", notifErr);
-      }
-
       broadcastLMSEvent("EVENTS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        message: "Class session reschedule submitted for Admin approval.",
+        message: "Class session rescheduled successfully.",
         event: updated,
       });
     }
@@ -473,37 +435,37 @@ export async function POST(request: NextRequest) {
           preferredDate: targetDate,
           meetingLink: link,
           notes: notes !== undefined ? notes?.trim() || null : existingTrial.notes,
-          status: TrialStatus.PENDING_APPROVAL,
-          approvalStatus: "PENDING",
+          status: TrialStatus.CONFIRMED,
+          approvalStatus: "APPROVED",
           rejectionReason: null,
         },
         include: { course: true, tutor: true, student: true },
       });
 
-      // Notify Admins about the trial confirmation
-      try {
-        const admins = await prisma.user.findMany({ where: { role: Role.ADMIN }, select: { id: true } });
-        if (admins.length > 0) {
-          await prisma.notification.createMany({
-            data: admins.map((a) => ({
-              userId: a.id,
-              title: "⏳ Trial Session Awaiting Approval",
-              message: `Tutor ${tutor.name} confirmed trial with ${updatedTrial.studentName} for "${updatedTrial.course?.title || "London A/L"}". Please review and approve.`,
-              type: "INFO",
-              link: "/admin",
-            })),
-          });
-          admins.forEach((a) => broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: a.id }));
-        }
-      } catch (notifErr) {
-        console.error("Failed to notify admins of trial confirmation:", notifErr);
+      // Notify student of confirmation
+      if (updatedTrial.studentId) {
+        const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Masterclass";
+        const dateStr = targetDate.toLocaleDateString("en-US", {
+          weekday: "short", month: "short", day: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+        await prisma.notification.create({
+          data: {
+            userId: updatedTrial.studentId,
+            title: "🎉 Free Trial Confirmed!",
+            message: `Your 30-min trial session for "${courseTitle}" has been confirmed for ${dateStr}. Google Meet link is ready on your dashboard!`,
+            type: "INFO",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updatedTrial.studentId });
       }
 
       broadcastLMSEvent("TRIALS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        message: "Trial session confirmed and submitted for Admin approval.",
+        message: "Trial session confirmed and scheduled!",
         trial: updatedTrial,
       });
     }
@@ -585,37 +547,37 @@ export async function POST(request: NextRequest) {
         data: {
           preferredDate: parsedDate,
           notes: notes !== undefined ? notes.trim() : undefined,
-          status: TrialStatus.PENDING_APPROVAL,
-          approvalStatus: "PENDING",
+          status: TrialStatus.CONFIRMED,
+          approvalStatus: "APPROVED",
           rejectionReason: null,
         },
         include: { course: true, tutor: true, student: true },
       });
 
-      // Notify Admins
-      try {
-        const admins = await prisma.user.findMany({ where: { role: Role.ADMIN }, select: { id: true } });
-        if (admins.length > 0) {
-          await prisma.notification.createMany({
-            data: admins.map((a) => ({
-              userId: a.id,
-              title: "⏳ Trial Reschedule Awaiting Approval",
-              message: `Tutor ${tutor.name} requested to reschedule trial with ${updatedTrial.studentName} to ${parsedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}.`,
-              type: "INFO",
-              link: "/admin",
-            })),
-          });
-          admins.forEach((a) => broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: a.id }));
-        }
-      } catch (notifErr) {
-        console.error("Failed to notify admins of trial reschedule:", notifErr);
+      // Notify student of reschedule
+      if (updatedTrial.studentId) {
+        const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Masterclass";
+        const dateStr = parsedDate.toLocaleDateString("en-US", {
+          weekday: "short", month: "short", day: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+        await prisma.notification.create({
+          data: {
+            userId: updatedTrial.studentId,
+            title: "📅 Trial Session Rescheduled",
+            message: `Your trial session for "${courseTitle}" has been rescheduled to ${dateStr}.`,
+            type: "INFO",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updatedTrial.studentId });
       }
 
       broadcastLMSEvent("TRIALS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        message: "1-on-1 consultation reschedule submitted for Admin approval.",
+        message: "1-on-1 consultation rescheduled successfully.",
         trial: updatedTrial,
       });
     }

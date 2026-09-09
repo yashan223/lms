@@ -2414,8 +2414,7 @@ function TutorDashboardContent() {
                       {[
                         { key: "ALL", label: "All Bookings", count: trials.length },
                         { key: "PENDING", label: "⏳ Needs Date", count: trials.filter((t) => t.status === "PENDING").length },
-                        { key: "PENDING_APPROVAL", label: "⏳ In Admin Review", count: trials.filter((t) => t.status === "PENDING_APPROVAL").length },
-                        { key: "CONFIRMED", label: "✓ Approved & Live", count: trials.filter((t) => t.status === "CONFIRMED").length },
+                        { key: "CONFIRMED", label: "✓ Confirmed", count: trials.filter((t) => t.status === "CONFIRMED").length },
                         { key: "CANCELLED", label: "Declined / Cancelled", count: trials.filter((t) => t.status === "CANCELLED" || t.status === "REJECTED").length },
                       ].map((tab) => (
                         <button
@@ -2452,7 +2451,6 @@ function TutorDashboardContent() {
                         .filter((t) => trialFilter === "ALL" || t.status === trialFilter || (trialFilter === "CANCELLED" && (t.status === "CANCELLED" || t.status === "REJECTED")))
                         .map((tr) => {
                           const isPending = tr.status === "PENDING";
-                          const isPendingApproval = tr.status === "PENDING_APPROVAL";
                           const isConfirmed = tr.status === "CONFIRMED";
                           const isCancelled = tr.status === "CANCELLED" || tr.status === "REJECTED";
 
@@ -2482,8 +2480,6 @@ function TutorDashboardContent() {
                               className={`rounded-2xl border transition-all p-5 sm:p-6 space-y-4 shadow-xs hover:shadow-sm ${
                                 isPending
                                   ? "bg-amber-50/30 border-amber-200"
-                                  : isPendingApproval
-                                  ? "bg-indigo-50/30 border-indigo-200"
                                   : isConfirmed
                                   ? "bg-white border-slate-200 hover:border-blue-300"
                                   : "bg-slate-50 border-slate-200 opacity-70"
@@ -2525,16 +2521,10 @@ function TutorDashboardContent() {
                                       ⏳ Action Needed: Set Date
                                     </Badge>
                                   )}
-                                  {isPendingApproval && (
-                                    <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs px-3 py-1 flex items-center gap-1.5">
-                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                      <span>Awaiting Admin Approval</span>
-                                    </Badge>
-                                  )}
                                   {isConfirmed && (
                                     <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1 flex items-center gap-1.5 shadow-2xs">
                                       <CheckCircle2 className="w-3.5 h-3.5" />
-                                      <span>Approved &amp; on Calendar</span>
+                                      <span>Confirmed &amp; Scheduled</span>
                                     </Badge>
                                   )}
                                   {isCancelled && (
@@ -2645,22 +2635,6 @@ function TutorDashboardContent() {
                                         <span>Chat with Student</span>
                                       </button>
                                     )}
-                                  </>
-                                ) : isPendingApproval ? (
-                                  <>
-                                    <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold inline-flex items-center gap-1.5">
-                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                      <span>Admin Reviewing</span>
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => openRescheduleForTrial(tr)}
-                                      className="h-9 px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
-                                      title="Adjust session date"
-                                    >
-                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                      <span>Edit Date</span>
-                                    </button>
                                   </>
                                 ) : isConfirmed ? (
                                   <>
@@ -3865,7 +3839,7 @@ function TutorDashboardContent() {
                   disabled={schedulingClass}
                   className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
                 >
-                  {schedulingClass ? "Submitting..." : "Submit for Admin Approval"}
+                  {schedulingClass ? "Scheduling..." : "📅 Schedule Live Class"}
                 </Button>
               </div>
             </form>
@@ -4096,10 +4070,10 @@ function TutorDashboardContent() {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900">
-                    Set Date & Submit Trial for Approval
+                    Set Date &amp; Confirm Trial Session
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Set official slot and submit for Admin verification before publishing to student
+                    Set the confirmed date and Google Meet link for this student's free trial
                   </p>
                 </div>
               </div>
@@ -4214,7 +4188,7 @@ function TutorDashboardContent() {
                   disabled={isSubmittingConfirmTrial}
                   className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
                 >
-                  {isSubmittingConfirmTrial ? "Confirming & Scheduling..." : "✓ Confirm & Schedule Session"}
+                  {isSubmittingConfirmTrial ? "Confirming..." : "✓ Confirm & Schedule Session"}
                 </Button>
               </div>
             </form>

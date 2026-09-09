@@ -151,7 +151,7 @@ export function EncryptedChatDrawer({
     },
   });
 
-  const fetchMessages = async (convId: string, otherUser: any) => {
+  const fetchMessages = async (convId: string, otherUserHint?: any) => {
     try {
       setLoadingMessages(true);
       const res = await fetch(`/api/chat?action=messages&conversationId=${convId}`);
@@ -160,8 +160,11 @@ export function EncryptedChatDrawer({
         const rawMessages = data.messages || [];
         setMessages(rawMessages);
 
+        // Always prefer the authoritative otherUser from the API response to avoid key mismatch
+        const resolvedOtherUser = data.conversation?.otherUser ?? otherUserHint;
         const myId = currentUser?.id;
-        const theirId = otherUser?.id;
+        const theirId = resolvedOtherUser?.id;
+
         if (myId && theirId) {
           try {
             const key = await deriveConversationKey(myId, theirId);

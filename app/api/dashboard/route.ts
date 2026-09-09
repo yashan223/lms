@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -180,7 +181,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const timelineEvents = await prisma.event.findMany({
+    let timelineEvents = await prisma.event.findMany({
       where: eventWhere,
       orderBy: { dueDate: "asc" },
       include: {
@@ -195,6 +196,94 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
+    // For students, ensure all confirmed 1-on-1 trials are included in timeline events
+    if (user?.role === "STUDENT") {
+      const confirmedTrials = await prisma.trialRequest.findMany({
+        where: {
+          status: { in: [TrialStatus.CONFIRMED, TrialStatus.COMPLETED] },
+          OR: [
+            { studentId: user.id },
+            { studentEmail: { equals: user.email, mode: "insensitive" } },
+          ],
+        },
+        include: {
+          course: true,
+          tutor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+        },
+      });
+
+      for (const trial of confirmedTrials) {
+        // Link studentId on trial if missing
+        if (!trial.studentId) {
+          await prisma.trialRequest.update({
+            where: { id: trial.id },
+            data: { studentId: user.id },
+          }).catch(() => {});
+        }
+
+        const alreadyInTimeline = timelineEvents.some(
+          (ev) =>
+            (trial.courseId && ev.courseId === trial.courseId && Math.abs(new Date(ev.dueDate).getTime() - new Date(trial.preferredDate).getTime()) < 60000) ||
+            (ev.userId === user.id && Math.abs(new Date(ev.dueDate).getTime() - new Date(trial.preferredDate).getTime()) < 60000) ||
+            ev.title.toLowerCase().includes(trial.studentName.toLowerCase()) ||
+            (ev.description && ev.description.includes(trial.id))
+        );
+
+        if (!alreadyInTimeline) {
+          const courseTitle = trial.course?.title || "London A/L Tutorial Masterclass";
+          const courseCode = trial.course?.subjectCode || "";
+          const eventTitle = `1-on-1 Trial: ${courseTitle} (${trial.studentName || user.name})`;
+          const link = trial.meetingLink || "https://meet.google.com/new";
+          const eventDesc = [
+            `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+            `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
+            `Topic / Focus: ${trial.topic || "30-Min Free Trial & Syllabus Overview"}`,
+            `Student: ${trial.studentName} (${trial.studentEmail})`,
+            `Classroom Link: ${link}`,
+            trial.notes ? `Faculty Notes: ${trial.notes}` : "",
+          ].filter(Boolean).join("\n\n");
+
+          const syncedEvent = await prisma.event.create({
+            data: {
+              title: eventTitle,
+              description: eventDesc,
+              dueDate: trial.preferredDate,
+              type: EventType.LIVE_SEMINAR,
+              status: trial.status === TrialStatus.COMPLETED ? EventStatus.COMPLETED : EventStatus.SCHEDULED,
+              approvalStatus: "APPROVED",
+              meetingLink: link,
+              courseId: trial.courseId || null,
+              userId: user.id,
+              requestedBy: trial.tutorId || null,
+            },
+            include: {
+              course: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  role: true,
+                },
+              },
+            },
+          });
+
+          timelineEvents.push(syncedEvent);
+        }
+      }
+
+      // Re-sort timelineEvents by dueDate ascending
+      timelineEvents.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    }
 
     return NextResponse.json({
       user,

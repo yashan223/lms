@@ -582,6 +582,15 @@ function DashboardContent() {
     return timelineEvents.filter((ev) => {
 
       if (ev.userId && user?.id && ev.userId === user.id) return true;
+      if (ev.studentId && user?.id && ev.studentId === user.id) return true;
+      if (ev.studentEmail && user?.email && ev.studentEmail.toLowerCase() === user.email.toLowerCase()) return true;
+      if (
+        (ev.title?.toLowerCase().includes("1-on-1") || ev.title?.toLowerCase().includes("trial")) &&
+        user?.name &&
+        ev.title.toLowerCase().includes(user.name.toLowerCase())
+      ) {
+        return true;
+      }
 
       const matchesCourse =
         (ev.courseId && enrolledCourseIds.has(ev.courseId)) ||
@@ -719,7 +728,7 @@ function DashboardContent() {
 
         if (ev.status === "LIVE") return true;
 
-        return (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate).getTime() >= now;
+        return (ev.status === "SCHEDULED" || ev.status === "CONFIRMED" || !ev.status) && new Date(ev.dueDate).getTime() >= now;
       })
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [studentTimelineEvents, calendarCourseFilter]);
@@ -1385,9 +1394,15 @@ function DashboardContent() {
                                   Ended
                                 </Badge>
                               )}
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-50 text-blue-700 border-blue-200">
-                                Online Session
-                              </span>
+                              {(ev.title?.toLowerCase().includes("trial") || ev.title?.toLowerCase().includes("1-on-1")) ? (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-amber-50 text-amber-700 border-amber-200">
+                                  1-on-1 Trial
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-50 text-blue-700 border-blue-200">
+                                  Online Session
+                                </span>
+                              )}
                             </div>
                             {ev.description && (
                               <p className="text-[11px] text-slate-500 truncate mt-0.5">
@@ -1562,7 +1577,7 @@ function DashboardContent() {
                           </button>
                           <span className="text-slate-400">•</span>
                           <span className="text-slate-600 font-semibold">
-                            Online Session
+                            {(ev.title?.toLowerCase().includes("trial") || ev.title?.toLowerCase().includes("1-on-1")) ? "1-on-1 Trial" : "Online Session"}
                           </span>
                         </div>
                       </div>

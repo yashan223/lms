@@ -2633,6 +2633,18 @@ function TutorDashboardContent() {
                                       <X className="w-3.5 h-3.5" />
                                       <span>Decline</span>
                                     </button>
+
+                                    {tr.studentId && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openChatWithStudent(tr.studentId)}
+                                        className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                        title="Open encrypted chat with student"
+                                      >
+                                        <MessageSquareLock className="w-3.5 h-3.5 text-blue-500" />
+                                        <span>Chat with Student</span>
+                                      </button>
+                                    )}
                                   </>
                                 ) : isPendingApproval ? (
                                   <>
@@ -2650,7 +2662,7 @@ function TutorDashboardContent() {
                                       <span>Edit Date</span>
                                     </button>
                                   </>
-                                ) : (
+                                ) : isConfirmed ? (
                                   <>
                                     {tr.meetingLink && (
                                       <a
@@ -2687,16 +2699,27 @@ function TutorDashboardContent() {
                                       <Calendar className="w-3.5 h-3.5" />
                                       <span>Google Cal</span>
                                     </a>
+
+                                    {tr.studentId && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openChatWithStudent(tr.studentId)}
+                                        className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                        title="Open encrypted chat with student"
+                                      >
+                                        <MessageSquareLock className="w-3.5 h-3.5 text-blue-500" />
+                                        <span>Chat with Student</span>
+                                      </button>
+                                    )}
                                   </>
+                                ) : (
+                                  <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 text-xs font-semibold inline-flex items-center gap-1.5">
+                                    <X className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>Declined / Cancelled</span>
+                                  </span>
                                 )}
 
-                                <a
-                                  href={`mailto:${tr.studentEmail}?subject=EduPulse Free Trial Consultation&body=Dear ${tr.studentName},`}
-                                  className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
-                                >
-                                  <Mail className="w-3.5 h-3.5 text-slate-400" />
-                                  <span>Email Student</span>
-                                </a>
+
                               </div>
                             </div>
                           );

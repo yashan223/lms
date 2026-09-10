@@ -493,3 +493,25 @@ model SystemEvent {
   @@index([createdAt])
   @@map("system_events")
 }
+
+// ========================================================
+// ADMIN AUDIT LOG — Full immutable history of all admin actions
+// ========================================================
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String                         // ID of the admin who performed the action
+  adminEmail  String                         // Email snapshot at time of action
+  action      String                         // e.g. "create_user", "delete_course", "approve_trial"
+  category    String   @default("GENERAL")  // "USER", "COURSE", "CLASS", "TRIAL", "FINANCE", "PRICING", "GENERAL"
+  targetId    String?                        // ID of the affected record (userId, courseId, eventId, etc.)
+  targetLabel String?                        // Human-readable name/title of the affected record
+  details     Json?                          // Extra context (before/after diff, reason, amount, etc.)
+  ipAddress   String?                        // Admin's IP address
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([action])
+  @@index([category])
+  @@map("audit_logs")
+}

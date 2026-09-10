@@ -10,6 +10,52 @@ import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// ── Audit log helper ────────────────────────────────────────────────────────
+const ACTION_CATEGORY_MAP: Record<string, string> = {
+  create_user: "USER", create_candidate: "USER",
+  update_user: "USER", delete_user: "USER", delete_candidate: "USER",
+  enroll_user: "USER", unenroll_user: "USER",
+  grant_tokens: "FINANCE", give_credit: "FINANCE", adjust_tokens: "FINANCE",
+  create_course: "COURSE", update_course: "COURSE", delete_course: "COURSE",
+  add_module: "COURSE", delete_module: "COURSE",
+  add_lesson: "COURSE", delete_lesson: "COURSE",
+  add_course_material: "COURSE", delete_course_material: "COURSE",
+  approve_course: "COURSE", reject_course: "COURSE",
+  schedule_class: "CLASS", start_class: "CLASS", end_class: "CLASS",
+  approve_class: "CLASS", reject_class: "CLASS",
+  delete_assessment: "CLASS", delete_event: "CLASS", create_mock_paper: "CLASS",
+  approve_trial: "TRIAL", reject_trial: "TRIAL",
+  update_bundles: "PRICING",
+};
+
+async function writeAuditLog(opts: {
+  adminId: string;
+  adminEmail: string;
+  action: string;
+  targetId?: string | null;
+  targetLabel?: string | null;
+  details?: Record<string, any> | null;
+  ipAddress?: string | null;
+}) {
+  const category = ACTION_CATEGORY_MAP[opts.action] ?? "GENERAL";
+  try {
+    await prisma.auditLog.create({
+      data: {
+        adminId: opts.adminId,
+        adminEmail: opts.adminEmail,
+        action: opts.action,
+        category,
+        targetId: opts.targetId ?? null,
+        targetLabel: opts.targetLabel ?? null,
+        details: opts.details ? (opts.details as any) : undefined,
+        ipAddress: opts.ipAddress ?? null,
+      },
+    });
+  } catch (auditErr) {
+    console.error("[AuditLog] Failed to write audit log entry:", auditErr);
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request, [Role.ADMIN]);
@@ -186,6 +232,26 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { action } = body;
+
+    // ── Fire-and-forget audit log for every admin POST action ─────────────
+    const ipAddress =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      null;
+    const targetLabel =
+      body.name || body.title || body.email ||
+      body.courseId || body.userId || body.eventId || body.trialId ||
+      body.materialId || body.moduleId || body.lessonId || body.bundleId || null;
+    writeAuditLog({
+      adminId: auth.user.id,
+      adminEmail: auth.user.email,
+      action,
+      targetId: body.userId || body.courseId || body.eventId || body.trialId || body.materialId || body.moduleId || body.lessonId || null,
+      targetLabel: typeof targetLabel === "string" ? targetLabel : null,
+      details: { body: { ...body, password: body.password ? "[REDACTED]" : undefined } },
+      ipAddress,
+    });
+    // ──────────────────────────────────────────────────────────────────────
 
     if (action === "create_user" || action === "create_candidate") {
       const { name, email, password, phone, role, headline, bio, initialCourseId } = body;

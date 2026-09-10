@@ -413,7 +413,7 @@ function RescheduleContent() {
     <div className="min-h-screen bg-slate-50/70 pb-16">
       {/* Top Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs backdrop-blur-md bg-white/95">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="w-full max-w-[1560px] mx-auto px-4 sm:px-8 xl:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
@@ -448,7 +448,7 @@ function RescheduleContent() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+      <main className="w-full max-w-[1560px] mx-auto px-4 sm:px-8 xl:px-12 pt-6 space-y-6">
         {/* Status Alerts */}
         {statusMsg && (
           <div
@@ -500,9 +500,9 @@ function RescheduleContent() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Trial & Faculty Summary (4 cols) */}
-          <div className="lg:col-span-4 space-y-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Trial & Faculty Summary */}
+          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-5">
             {/* Consultation Card */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -672,10 +672,32 @@ function RescheduleContent() {
                 </div>
               )}
             </div>
+
+            {/* Reschedule Guidance Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+              <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Reschedule Guidance</span>
+              </h4>
+              <ul className="space-y-2.5 text-xs text-slate-600">
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                  <span><strong>Instant Confirmation:</strong> Your chosen slot locks immediately without waiting for tutor approval.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
+                  <span><strong>Mutual Alignment:</strong> Gold-highlighted slots align with your preferred study schedule.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-1.5 shrink-0" />
+                  <span><strong>Calendar Sync:</strong> Session date and Google Meet classroom update in real time across the portal.</span>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          {/* Right Column: Availability Picker & Reschedule Form (8 cols) */}
-          <div className="lg:col-span-8 space-y-5">
+          {/* Right Column: Availability Picker & Reschedule Form */}
+          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 space-y-5">
             <form onSubmit={handleSubmitReschedule} className="space-y-5">
               {/* Date & Slots Card */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
@@ -700,7 +722,7 @@ function RescheduleContent() {
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                     Available Dates
                   </label>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                  <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
                     {availabilityDays.map((day) => {
                       const isSelected = day.date === selectedDate;
                       return (
@@ -711,7 +733,7 @@ function RescheduleContent() {
                             setSelectedDate(day.date);
                             setSelectedSlotTime("");
                           }}
-                          className={`shrink-0 px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col items-center min-w-[85px] ${
+                          className={`shrink-0 px-4 py-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col items-center min-w-[90px] flex-1 sm:flex-initial ${
                             isSelected
                               ? "bg-[#0c2461] border-[#0c2461] text-white shadow-md shadow-blue-950/20"
                               : day.hasAvailableSlots
@@ -773,7 +795,7 @@ function RescheduleContent() {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                       {currentDayData.slots.map((slot, idx) => {
                         const isSelected = selectedSlotTime === slot.startTime;
 

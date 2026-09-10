@@ -193,8 +193,11 @@ function TutorDashboardContent() {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
+    if (tab === "profile") {
+      router.push("/tutor/profile");
+      return;
+    }
     if (
-      tab === "profile" ||
       tab === "courses" ||
       tab === "classes" ||
       tab === "history" ||
@@ -205,7 +208,7 @@ function TutorDashboardContent() {
     ) {
       setCenterTab(tab);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const totalEarnings = useMemo(() => {
     return courses.reduce((sum, c) => {
@@ -1311,7 +1314,13 @@ function TutorDashboardContent() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setCenterTab(tab.id as any)}
+                onClick={() => {
+                  if (tab.id === "profile") {
+                    router.push("/tutor/profile");
+                  } else {
+                    setCenterTab(tab.id as any);
+                  }
+                }}
                 className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
                   isActive
                     ? "bg-[#0c2461] text-white shadow-xs"
@@ -1446,19 +1455,16 @@ function TutorDashboardContent() {
                 </button>
 
                 <button
-                  onClick={() => setCenterTab("profile")}
-                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
-                    centerTab === "profile"
-                      ? "bg-blue-50 text-blue-700 font-bold"
-                      : "text-slate-700 hover:bg-slate-50"
-                  }`}
+                  onClick={() => router.push("/tutor/profile")}
+                  className="w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer text-slate-700 hover:bg-slate-50"
                 >
                   <span className="flex items-center gap-2">
-                    <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    <UserCheck className="w-3.5 h-3.5 text-purple-600" />
                     <span>Instructor Profile & Credentials</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 font-bold">
-                    Edit
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-800 font-bold flex items-center gap-1">
+                    <span>Studio Page</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
                   </span>
                 </button>
               </div>
@@ -1689,15 +1695,12 @@ function TutorDashboardContent() {
               </button>
 
               <button
-                onClick={() => setCenterTab("profile")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                  centerTab === "profile"
-                    ? "bg-[#0c2461] text-white shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
+                onClick={() => router.push("/tutor/profile")}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Instructor Profile</span>
+                <UserCheck className="w-3.5 h-3.5 text-purple-600" />
+                <span>Instructor Profile Studio</span>
+                <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
               </button>
             </div>
 
@@ -2735,6 +2738,26 @@ function TutorDashboardContent() {
 
             {centerTab === "profile" && (
               <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-purple-950">Dedicated Profile Customization Studio Available</h4>
+                      <p className="text-xs text-purple-700">Open the full-width standalone studio with real-time public student preview card and live completeness checklist.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/tutor/profile")}
+                    className="px-4 py-2 bg-[#0c2461] hover:bg-[#103080] text-white rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <span>Open Dedicated Studio</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-3">
@@ -3411,11 +3434,12 @@ function TutorDashboardContent() {
                   Instructor Profile
                 </h3>
                 <button
-                  onClick={() => setCenterTab("profile")}
+                  onClick={() => router.push("/tutor/profile")}
                   className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
                 >
                   <Edit3 className="w-3 h-3" />
                   <span>Edit Profile</span>
+                  <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-60" />
                 </button>
               </div>
 
@@ -3460,11 +3484,12 @@ function TutorDashboardContent() {
               </p>
 
               <button
-                onClick={() => setCenterTab("profile")}
+                onClick={() => router.push("/tutor/profile")}
                 className="w-full py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>Customize Full Profile</span>
+                <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-70" />
               </button>
             </div>
 

@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const [totalCount, logs] = await Promise.all([
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [totalCount, logs, last24hCount, userCount, courseCount, classTrialCount, financePricingCount] = await Promise.all([
       prisma.auditLog.count({ where: whereClause }),
       prisma.auditLog.findMany({
         where: whereClause,
@@ -41,6 +42,11 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
+      prisma.auditLog.count({ where: { createdAt: { gte: oneDayAgo } } }),
+      prisma.auditLog.count({ where: { category: "USER" } }),
+      prisma.auditLog.count({ where: { category: "COURSE" } }),
+      prisma.auditLog.count({ where: { category: { in: ["CLASS", "TRIAL"] } } }),
+      prisma.auditLog.count({ where: { category: { in: ["FINANCE", "PRICING"] } } }),
     ]);
 
     return NextResponse.json({
@@ -49,6 +55,13 @@ export async function GET(request: NextRequest) {
       page,
       pageSize,
       totalPages: Math.ceil(totalCount / pageSize),
+      stats: {
+        last24hCount,
+        userCount,
+        courseCount,
+        classTrialCount,
+        financePricingCount,
+      },
     });
   } catch (error: any) {
     console.error("Audit log GET error:", error);

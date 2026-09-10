@@ -54,6 +54,9 @@ import {
   Sparkles,
   ArrowRight,
   PlusCircle,
+  Copy,
+  Check,
+  Filter,
 } from "lucide-react";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 
@@ -70,6 +73,65 @@ function formatSessionDuration(startedAt?: string | Date | null, endedAt?: strin
   const mins = diffMins % 60;
   return `${hrs}h ${mins}m`;
 }
+
+function getRelativeTimeString(dateInput: string | Date): string {
+  const date = new Date(dateInput);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  if (diffSecs < 45) return "Just now";
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+  create_user: { label: "Create User Account", icon: UserPlus, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  create_candidate: { label: "Register Candidate", icon: UserPlus, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  update_user: { label: "Update User Account", icon: Edit3, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  delete_user: { label: "Delete User Account", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  delete_candidate: { label: "Delete Candidate", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  grant_tokens: { label: "Grant Learning Credit", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
+  give_credit: { label: "Grant Learning Credit", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
+  adjust_tokens: { label: "Adjust Token Balance", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
+  enroll_user: { label: "Enroll Student in Course", icon: UserCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  unenroll_user: { label: "Unenroll Student", icon: Users, color: "text-orange-600 bg-orange-50 border-orange-200" },
+  create_course: { label: "Create Masterclass", icon: PlusCircle, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  update_course: { label: "Update Masterclass", icon: Edit3, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  delete_course: { label: "Delete Masterclass", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  add_module: { label: "Add Syllabus Module", icon: FolderPlus, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+  delete_module: { label: "Delete Syllabus Module", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  add_lesson: { label: "Add Lesson Video", icon: PlayCircle, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+  delete_lesson: { label: "Delete Lesson Video", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  add_course_material: { label: "Upload Resource / Material", icon: Upload, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  delete_course_material: { label: "Delete Course Material", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  schedule_class: { label: "Schedule Live Google Meet", icon: Video, color: "text-violet-600 bg-violet-50 border-violet-200" },
+  start_class: { label: "Launch Live Class Room", icon: Radio, color: "text-red-600 bg-red-50 border-red-200" },
+  end_class: { label: "Conclude Live Class", icon: CheckCircle2, color: "text-slate-600 bg-slate-50 border-slate-200" },
+  approve_class: { label: "Approve Live Class Proposal", icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  reject_class: { label: "Decline Live Class Proposal", icon: X, color: "text-red-600 bg-red-50 border-red-200" },
+  approve_trial: { label: "Approve 1-on-1 Free Trial", icon: CalendarCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  reject_trial: { label: "Decline Free Trial Request", icon: X, color: "text-red-600 bg-red-50 border-red-200" },
+  approve_course: { label: "Publish Masterclass", icon: ShieldCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  reject_course: { label: "Return Course to Draft", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
+  update_bundles: { label: "Update Pricing Packages", icon: Coins, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+  system_test: { label: "System Health Audit Check", icon: ShieldCheck, color: "text-slate-600 bg-slate-50 border-slate-200" },
+};
+
+const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: string; bg: string; text: string }> = {
+  ALL: { label: "All Operations", icon: Layers, badge: "bg-slate-900 text-white", bg: "bg-slate-50", text: "text-slate-900" },
+  USER: { label: "Users & Accounts", icon: Users, badge: "bg-blue-100 text-blue-800 border border-blue-200", bg: "bg-blue-50", text: "text-blue-600" },
+  COURSE: { label: "Curriculum & Syllabi", icon: BookOpen, badge: "bg-emerald-100 text-emerald-800 border border-emerald-200", bg: "bg-emerald-50", text: "text-emerald-600" },
+  CLASS: { label: "Live Classes", icon: Video, badge: "bg-violet-100 text-violet-800 border border-violet-200", bg: "bg-violet-50", text: "text-violet-600" },
+  TRIAL: { label: "1-on-1 Trials", icon: CalendarCheck, badge: "bg-amber-100 text-amber-800 border border-amber-200", bg: "bg-amber-50", text: "text-amber-600" },
+  FINANCE: { label: "Tuition & Credit", icon: DollarSign, badge: "bg-green-100 text-green-800 border border-green-200", bg: "bg-green-50", text: "text-green-700" },
+  PRICING: { label: "Token Bundles", icon: Coins, badge: "bg-indigo-100 text-indigo-800 border border-indigo-200", bg: "bg-indigo-50", text: "text-indigo-600" },
+  GENERAL: { label: "System General", icon: ShieldCheck, badge: "bg-slate-100 text-slate-800 border border-slate-200", bg: "bg-slate-50", text: "text-slate-600" },
+};
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
@@ -227,6 +289,15 @@ export default function AdminDashboardPage() {
   const [auditLogPage, setAuditLogPage] = useState(1);
   const [auditLogTotalPages, setAuditLogTotalPages] = useState(1);
   const [auditLogTotalCount, setAuditLogTotalCount] = useState(0);
+  const [auditLogStats, setAuditLogStats] = useState({
+    last24hCount: 0,
+    userCount: 0,
+    courseCount: 0,
+    classTrialCount: 0,
+    financePricingCount: 0,
+  });
+  const [selectedLogForModal, setSelectedLogForModal] = useState<any | null>(null);
+  const [copiedLogJson, setCopiedLogJson] = useState(false);
 
   const fetchAuditLogs = async (page = 1, search = auditLogSearch, category = auditLogCategory) => {
     try {
@@ -240,14 +311,37 @@ export default function AdminDashboardPage() {
         setAuditLogPage(data.page || 1);
         setAuditLogTotalPages(data.totalPages || 1);
         setAuditLogTotalCount(data.totalCount || 0);
+        if (data.stats) {
+          setAuditLogStats(data.stats);
+        }
       } else {
-        setAuditLogsError("Failed to load audit logs.");
+        setAuditLogsError("Failed to load audit logs from the server.");
       }
     } catch (err: any) {
       setAuditLogsError(err.message || "Network error fetching audit logs.");
     } finally {
       setAuditLogsLoading(false);
     }
+  };
+
+  const handleExportAuditLogCSV = () => {
+    if (auditLogs.length === 0) return;
+    const headers = "Timestamp,ISO Date,Admin Email,Admin ID,Action Code,Category,Target Label,Target ID,IP Address,Details\n";
+    const rows = auditLogs
+      .map((l) => {
+        const detailsStr = l.details ? JSON.stringify(l.details).replace(/"/g, '""') : "";
+        const targetStr = (l.targetLabel || "").replace(/"/g, '""');
+        return `"${new Date(l.createdAt).toLocaleString()}","${l.createdAt}","${l.adminEmail}","${l.adminId}","${l.action}","${l.category}","${targetStr}","${l.targetId || ""}","${l.ipAddress || ""}","${detailsStr}"`;
+      })
+      .join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `edupulse_audit_log_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Load audit logs when tab becomes active
@@ -304,6 +398,9 @@ export default function AdminDashboardPage() {
   useRealtimeSync({
     onSync: () => {
       fetchAdminData(false);
+      if (activeTab === "audit_log") {
+        fetchAuditLogs(auditLogPage, auditLogSearch, auditLogCategory);
+      }
     },
   });
 
@@ -1472,6 +1569,19 @@ export default function AdminDashboardPage() {
                     <span>Edit Packages</span>
                   </Button>
                 </div>
+              )}
+
+              {activeTab === "audit_log" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExportAuditLogCSV}
+                  disabled={auditLogs.length === 0}
+                  className="bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold gap-1.5 h-9 rounded-xl border-slate-200 shadow-2xs cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="hidden sm:inline">Export CSV Statement</span>
+                </Button>
               )}
             </div>
           </div>
@@ -4225,96 +4335,127 @@ export default function AdminDashboardPage() {
       )}
 
           {/* ════════════════════════════════════════════════════════════
-              AUDIT LOG TAB
+              AUDIT LOG TAB (REVAMPED UI)
               ════════════════════════════════════════════════════════════ */}
           {activeTab === "audit_log" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* KPI Strip */}
+              {/* Top KPI Metrics Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Total Logged Actions</span>
-                    <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="text-2xl font-black tracking-tight text-slate-900">{auditLogTotalCount.toLocaleString()}</div>
-                  <div className="text-[11px] text-violet-600 font-semibold">All-time admin actions</div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Showing Page</span>
+                    <span className="text-xs font-semibold text-slate-500">Total Audit Events</span>
                     <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                      <Layers className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="text-2xl font-black tracking-tight text-slate-900">{auditLogPage} / {auditLogTotalPages}</div>
-                  <div className="text-[11px] text-blue-600 font-semibold">50 records per page</div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Active Category Filter</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-black tracking-tight text-slate-900">{auditLogCategory === "ALL" ? "All" : auditLogCategory}</div>
-                  <div className="text-[11px] text-emerald-600 font-semibold">Category scope</div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {auditLogTotalCount.toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Immutable records saved in DB</span>
+                  </div>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">On This Page</span>
+                    <span className="text-xs font-semibold text-slate-500">Recent Activity (24h)</span>
                     <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                       <Clock className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-black tracking-tight text-slate-900">{auditLogs.length} Records</div>
-                  <div className="text-[11px] text-amber-600 font-semibold">Newest first</div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {auditLogStats.last24hCount.toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-amber-600 font-semibold">
+                    Administrative actions in past 24h
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500">User & Account Changes</span>
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <Users className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {auditLogStats.userCount.toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-indigo-600 font-semibold">
+                    Creations, updates, and enrollments
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500">Classes & Curriculum</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {(auditLogStats.courseCount + auditLogStats.classTrialCount).toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-emerald-600 font-semibold">
+                    Courses, sessions & trial approvals
+                  </div>
                 </div>
               </div>
 
-              {/* Main Log Panel */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-                {/* Panel Header */}
-                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900">Complete Admin Action History</h3>
-                    <p className="text-xs text-slate-500">Every admin action is automatically recorded with who did it, when, and what was affected.</p>
+              {/* Main Log Control & Filter Bar */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3.5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  {/* Search Input */}
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      placeholder="Search action code, admin email, or target record..."
+                      value={auditLogSearch}
+                      onChange={(e) => setAuditLogSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") fetchAuditLogs(1, auditLogSearch, auditLogCategory);
+                      }}
+                      className="pl-10 pr-9 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-400"
+                    />
+                    {auditLogSearch && (
+                      <button
+                        onClick={() => {
+                          setAuditLogSearch("");
+                          fetchAuditLogs(1, "", auditLogCategory);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100"
+                        title="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
+
+                  {/* Actions & Live Status Indicator */}
                   <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Live Audit Stream</span>
+                    </div>
+
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => fetchAuditLogs(auditLogPage, auditLogSearch, auditLogCategory)}
                       disabled={auditLogsLoading}
-                      className="text-xs font-bold text-slate-700 h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
+                      className="h-10 text-xs font-bold rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${auditLogsLoading ? "animate-spin" : ""}`} />
                       <span className="hidden sm:inline">Refresh</span>
                     </Button>
+
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        const headers = "Timestamp,Admin Email,Action,Category,Target,Target ID\n";
-                        const rows = auditLogs
-                          .map((l) =>
-                            `"${new Date(l.createdAt).toLocaleString()}","${l.adminEmail}","${l.action}","${l.category}","${l.targetLabel || ""}","${l.targetId || ""}"`
-                          )
-                          .join("\n");
-                        const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement("a");
-                        link.href = url;
-                        link.setAttribute("download", `audit_log_${new Date().toISOString().slice(0, 10)}.csv`);
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      className="text-xs font-bold text-slate-700 h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
+                      onClick={handleExportAuditLogCSV}
+                      disabled={auditLogs.length === 0}
+                      className="h-10 text-xs font-bold rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <Download className="w-3.5 h-3.5 text-slate-500" />
                       <span className="hidden sm:inline">Export CSV</span>
@@ -4322,140 +4463,228 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Filters */}
-                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                  {/* Search */}
-                  <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                    <Input
-                      placeholder="Search action, admin, or target..."
-                      value={auditLogSearch}
-                      onChange={(e) => setAuditLogSearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") fetchAuditLogs(1, auditLogSearch, auditLogCategory);
-                      }}
-                      className="pl-9 h-9 text-xs rounded-xl"
-                    />
-                  </div>
+                {/* Category Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-3">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1 shrink-0">
+                    <Filter className="w-3 h-3 text-slate-400" />
+                    <span>Filter:</span>
+                  </span>
 
-                  {/* Category pills */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {(["ALL", "USER", "COURSE", "CLASS", "TRIAL", "FINANCE", "PRICING", "GENERAL"] as const).map((cat) => {
-                      const catColors: Record<string, string> = {
-                        ALL: "bg-slate-900 text-white",
-                        USER: "bg-blue-600 text-white",
-                        COURSE: "bg-emerald-600 text-white",
-                        CLASS: "bg-red-600 text-white",
-                        TRIAL: "bg-amber-600 text-white",
-                        FINANCE: "bg-green-700 text-white",
-                        PRICING: "bg-indigo-600 text-white",
-                        GENERAL: "bg-slate-500 text-white",
-                      };
-                      const isActive = auditLogCategory === cat;
-                      return (
-                        <button
-                          key={cat}
-                          onClick={() => {
-                            setAuditLogCategory(cat);
-                            setAuditLogSearch("");
-                            fetchAuditLogs(1, "", cat);
-                          }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                            isActive ? catColors[cat] : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      );
-                    })}
+                  {(["ALL", "USER", "COURSE", "CLASS", "TRIAL", "FINANCE", "PRICING", "GENERAL"] as const).map((cat) => {
+                    const conf = AUDIT_CATEGORY_CONFIG[cat] || AUDIT_CATEGORY_CONFIG.GENERAL;
+                    const Icon = conf.icon;
+                    const isActive = auditLogCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          setAuditLogCategory(cat);
+                          fetchAuditLogs(1, auditLogSearch, cat);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-blue-600 text-white shadow-xs shadow-blue-600/20"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-slate-500"}`} />
+                        <span>{conf.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Main Audit Log Table Panel */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                {/* Table Header Strip */}
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">Recorded Activity Ledger</h3>
+                    <p className="text-xs text-slate-500">
+                      Chronological history of all admin modifications, security events, and approvals
+                    </p>
+                  </div>
+                  <div className="text-xs font-semibold text-slate-400">
+                    {auditLogTotalCount.toLocaleString()} Total Records
                   </div>
                 </div>
 
-                {/* Table */}
+                {/* Error Banner */}
                 {auditLogsError && (
-                  <div className="p-6 text-center text-sm text-red-600 font-semibold">
-                    {auditLogsError}
-                    <button onClick={() => fetchAuditLogs(1)} className="ml-2 underline text-blue-600">Retry</button>
+                  <div className="p-6 text-center text-sm text-red-600 font-semibold bg-red-50/50 border-b border-red-100">
+                    <AlertCircle className="w-5 h-5 text-red-600 mx-auto mb-2" />
+                    <span>{auditLogsError}</span>
+                    <button
+                      onClick={() => fetchAuditLogs(1)}
+                      className="ml-3 underline text-blue-600 hover:text-blue-700 font-bold"
+                    >
+                      Retry
+                    </button>
                   </div>
                 )}
 
+                {/* Loading State */}
                 {auditLogsLoading && auditLogs.length === 0 && (
-                  <div className="py-16 text-center space-y-2">
-                    <Loader2 className="w-7 h-7 text-violet-500 animate-spin mx-auto" />
-                    <div className="text-xs font-semibold text-slate-500">Loading audit history...</div>
+                  <div className="py-20 text-center space-y-3">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+                    <div className="text-sm font-bold text-slate-800">Synchronizing Audit Records...</div>
+                    <p className="text-xs text-slate-400">Fetching immutable history logs from database.</p>
                   </div>
                 )}
 
+                {/* Empty State */}
                 {!auditLogsLoading && !auditLogsError && auditLogs.length === 0 && (
-                  <div className="py-16 text-center space-y-2">
-                    <FileText className="w-8 h-8 text-slate-300 mx-auto" />
-                    <div className="text-sm font-bold text-slate-400">No audit log entries yet</div>
-                    <p className="text-xs text-slate-400">Actions you perform will appear here automatically.</p>
+                  <div className="py-20 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <div className="text-sm font-bold text-slate-800">No matching audit events found</div>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      {auditLogSearch || auditLogCategory !== "ALL"
+                        ? "Try clearing your search query or selecting a different category filter."
+                        : "Any administrative operation performed in the LMS will be recorded and displayed here automatically."}
+                    </p>
+                    {(auditLogSearch || auditLogCategory !== "ALL") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setAuditLogSearch("");
+                          setAuditLogCategory("ALL");
+                          fetchAuditLogs(1, "", "ALL");
+                        }}
+                        className="rounded-xl text-xs font-bold cursor-pointer"
+                      >
+                        Reset All Filters
+                      </Button>
+                    )}
                   </div>
                 )}
 
+                {/* Data Table */}
                 {auditLogs.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                         <tr>
-                          <th className="py-3 px-4 whitespace-nowrap">Timestamp</th>
-                          <th className="py-3 px-4 whitespace-nowrap">Admin</th>
-                          <th className="py-3 px-4 whitespace-nowrap">Action</th>
-                          <th className="py-3 px-4 whitespace-nowrap">Category</th>
-                          <th className="py-3 px-4 whitespace-nowrap">Target</th>
-                          <th className="py-3 px-4 whitespace-nowrap">IP Address</th>
+                          <th className="py-3.5 px-4">Operation & Action</th>
+                          <th className="py-3.5 px-4">Category</th>
+                          <th className="py-3.5 px-4">Target Record</th>
+                          <th className="py-3.5 px-4">Administrator</th>
+                          <th className="py-3.5 px-4">Timestamp</th>
+                          <th className="py-3.5 px-4 text-right">Details</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {auditLogs.map((log) => {
-                          const catBadgeColors: Record<string, string> = {
-                            USER: "bg-blue-100 text-blue-800",
-                            COURSE: "bg-emerald-100 text-emerald-800",
-                            CLASS: "bg-red-100 text-red-800",
-                            TRIAL: "bg-amber-100 text-amber-800",
-                            FINANCE: "bg-green-100 text-green-800",
-                            PRICING: "bg-indigo-100 text-indigo-800",
-                            GENERAL: "bg-slate-100 text-slate-700",
+                          const actionConfig = AUDIT_ACTION_CONFIG[log.action] || {
+                            label: log.action.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
+                            icon: ShieldCheck,
+                            color: "text-slate-600 bg-slate-50 border-slate-200",
                           };
-                          const badgeColor = catBadgeColors[log.category] || "bg-slate-100 text-slate-700";
+                          const ActionIcon = actionConfig.icon;
+                          const categoryConfig = AUDIT_CATEGORY_CONFIG[log.category] || AUDIT_CATEGORY_CONFIG.GENERAL;
+
                           return (
-                            <tr key={log.id} className="hover:bg-violet-50/20 transition-colors">
-                              <td className="py-3 px-4 whitespace-nowrap">
-                                <div className="font-semibold text-slate-700">
-                                  {new Date(log.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            <tr key={log.id} className="hover:bg-blue-50/20 transition-colors">
+                              {/* Operation & Action */}
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${actionConfig.color}`}>
+                                    <ActionIcon className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-bold text-slate-900 truncate">
+                                      {actionConfig.label}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <code className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">
+                                        {log.action}
+                                      </code>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-[10px] text-slate-400">
-                                  {new Date(log.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                                </div>
                               </td>
-                              <td className="py-3 px-4">
-                                <div className="font-bold text-slate-900 max-w-[160px] truncate">{log.adminEmail}</div>
-                                <div className="text-[10px] text-slate-400 font-mono truncate">{log.adminId}</div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-[10px] font-bold">
-                                  {log.action}
-                                </code>
-                              </td>
-                              <td className="py-3 px-4">
-                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${badgeColor}`}>
-                                  {log.category}
+
+                              {/* Category */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold ${categoryConfig.badge}`}>
+                                  <span>{log.category}</span>
                                 </span>
                               </td>
-                              <td className="py-3 px-4 max-w-[180px]">
-                                {log.targetLabel && (
-                                  <div className="font-semibold text-slate-800 truncate">{log.targetLabel}</div>
-                                )}
-                                {log.targetId && (
-                                  <div className="text-[10px] text-slate-400 font-mono truncate">{log.targetId}</div>
-                                )}
-                                {!log.targetLabel && !log.targetId && (
-                                  <span className="text-slate-300">—</span>
+
+                              {/* Target Record */}
+                              <td className="py-3.5 px-4 max-w-[220px]">
+                                {log.targetLabel ? (
+                                  <div>
+                                    <div className="font-bold text-slate-900 truncate" title={log.targetLabel}>
+                                      {log.targetLabel}
+                                    </div>
+                                    {log.targetId && (
+                                      <div className="text-[10px] text-slate-400 font-mono truncate" title={log.targetId}>
+                                        ID: {log.targetId}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : log.targetId ? (
+                                  <div className="text-[11px] text-slate-600 font-mono truncate" title={log.targetId}>
+                                    ID: {log.targetId}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-300 font-medium">—</span>
                                 )}
                               </td>
-                              <td className="py-3 px-4">
-                                <span className="text-slate-500 font-mono text-[10px]">{log.ipAddress || "—"}</span>
+
+                              {/* Administrator */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="w-6 h-6 ring-1 ring-slate-200">
+                                    <AvatarFallback className="text-[10px] font-bold bg-slate-100 text-slate-700">
+                                      {(log.adminEmail || "A").slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0">
+                                    <div className="font-bold text-slate-900 text-xs truncate max-w-[170px]" title={log.adminEmail}>
+                                      {log.adminEmail}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-mono">
+                                      {log.ipAddress ? `IP: ${log.ipAddress}` : "System Execution"}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Timestamp */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-bold text-slate-800 text-xs">
+                                  {getRelativeTimeString(log.createdAt)}
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {new Date(log.createdAt).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}{" "}
+                                  •{" "}
+                                  {new Date(log.createdAt).toLocaleTimeString("en-US", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                  })}
+                                </div>
+                              </td>
+
+                              {/* Details / Inspect */}
+                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                <button
+                                  onClick={() => setSelectedLogForModal(log)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 font-semibold text-xs transition-all cursor-pointer shadow-2xs"
+                                  title="Inspect full event context"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-600" />
+                                  <span>Inspect</span>
+                                </button>
                               </td>
                             </tr>
                           );
@@ -4465,28 +4694,32 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                {/* Pagination */}
+                {/* Pagination Footer */}
                 {auditLogTotalPages > 1 && (
-                  <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-xs text-slate-500">
-                      Page {auditLogPage} of {auditLogTotalPages} — {auditLogTotalCount.toLocaleString()} total entries
+                  <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
+                    <span className="text-xs text-slate-500 font-medium">
+                      Showing {(auditLogPage - 1) * 50 + 1} – {Math.min(auditLogPage * 50, auditLogTotalCount)} of{" "}
+                      <strong>{auditLogTotalCount.toLocaleString()}</strong> events
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={auditLogPage <= 1 || auditLogsLoading}
                         onClick={() => fetchAuditLogs(auditLogPage - 1)}
-                        className="h-8 rounded-xl text-xs font-bold cursor-pointer"
+                        className="h-8 rounded-xl text-xs font-bold cursor-pointer border-slate-200"
                       >
-                        ← Prev
+                        ← Previous
                       </Button>
+                      <div className="px-3 py-1 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700">
+                        {auditLogPage} / {auditLogTotalPages}
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={auditLogPage >= auditLogTotalPages || auditLogsLoading}
                         onClick={() => fetchAuditLogs(auditLogPage + 1)}
-                        className="h-8 rounded-xl text-xs font-bold cursor-pointer"
+                        className="h-8 rounded-xl text-xs font-bold cursor-pointer border-slate-200"
                       >
                         Next →
                       </Button>
@@ -4496,6 +4729,152 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+      {/* Audit Log Entry Inspector Modal */}
+      {selectedLogForModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900">
+                    {AUDIT_ACTION_CONFIG[selectedLogForModal.action]?.label || selectedLogForModal.action}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Recorded event details and payload parameters
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedLogForModal(null);
+                  setCopiedLogJson(false);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Event Meta Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Administrator
+                </div>
+                <div className="text-xs font-bold text-slate-900 truncate">
+                  {selectedLogForModal.adminEmail}
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono truncate">
+                  ID: {selectedLogForModal.adminId}
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono">
+                  IP: {selectedLogForModal.ipAddress || "Internal / Local"}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Target Entity
+                </div>
+                <div className="text-xs font-bold text-slate-900 truncate">
+                  {selectedLogForModal.targetLabel || "—"}
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono truncate">
+                  Target ID: {selectedLogForModal.targetId || "—"}
+                </div>
+                <div className="text-[10px] text-slate-500 font-semibold">
+                  Category: {selectedLogForModal.category}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Action Code
+                </div>
+                <code className="text-xs font-bold text-blue-700 font-mono block truncate">
+                  {selectedLogForModal.action}
+                </code>
+                <div className="text-[10px] text-slate-500">
+                  Event ID: <span className="font-mono">{selectedLogForModal.id}</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Timestamp
+                </div>
+                <div className="text-xs font-bold text-slate-900">
+                  {new Date(selectedLogForModal.createdAt).toLocaleString("en-US", {
+                    dateStyle: "medium",
+                    timeStyle: "medium",
+                  })}
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono truncate">
+                  ISO: {selectedLogForModal.createdAt}
+                </div>
+              </div>
+            </div>
+
+            {/* Event Payload Details */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800">
+                  Recorded Payload & Parameters
+                </label>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const jsonStr = JSON.stringify(selectedLogForModal.details || {}, null, 2);
+                    navigator.clipboard.writeText(jsonStr);
+                    setCopiedLogJson(true);
+                    setTimeout(() => setCopiedLogJson(false), 2000);
+                  }}
+                  className="h-7 text-[11px] rounded-lg border-slate-200 gap-1.5 cursor-pointer"
+                >
+                  {copiedLogJson ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700 font-bold">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Copy JSON</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900 text-slate-100 font-mono text-xs overflow-x-auto max-h-60 border border-slate-800 shadow-inner">
+                <pre className="whitespace-pre-wrap leading-relaxed">
+                  {JSON.stringify(selectedLogForModal.details || { message: "No extra payload recorded for this operation" }, null, 2)}
+                </pre>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-2 flex justify-end border-t border-slate-100">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setSelectedLogForModal(null);
+                  setCopiedLogJson(false);
+                }}
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl px-5 h-9 cursor-pointer"
+              >
+                Close Inspector
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Token Bundle Editor Modal */}
       {showBundleEditorModal && (

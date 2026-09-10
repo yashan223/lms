@@ -672,28 +672,6 @@ function RescheduleContent() {
                 </div>
               )}
             </div>
-
-            {/* Reschedule Guidance Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
-              <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Reschedule Guidance</span>
-              </h4>
-              <ul className="space-y-2.5 text-xs text-slate-600">
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
-                  <span><strong>Instant Confirmation:</strong> Your chosen slot locks immediately without waiting for tutor approval.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
-                  <span><strong>Mutual Alignment:</strong> Gold-highlighted slots align with your preferred study schedule.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-1.5 shrink-0" />
-                  <span><strong>Calendar Sync:</strong> Session date and Google Meet classroom update in real time across the portal.</span>
-                </li>
-              </ul>
-            </div>
           </div>
 
           {/* Right Column: Availability Picker & Reschedule Form */}

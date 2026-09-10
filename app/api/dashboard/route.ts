@@ -249,6 +249,7 @@ export async function GET(request: NextRequest) {
             `Student: ${trial.studentName} (${trial.studentEmail})`,
             `Classroom Link: ${link}`,
             trial.notes ? `Faculty Notes: ${trial.notes}` : "",
+            `Trial ID: ${trial.id}`,
           ].filter(Boolean).join("\n\n");
 
           const syncedEvent = await prisma.event.create({
@@ -280,6 +281,16 @@ export async function GET(request: NextRequest) {
           timelineEvents.push(syncedEvent);
         }
       }
+
+      // Attach trialId to timeline events matching confirmed trials
+      timelineEvents = timelineEvents.map((ev: any) => {
+        const matchingTrial = confirmedTrials.find(
+          (t) =>
+            (ev.description && ev.description.includes(t.id)) ||
+            (t.courseId && ev.courseId === t.courseId)
+        );
+        return matchingTrial ? { ...ev, trialId: matchingTrial.id } : ev;
+      });
 
       // Re-sort timelineEvents by dueDate ascending
       timelineEvents.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());

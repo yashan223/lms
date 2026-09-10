@@ -291,7 +291,7 @@ export function EncryptedChatDrawer({
           {isOpen ? (
             <X className="w-5 h-5 sm:w-6 sm:h-6 transition-transform" />
           ) : (
-            <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
+            <MessageSquareLock className="w-5 h-5 sm:w-6 sm:h-6" />
           )}
 
           {!isOpen && totalUnreadCount > 0 && (

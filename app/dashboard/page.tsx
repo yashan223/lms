@@ -238,8 +238,13 @@ function DashboardContent() {
   }, [user?.id, user?.role, showStudentAvailabilityModal]);
 
   const openStudentReschedule = (event: any) => {
-    if (event?.title?.toLowerCase().includes("trial") || event?.title?.toLowerCase().includes("consultation")) {
-      router.push("/trials/reschedule");
+    if (event?.title?.toLowerCase().includes("trial") || event?.title?.toLowerCase().includes("consultation") || event?.trialId) {
+      const trialId = event?.trialId || (event?.description && event.description.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/i)?.[1]);
+      if (trialId) {
+        router.push(`/trials/reschedule?trialId=${encodeURIComponent(trialId)}`);
+      } else {
+        router.push("/trials/reschedule");
+      }
       return;
     }
 

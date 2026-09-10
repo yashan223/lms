@@ -147,6 +147,50 @@ function RescheduleContent() {
   const [error, setError] = useState<string | null>(null);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
 
+  // Helper to load availability for a target trial session
+  const loadTrialAvailability = async (targetTrial: TrialDetail) => {
+    setTrial(targetTrial);
+    setMeetingLink(targetTrial.meetingLink || "");
+    setRescheduleNotes(targetTrial.notes || "");
+
+    const tutorId = targetTrial.tutorId || targetTrial.course?.tutor?.id || "";
+    const availUrl = `/api/tutor/availability?trialId=${encodeURIComponent(targetTrial.id)}${
+      tutorId ? `&tutorId=${encodeURIComponent(tutorId)}` : ""
+    }&days=14`;
+
+    const availRes = await fetch(availUrl);
+    const availData = await availRes.json();
+    if (availRes.ok && availData.days) {
+      setAvailabilityDays(availData.days);
+      setScheduledClasses(availData.scheduledClasses || []);
+      if (availData.student?.availabilities) {
+        setStudentStudySlots(availData.student.availabilities);
+      }
+      const firstWithSlots = availData.days.find((d: DayAvailability) => d.hasAvailableSlots);
+      if (firstWithSlots) {
+        setSelectedDate(firstWithSlots.date);
+      } else if (availData.days.length > 0) {
+        setSelectedDate(availData.days[0].date);
+      }
+    }
+  };
+
+  const handleSwitchTrial = async (targetId: string) => {
+    const chosen = allTrials.find((t) => t.id === targetId);
+    if (!chosen) return;
+    try {
+      setLoading(true);
+      setError(null);
+      setStatusMsg(null);
+      await loadTrialAvailability(chosen);
+      router.replace(`/trials/reschedule?trialId=${encodeURIComponent(targetId)}`);
+    } catch (e: any) {
+      setError(e.message || "Failed to switch trial session.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 1. Fetch Trial & Tutor Availability
   useEffect(() => {
     async function fetchData() {
@@ -154,46 +198,29 @@ function RescheduleContent() {
         setLoading(true);
         setError(null);
 
+        // Fetch user's trials list
+        const res = await fetch("/api/trials");
+        const data = await res.json();
+        const trialsList: TrialDetail[] = res.ok && Array.isArray(data.trials) ? data.trials : [];
+        setAllTrials(trialsList);
+
+        let targetTrial: TrialDetail | null = null;
         if (trialId) {
-          // Fetch specific trial
-          const res = await fetch(`/api/trials?id=${encodeURIComponent(trialId)}`);
-          const data = await res.json();
-          if (!res.ok || !data.trial) {
-            throw new Error(data.error || "Trial session not found.");
-          }
-          setTrial(data.trial);
-          setMeetingLink(data.trial.meetingLink || "");
-          setRescheduleNotes(data.trial.notes || "");
-
-          // Next: Fetch tutor availability
-          const tutorId = data.trial.tutorId || data.trial.course?.tutor?.id || "";
-          const availUrl = `/api/tutor/availability?trialId=${encodeURIComponent(trialId)}${
-            tutorId ? `&tutorId=${encodeURIComponent(tutorId)}` : ""
-          }&days=14`;
-
-          const availRes = await fetch(availUrl);
-          const availData = await availRes.json();
-          if (availRes.ok && availData.days) {
-            setAvailabilityDays(availData.days);
-            setScheduledClasses(availData.scheduledClasses || []);
-            if (availData.student?.availabilities) {
-              setStudentStudySlots(availData.student.availabilities);
-            }
-            // Set initial selected date to the first date with available slots or tomorrow
-            const firstWithSlots = availData.days.find((d: DayAvailability) => d.hasAvailableSlots);
-            if (firstWithSlots) {
-              setSelectedDate(firstWithSlots.date);
-            } else if (availData.days.length > 0) {
-              setSelectedDate(availData.days[0].date);
+          targetTrial = trialsList.find((t) => t.id === trialId) || null;
+          if (!targetTrial) {
+            const singleRes = await fetch(`/api/trials?id=${encodeURIComponent(trialId)}`);
+            const singleData = await singleRes.json();
+            if (singleRes.ok && singleData.trial) {
+              targetTrial = singleData.trial;
             }
           }
-        } else {
-          // No trialId provided: fetch user's trials list
-          const res = await fetch("/api/trials");
-          const data = await res.json();
-          if (res.ok && data.trials) {
-            setAllTrials(data.trials);
-          }
+        } else if (trialsList.length > 0) {
+          // Directly open: automatically select the trial session
+          targetTrial = trialsList[0];
+        }
+
+        if (targetTrial) {
+          await loadTrialAvailability(targetTrial);
         }
       } catch (err: any) {
         console.error("Failed to load reschedule data:", err);
@@ -356,93 +383,25 @@ function RescheduleContent() {
     );
   }
 
-  // Fallback: If no trialId provided, show list of trials
-  if (!trialId || !trial) {
+  // Fallback: If no trial could be found on the account
+  if (!trial) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link
-                href="/tutor"
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-2xs hover:bg-slate-100 transition-all"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
-              <div>
-                <h1 className="font-extrabold text-xl text-slate-900 tracking-tight">
-                  Reschedule Free Trial Session
-                </h1>
-                <p className="text-xs text-slate-500">
-                  Select a registered trial consultation to view faculty availability and adjust session time.
-                </p>
-              </div>
-            </div>
+      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-xs space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+            <Calendar className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-base text-slate-900">No Active Trial Requests Found</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            There are currently no free trial sessions awaiting rescheduling on your account.
+          </p>
+          <div className="pt-2 flex justify-center gap-2">
             <Link href="/dashboard">
-              <Button variant="outline" className="text-xs rounded-xl font-bold">
-                Student Dashboard
+              <Button className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl">
+                Return to Dashboard
               </Button>
             </Link>
           </div>
-
-          {allTrials.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-base text-slate-900">No Active Trial Requests Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                There are currently no free trial sessions awaiting rescheduling on your account.
-              </p>
-              <div className="pt-2 flex justify-center gap-2">
-                <Link href="/courses">
-                  <Button className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl">
-                    Browse A/L Courses
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allTrials.map((tr) => (
-                <div
-                  key={tr.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-blue-400 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-[10px] font-bold">
-                        {tr.status}
-                      </Badge>
-                      <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        {new Date(tr.preferredDate).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                    <h4 className="font-extrabold text-sm text-slate-900 leading-snug">
-                      {tr.course?.title || "London A/L Masterclass"}
-                    </h4>
-                    <p className="text-xs text-slate-600 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{tr.studentName} ({tr.studentEmail})</span>
-                    </p>
-                  </div>
-
-                  <Link href={`/trials/reschedule?trialId=${tr.id}`}>
-                    <Button className="w-full bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl gap-2 cursor-pointer shadow-xs">
-                      <CalendarCheck className="w-4 h-4" />
-                      <span>Reschedule This Session</span>
-                    </Button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -479,11 +438,6 @@ function RescheduleContent() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/tutor?tab=trials">
-              <Button variant="ghost" size="sm" className="text-xs font-semibold text-slate-600 rounded-xl">
-                Faculty Studio
-              </Button>
-            </Link>
             <Link href="/dashboard">
               <Button variant="outline" size="sm" className="text-xs font-semibold rounded-xl">
                 Student Portal
@@ -580,6 +534,34 @@ function RescheduleContent() {
                   </p>
                 )}
               </div>
+
+              {/* Session Switcher if multiple trials exist */}
+              {allTrials.length > 1 && (
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                    Switch Session ({allTrials.length} active)
+                  </label>
+                  <select
+                    value={trial.id}
+                    onChange={(e) => handleSwitchTrial(e.target.value)}
+                    aria-label="Switch trial session"
+                    className="w-full text-xs font-bold bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    {allTrials.map((tr) => (
+                      <option key={tr.id} value={tr.id}>
+                        {tr.course?.title || "London A/L Masterclass"} (
+                        {new Date(tr.preferredDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        )
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Current Scheduled Time Highlight */}
               <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-1">
@@ -690,29 +672,6 @@ function RescheduleContent() {
                 </div>
               )}
             </div>
-
-            {/* Conflict System Information Card */}
-            <div className="bg-gradient-to-br from-blue-900 to-indigo-950 rounded-2xl p-5 text-white shadow-sm space-y-3">
-              <div className="flex items-center gap-2 font-bold text-xs text-blue-200">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Real-Time Class Conflict Protection</span>
-              </div>
-              <p className="text-[11px] text-blue-100/80 leading-relaxed">
-                The LMS automatically scans Dr. Sarah Jenkins&apos; live class seminars and workshops.
-                Any slot conflicting with an existing lecture is highlighted in red and locked to
-                prevent double-booking.
-              </p>
-              <div className="flex items-center gap-3 pt-1 text-[10px] text-blue-200/70 border-t border-blue-800/60">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
-                  Open / Available
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
-                  Live Class Scheduled
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Right Column: Availability Picker & Reschedule Form (8 cols) */}
@@ -724,7 +683,7 @@ function RescheduleContent() {
                   <div>
                     <h3 className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-blue-600" />
-                      <span>1. Select Date &amp; Available Time Slot</span>
+                      <span>Select Date &amp; Available Time Slot</span>
                     </h3>
                     <p className="text-xs text-slate-500">
                       Choose an open time slot from faculty office hours and seminar schedules
@@ -961,57 +920,9 @@ function RescheduleContent() {
                     </div>
                   ) : null}
                 </div>
-              </div>
-
-              {/* Classroom Link & Notes Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-                <h3 className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <Video className="w-4 h-4 text-purple-600" />
-                  <span>2. Meeting Room Link &amp; Reschedule Notes</span>
-                </h3>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700 block">
-                      Google Meet Classroom Link
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")
-                      }
-                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>meet.google.com/new</span>
-                    </button>
-                  </div>
-                  <Input
-                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
-                    value={meetingLink}
-                    onChange={(e) => setMeetingLink(e.target.value)}
-                    className="rounded-xl h-9 text-xs font-mono"
-                  />
-                  <span className="text-[10px] text-slate-400 block">
-                    Keep existing room link or replace with a new Google Meet URL.
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 block">
-                    Reschedule Notes / Reason for Change (Optional)
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="e.g. Session adjusted as agreed to accommodate student's mock exam preparation..."
-                    value={rescheduleNotes}
-                    onChange={(e) => setRescheduleNotes(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
 
                 {/* Submission CTA */}
-                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="text-[11px] text-slate-500 text-center sm:text-left">
                     Notifications will be sent automatically to both student and tutor upon confirmation.
                   </div>
@@ -1021,7 +932,7 @@ function RescheduleContent() {
                       type="button"
                       variant="outline"
                       onClick={() => router.back()}
-                      className="text-xs font-semibold rounded-xl w-full sm:w-auto"
+                      className="text-xs font-semibold rounded-xl w-full sm:w-auto cursor-pointer"
                     >
                       Cancel
                     </Button>

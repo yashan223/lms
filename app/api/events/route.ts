@@ -1,22 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { LMSEventPayload } from "@/lib/events";
+import { LMSEventPayload, eventEmitter } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Vercel function timeout limits:
-//   Hobby plan → 30s  →  we use 25s max lifetime
-//   Pro plan   → 60s  →  we use 55s max lifetime
-// We default to the safe Hobby value. Set VERCEL_MAX_DURATION=55 env var for Pro.
-const MAX_LIFETIME_MS = parseInt(process.env.VERCEL_MAX_DURATION ?? "25") * 1000;
-const POLL_INTERVAL_MS = 3000;   // DB poll every 3 seconds
-const PING_INTERVAL_MS = 20000;  // SSE keepalive every 20 seconds
+const PING_INTERVAL_MS = 20000; // SSE keepalive ping every 20 seconds
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  // Client sends ?since=<epoch_ms> so we only return events it hasn't seen yet
   const sinceParam = url.searchParams.get("since");
-  let since = sinceParam ? new Date(parseInt(sinceParam, 10)) : new Date(Date.now() - 5000);
+  const since = sinceParam ? new Date(parseInt(sinceParam, 10)) : new Date(Date.now() - 10000);
 
   const encoder = new TextEncoder();
 
@@ -28,70 +21,67 @@ export async function GET(request: Request) {
     async start(controller) {
       let closed = false;
 
-      const cleanup = () => { closed = true; };
+      const cleanup = () => {
+        closed = true;
+        eventEmitter.removeListener("lms_event", onEvent);
+        if (pingTimer) clearInterval(pingTimer);
+      };
+
       request.signal.addEventListener("abort", cleanup);
 
-      // ── Initial PING ─────────────────────────────────────────────────────
-      controller.enqueue(encode({ type: "PING", timestamp: Date.now() }));
-
-      const deadline = Date.now() + MAX_LIFETIME_MS;
-
-      // ── Polling loop ──────────────────────────────────────────────────────
-      while (!closed && Date.now() < deadline) {
-        await sleep(POLL_INTERVAL_MS);
-        if (closed) break;
-
+      // ── Event listener for instant in-process SSE dispatch ───────────────────
+      const onEvent = (payload: LMSEventPayload) => {
+        if (closed) return;
         try {
-          const newEvents = await prisma.systemEvent.findMany({
-            where: { createdAt: { gt: since } },
-            orderBy: { createdAt: "asc" },
-            take: 50,
-          });
-
-          for (const ev of newEvents) {
-            if (closed) break;
-            const payload: LMSEventPayload = {
-              type: ev.type as LMSEventPayload["type"],
-              timestamp: ev.createdAt.getTime(),
-              data: ev.data ?? undefined,
-            };
-            try {
-              controller.enqueue(encode(payload));
-            } catch {
-              closed = true;
-              break;
-            }
-          }
-
-          if (newEvents.length > 0) {
-            since = newEvents[newEvents.length - 1].createdAt;
-          }
-
-          // Keepalive PING if no events (prevent proxy timeout)
-          if (newEvents.length === 0) {
-            const now = Date.now();
-            if (now % PING_INTERVAL_MS < POLL_INTERVAL_MS * 2) {
-              try {
-                controller.enqueue(encode({ type: "PING", timestamp: now }));
-              } catch {
-                closed = true;
-              }
-            }
-          }
-        } catch (dbErr) {
-          // DB error — send a ping and keep trying
-          console.warn("[events/sse] DB poll error:", dbErr);
-          try {
-            controller.enqueue(encode({ type: "PING", timestamp: Date.now() }));
-          } catch {
-            closed = true;
-          }
+          controller.enqueue(encode(payload));
+        } catch {
+          cleanup();
         }
+      };
+
+      eventEmitter.on("lms_event", onEvent);
+
+      // ── Initial PING ─────────────────────────────────────────────────────────
+      try {
+        controller.enqueue(encode({ type: "PING", timestamp: Date.now() }));
+      } catch {
+        cleanup();
+        return;
       }
 
-      // ── Graceful close: client will reconnect immediately ─────────────────
-      try { controller.close(); } catch {}
-      request.signal.removeEventListener("abort", cleanup);
+      // ── Catch up on any events since `since` timestamp ───────────────────────
+      try {
+        const missedEvents = await prisma.systemEvent.findMany({
+          where: { createdAt: { gt: since } },
+          orderBy: { createdAt: "asc" },
+          take: 50,
+        });
+
+        for (const ev of missedEvents) {
+          if (closed) break;
+          const payload: LMSEventPayload = {
+            type: ev.type as LMSEventPayload["type"],
+            timestamp: ev.createdAt.getTime(),
+            data: ev.data ?? undefined,
+          };
+          controller.enqueue(encode(payload));
+        }
+      } catch (err) {
+        console.warn("[events/sse] Error fetching missed events:", err);
+      }
+
+      // ── Keepalive Ping Timer ─────────────────────────────────────────────────
+      const pingTimer = setInterval(() => {
+        if (closed) {
+          clearInterval(pingTimer);
+          return;
+        }
+        try {
+          controller.enqueue(encode({ type: "PING", timestamp: Date.now() }));
+        } catch {
+          cleanup();
+        }
+      }, PING_INTERVAL_MS);
     },
   });
 
@@ -103,8 +93,4 @@ export async function GET(request: Request) {
       "X-Accel-Buffering": "no",
     },
   });
-}
-
-function sleep(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }

@@ -2,16 +2,13 @@ import fs from "fs";
 import { promises as fsPromises } from "fs";
 import path from "path";
 import crypto from "crypto";
-import { put, del } from "@vercel/blob";
 
-const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
-
+// On a VPS, storage directory is configurable via STORAGE_DIR or defaults to ./storage/uploads
 export const STORAGE_ROOT =
   process.env.STORAGE_DIR ||
-  (isServerless ? path.join("/tmp", "storage", "uploads") : path.join(process.cwd(), "storage", "uploads"));
+  path.join(process.cwd(), "storage", "uploads");
 
 export const MIME_MAP: Record<string, string> = {
-
   "image/jpeg": ".jpg",
   "image/jpg": ".jpg",
   "image/png": ".png",
@@ -83,8 +80,8 @@ export function formatBytes(bytes: number, decimals = 1): string {
 }
 
 export async function ensureStorageDirectories(): Promise<void> {
-  const publicDir = path.join(STORAGE_ROOT, "public");
-  const privateDir = path.join(STORAGE_ROOT, "private");
+  const publicDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, "public");
+  const privateDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, "private");
   try {
     if (fs.existsSync(/*turbopackIgnore: true*/ publicDir) === false) {
       await fsPromises.mkdir(/*turbopackIgnore: true*/ publicDir, { recursive: true });
@@ -93,7 +90,7 @@ export async function ensureStorageDirectories(): Promise<void> {
       await fsPromises.mkdir(/*turbopackIgnore: true*/ privateDir, { recursive: true });
     }
   } catch (err) {
-    console.warn("Storage directories initialization notice:", err);
+    console.warn("[storage] Storage directory initialization notice:", err);
   }
 }
 
@@ -193,9 +190,10 @@ export async function saveUploadedFile(
   const folder = isPrivate ? "private" : "public";
   const contentType = mimeType || EXTENSION_TO_MIME[detectedExt] || "application/octet-stream";
 
-  // Use Vercel Blob if BLOB_READ_WRITE_TOKEN is configured
+  // Optional: If user explicitly configured BLOB_READ_WRITE_TOKEN, allow Vercel Blob
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
+      const { put } = await import("@vercel/blob");
       const blobPathname = `${folder}/${storedFileName}`;
       const blob = await put(blobPathname, fileBuffer, {
         access: "public",
@@ -213,11 +211,11 @@ export async function saveUploadedFile(
         isPrivate,
       };
     } catch (blobErr) {
-      console.error("Vercel Blob upload failed, attempting local fallback:", blobErr);
+      console.warn("[storage] Vercel Blob upload failed, saving to VPS local storage:", blobErr);
     }
   }
 
-  // Fallback to local filesystem storage
+  // Primary VPS local filesystem storage
   await ensureStorageDirectories();
 
   const targetDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, folder);
@@ -244,22 +242,23 @@ export async function saveUploadedFile(
 export async function deleteStorageFile(fileKey: string): Promise<boolean> {
   if (!fileKey || typeof fileKey !== "string") return false;
 
-  // Handle Vercel Blob URL deletion
+  // Handle remote Vercel Blob URL deletion if applicable
   if (
     fileKey.startsWith("http://") ||
     fileKey.startsWith("https://") ||
     fileKey.includes("blob.vercel-storage.com")
   ) {
     try {
+      const { del } = await import("@vercel/blob");
       await del(fileKey);
       return true;
     } catch (err) {
-      console.error(`Error deleting Vercel Blob file (${fileKey}):`, err);
+      console.error(`[storage] Error deleting Vercel Blob file (${fileKey}):`, err);
       return false;
     }
   }
 
-  // Fallback for local disk storage
+  // VPS local disk storage deletion
   const safePath = resolveSafeStoragePath(fileKey);
   if (!safePath) return false;
 
@@ -270,7 +269,7 @@ export async function deleteStorageFile(fileKey: string): Promise<boolean> {
     }
     return false;
   } catch (err) {
-    console.error(`Error deleting storage file (${fileKey}):`, err);
+    console.error(`[storage] Error deleting local file (${fileKey}):`, err);
     return false;
   }
 }

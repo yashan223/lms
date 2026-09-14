@@ -4,6 +4,32 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Access-Control-Allow-Credentials",
+            value: "true",
+          },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://lms.xoxod33p.tech",
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET,OPTIONS,PATCH,DELETE,POST,PUT,HEAD",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value:
+              "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Range, edupulse_session",
+          },
+          {
+            key: "Access-Control-Expose-Headers",
+            value: "Content-Range, Accept-Ranges, Content-Length",
+          },
+        ],
+      },
+      {
         source: "/:path*",
         headers: [
           {
@@ -28,7 +54,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(self 'https://meet.google.com'), microphone=(self 'https://meet.google.com'), geolocation=(), payment=(self)",
+            value:
+              "camera=(self 'https://meet.google.com'), microphone=(self 'https://meet.google.com'), geolocation=(), payment=(self)",
           },
           {
             key: "Cross-Origin-Opener-Policy",
@@ -44,6 +71,10 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lms.xoxod33p.tech",
+      },
       {
         protocol: "https",
         hostname: "*.public.blob.vercel-storage.com",

@@ -15,6 +15,30 @@ interface SessionPayload {
   exp: number;
 }
 
+// Allowed CORS origins for lms.xoxod33p.tech, subdomains, and local dev
+const ALLOWED_ORIGIN_REGEX =
+  /^(https?:\/\/(?:[a-z0-9-]+\.)*xoxod33p\.tech(:[0-9]+)?|http:\/\/localhost:[0-9]+|http:\/\/127\.0\.0\.1:[0-9]+)$/i;
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed =
+    origin &&
+    (ALLOWED_ORIGIN_REGEX.test(origin) ||
+      origin === "https://lms.xoxod33p.tech" ||
+      origin === "http://lms.xoxod33p.tech");
+
+  const allowOrigin = isAllowed ? origin : "https://lms.xoxod33p.tech";
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD",
+    "Access-Control-Allow-Headers":
+      "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Range, edupulse_session",
+    "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
 function base64UrlToUint8Array(base64Url: string): Uint8Array {
   const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
   const pad = base64.length % 4;
@@ -65,6 +89,26 @@ async function verifySessionTokenEdge(token: string): Promise<SessionPayload | n
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const origin = request.headers.get("origin");
+
+  // ── 0. Handle CORS preflight OPTIONS requests for API routes ──────────────
+  if (pathname.startsWith("/api/")) {
+    const corsHeaders = getCorsHeaders(origin);
+
+    if (request.method === "OPTIONS") {
+      return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
+    }
+
+    // For other API requests, process downstream and attach CORS headers
+    const response = NextResponse.next();
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return response;
+  }
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = sessionCookie ? await verifySessionTokenEdge(sessionCookie) : null;
@@ -131,6 +175,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/:path*",
     "/admin/:path*",
     "/tutor/:path*",
     "/dashboard/:path*",

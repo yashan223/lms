@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [
+    "lms.xoxod33p.tech",
+    "*.xoxod33p.tech",
+    "54.169.4.38",
+    "localhost",
+    "localhost:3000",
+    "127.0.0.1",
+    "127.0.0.1:3000",
+  ],
   async headers() {
     return [
       {

@@ -7,7 +7,11 @@ const { loadEnvConfig } = require("@next/env");
 // Load .env and .env.local configuration
 loadEnvConfig(process.cwd());
 
-const dev = process.env.NODE_ENV !== "production";
+// Default to production mode on VPS unless explicitly specified as development
+const dev = process.env.NODE_ENV === "development" || process.env.npm_lifecycle_event === "dev";
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = dev ? "development" : "production";
+}
 const hostname = process.env.HOSTNAME || "0.0.0.0";
 const port = parseInt(process.env.PORT || "3000", 10);
 

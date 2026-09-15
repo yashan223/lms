@@ -112,7 +112,7 @@ async function dispatchResendEmail(params: {
 }
 
 /**
- * Sends an email verification link to a newly registered student via Resend.
+ * Sends an email verification link to a newly created academic account via Resend.
  */
 export async function sendVerificationEmail({
   email,
@@ -156,7 +156,7 @@ export async function sendVerificationEmail({
                 Hello <strong>${name}</strong>,
               </p>
               <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-                Welcome to EduPulse Academy! Please verify your email address to activate your student account and access your live classes, past papers, and faculty lecture materials.
+                Welcome to EduPulse Academy! Please verify your email address to activate your academic account and access your live classes, past papers, and faculty lecture materials.
               </p>
 
               <!-- CTA Button -->
@@ -205,7 +205,7 @@ export async function sendVerificationEmail({
   const textContent = `
 Hello ${name},
 
-Welcome to EduPulse Academy! Please verify your email address to activate your student account.
+Welcome to EduPulse Academy! Please verify your email address to activate your academic account.
 
 Click the following link to verify your email address:
 ${verificationUrl}

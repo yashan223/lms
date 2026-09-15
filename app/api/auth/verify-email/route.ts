@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
           alreadyVerified: true,
           message: "Your academic email address is already verified! Welcome back.",
           user: safeUser,
-          redirectTo: "/dashboard",
+          redirectTo: user.role === "TUTOR" ? "/tutor" : "/dashboard",
         });
 
         attachSessionCookies(response, user);
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
       valid: true,
       message: "Academic email address verified successfully! Welcome to EduPulse Academy.",
       user: safeUser,
-      redirectTo: "/dashboard",
+      redirectTo: user.role === "TUTOR" ? "/tutor" : "/dashboard",
     });
 
     // Automatically establish authenticated session upon successful verification
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/auth/verify-email
- * Resends a fresh email verification link to the student's email address.
+ * Resends a fresh email verification link to the academic account email address.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     if (!email || typeof email !== "string") {
       return NextResponse.json(
-        { error: "A valid student email address is required." },
+        { error: "A valid academic email address is required." },
         { status: 400 }
       );
     }

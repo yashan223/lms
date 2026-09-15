@@ -1,11 +1,13 @@
 import { NextResponse, NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
+import { sendVerificationEmail } from "@/lib/email";
 import { getBundles, saveBundles, DEFAULT_BUNDLES } from "@/lib/bundles";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
@@ -301,6 +303,10 @@ export async function POST(request: NextRequest) {
       const { name, email, password, phone, role, headline, bio, initialCourseId } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
+      if (!email || typeof email !== "string" || !email.trim()) {
+        return NextResponse.json({ error: "An email address is required for every user account." }, { status: 400 });
+      }
+
       const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "TutorPass123!" : "StudentPass123!");
       const hashedPassword = hashPassword(rawPassword);
 
@@ -310,6 +316,7 @@ export async function POST(request: NextRequest) {
           email: email.trim().toLowerCase(),
           passwordHash: hashedPassword,
           role: assignedRole,
+          emailVerified: assignedRole === Role.TUTOR ? null : new Date(),
           phone: phone ? phone.trim() : null,
           headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Faculty Tutor" : "London A/L Student"),
           bio: bio || `Registered academic member of EduPulse Academy.`,
@@ -330,12 +337,40 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      let verificationEmailSent = false;
+      if (assignedRole === Role.TUTOR) {
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        await prisma.emailVerificationToken.create({
+          data: {
+            token: verificationToken,
+            userId: newUser.id,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        });
+
+        const emailResult = await sendVerificationEmail({
+          email: newUser.email,
+          name: newUser.name,
+          token: verificationToken,
+        });
+        verificationEmailSent = emailResult.success;
+      }
+
       broadcastLMSEvent("USERS_CHANGED");
       if (initialCourseId && assignedRole === Role.STUDENT) {
         broadcastLMSEvent("ENROLLMENTS_CHANGED");
         broadcastLMSEvent("COURSES_CHANGED");
       }
-      return NextResponse.json({ success: true, user: newUser });
+      return NextResponse.json({
+        success: true,
+        user: newUser,
+        requiresVerification: assignedRole === Role.TUTOR,
+        message: assignedRole === Role.TUTOR
+          ? verificationEmailSent
+            ? "Tutor account created. A verification link was sent to the tutor's email address."
+            : "Tutor account created, but the verification email could not be sent."
+          : "User account created successfully.",
+      });
     }
 
     if (action === "update_user") {

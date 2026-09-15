@@ -37,6 +37,7 @@ function VerifyEmailContent() {
   >(tokenParam ? "verifying" : "idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
+  const [redirectPath, setRedirectPath] = useState("/dashboard");
 
   // Resend states
   const [resendLoading, setResendLoading] = useState<boolean>(false);
@@ -69,6 +70,7 @@ function VerifyEmailContent() {
         if (res.ok && data.success) {
           setVerificationStatus("success");
           setStatusMessage(data.message || "Your academic email has been verified successfully!");
+          setRedirectPath(data.redirectTo || (data.user?.role === "TUTOR" ? "/tutor" : "/dashboard"));
         } else if (data.expired) {
           setVerificationStatus("expired");
           setStatusMessage(
@@ -106,7 +108,7 @@ function VerifyEmailContent() {
       setRedirectCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          router.push("/dashboard");
+          router.push(redirectPath);
           return 0;
         }
         return prev - 1;
@@ -114,7 +116,7 @@ function VerifyEmailContent() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [verificationStatus, router]);
+  }, [verificationStatus, redirectPath, router]);
 
   // Handle resending verification email
   const handleResend = async () => {
@@ -198,10 +200,10 @@ function VerifyEmailContent() {
               </div>
               <div className="space-y-2">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Verifying Your Student Account...
+                  Verifying Your Academic Account...
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
-                  Please wait while we validate your academic credentials and configure your LMS dashboard.
+                  Please wait while we validate your academic credentials and configure your LMS access.
                 </p>
               </div>
             </div>

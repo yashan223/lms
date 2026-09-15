@@ -68,8 +68,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Enforce email verification for student accounts
-    if (user.role === "STUDENT" && !user.emailVerified) {
+    // Require email verification before students or tutors can access the LMS.
+    if ((user.role === "STUDENT" || user.role === "TUTOR") && !user.emailVerified) {
       return NextResponse.json(
         {
           error: "Your academic email address has not been verified yet. Please check your inbox or request a new verification link.",

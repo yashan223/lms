@@ -1609,12 +1609,21 @@ function DashboardContent() {
 
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-sm font-bold text-slate-900">
-                  Enrolled Course Overview
-                </h3>
-                <span className="text-xs font-semibold text-slate-500">
-                  {myCourses.length} {myCourses.length === 1 ? "Unit" : "Units"} Active
-                </span>
+                <div className="flex items-center justify-between gap-3 min-w-0">
+                  <h3 className="text-sm font-bold text-slate-900 truncate">
+                    Enrolled Course Overview
+                  </h3>
+                  <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                    {myCourses.length} {myCourses.length === 1 ? "Unit" : "Units"} Active
+                  </span>
+                </div>
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200 transition-colors whitespace-nowrap"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Explore Courses</span>
+                </Link>
               </div>
 
               {myCourses.length > 0 ? (

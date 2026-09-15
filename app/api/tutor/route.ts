@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
+import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -160,6 +160,75 @@ export async function POST(request: NextRequest) {
     const tutor = auth.user;
     const body = await request.json();
     const { action } = body;
+
+    if (action === "create_course" || action === "update_course") {
+      const { courseId, title, slug, subtitle, description, category, subjectCode, price, level } = body;
+      if (!title?.trim() || !description?.trim() || !category?.trim()) {
+        return NextResponse.json(
+          { error: "Course title, description, and category are required." },
+          { status: 400 }
+        );
+      }
+
+      const normalizedSlug = (slug?.trim() || title.trim())
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const tokenPrice = Number(price);
+
+      if (action === "update_course") {
+        const existing = await prisma.course.findFirst({
+          where: { id: courseId, tutorId: tutor.id },
+        });
+        if (!existing) {
+          return NextResponse.json({ error: "Course not found or not owned by this tutor." }, { status: 404 });
+        }
+
+        const updated = await prisma.course.update({
+          where: { id: existing.id },
+          data: {
+            title: title.trim(),
+            slug: normalizedSlug === existing.slug ? existing.slug : `${normalizedSlug}-${Date.now()}`,
+            subtitle: subtitle?.trim() || null,
+            description: description.trim(),
+            category: category.trim(),
+            subjectCode: subjectCode?.trim() || null,
+            price: Number.isFinite(tokenPrice) ? tokenPrice : existing.price,
+            level: (level as CourseLevel) || existing.level,
+            status: CourseStatus.PENDING_REVIEW,
+          },
+        });
+
+        broadcastLMSEvent("COURSES_CHANGED");
+        return NextResponse.json({
+          success: true,
+          message: "Course changes submitted for admin approval.",
+          course: updated,
+        });
+      }
+
+      const created = await prisma.course.create({
+        data: {
+          title: title.trim(),
+          slug: `${normalizedSlug}-${Date.now()}`,
+          subtitle: subtitle?.trim() || null,
+          description: description.trim(),
+          category: category.trim(),
+          subjectCode: subjectCode?.trim() || null,
+          price: Number.isFinite(tokenPrice) ? tokenPrice : 0,
+          level: (level as CourseLevel) || CourseLevel.ADVANCED,
+          status: CourseStatus.PENDING_REVIEW,
+          tutorId: tutor.id,
+        },
+      });
+
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({
+        success: true,
+        message: "Course submitted for admin approval.",
+        course: created,
+      });
+    }
 
     if (action === "update_profile") {
       const { tutorId, name, headline, bio, phone, avatar } = body;

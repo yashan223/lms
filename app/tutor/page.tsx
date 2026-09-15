@@ -181,6 +181,19 @@ function TutorDashboardContent() {
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
 
   const [courseSearch, setCourseSearch] = useState("");
+  const [showCourseEditor, setShowCourseEditor] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [courseForm, setCourseForm] = useState({
+    title: "",
+    subtitle: "",
+    description: "",
+    category: "",
+    subjectCode: "",
+    price: "0",
+    level: "ADVANCED",
+  });
+  const [courseFormError, setCourseFormError] = useState("");
+  const [courseFormSaving, setCourseFormSaving] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [selectedCourseFilter, setSelectedCourseFilter] = useState("ALL");
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
@@ -604,6 +617,46 @@ function TutorDashboardContent() {
         }
       },
     });
+  };
+
+  const openCourseEditor = (course?: TutorCourse) => {
+    setEditingCourseId(course?.id || null);
+    setCourseFormError("");
+    setCourseForm({
+      title: course?.title || "",
+      subtitle: course?.subtitle || "",
+      description: (course as any)?.description || "",
+      category: course?.category || "",
+      subjectCode: course?.subjectCode || "",
+      price: String(course?.price ?? 0),
+      level: (course as any)?.level || "ADVANCED",
+    });
+    setShowCourseEditor(true);
+  };
+
+  const handleSaveCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCourseFormError("");
+    setCourseFormSaving(true);
+    try {
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: editingCourseId ? "update_course" : "create_course",
+          courseId: editingCourseId,
+          ...courseForm,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit course.");
+      setShowCourseEditor(false);
+      await fetchTutorData(false);
+    } catch (err: any) {
+      setCourseFormError(err.message || "Failed to submit course.");
+    } finally {
+      setCourseFormSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -1782,9 +1835,19 @@ function TutorDashboardContent() {
               <div className="space-y-4">
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-                      Assigned Curriculum Courses
-                    </h3>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                        Assigned Curriculum Courses
+                      </h3>
+                      <Button
+                        size="sm"
+                        onClick={() => openCourseEditor()}
+                        className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Course
+                      </Button>
+                    </div>
 
                     <div className="relative w-full sm:w-56">
                       <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1849,6 +1912,14 @@ function TutorDashboardContent() {
                               <ArrowRight className="w-3 h-3" />
                             </Link>
 
+                            <button
+                              type="button"
+                              onClick={() => openCourseEditor(c)}
+                              className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-2 py-1 rounded-md inline-flex items-center gap-1"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              Edit
+                            </button>
                             <button
                               onClick={() => {
                                 setScheduleMode("COURSE");
@@ -3628,6 +3699,48 @@ function TutorDashboardContent() {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showCourseEditor && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-base text-slate-900">
+                  {editingCourseId ? "Edit Course" : "Add Course"}
+                </h3>
+                <p className="text-xs text-slate-500">Changes require administrator approval before publishing.</p>
+              </div>
+              <button type="button" onClick={() => setShowCourseEditor(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {courseFormError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">{courseFormError}</div>}
+            <form onSubmit={handleSaveCourse} className="space-y-3 text-xs">
+              <Input required placeholder="Course title" value={courseForm.title} onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })} className="rounded-xl" />
+              <Input placeholder="Short subtitle" value={courseForm.subtitle} onChange={(e) => setCourseForm({ ...courseForm, subtitle: e.target.value })} className="rounded-xl" />
+              <textarea required rows={4} placeholder="Course description" value={courseForm.description} onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+              <div className="grid grid-cols-2 gap-2">
+                <Input required placeholder="Category" value={courseForm.category} onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })} className="rounded-xl" />
+                <Input placeholder="Subject code" value={courseForm.subjectCode} onChange={(e) => setCourseForm({ ...courseForm, subjectCode: e.target.value })} className="rounded-xl" />
+                <Input required type="number" min="0" step="0.01" placeholder="Token price" value={courseForm.price} onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })} className="rounded-xl" />
+                <select value={courseForm.level} onChange={(e) => setCourseForm({ ...courseForm, level: e.target.value })} className="h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
+                  <option value="BEGINNER">Beginner</option>
+                  <option value="INTERMEDIATE">Intermediate</option>
+                  <option value="ADVANCED">Advanced</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <Button type="button" variant="outline" onClick={() => setShowCourseEditor(false)} className="rounded-xl">Cancel</Button>
+                <Button type="submit" disabled={courseFormSaving} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-1.5">
+                  {courseFormSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  {editingCourseId ? "Submit Changes" : "Submit for Approval"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

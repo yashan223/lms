@@ -78,6 +78,45 @@ async function main() {
   console.log("   👑 Admin:   admin@edupulse.uk   / AdminPass123!");
   console.log("   🎓 Tutor:   tutor@edupulse.uk   / TutorPass123!");
 
+  // Course creation is intentionally handled by tutors and reviewed by admins.
+  // Keep the seed limited to accounts and package definitions.
+  for (const bundle of DEFAULT_BUNDLES) {
+    await prisma.tokenBundle.upsert({
+      where: { id: bundle.id },
+      update: {
+        name: bundle.name,
+        hours: bundle.hours,
+        tokens: bundle.tokens,
+        price: bundle.price,
+        lkrPrice: bundle.lkrPrice,
+        popular: bundle.popular,
+        badge: bundle.badge,
+        description: bundle.description,
+        roleTarget: bundle.roleTarget,
+        ctaText: bundle.ctaText,
+        features: bundle.features,
+      },
+      create: {
+        id: bundle.id,
+        name: bundle.name,
+        hours: bundle.hours,
+        tokens: bundle.tokens,
+        price: bundle.price,
+        lkrPrice: bundle.lkrPrice,
+        popular: bundle.popular,
+        badge: bundle.badge,
+        description: bundle.description,
+        roleTarget: bundle.roleTarget,
+        ctaText: bundle.ctaText,
+        features: bundle.features,
+      },
+    });
+  }
+
+  console.log("💰 Token bundle packages upserted.");
+  console.log("🚀 Database successfully seeded with 1 Admin and 1 Tutor. Courses require tutor creation and admin approval.");
+  return;
+
   // 4. Update all courses to belong to the single Tutor
   await prisma.course.updateMany({
     data: {
@@ -330,7 +369,7 @@ async function main() {
       console.log(`✅ Seeded Course: ${course.title} (${course.price} Tokens = ${course.price}H)`);
     } else {
       course = await prisma.course.update({
-        where: { id: existing.id },
+        where: { id: existing!.id },
         data: {
           title: cData.title,
           subtitle: cData.subtitle,
@@ -499,7 +538,7 @@ async function main() {
         meetingLink: "https://meet.google.com/edp-math-p3m",
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
-        courseId: mathCourse.id,
+        courseId: mathCourse!.id,
         userId: tutorUser.id,
       },
     });
@@ -514,7 +553,7 @@ async function main() {
         meetingLink: "https://meet.google.com/edp-phys-u4m",
         type: EventType.LIVE_SEMINAR,
         dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),
-        courseId: physicsCourse.id,
+        courseId: physicsCourse!.id,
         userId: tutorUser.id,
       },
     });

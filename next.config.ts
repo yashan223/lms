@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  env: {
+    DEFAULT_ADMIN_NAME: process.env.DEFAULT_ADMIN_NAME || "Administrator",
+  },
   allowedDevOrigins: [
     "lms.xoxod33p.tech",
     "*.xoxod33p.tech",

@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
   const [facultyList, setFacultyList] = useState<any[]>([]);
   const [eventsList, setEventsList] = useState<any[]>([]);
   const [adminName, setAdminName] = useState<string>(
-    process.env.NEXT_PUBLIC_ADMIN_NAME || "Administrator"
+    process.env.DEFAULT_ADMIN_NAME || "Administrator"
   );
   const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
 

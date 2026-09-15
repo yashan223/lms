@@ -230,7 +230,6 @@ export async function GET(request: NextRequest) {
     const adminName =
       auth.user.name ||
       process.env.DEFAULT_ADMIN_NAME ||
-      process.env.NEXT_PUBLIC_ADMIN_NAME ||
       "Administrator";
 
     const adminProfile = {

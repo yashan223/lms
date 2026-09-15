@@ -15,6 +15,7 @@ import {
   GraduationCap,
   RefreshCw,
   BookOpen,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -296,7 +297,8 @@ export function StudentAvailabilityModal({
               disabled={saving}
               className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
             >
-              ⚡ Weekdays (16:00 – 20:00)
+              <Zap className="w-3.5 h-3.5" />
+              Weekdays (16:00 – 20:00)
             </button>
             <button
               type="button"
@@ -304,7 +306,8 @@ export function StudentAvailabilityModal({
               disabled={saving}
               className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
             >
-              ⚡ Weekend Study (10:00 – 16:00)
+              <Zap className="w-3.5 h-3.5" />
+              Weekend Study (10:00 – 16:00)
             </button>
           </div>
         </div>

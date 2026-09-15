@@ -22,6 +22,7 @@ import {
   Sparkles,
   ExternalLink,
   ChevronRight,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -359,7 +360,8 @@ function TutorAvailabilityContent() {
                 disabled={saving}
                 className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer shadow-2xs"
               >
-                ⚡ Apply Weekdays (14:00 - 17:00)
+                <Zap className="w-3.5 h-3.5" />
+                Apply Weekdays (14:00 - 17:00)
               </button>
               <button
                 type="button"
@@ -367,7 +369,8 @@ function TutorAvailabilityContent() {
                 disabled={saving}
                 className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer shadow-2xs"
               >
-                ⚡ Apply Saturday Mornings
+                <Zap className="w-3.5 h-3.5" />
+                Apply Saturday Mornings
               </button>
             </div>
           </div>
@@ -478,7 +481,8 @@ function TutorAvailabilityContent() {
                     disabled={saving}
                     className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-[11px] font-bold border border-slate-200 transition-all cursor-pointer"
                   >
-                    ⚡ Weekdays (14:00 - 17:00)
+                    <Zap className="w-3.5 h-3.5" />
+                    Weekdays (14:00 - 17:00)
                   </button>
                   <button
                     type="button"
@@ -486,7 +490,8 @@ function TutorAvailabilityContent() {
                     disabled={saving}
                     className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-700 text-[11px] font-bold border border-slate-200 transition-all cursor-pointer"
                   >
-                    ⚡ Saturday Mornings
+                    <Zap className="w-3.5 h-3.5" />
+                    Saturday Mornings
                   </button>
                 </div>
               </div>
@@ -583,6 +588,7 @@ function TutorAvailabilityContent() {
                       step={1800}
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
                       className="rounded-xl h-9 text-xs font-mono font-semibold cursor-pointer"
                     />
                   </div>
@@ -598,6 +604,7 @@ function TutorAvailabilityContent() {
                       step={1800}
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
                       className="rounded-xl h-9 text-xs font-mono font-semibold cursor-pointer"
                     />
                   </div>

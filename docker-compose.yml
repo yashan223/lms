@@ -35,7 +35,8 @@ services:
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
       - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL:-admin@edupulse.uk}
       - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:-AdminPass123!}
-      - DEFAULT_ADMIN_NAME=${DEFAULT_ADMIN_NAME:-Dr. Alastair Vance}
+      - DEFAULT_ADMIN_NAME=${DEFAULT_ADMIN_NAME:-deep}
+      - NEXT_PUBLIC_ADMIN_NAME=${DEFAULT_ADMIN_NAME:-deep}
     volumes:
       - ./storage/uploads:/app/storage/uploads
     depends_on:

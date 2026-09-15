@@ -149,6 +149,17 @@ export default function AdminDashboardPage() {
   const [coursesList, setCoursesList] = useState<any[]>([]);
   const [facultyList, setFacultyList] = useState<any[]>([]);
   const [eventsList, setEventsList] = useState<any[]>([]);
+  const [adminName, setAdminName] = useState<string>(
+    process.env.NEXT_PUBLIC_ADMIN_NAME || "Administrator"
+  );
+  const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
+
+  const getAdminInitials = (nameStr: string) => {
+    const parts = (nameStr || "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "AD";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
   // Approvals State
   const [pendingClassesList, setPendingClassesList] = useState<any[]>([]);
@@ -574,6 +585,14 @@ export default function AdminDashboardPage() {
         setTotalPendingApprovals(data.totalPendingApprovals || 0);
         if (data.bundles && data.bundles.length > 0) {
           setBundlesList(data.bundles);
+        }
+        if (data.adminProfile) {
+          if (data.adminProfile.name) {
+            setAdminName(data.adminProfile.name);
+          }
+          if (data.adminProfile.avatar) {
+            setAdminAvatar(data.adminProfile.avatar);
+          }
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -1661,11 +1680,13 @@ export default function AdminDashboardPage() {
         <div className="p-3.5 border-t border-slate-200 space-y-3 bg-slate-50/70">
           <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
             <Avatar className="w-8 h-8 ring-1 ring-blue-200">
-              <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" />
-              <AvatarFallback>AV</AvatarFallback>
+              {adminAvatar && <AvatarImage src={adminAvatar} alt={adminName} />}
+              <AvatarFallback className="bg-[#0c2461] text-white font-bold text-xs">
+                {getAdminInitials(adminName)}
+              </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-bold text-slate-900 truncate">Dr. Alastair Vance</div>
+              <div className="text-xs font-bold text-slate-900 truncate">{adminName}</div>
               <div className="text-[10px] text-blue-500 font-semibold truncate">System Administrator</div>
             </div>
           </div>

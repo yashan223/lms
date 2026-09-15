@@ -227,9 +227,25 @@ export async function GET(request: NextRequest) {
     const faculty = allUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
     const admins = allUsers.filter((u) => u.role === Role.ADMIN);
 
-    const totalPendingApprovals = pendingClasses.length + pendingTrials.length + pendingCourses.length;
+    const adminName =
+      auth.user.name ||
+      process.env.DEFAULT_ADMIN_NAME ||
+      process.env.NEXT_PUBLIC_ADMIN_NAME ||
+      "Administrator";
+
+    const adminProfile = {
+      id: auth.user.id,
+      name: adminName,
+      email: auth.user.email,
+      role: auth.user.role,
+      avatar: auth.user.avatar || null,
+    };
+
+    const totalPendingApprovals =
+      pendingClasses.length + pendingTrials.length + pendingCourses.length;
 
     return NextResponse.json({
+      adminProfile,
       allUsers,
       candidates,
       faculty,

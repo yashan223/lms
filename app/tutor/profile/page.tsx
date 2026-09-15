@@ -644,10 +644,10 @@ function TutorProfileContent() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+                        className="px-4 py-2 rounded-xl bg-[#0c2461] hover:bg-blue-900 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                       >
                         <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Photo from Device</span>
+                        <span>Browse &amp; Upload Photo from Device</span>
                       </button>
 
                       {avatar && (
@@ -663,25 +663,13 @@ function TutorProfileContent() {
                           className="px-3 py-2 rounded-xl bg-slate-50 hover:bg-red-50 text-slate-600 hover:text-red-700 text-xs font-semibold border border-slate-200 hover:border-red-200 transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span>Remove</span>
+                          <span>Remove Photo</span>
                         </button>
                       )}
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-600 block">
-                        Or Enter Direct Image URL
-                      </label>
-                      <Input
-                        placeholder="https://images.unsplash.com/photo-..."
-                        value={avatar}
-                        onChange={(e) => setAvatar(e.target.value)}
-                        className="rounded-xl h-8 text-xs font-mono"
-                      />
-                    </div>
-
-                    <p className="text-[11px] text-slate-400">
-                      Supports PNG, JPG, JPEG, and WEBP formats up to 5MB. Photo is automatically framed and optimized.
+                    <p className="text-[11px] text-slate-500">
+                      Select a photo directly from your device files. Supports PNG, JPG, JPEG, and WEBP formats up to 5MB. Photo is automatically framed and optimized.
                     </p>
                   </div>
                 </div>

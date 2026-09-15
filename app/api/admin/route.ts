@@ -23,7 +23,7 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
   add_lesson: "COURSE", delete_lesson: "COURSE",
   add_course_material: "COURSE", delete_course_material: "COURSE",
   approve_course: "COURSE", reject_course: "COURSE",
-  schedule_class: "CLASS", start_class: "CLASS", end_class: "CLASS",
+  start_class: "CLASS", end_class: "CLASS",
   approve_class: "CLASS", reject_class: "CLASS",
   delete_assessment: "CLASS", delete_event: "CLASS", create_mock_paper: "CLASS",
   approve_trial: "TRIAL", reject_trial: "TRIAL",
@@ -715,48 +715,6 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Live class session marked as completed.",
         event: updated,
-      });
-    }
-
-    if (action === "schedule_class") {
-      const { title, description, meetingLink, scheduledDate, courseId, tutorId, studentId, type } = body;
-      if (!title || !scheduledDate) {
-        return NextResponse.json({ error: "Class title and scheduled date are required." }, { status: 400 });
-      }
-
-      const meetLink = getSafeMeetingLink(meetingLink);
-
-      const fullDescription = [
-        description?.trim() || "Live curriculum masterclass with Faculty.",
-        `\n\nGoogle Meet Classroom: ${meetLink}`,
-      ].join("").trim();
-
-      const newEvent = await prisma.event.create({
-        data: {
-          title: title.trim(),
-          description: fullDescription,
-          meetingLink: meetLink,
-          dueDate: new Date(scheduledDate),
-          status: "SCHEDULED",
-          type: (type as EventType) || EventType.LIVE_SEMINAR,
-          courseId: courseId || null,
-          userId: studentId || null,
-        },
-        include: {
-          course: {
-            include: { tutor: true },
-          },
-          user: true,
-        },
-      });
-
-      broadcastLMSEvent("EVENTS_CHANGED");
-
-      return NextResponse.json({
-        success: true,
-        message: "Live Google Meet class session scheduled successfully.",
-        event: newEvent,
-        meetingLink: meetLink,
       });
     }
 

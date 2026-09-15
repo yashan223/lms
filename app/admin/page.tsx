@@ -186,20 +186,9 @@ export default function AdminDashboardPage() {
 
   const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
   const [liveClassSearch, setLiveClassSearch] = useState("");
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
   const [purchaseSearch, setPurchaseSearch] = useState("");
   const [purchaseCourseFilter, setPurchaseCourseFilter] = useState("ALL");
-
-  const [newClassTitle, setNewClassTitle] = useState("");
-  const [newClassCourseId, setNewClassCourseId] = useState("");
-  const [newClassTutorId, setNewClassTutorId] = useState("");
-  const [newClassStudentId, setNewClassStudentId] = useState("");
-  const [newClassDate, setNewClassDate] = useState("");
-  const [newClassMeetingLink, setNewClassMeetingLink] = useState("");
-  const [newClassDesc, setNewClassDesc] = useState("");
-  const [newClassType, setNewClassType] = useState("LIVE_SEMINAR");
-  const [isSubmittingClass, setIsSubmittingClass] = useState(false);
 
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
@@ -1372,45 +1361,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleScheduleLiveClass = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newClassTitle.trim() || !newClassDate) return;
-    try {
-      setIsSubmittingClass(true);
-      const res = await fetch("/api/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "schedule_class",
-          title: newClassTitle.trim(),
-          courseId: newClassCourseId || null,
-          tutorId: newClassTutorId || null,
-          studentId: newClassStudentId || null,
-          scheduledDate: new Date(newClassDate).toISOString(),
-          meetingLink: newClassMeetingLink.trim() || null,
-          description: newClassDesc.trim() || null,
-          type: newClassType,
-        }),
-      });
-
-      if (res.ok) {
-        setShowScheduleModal(false);
-        setNewClassTitle("");
-        setNewClassCourseId("");
-        setNewClassTutorId("");
-        setNewClassStudentId("");
-        setNewClassDate("");
-        setNewClassMeetingLink("");
-        setNewClassDesc("");
-        await fetchAdminData();
-      }
-    } catch (err) {
-      console.error("Error scheduling live class:", err);
-    } finally {
-      setIsSubmittingClass(false);
-    }
-  };
-
   const handleDeleteLiveClass = (event: any) => {
     setConfirmModalData({
       isOpen: true,
@@ -1787,17 +1737,6 @@ export default function AdminDashboardPage() {
                 </Button>
               )}
 
-              {activeTab === "live_classes" && (
-                <Button
-                  size="sm"
-                  onClick={() => setShowScheduleModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-600/20 cursor-pointer"
-                >
-                  <Video className="w-3.5 h-3.5 text-blue-100" />
-                  <span>+ Schedule Live Class</span>
-                </Button>
-              )}
-
               {activeTab === "courses" && (
                 <Button
                   size="sm"
@@ -2048,13 +1987,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={() => setShowScheduleModal(true)}
-                  className="w-full md:w-auto text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 h-10 rounded-xl shadow-xs cursor-pointer"
-                >
-                  <Video className="w-4 h-4 text-blue-100" />
-                  <span>+ Schedule Live Class</span>
-                </Button>
               </div>
 
               {(liveClassFilter === "ALL" || liveClassFilter === "LIVE") && liveNowCount > 0 && (
@@ -2353,15 +2285,8 @@ export default function AdminDashboardPage() {
                     <Video className="w-10 h-10 text-slate-300 mx-auto" />
                     <h4 className="font-bold text-xs text-slate-700">No Classes Found</h4>
                     <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                      No Google Meet classes match the selected filter. Schedule a new lecture or workshop.
+                      No Google Meet classes match the selected filter.
                     </p>
-                    <Button
-                      size="sm"
-                      onClick={() => setShowScheduleModal(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl"
-                    >
-                      + Schedule Class
-                    </Button>
                   </div>
                 )}
               </div>
@@ -5125,178 +5050,6 @@ export default function AdminDashboardPage() {
                 Close
               </Button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showScheduleModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
-                  <Video className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">
-                    Schedule Live Class & Google Meet
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Create synchronized real-time Google Meet classroom session
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowScheduleModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleScheduleLiveClass} className="space-y-3.5 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Class / Session Title <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  required
-                  placeholder="Enter class or session title"
-                  value={newClassTitle}
-                  onChange={(e) => setNewClassTitle(e.target.value)}
-                  className="h-9 text-xs rounded-xl"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Course / Masterclass Association
-                </label>
-                <select
-                  value={newClassCourseId}
-                  onChange={(e) => setNewClassCourseId(e.target.value)}
-                  className="w-full h-9 px-3 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Academy-Wide / General Tutorial</option>
-                  {coursesList.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title} {c.subjectCode ? `(${c.subjectCode})` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Faculty Lecturer Lead
-                  </label>
-                  <select
-                    value={newClassTutorId}
-                    onChange={(e) => setNewClassTutorId(e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">Select Faculty Lead...</option>
-                    {facultyList.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name} ({f.headline || "Faculty"})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Specific Student (Optional)
-                  </label>
-                  <select
-                    value={newClassStudentId}
-                    onChange={(e) => setNewClassStudentId(e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">All Enrolled Course Students</option>
-                    {allUsersList
-                      .filter((u) => u.role === "STUDENT")
-                      .map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.email})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Date & Scheduled Time <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={newClassDate}
-                    onChange={(e) => setNewClassDate(e.target.value)}
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Google Meet Room Link (Optional)
-                  </label>
-                  <Input
-                    placeholder="https://meet.google.com/..."
-                    value={newClassMeetingLink}
-                    onChange={(e) => setNewClassMeetingLink(e.target.value)}
-                    className="h-9 text-xs rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Class Overview & Topic Objectives
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Add class overview and topic objectives..."
-                  value={newClassDesc}
-                  onChange={(e) => setNewClassDesc(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowScheduleModal(false)}
-                  className="rounded-xl text-xs"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={isSubmittingClass || !newClassTitle.trim() || !newClassDate}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl gap-1.5 shadow-sm cursor-pointer"
-                >
-                  {isSubmittingClass ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Scheduling...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Video className="w-3.5 h-3.5" />
-                      <span>Publish Live Class</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       )}

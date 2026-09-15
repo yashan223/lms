@@ -45,6 +45,7 @@ async function dispatchResendEmail(params: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   directUrl?: string;
 }): Promise<{ success: boolean; error?: string; simulated?: boolean }> {
   const resend = getResendClient();
@@ -66,6 +67,10 @@ async function dispatchResendEmail(params: {
       to: params.to,
       subject: params.subject,
       html: params.html,
+      text: params.text,
+      headers: {
+        "X-Entity-Ref-ID": Date.now().toString(),
+      },
     });
 
     // If custom domain is not verified, auto-fallback to onboarding@resend.dev
@@ -78,6 +83,10 @@ async function dispatchResendEmail(params: {
           to: params.to,
           subject: params.subject,
           html: params.html,
+          text: params.text,
+          headers: {
+            "X-Entity-Ref-ID": Date.now().toString(),
+          },
         });
       }
     }
@@ -193,10 +202,27 @@ export async function sendVerificationEmail({
 </html>
   `.trim();
 
+  const textContent = `
+Hello ${name},
+
+Welcome to EduPulse Academy! Please verify your email address to activate your student account.
+
+Click the following link to verify your email address:
+${verificationUrl}
+
+This verification link will expire in 24 hours.
+
+If you did not create an account on EduPulse Academy, please safely ignore this email.
+
+—
+EduPulse Academy London A/L & O/L LMS
+`.trim();
+
   return await dispatchResendEmail({
     to: email,
     subject: "EduPulse — Verify Your Academic Email",
     html: htmlContent,
+    text: textContent,
     directUrl: verificationUrl,
   });
 }
@@ -281,10 +307,25 @@ export async function sendPasswordResetEmail({
 </html>
   `.trim();
 
+  const textContent = `
+Hello ${name},
+
+We received a request to reset your password for your EduPulse account.
+
+Click the following link to choose a new password:
+${resetUrl}
+
+This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.
+
+—
+EduPulse Academy London A/L & O/L LMS
+`.trim();
+
   return await dispatchResendEmail({
     to: email,
     subject: "EduPulse — Password Reset Request",
     html: htmlContent,
+    text: textContent,
     directUrl: resetUrl,
   });
 }

@@ -454,8 +454,19 @@ export async function POST(request: NextRequest) {
           slotType = "ALL",
         } = s;
 
-        if (!startTime || !endTime) {
-          continue;
+        const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+        if (!timePattern.test(startTime?.trim()) || !timePattern.test(endTime?.trim())) {
+          return NextResponse.json(
+            { error: "Start and end times must use the HH:mm format." },
+            { status: 400 }
+          );
+        }
+
+        if (startTime.trim() >= endTime.trim()) {
+          return NextResponse.json(
+            { error: "End time must be later than start time." },
+            { status: 400 }
+          );
         }
 
         const newSlot = await prisma.tutorAvailability.create({

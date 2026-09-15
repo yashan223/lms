@@ -143,6 +143,11 @@ function TutorAvailabilityContent() {
       return;
     }
 
+    if (startTime >= endTime) {
+      setStatusMsg({ type: "error", text: "End time must be later than start time." });
+      return;
+    }
+
     try {
       setSaving(true);
       setStatusMsg(null);
@@ -568,27 +573,32 @@ function TutorAvailabilityContent() {
                 {/* Time Range */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-700 block">
+                    <label htmlFor="availability-start-time" className="font-bold text-slate-700 block cursor-pointer">
                       Start Time <span className="text-red-500">*</span>
                     </label>
                     <Input
+                      id="availability-start-time"
                       type="time"
                       required
+                      step={1800}
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="rounded-xl h-9 text-xs font-mono font-semibold"
+                      className="rounded-xl h-9 text-xs font-mono font-semibold cursor-pointer"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-700 block">
+                    <label htmlFor="availability-end-time" className="font-bold text-slate-700 block cursor-pointer">
                       End Time <span className="text-red-500">*</span>
                     </label>
                     <Input
+                      id="availability-end-time"
                       type="time"
                       required
+                      min={startTime}
+                      step={1800}
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="rounded-xl h-9 text-xs font-mono font-semibold"
+                      className="rounded-xl h-9 text-xs font-mono font-semibold cursor-pointer"
                     />
                   </div>
                 </div>

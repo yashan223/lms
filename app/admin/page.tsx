@@ -671,10 +671,10 @@ export default function AdminDashboardPage() {
     setFormUserName("");
     setFormUserEmail("");
     setFormUserPhone("");
-    setFormUserPassword("StudentPass123!");
+    setFormUserPassword("");
     setFormUserRole("STUDENT");
-    setFormUserHeadline("London A/L Pure Maths Student");
-    setFormUserBio("Enrolled in London A/L & O/L masterclass syllabus.");
+    setFormUserHeadline("");
+    setFormUserBio("");
     setShowAddUserModal(true);
   };
 
@@ -4463,7 +4463,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Initial Password</label>
-                  <Input placeholder="Enter initial password" value={formUserPassword} onChange={(e) => setFormUserPassword(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <Input required type="password" placeholder="Enter initial password" value={formUserPassword} onChange={(e) => setFormUserPassword(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
                 </div>
               </div>
               <div>

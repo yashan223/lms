@@ -45,8 +45,10 @@ export async function POST(request: Request) {
       data: { token, userId: user.id, expiresAt },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const resetUrl = `${appUrl}/reset-password?token=${token}`;
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://pulseedu.online")
+      .trim()
+      .replace(/\/$/, "");
+    const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",

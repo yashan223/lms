@@ -8,13 +8,13 @@ function getResendClient() {
 
 function getAppUrl() {
   if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+    return process.env.NEXT_PUBLIC_APP_URL.trim().replace(/\/$/, "");
   }
   if (process.env.APP_URL) {
-    return process.env.APP_URL.replace(/\/$/, "");
+    return process.env.APP_URL.trim().replace(/\/$/, "");
   }
   if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+    return process.env.NEXT_PUBLIC_SITE_URL.trim().replace(/\/$/, "");
   }
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
@@ -22,7 +22,7 @@ function getAppUrl() {
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  return "http://localhost:3000";
+  return "https://pulseedu.online";
 }
 
 function getFromEmail() {
@@ -235,7 +235,7 @@ export async function sendPasswordResetEmail({
   name,
   token,
 }: SendPasswordResetEmailParams): Promise<{ success: boolean; error?: string }> {
-  const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
+  const resetUrl = `${getAppUrl()}/reset-password?token=${encodeURIComponent(token)}`;
 
   console.log(`\n========================================`);
   console.log(`📧 [PASSWORD RESET] To: ${email}`);

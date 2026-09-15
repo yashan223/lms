@@ -1773,17 +1773,19 @@ export default function AdminDashboardPage() {
                 <span className="hidden sm:inline">Refresh Data</span>
               </Button>
 
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleOpenClearDataModal}
-                disabled={loading || isClearingAllData}
-                className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 hover:border-rose-300 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs transition-all"
-                title="Clear all LMS data except admin login"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                <span className="hidden sm:inline">Clear All Data</span>
-              </Button>
+              {activeTab === "overview" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleOpenClearDataModal}
+                  disabled={loading || isClearingAllData}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 hover:border-rose-300 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs transition-all"
+                  title="Clear all LMS data except admin login"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <span className="hidden sm:inline">Clear All Data</span>
+                </Button>
+              )}
 
               {activeTab === "live_classes" && (
                 <Button
@@ -2364,59 +2366,6 @@ export default function AdminDashboardPage() {
                 )}
               </div>
 
-              {/* Danger Zone: Clear Platform Data */}
-              <div className="p-5 sm:p-6 rounded-2xl bg-white border border-rose-200 shadow-2xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
-                      <Trash2 className="w-5 h-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-black text-slate-900">Platform Data Reset & Purge</h3>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700">
-                          High Risk Action
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                        Instantly clear all courses, modules, enrollments, student records, faculty tutors, messages, live classes, and uploaded files. 
-                        <strong> Administrator accounts and credentials are preserved</strong> so you remain logged in and can administer the platform.
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    onClick={handleOpenClearDataModal}
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-9 px-4 rounded-xl gap-2 shadow-xs shrink-0 cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Clear All LMS Data</span>
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
-                    <div className="font-bold text-slate-700 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-rose-500" />
-                      <span>Data That Will Be Cleared:</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
-                      All courses, syllabus modules & lessons, materials, student enrollments, progress, tutor & student accounts, live Google Meet sessions, trial bookings, and chat messages.
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
-                    <div className="font-bold text-emerald-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span>Data That Will Be Preserved:</span>
-                    </div>
-                    <p className="text-[11px] text-emerald-700 leading-relaxed">
-                      All Administrator accounts (email, password hash, role) so you retain instant access. Token bundle pricing defaults will also be retained.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

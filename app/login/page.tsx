@@ -27,10 +27,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setUnverifiedEmail(null);
     setLoading(true);
 
     try {
@@ -47,6 +49,9 @@ export default function LoginPage() {
 
       if (!res.ok) {
         setErrorMsg(data.error || "Invalid email or password. Please check your credentials.");
+        if (data.requiresVerification) {
+          setUnverifiedEmail(data.email || email.trim().toLowerCase());
+        }
         setLoading(false);
         return;
       }
@@ -97,10 +102,34 @@ export default function LoginPage() {
             </div>
 
             {errorMsg && (
-              <div className="p-3.5 rounded-xl text-xs space-y-2 animate-in fade-in bg-red-50 border border-red-200 text-red-700">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="font-medium leading-relaxed">{errorMsg}</span>
+              <div
+                className={`p-3.5 rounded-xl text-xs space-y-2 animate-in fade-in ${
+                  unverifiedEmail
+                    ? "bg-amber-50 border border-amber-200 text-amber-900"
+                    : "bg-red-50 border border-red-200 text-red-700"
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle
+                    className={`w-4 h-4 shrink-0 mt-0.5 ${
+                      unverifiedEmail ? "text-amber-600" : "text-red-600"
+                    }`}
+                  />
+                  <div className="space-y-2 flex-1">
+                    <span className="font-medium leading-relaxed block">{errorMsg}</span>
+                    {unverifiedEmail && (
+                      <div>
+                        <Link
+                          href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0c2461] hover:bg-blue-900 text-white font-bold text-xs shadow-xs transition-colors"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>Verify Email / Resend Link</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

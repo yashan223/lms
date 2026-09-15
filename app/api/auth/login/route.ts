@@ -68,16 +68,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Auto-mark email as verified if registered prior to verification removal
-    if (!user.emailVerified) {
-      try {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { emailVerified: new Date() },
-        });
-      } catch (verifyErr) {
-        console.error("Non-fatal email auto-verification error:", verifyErr);
-      }
+    // Enforce email verification for student accounts
+    if (user.role === "STUDENT" && !user.emailVerified) {
+      return NextResponse.json(
+        {
+          error: "Your academic email address has not been verified yet. Please check your inbox or request a new verification link.",
+          requiresVerification: true,
+          email: user.email,
+        },
+        { status: 403 }
+      );
     }
 
     // Seamlessly upgrade legacy/plaintext password hashes to cryptographic scrypt

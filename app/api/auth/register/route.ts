@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
-import { hashPassword, attachSessionCookies } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { sendVerificationEmail } from "@/lib/email";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +53,7 @@ export async function POST(request: Request) {
 
     const hashedPassword = hashPassword(password);
 
+    // 1. Create the new student account with unverified email status
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
@@ -56,7 +61,7 @@ export async function POST(request: Request) {
         passwordHash: hashedPassword,
         phone: phone ? phone.trim() : null,
         role: Role.STUDENT,
-        emailVerified: new Date(), // Instant account activation (verification disabled)
+        emailVerified: null, // Student must verify via email!
         headline: `${qualification || "London A/L"} Student${country ? ` • ${country}` : ""} (${targetSeries || "Spring / Summer 2026"})`,
         bio: `Enrolled student ${country ? `from ${country} ` : ""}studying ${examBoard || "London A/L & O/L"} curriculum.`,
         avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
@@ -68,15 +73,47 @@ export async function POST(request: Request) {
       },
     });
 
-    const response = NextResponse.json({
-      success: true,
-      email: newUser.email,
-      redirectTo: "/dashboard",
-      message: "Registration successful! Welcome to EduPulse Academy.",
+    // 2. Generate a secure 24-hour verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await prisma.emailVerificationToken.create({
+      data: {
+        token: verificationToken,
+        userId: newUser.id,
+        expiresAt,
+      },
     });
 
-    attachSessionCookies(response, newUser);
-    return response;
+    // 3. Dispatch verification email via Resend
+    let emailSent = false;
+    let emailNotice: string | undefined;
+    try {
+      const emailResult = await sendVerificationEmail({
+        email: newUser.email,
+        name: newUser.name,
+        token: verificationToken,
+      });
+      emailSent = emailResult.success;
+      if (!emailResult.success) {
+        emailNotice = emailResult.error;
+      }
+    } catch (err: any) {
+      console.error("Failed to dispatch initial verification email:", err);
+      emailNotice = err?.message;
+    }
+
+    // Return redirect to verify-email without auto-session
+    return NextResponse.json({
+      success: true,
+      email: newUser.email,
+      requiresVerification: true,
+      redirectTo: `/verify-email?email=${encodeURIComponent(newUser.email)}`,
+      message: emailSent
+        ? "Registration successful! A verification link has been sent to your email address."
+        : "Registration successful! Please verify your email address to activate your account.",
+      emailNotice,
+    });
   } catch (error: any) {
     console.error("Register API error:", error);
     return NextResponse.json(

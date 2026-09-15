@@ -15,17 +15,8 @@ if not exist .env (
     )
 )
 
-REM 2. Start Docker Database Container
-echo [1/5] Starting PostgreSQL with Docker Compose...
-call docker compose up -d
-if %errorlevel% neq 0 (
-    echo [ERROR] Could not start Docker container. Please ensure Docker Desktop is running.
-    pause
-    exit /b %errorlevel%
-)
-
-REM 3. Generate Prisma Client
-echo [2/5] Generating Prisma Client...
+REM 2. Generate Prisma Client
+echo [1/4] Generating Prisma Client...
 call npx prisma generate
 if %errorlevel% neq 0 (
     echo [ERROR] Prisma generate failed.
@@ -33,8 +24,8 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-REM 4. Push Database Schema
-echo [3/5] Syncing database schema...
+REM 3. Push Database Schema
+echo [2/4] Syncing database schema...
 call npx prisma db push
 if %errorlevel% neq 0 (
     echo [ERROR] Database schema push failed.
@@ -42,8 +33,8 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-REM 5. Seed Database
-echo [4/5] Seeding database with initial data...
+REM 4. Seed Database
+echo [3/4] Seeding database with initial data...
 call npx tsx prisma/seed.ts
 if %errorlevel% neq 0 (
     echo [ERROR] Database seeding failed.
@@ -51,8 +42,8 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-REM 6. Launch Next.js Dev Server
-echo [5/5] Launching Next.js Development Server...
+REM 5. Launch Next.js Dev Server
+echo [4/4] Launching Next.js Development Server...
 echo ===================================================
 echo   LMS Ready! Access at: http://localhost:3000
 echo ===================================================

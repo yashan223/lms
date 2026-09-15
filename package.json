@@ -10,15 +10,11 @@
     "start:next": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:setup": "docker compose up -d postgres && prisma generate && prisma db push && tsx prisma/seed.ts",
-    "setup:run": "npm run db:setup && npm run dev",
-    "app:up": "docker compose up -d --build",
-    "app:down": "docker compose down"
+    "db:setup": "prisma generate && prisma db push && tsx prisma/seed.ts",
+    "setup:run": "npm run db:setup && npm run dev"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

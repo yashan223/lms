@@ -63,6 +63,7 @@ model User {
   headline      String?
   bio           String?
   phone         String?
+  country       String?
   emailVerified DateTime?      // Date & time student verified their email address
   publicKey     String?        // E2EE Public Key for client-side encryption
   createdAt     DateTime       @default(now())

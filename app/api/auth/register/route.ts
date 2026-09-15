@@ -60,6 +60,7 @@ export async function POST(request: Request) {
         email: normalizedEmail,
         passwordHash: hashedPassword,
         phone: phone ? phone.trim() : null,
+        country: country ? country.trim() : null,
         role: Role.STUDENT,
         emailVerified: null, // Student must verify via email!
         headline: `${qualification || "London A/L"} Student${country ? ` • ${country}` : ""} (${targetSeries || "Spring / Summer 2026"})`,

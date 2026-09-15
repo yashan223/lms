@@ -61,6 +61,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
+import { formatStudentPrice } from "@/lib/currency";
 
 const formatForDateTimeInput = (date: Date) => {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -79,6 +80,7 @@ interface UserProfile {
   avatar: string | null;
   role: "STUDENT" | "TUTOR" | "INSTRUCTOR" | "ADMIN";
   headline: string | null;
+  country: string | null;
   tokenWallet?: {
     balance: number;
     transactions: Array<{
@@ -2193,7 +2195,9 @@ function DashboardContent() {
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-lg font-black text-slate-900">${pack.price}</div>
+                    <div className="text-lg font-black text-slate-900">
+                      {formatStudentPrice(pack.price, user?.country)}
+                    </div>
                     <Button
                       size="sm"
                       disabled={tokenPurchasing}

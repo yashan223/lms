@@ -7,7 +7,7 @@ import { hashPassword } from "../lib/auth";
 import { getBundles, saveBundles, DEFAULT_BUNDLES } from "../lib/bundles";
 
 async function main() {
-  console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin, 1 Tutor, and 1 Student...");
+  console.log("🌱 Seeding London A/L & O/L LMS Database with 1 Admin and 1 Tutor...");
 
   const adminEmail = process.env.DEFAULT_ADMIN_EMAIL?.trim().toLowerCase();
   const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
@@ -19,11 +19,10 @@ async function main() {
     );
   }
 
-  // Upsert the 3 default accounts without deleting existing user data
+  // Upsert the 2 default accounts without deleting existing user data
 
   const adminPassHash = hashPassword(adminPassword);
   const tutorPassHash = hashPassword("TutorPass123!");
-  const studentPassHash = hashPassword("StudentPass123!");
 
   const now = new Date();
 
@@ -75,96 +74,9 @@ async function main() {
     },
   });
 
-  // 3. Single Student Account
-  const studentUser = await prisma.user.upsert({
-    where: { email: "student@edupulse.uk" },
-    update: {
-      name: "S.Y.T. Perera",
-      passwordHash: studentPassHash,
-      role: Role.STUDENT,
-      emailVerified: now,
-      phone: "+44 7700 900142",
-      headline: "London A/L Mathematics & Science Student",
-      bio: "Enrolled in Pure Mathematics (P1-P4), Physics, and Chemistry.",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-    },
-    create: {
-      email: "student@edupulse.uk",
-      name: "S.Y.T. Perera",
-      passwordHash: studentPassHash,
-      role: Role.STUDENT,
-      emailVerified: now,
-      phone: "+44 7700 900142",
-      headline: "London A/L Mathematics & Science Student",
-      bio: "Enrolled in Pure Mathematics (P1-P4), Physics, and Chemistry.",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-    },
-  });
-
-  // Initialize Token Wallet for student (1 Token = 1 Hour)
-  const existingWallet = await prisma.tokenWallet.findUnique({
-    where: { userId: studentUser.id },
-  });
-
-  if (existingWallet) {
-    await prisma.tokenTransaction.deleteMany({
-      where: { walletId: existingWallet.id },
-    });
-  }
-
-  await prisma.tokenWallet.upsert({
-    where: { userId: studentUser.id },
-    update: {
-      balance: 18,
-      transactions: {
-        create: [
-          {
-            amount: 24,
-            type: "PURCHASE",
-            description: "Purchased 24 Hours Mastery Vault (24 Tokens — 1 Token = 1H)",
-          },
-          {
-            amount: -4,
-            type: "SPEND",
-            description: "Allocated 4 Hours (4 Tokens) to 1-on-1 Pure Mathematics Tutoring",
-          },
-          {
-            amount: -2,
-            type: "SPEND",
-            description: "Allocated 2 Hours (2 Tokens) to Live Masterclass: Pure Mathematics P3 Integration",
-          },
-        ],
-      },
-    },
-    create: {
-      userId: studentUser.id,
-      balance: 18,
-      transactions: {
-        create: [
-          {
-            amount: 24,
-            type: "PURCHASE",
-            description: "Purchased 24 Hours Mastery Vault (24 Tokens — 1 Token = 1H)",
-          },
-          {
-            amount: -4,
-            type: "SPEND",
-            description: "Allocated 4 Hours (4 Tokens) to 1-on-1 Pure Mathematics Tutoring",
-          },
-          {
-            amount: -2,
-            type: "SPEND",
-            description: "Allocated 2 Hours (2 Tokens) to Live Masterclass: Pure Mathematics P3 Integration",
-          },
-        ],
-      },
-    },
-  });
-
-  console.log("✅ Exactly 3 Test Users Initialized:");
+  console.log("✅ Exactly 2 Test Users Initialized:");
   console.log("   👑 Admin:   admin@edupulse.uk   / AdminPass123!");
   console.log("   🎓 Tutor:   tutor@edupulse.uk   / TutorPass123!");
-  console.log("   📚 Student: student@edupulse.uk / StudentPass123! (Balance: 18 Tokens = 18 Hours)");
 
   // 4. Update all courses to belong to the single Tutor
   await prisma.course.updateMany({
@@ -436,21 +348,6 @@ async function main() {
       console.log(`🔄 Updated Course: ${course.title} (${course.price} Tokens = ${course.price}H)`);
     }
 
-    // Enroll our 1 student in the course
-    await prisma.enrollment.upsert({
-      where: {
-        userId_courseId: {
-          userId: studentUser.id,
-          courseId: course.id,
-        },
-      },
-      update: {},
-      create: {
-        userId: studentUser.id,
-        courseId: course.id,
-        enrolledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      },
-    });
   }
 
   // 6. Seed Course Study Materials & Handbooks
@@ -607,16 +504,6 @@ async function main() {
       },
     });
 
-    await prisma.event.create({
-      data: {
-        title: "Virtual Workshop: Pure Mathematics P4 Differential Calculus (1H)",
-        description: "Interactive problem-solving workshop on pure mathematical methods (1 Hour / 1 Token).",
-        type: EventType.DEADLINE,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        courseId: mathCourse.id,
-        userId: studentUser.id,
-      },
-    });
   }
 
   if (physicsCourse) {
@@ -633,43 +520,7 @@ async function main() {
     });
   }
 
-  // 8. Seed Private Files
-  await prisma.privateFile.deleteMany({});
-  await prisma.privateFile.createMany({
-    data: [
-      {
-        fileName: "Pure_Maths_P3_Formula_Handbook_2026.pdf",
-        fileSize: "2.4 MB",
-        fileType: "application/pdf",
-        userId: studentUser.id,
-      },
-      {
-        fileName: "Physics_Unit2_Circuit_EMF_Summary_Notes.pdf",
-        fileSize: "1.8 MB",
-        fileType: "application/pdf",
-        userId: studentUser.id,
-      },
-    ],
-  });
-
-  // 9. Seed Student Badges
-  await prisma.badgeAward.deleteMany({});
-  await prisma.badgeAward.createMany({
-    data: [
-      {
-        name: "Pure Mathematics Unit Mastery",
-        description: "Achieved 100% completion in P1 & P2 calculus foundations.",
-        userId: studentUser.id,
-      },
-      {
-        name: "Experimental Physics Distinction",
-        description: "Completed laboratory analysis and uncertainty evaluation.",
-        userId: studentUser.id,
-      },
-    ],
-  });
-
-  // 10. Upsert default token bundle packages into the database
+  // 8. Upsert default token bundle packages into the database
   for (const bundle of DEFAULT_BUNDLES) {
     await prisma.tokenBundle.upsert({
       where: { id: bundle.id },
@@ -702,7 +553,7 @@ async function main() {
   }
   console.log(`💰 Token bundle packages upserted into DB: ${DEFAULT_BUNDLES.map((b) => b.name).join(", ")}`);
 
-  console.log("🚀 Database successfully seeded with 1 Admin, 1 Instructor, and 1 Student!");
+  console.log("🚀 Database successfully seeded with 1 Admin and 1 Tutor!");
 }
 
 main()

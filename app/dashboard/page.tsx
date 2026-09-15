@@ -2196,7 +2196,7 @@ function DashboardContent() {
 
                   <div className="text-right shrink-0">
                     <div className="text-lg font-black text-slate-900">
-                      {formatStudentPrice(pack.price, user?.country)}
+                      {formatStudentPrice(pack.price, user?.country, pack.lkrPrice)}
                     </div>
                     <Button
                       size="sm"

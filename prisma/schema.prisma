@@ -131,6 +131,7 @@ model TokenBundle {
   hours       Int
   tokens      Int
   price       Float
+  lkrPrice    Float      @default(0)
   popular     Boolean  @default(false)
   badge       String   @default("Standard")
   description String

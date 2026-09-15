@@ -117,7 +117,7 @@ export function PricingSection({ initialBundles }: PricingSectionProps) {
 
                   <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-slate-100">
                     <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                      {formatStudentPrice(price, studentCountry)}
+                      {formatStudentPrice(price, studentCountry, plan.lkrPrice)}
                     </span>
                     <span className="text-xs font-semibold text-slate-500">
                       / package (one-time purchase)

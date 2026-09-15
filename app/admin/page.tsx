@@ -911,6 +911,7 @@ export default function AdminDashboardPage() {
       hours: newHours,
       tokens: newHours,
       price: 99,
+      lkrPrice: 29700,
       popular: false,
       badge: "Extended",
       description: `${newHours} hours of comprehensive tutoring tokens for extensive revision and dedicated exam prep.`,
@@ -3333,9 +3334,9 @@ export default function AdminDashboardPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {(bundlesList.length > 0 ? bundlesList : [
-                    { id: "pack-6", name: "6 Hours Flexi Pack", hours: 6, tokens: 6, price: 24, popular: false, badge: "Starter", description: "6 hours of learning tokens." },
-                    { id: "pack-16", name: "16 Hours Standard Bundle", hours: 16, tokens: 16, price: 58, popular: true, badge: "Most Popular", description: "16 hours of learning tokens." },
-                    { id: "pack-24", name: "24 Hours Mastery Vault", hours: 24, tokens: 24, price: 84, popular: false, badge: "Best Value", description: "24 hours of learning tokens." },
+                    { id: "pack-6", name: "6 Hours Flexi Pack", hours: 6, tokens: 6, price: 24, lkrPrice: 7200, popular: false, badge: "Starter", description: "6 hours of learning tokens." },
+                    { id: "pack-16", name: "16 Hours Standard Bundle", hours: 16, tokens: 16, price: 58, lkrPrice: 17400, popular: true, badge: "Most Popular", description: "16 hours of learning tokens." },
+                    { id: "pack-24", name: "24 Hours Mastery Vault", hours: 24, tokens: 24, price: 84, lkrPrice: 25200, popular: false, badge: "Best Value", description: "24 hours of learning tokens." },
                   ]).map((bundle) => (
                     <div
                       key={bundle.id}
@@ -3358,7 +3359,7 @@ export default function AdminDashboardPage() {
                         <div className="text-right font-black text-slate-900 text-base">
                           <div>{formatStudentPrice(bundle.price, null)}</div>
                           <div className="text-[10px] font-semibold text-emerald-700">
-                            {formatStudentPrice(bundle.price, "Sri Lanka")}
+                            {formatStudentPrice(bundle.price, "Sri Lanka", bundle.lkrPrice)}
                           </div>
                         </div>
                       </div>
@@ -3548,7 +3549,7 @@ export default function AdminDashboardPage() {
                               {formatStudentPrice(price, null)}
                             </span>
                             <span className="text-xs font-semibold text-emerald-700">
-                              {formatStudentPrice(price, "Sri Lanka")}
+                              {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice)}
                             </span>
                             <span className="text-xs font-semibold text-slate-500">
                               / package
@@ -5480,6 +5481,28 @@ export default function AdminDashboardPage() {
                           </div>
                           <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
                             ≈ ${curBundle.hours > 0 ? (curBundle.price / curBundle.hours).toFixed(2) : "0.00"}/hr
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="font-bold text-slate-700 text-xs block mb-1">Price (LKR) <span className="text-red-500">*</span></label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">LKR</span>
+                            <Input
+                              required
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={curBundle.lkrPrice}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                const updated = [...editingBundles];
+                                updated[selectedBundleIndex] = { ...curBundle, lkrPrice: val };
+                                setEditingBundles(updated);
+                              }}
+                              className="pl-12 h-9 text-xs rounded-xl font-mono"
+                              placeholder="17400"
+                            />
                           </div>
                         </div>
 

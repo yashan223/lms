@@ -4,6 +4,7 @@ export interface TokenBundle {
   hours: number;
   tokens: number;
   price: number;
+  lkrPrice: number;
   popular: boolean;
   badge: string;
   description: string;
@@ -19,6 +20,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     hours: 6,
     tokens: 6,
     price: 24,
+    lkrPrice: 7200,
     popular: false,
     badge: "Starter",
     description:
@@ -40,6 +42,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     hours: 16,
     tokens: 16,
     price: 58,
+    lkrPrice: 17400,
     popular: true,
     badge: "Most Popular",
     description:
@@ -61,6 +64,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     hours: 24,
     tokens: 24,
     price: 84,
+    lkrPrice: 25200,
     popular: false,
     badge: "Best Value",
     description:

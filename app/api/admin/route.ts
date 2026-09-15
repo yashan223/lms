@@ -1050,6 +1050,7 @@ export async function POST(request: NextRequest) {
         const hours = parseInt(b.hours, 10) || parseInt(b.tokens, 10) || 1;
         const tokens = parseInt(b.tokens, 10) || hours;
         const price = parseFloat(b.price) || 0;
+        const lkrPrice = parseFloat(b.lkrPrice) || 0;
         const popular = Boolean(b.popular);
         const badge = String(b.badge || (popular ? "Most Popular" : "Standard")).trim();
         const description = String(b.description || "").trim();
@@ -1065,6 +1066,7 @@ export async function POST(request: NextRequest) {
           hours,
           tokens,
           price,
+          lkrPrice,
           popular,
           badge,
           description,

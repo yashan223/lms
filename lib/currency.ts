@@ -1,15 +1,15 @@
-export const USD_TO_LKR_RATE = 300;
-
 export function isSriLankanStudent(country?: string | null): boolean {
   return country?.trim().toLowerCase() === "sri lanka";
 }
 
 export function formatStudentPrice(
   usdPrice: number,
-  country?: string | null
+  country?: string | null,
+  lkrPrice?: number
 ): string {
   if (isSriLankanStudent(country)) {
-    return `LKR ${(usdPrice * USD_TO_LKR_RATE).toLocaleString("en-LK")}`;
+    const price = lkrPrice ?? 0;
+    return `LKR ${price.toLocaleString("en-LK")}`;
   }
 
   return `USD ${usdPrice.toLocaleString("en-US", {

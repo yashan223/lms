@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
+import { formatStudentPrice } from "@/lib/currency";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -3354,9 +3355,11 @@ export default function AdminDashboardPage() {
                           <Coins className="w-3.5 h-3.5 text-amber-500" />
                           <span>{bundle.tokens} Hours</span>
                         </div>
-                        <div className="font-black text-slate-900 text-base">
-                          ${bundle.price}
-                          <span className="text-[10px] font-medium text-slate-400 ml-0.5">USD</span>
+                        <div className="text-right font-black text-slate-900 text-base">
+                          <div>{formatStudentPrice(bundle.price, null)}</div>
+                          <div className="text-[10px] font-semibold text-emerald-700">
+                            {formatStudentPrice(bundle.price, "Sri Lanka")}
+                          </div>
                         </div>
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono">
@@ -3542,7 +3545,10 @@ export default function AdminDashboardPage() {
 
                           <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-slate-100">
                             <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                              ${price}
+                              {formatStudentPrice(price, null)}
+                            </span>
+                            <span className="text-xs font-semibold text-emerald-700">
+                              {formatStudentPrice(price, "Sri Lanka")}
                             </span>
                             <span className="text-xs font-semibold text-slate-500">
                               / package

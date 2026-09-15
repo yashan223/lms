@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { TokenBundle, DEFAULT_BUNDLES } from "@/lib/bundle-types";
+import { formatStudentPrice } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ArrowRight, Award } from "lucide-react";
 
@@ -14,16 +15,24 @@ export function PricingSection({ initialBundles }: PricingSectionProps) {
   const [bundles, setBundles] = useState<TokenBundle[]>(
     initialBundles && initialBundles.length > 0 ? initialBundles : DEFAULT_BUNDLES
   );
+  const [studentCountry, setStudentCountry] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadBundles() {
       try {
-        const res = await fetch("/api/bundles");
-        if (res.ok) {
-          const data = await res.json();
+        const [bundlesRes, dashboardRes] = await Promise.all([
+          fetch("/api/bundles"),
+          fetch("/api/dashboard"),
+        ]);
+        if (bundlesRes.ok) {
+          const data = await bundlesRes.json();
           if (data.bundles && Array.isArray(data.bundles) && data.bundles.length > 0) {
             setBundles(data.bundles);
           }
+        }
+        if (dashboardRes.ok) {
+          const dashboardData = await dashboardRes.json();
+          setStudentCountry(dashboardData.user?.country || null);
         }
       } catch (err) {
         console.error("Failed to load dynamic bundles in PricingSection:", err);
@@ -108,7 +117,7 @@ export function PricingSection({ initialBundles }: PricingSectionProps) {
 
                   <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-slate-100">
                     <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                      ${price}
+                      {formatStudentPrice(price, studentCountry)}
                     </span>
                     <span className="text-xs font-semibold text-slate-500">
                       / package (one-time purchase)

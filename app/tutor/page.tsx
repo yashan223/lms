@@ -652,6 +652,9 @@ function TutorDashboardContent() {
       if (!res.ok) throw new Error(data.error || "Failed to submit course.");
       setShowCourseEditor(false);
       await fetchTutorData(false);
+      if (data.course?.id) {
+        router.push(`/tutor/courses/${data.course.id}/edit`);
+      }
     } catch (err: any) {
       setCourseFormError(err.message || "Failed to submit course.");
     } finally {
@@ -1912,14 +1915,13 @@ function TutorDashboardContent() {
                               <ArrowRight className="w-3 h-3" />
                             </Link>
 
-                            <button
-                              type="button"
-                              onClick={() => openCourseEditor(c)}
-                              className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-2 py-1 rounded-md inline-flex items-center gap-1"
+                            <Link
+                              href={`/tutor/courses/${c.id}/edit`}
+                              className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md inline-flex items-center gap-1 hover:bg-blue-100 transition-colors"
                             >
                               <Edit3 className="w-3 h-3" />
-                              Edit
-                            </button>
+                              <span>Edit Course & Content</span>
+                            </Link>
                             <button
                               onClick={() => {
                                 setScheduleMode("COURSE");

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,7 @@ const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: s
 };
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<
     "overview" | "live_classes" | "users" | "courses" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
   >("overview");
@@ -1064,8 +1066,12 @@ export default function AdminDashboardPage() {
       });
 
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         setShowAddCourseModal(false);
         fetchAdminData();
+        if (data.course?.id) {
+          router.push(`/admin/courses/${data.course.id}/edit`);
+        }
       }
     } catch (err) {
       console.error("Error creating course:", err);
@@ -2574,43 +2580,29 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedCourseForSyllabus(course);
-                          setShowManageSyllabusModal(true);
-                        }}
-                        className="text-xs font-bold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 h-8 rounded-xl flex-1 cursor-pointer"
+                      <Link
+                        href={`/admin/courses/${course.id}/edit`}
+                        className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 h-8 rounded-xl flex-1 cursor-pointer transition-colors shadow-2xs"
                       >
-                        <FolderPlus className="w-3.5 h-3.5 text-blue-500" />
-                        <span>Syllabus</span>
-                      </Button>
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit Course & Content</span>
+                      </Link>
 
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleOpenManageMaterials(course)}
-                        className="text-xs font-bold gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50 h-8 rounded-xl flex-1 cursor-pointer"
+                      <Link
+                        href={`/courses/${course.slug}`}
+                        target="_blank"
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
+                        title="Preview Public Course Page"
                       >
-                        <FileText className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Files ({course.materials?.length || 0})</span>
-                      </Button>
-
-                      <button
-                        onClick={() => handleOpenEditCourse(course)}
-                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg cursor-pointer"
-                        title="Edit Course Details"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
 
                       <button
                         onClick={() => handleDeleteCourse(course)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                         title="Delete Course"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>

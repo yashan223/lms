@@ -22,15 +22,26 @@ export async function GET(request: NextRequest) {
       include: {
         modules: {
           include: { lessons: true },
+          orderBy: { position: "asc" },
         },
-        materials: true,
+        materials: {
+          orderBy: { createdAt: "desc" },
+        },
         enrollments: {
           include: {
             user: true,
           },
           orderBy: { enrolledAt: "desc" },
         },
+        events: {
+          orderBy: { dueDate: "desc" },
+        },
+        reviews: {
+          include: { user: true },
+          orderBy: { createdAt: "desc" },
+        },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     if (courses.length === 0) {
@@ -38,15 +49,26 @@ export async function GET(request: NextRequest) {
         include: {
           modules: {
             include: { lessons: true },
+            orderBy: { position: "asc" },
           },
-          materials: true,
+          materials: {
+            orderBy: { createdAt: "desc" },
+          },
           enrollments: {
             include: {
               user: true,
             },
             orderBy: { enrolledAt: "desc" },
           },
+          events: {
+            orderBy: { dueDate: "desc" },
+          },
+          reviews: {
+            include: { user: true },
+            orderBy: { createdAt: "desc" },
+          },
         },
+        orderBy: { createdAt: "desc" },
       });
     }
 
@@ -162,7 +184,7 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     if (action === "create_course" || action === "update_course") {
-      const { courseId, title, slug, subtitle, description, category, subjectCode, price, level } = body;
+      const { courseId, title, slug, subtitle, description, category, subjectCode, price, level, thumbnail, status } = body;
       if (!title?.trim() || !description?.trim() || !category?.trim()) {
         return NextResponse.json(
           { error: "Course title, description, and category are required." },
@@ -178,7 +200,7 @@ export async function POST(request: NextRequest) {
 
       if (action === "update_course") {
         const existing = await prisma.course.findFirst({
-          where: { id: courseId, tutorId: tutor.id },
+          where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
         });
         if (!existing) {
           return NextResponse.json({ error: "Course not found or not owned by this tutor." }, { status: 404 });
@@ -193,16 +215,17 @@ export async function POST(request: NextRequest) {
             description: description.trim(),
             category: category.trim(),
             subjectCode: subjectCode?.trim() || null,
+            thumbnail: thumbnail !== undefined ? (thumbnail?.trim() || null) : existing.thumbnail,
             price: Number.isFinite(tokenPrice) ? tokenPrice : existing.price,
             level: (level as CourseLevel) || existing.level,
-            status: CourseStatus.PENDING_REVIEW,
+            status: status ? (status as CourseStatus) : existing.status,
           },
         });
 
         broadcastLMSEvent("COURSES_CHANGED");
         return NextResponse.json({
           success: true,
-          message: "Course changes submitted for admin approval.",
+          message: "Course changes saved successfully.",
           course: updated,
         });
       }
@@ -215,10 +238,24 @@ export async function POST(request: NextRequest) {
           description: description.trim(),
           category: category.trim(),
           subjectCode: subjectCode?.trim() || null,
+          thumbnail: thumbnail?.trim() || null,
           price: Number.isFinite(tokenPrice) ? tokenPrice : 0,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: CourseStatus.PENDING_REVIEW,
           tutorId: tutor.id,
+          modules: {
+            create: [
+              {
+                title: "Module 1: Foundations & Theoretical Proofs",
+                position: 1,
+                lessons: {
+                  create: [
+                    { title: "Lesson 1: Syllabus Breakdown & Unit Overview", durationMin: 25, position: 1, isFreePreview: true },
+                  ],
+                },
+              },
+            ],
+          },
         },
       });
 
@@ -228,6 +265,130 @@ export async function POST(request: NextRequest) {
         message: "Course submitted for admin approval.",
         course: created,
       });
+    }
+
+    if (action === "delete_course") {
+      const { courseId } = body;
+      const existing = await prisma.course.findFirst({
+        where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Course not found or permission denied." }, { status: 404 });
+      }
+      await prisma.course.delete({ where: { id: courseId } });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, message: "Course deleted successfully." });
+    }
+
+    if (action === "add_module") {
+      const { courseId, title, position } = body;
+      const course = await prisma.course.findFirst({
+        where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
+      });
+      if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      const newModule = await prisma.module.create({
+        data: {
+          courseId,
+          title: title.trim(),
+          position: position || 2,
+        },
+      });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, module: newModule });
+    }
+
+    if (action === "update_module") {
+      const { moduleId, title, position } = body;
+      const updatedModule = await prisma.module.update({
+        where: { id: moduleId },
+        data: {
+          title: title !== undefined ? title.trim() : undefined,
+          position: position !== undefined ? parseInt(position) : undefined,
+        },
+      });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, module: updatedModule });
+    }
+
+    if (action === "delete_module") {
+      const { moduleId } = body;
+      await prisma.module.delete({ where: { id: moduleId } });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, message: "Module deleted." });
+    }
+
+    if (action === "add_lesson") {
+      const { moduleId, title, durationMin, isFreePreview, videoUrl } = body;
+      const count = await prisma.lesson.count({ where: { moduleId } });
+      const newLesson = await prisma.lesson.create({
+        data: {
+          moduleId,
+          title: title.trim(),
+          durationMin: parseInt(durationMin) || 30,
+          position: count + 1,
+          isFreePreview: Boolean(isFreePreview),
+          videoUrl: videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        },
+      });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, lesson: newLesson });
+    }
+
+    if (action === "update_lesson") {
+      const { lessonId, title, durationMin, isFreePreview, videoUrl, position } = body;
+      const updatedLesson = await prisma.lesson.update({
+        where: { id: lessonId },
+        data: {
+          title: title !== undefined ? title.trim() : undefined,
+          durationMin: durationMin !== undefined ? (parseInt(durationMin) || 30) : undefined,
+          isFreePreview: isFreePreview !== undefined ? Boolean(isFreePreview) : undefined,
+          videoUrl: videoUrl !== undefined ? videoUrl : undefined,
+          position: position !== undefined ? parseInt(position) : undefined,
+        },
+      });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, lesson: updatedLesson });
+    }
+
+    if (action === "delete_lesson") {
+      const { lessonId } = body;
+      await prisma.lesson.delete({ where: { id: lessonId } });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, message: "Lesson deleted." });
+    }
+
+    if (action === "add_course_material") {
+      const { courseId, title, description, fileUrl, fileSize, fileType, category } = body;
+      if (!courseId || !title || !fileUrl) {
+        return NextResponse.json({ error: "Course, title, and file are required" }, { status: 400 });
+      }
+      const course = await prisma.course.findFirst({
+        where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
+      });
+      if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+
+      const material = await prisma.courseMaterial.create({
+        data: {
+          courseId,
+          title: title.trim(),
+          description: description?.trim() || null,
+          fileUrl,
+          fileSize: fileSize || "1.5 MB",
+          fileType: fileType || "application/pdf",
+          category: category || "HANDOUT",
+        },
+      });
+      broadcastLMSEvent("MATERIALS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, material });
+    }
+
+    if (action === "delete_course_material") {
+      const { materialId } = body;
+      await prisma.courseMaterial.delete({ where: { id: materialId } });
+      broadcastLMSEvent("MATERIALS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, message: "Material deleted." });
     }
 
     if (action === "update_profile") {

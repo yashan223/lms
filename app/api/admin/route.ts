@@ -137,6 +137,14 @@ export async function GET(request: NextRequest) {
           },
           enrollments: {
             include: { user: true },
+            orderBy: { enrolledAt: "desc" },
+          },
+          events: {
+            orderBy: { dueDate: "desc" },
+          },
+          reviews: {
+            include: { user: true },
+            orderBy: { createdAt: "desc" },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -567,7 +575,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_course") {
-      const { courseId, title, subtitle, description, category, subjectCode, price, tokens, level, status, tutorId, instructorId } = body;
+      const { courseId, title, subtitle, description, category, subjectCode, price, tokens, level, status, tutorId, instructorId, thumbnail, featured } = body;
       const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 10.0);
       const updatedCourse = await prisma.course.update({
         where: { id: courseId },
@@ -577,6 +585,8 @@ export async function POST(request: NextRequest) {
           description,
           category,
           subjectCode,
+          thumbnail: thumbnail !== undefined ? thumbnail : undefined,
+          featured: featured !== undefined ? Boolean(featured) : undefined,
           price: isNaN(tokenValue) ? 10.0 : tokenValue,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,
@@ -607,6 +617,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, module: newModule });
     }
 
+    if (action === "update_module") {
+      const { moduleId, title, position } = body;
+      const updatedModule = await prisma.module.update({
+        where: { id: moduleId },
+        data: {
+          title: title !== undefined ? title : undefined,
+          position: position !== undefined ? parseInt(position) : undefined,
+        },
+      });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, module: updatedModule });
+    }
+
     if (action === "delete_module") {
       const { moduleId } = body;
       await prisma.module.delete({ where: { id: moduleId } });
@@ -631,11 +654,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, lesson: newLesson });
     }
 
+    if (action === "update_lesson") {
+      const { lessonId, title, durationMin, isFreePreview, videoUrl, position } = body;
+      const updatedLesson = await prisma.lesson.update({
+        where: { id: lessonId },
+        data: {
+          title: title !== undefined ? title : undefined,
+          durationMin: durationMin !== undefined ? (parseInt(durationMin) || 30) : undefined,
+          isFreePreview: isFreePreview !== undefined ? Boolean(isFreePreview) : undefined,
+          videoUrl: videoUrl !== undefined ? videoUrl : undefined,
+          position: position !== undefined ? parseInt(position) : undefined,
+        },
+      });
+      broadcastLMSEvent("COURSES_CHANGED");
+      return NextResponse.json({ success: true, lesson: updatedLesson });
+    }
+
     if (action === "delete_lesson") {
       const { lessonId } = body;
       await prisma.lesson.delete({ where: { id: lessonId } });
       broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "schedule_class" || action === "create_class") {
+      const { title, description, dueDate, courseId, meetingLink } = body;
+      const newEvent = await prisma.event.create({
+        data: {
+          title: title || "Scheduled Live Class",
+          description: description || null,
+          type: "LIVE_SEMINAR",
+          status: "SCHEDULED",
+          meetingLink: meetingLink || "https://meet.google.com/new",
+          dueDate: new Date(dueDate || Date.now() + 24 * 60 * 60 * 1000),
+          courseId: courseId || null,
+          approvalStatus: "APPROVED",
+        },
+      });
+      broadcastLMSEvent("EVENTS_CHANGED");
+      return NextResponse.json({ success: true, event: newEvent });
     }
 
     if (action === "create_mock_paper" || action === "create_assessment") {

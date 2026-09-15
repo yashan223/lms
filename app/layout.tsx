@@ -18,11 +18,11 @@ export const metadata: Metadata = {
     "Unified multi-role learning platform with accredited courses, interactive faculty curriculum studio, and system administrator control center.",
   icons: {
     icon: [
-      { url: "/favicon.png", sizes: "any" },
+      { url: "/favicon.png?v=2", sizes: "any" },
       { url: "/icon.png", type: "image/png" },
       { url: "/logo-square.png", sizes: "192x192", type: "image/png" },
     ],
-    shortcut: "/favicon.png",
+    shortcut: "/favicon.png?v=2",
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
       { url: "/logo-square.png", sizes: "180x180", type: "image/png" },

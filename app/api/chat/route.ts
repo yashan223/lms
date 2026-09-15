@@ -84,7 +84,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
       }
 
-      if (conversation.participantAId !== currentUserId && conversation.participantBId !== currentUserId) {
+      if (
+        conversation.participantAId !== currentUserId &&
+        conversation.participantBId !== currentUserId &&
+        user.role !== Role.ADMIN
+      ) {
         return NextResponse.json({ error: "Forbidden access to conversation" }, { status: 403 });
       }
 

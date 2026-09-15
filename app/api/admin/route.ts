@@ -1,10 +1,12 @@
 import { NextResponse, NextRequest } from "next/server";
+import fs from "fs";
+import path from "path";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
-import { getBundles, saveBundles } from "@/lib/bundles";
+import { getBundles, saveBundles, DEFAULT_BUNDLES } from "@/lib/bundles";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +28,34 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
   delete_assessment: "CLASS", delete_event: "CLASS", create_mock_paper: "CLASS",
   approve_trial: "TRIAL", reject_trial: "TRIAL",
   update_bundles: "PRICING",
+  clear_all_data: "GENERAL",
 };
+
+async function clearLocalStorageUploads(): Promise<void> {
+  try {
+    const storageDir = process.env.STORAGE_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "storage", "uploads");
+    const subdirs = ["public", "private"];
+    for (const sub of subdirs) {
+      const fullPath = path.join(/*turbopackIgnore: true*/ storageDir, sub);
+      if (fs.existsSync(/*turbopackIgnore: true*/ fullPath)) {
+        const files = fs.readdirSync(/*turbopackIgnore: true*/ fullPath);
+        for (const file of files) {
+          if (file === ".gitkeep") continue;
+          try {
+            const filePath = path.join(/*turbopackIgnore: true*/ fullPath, file);
+            if (fs.statSync(/*turbopackIgnore: true*/ filePath).isFile()) {
+              fs.unlinkSync(/*turbopackIgnore: true*/ filePath);
+            }
+          } catch (e) {
+            console.error(`[storage] Failed to delete storage file ${file}:`, e);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[storage] Storage directory cleanup error:", err);
+  }
+}
 
 async function writeAuditLog(opts: {
   adminId: string;
@@ -1043,6 +1072,125 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Token bundle packages updated successfully!",
         bundles: cleanBundles,
+      });
+    }
+
+    if (action === "clear_all_data") {
+      // 1. Identify all administrator accounts to preserve
+      const adminUsers = await prisma.user.findMany({
+        where: { role: Role.ADMIN },
+        select: { id: true, email: true, name: true },
+      });
+
+      if (adminUsers.length === 0) {
+        return NextResponse.json(
+          { error: "No administrator account detected. Operation aborted for safety." },
+          { status: 400 }
+        );
+      }
+
+      // 2. Clear all LMS platform data inside a transaction
+      await prisma.$transaction(async (tx) => {
+        // Chat messages & conversations
+        await tx.message.deleteMany({});
+        await tx.conversation.deleteMany({});
+
+        // Realtime notifications
+        await tx.notification.deleteMany({});
+
+        // Tutor & Student calendar availabilities
+        await tx.studentAvailability.deleteMany({});
+        await tx.tutorAvailability.deleteMany({});
+
+        // 1-on-1 Trial consultation requests
+        await tx.trialRequest.deleteMany({});
+
+        // Live classes, workshops, seminars, and calendar events
+        await tx.event.deleteMany({});
+
+        // Student learning progress and enrollments
+        await tx.userProgress.deleteMany({});
+        await tx.enrollment.deleteMany({});
+
+        // Course ratings, reviews, and completion certificates
+        await tx.review.deleteMany({});
+        await tx.certificate.deleteMany({});
+
+        // Syllabus contents: materials, lessons, modules, and courses
+        await tx.courseMaterial.deleteMany({});
+        await tx.lesson.deleteMany({});
+        await tx.module.deleteMany({});
+        await tx.course.deleteMany({});
+
+        // Vault private files and student badge awards
+        await tx.privateFile.deleteMany({});
+        await tx.badgeAward.deleteMany({});
+
+        // Financial ledger: token transactions
+        await tx.tokenTransaction.deleteMany({});
+
+        // Reset admin wallet balance to 0, delete wallets for non-admins
+        await tx.tokenWallet.updateMany({
+          where: { user: { role: Role.ADMIN } },
+          data: { balance: 0 },
+        });
+        await tx.tokenWallet.deleteMany({
+          where: { user: { role: { not: Role.ADMIN } } },
+        });
+
+        // Verification & reset auth tokens
+        await tx.passwordResetToken.deleteMany({});
+        await tx.emailVerificationToken.deleteMany({});
+
+        // Delete all non-admin users (students, tutors, instructors)
+        await tx.user.deleteMany({
+          where: { role: { not: Role.ADMIN } },
+        });
+
+        // Realtime SSE system events
+        await tx.systemEvent.deleteMany({});
+
+        // Reset previous audit logs and record this wipe
+        await tx.auditLog.deleteMany({});
+        await tx.auditLog.create({
+          data: {
+            adminId: auth.user.id,
+            adminEmail: auth.user.email,
+            action: "clear_all_data",
+            category: "GENERAL",
+            targetLabel: "Complete LMS Platform Data Wipe",
+            details: {
+              clearedAt: new Date().toISOString(),
+              clearedBy: auth.user.email,
+              preservedAdmins: adminUsers.map((a) => a.email),
+            },
+            ipAddress,
+          },
+        });
+      }, { timeout: 30000 });
+
+      // 3. Reset token pricing packages to platform defaults
+      try {
+        await saveBundles(DEFAULT_BUNDLES);
+      } catch (bundleErr) {
+        console.warn("[clear_all_data] Failed to restore default bundles:", bundleErr);
+      }
+
+      // 4. Wipe physical files from storage uploads
+      await clearLocalStorageUploads();
+
+      // 5. Broadcast real-time events to all connected clients
+      broadcastLMSEvent("USERS_CHANGED");
+      broadcastLMSEvent("COURSES_CHANGED");
+      broadcastLMSEvent("ENROLLMENTS_CHANGED");
+      broadcastLMSEvent("NOTIFICATIONS_CHANGED");
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("CHAT_MESSAGE");
+
+      return NextResponse.json({
+        success: true,
+        message: `All LMS platform data cleared successfully. Preserved ${adminUsers.length} admin account(s).`,
+        preservedAdmins: adminUsers.map((a) => a.email),
       });
     }
   } catch (error) {

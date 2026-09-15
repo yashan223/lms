@@ -57,8 +57,12 @@ import {
   Copy,
   Check,
   Filter,
+  MessageSquare,
+  MessageSquareLock,
+  Lock,
 } from "lucide-react";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
+import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -119,6 +123,7 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   approve_course: { label: "Publish Masterclass", icon: ShieldCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   reject_course: { label: "Return Course to Draft", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
   update_bundles: { label: "Update Pricing Packages", icon: Coins, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+  clear_all_data: { label: "Wipe LMS Platform Data", icon: Trash2, color: "text-rose-600 bg-rose-50 border-rose-200" },
   system_test: { label: "System Health Audit Check", icon: ShieldCheck, color: "text-slate-600 bg-slate-50 border-slate-200" },
 };
 
@@ -135,7 +140,7 @@ const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: s
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "users" | "courses" | "finances" | "approvals" | "pricing" | "audit_log"
+    "overview" | "live_classes" | "users" | "courses" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -299,6 +304,194 @@ export default function AdminDashboardPage() {
   const [selectedLogForModal, setSelectedLogForModal] = useState<any | null>(null);
   const [copiedLogJson, setCopiedLogJson] = useState(false);
 
+  // ── Clear All Data State ───────────────────────────────────────────────
+  const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [clearDataConfirmInput, setClearDataConfirmInput] = useState("");
+  const [isClearingAllData, setIsClearingAllData] = useState(false);
+  const [clearDataSuccessMsg, setClearDataSuccessMsg] = useState<string | null>(null);
+  const [clearDataErrorMsg, setClearDataErrorMsg] = useState<string | null>(null);
+
+  const handleOpenClearDataModal = () => {
+    setClearDataConfirmInput("");
+    setClearDataErrorMsg(null);
+    setClearDataSuccessMsg(null);
+    setShowClearDataModal(true);
+  };
+
+  const handleExecuteClearAllData = async () => {
+    if (clearDataConfirmInput.trim().toUpperCase() !== "CLEAR DATA") {
+      setClearDataErrorMsg("Please type 'CLEAR DATA' exactly to confirm.");
+      return;
+    }
+
+    try {
+      setIsClearingAllData(true);
+      setClearDataErrorMsg(null);
+      setClearDataSuccessMsg(null);
+
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_all_data" }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setClearDataSuccessMsg(data.message || "All platform data has been cleared. Admin login preserved.");
+        await fetchAdminData(false);
+        if (activeTab === "audit_log") {
+          fetchAuditLogs(1, "", "ALL");
+        }
+        setTimeout(() => {
+          setShowClearDataModal(false);
+          setClearDataConfirmInput("");
+          setClearDataSuccessMsg(null);
+        }, 2200);
+      } else {
+        setClearDataErrorMsg(data.error || "Failed to clear platform data.");
+      }
+    } catch (err: any) {
+      console.error("Error clearing platform data:", err);
+      setClearDataErrorMsg(err?.message || "An unexpected error occurred while clearing data.");
+    } finally {
+      setIsClearingAllData(false);
+    }
+  };
+
+  // ── Admin Chat Monitoring State ───────────────────────────────────────
+  const [adminConversations, setAdminConversations] = useState<any[]>([]);
+  const [adminChatsLoading, setAdminChatsLoading] = useState(false);
+  const [adminChatsSearch, setAdminChatsSearch] = useState("");
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
+  const [conversationMessages, setConversationMessages] = useState<any[]>([]);
+  const [loadingConversationMessages, setLoadingConversationMessages] = useState(false);
+  const [decryptedAdminMessages, setDecryptedAdminMessages] = useState<Record<string, string>>({});
+  const [adminChatStats, setAdminChatStats] = useState({ totalConversations: 0, totalMessages: 0 });
+  const [activeAdminCryptoKey, setActiveAdminCryptoKey] = useState<CryptoKey | null>(null);
+  const [chatMessageSearch, setChatMessageSearch] = useState("");
+  const [isDeletingMessageId, setIsDeletingMessageId] = useState<string | null>(null);
+  const [isDeletingConvId, setIsDeletingConvId] = useState<string | null>(null);
+
+  const fetchAdminChats = async (search = adminChatsSearch) => {
+    try {
+      setAdminChatsLoading(true);
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("search", search.trim());
+      const res = await fetch(`/api/admin/chats?${params}`, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setAdminConversations(data.conversations || []);
+        if (data.stats) {
+          setAdminChatStats(data.stats);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching admin conversations:", err);
+    } finally {
+      setAdminChatsLoading(false);
+    }
+  };
+
+  const handleSelectConversation = async (conv: any) => {
+    setSelectedConversationId(conv.id);
+    setSelectedConversation(conv);
+    setLoadingConversationMessages(true);
+    setConversationMessages([]);
+    setDecryptedAdminMessages({});
+    setChatMessageSearch("");
+
+    try {
+      let key: CryptoKey | null = null;
+      try {
+        if (typeof window !== "undefined" && conv.participantAId && conv.participantBId) {
+          key = await deriveConversationKey(conv.participantAId, conv.participantBId);
+          setActiveAdminCryptoKey(key);
+        }
+      } catch (keyErr) {
+        console.warn("Failed to derive E2EE key for conversation:", keyErr);
+      }
+
+      const res = await fetch(`/api/admin/chats?conversationId=${conv.id}`, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        const msgs = data.messages || [];
+        setConversationMessages(msgs);
+
+        const decrypted: Record<string, string> = {};
+        for (const m of msgs) {
+          if (m.encryptedContent && m.iv && key) {
+            try {
+              const plain = await decryptMessage(m.encryptedContent, m.iv, key);
+              decrypted[m.id] = plain;
+            } catch {
+              decrypted[m.id] = m.encryptedContent;
+            }
+          } else {
+            decrypted[m.id] = m.encryptedContent || "";
+          }
+        }
+        setDecryptedAdminMessages(decrypted);
+      }
+    } catch (err) {
+      console.error("Error loading conversation messages:", err);
+    } finally {
+      setLoadingConversationMessages(false);
+    }
+  };
+
+  const handleDeleteChatMessage = (messageId: string) => {
+    setConfirmModalData({
+      isOpen: true,
+      title: "Delete Chat Message?",
+      description: "This will permanently remove this message from the conversation for both participants.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          setIsDeletingMessageId(messageId);
+          const res = await fetch(`/api/admin/chats?messageId=${messageId}`, { method: "DELETE" });
+          if (res.ok) {
+            setConversationMessages((prev) => prev.filter((m) => m.id !== messageId));
+            fetchAdminChats();
+          }
+        } catch (err) {
+          console.error("Error deleting message:", err);
+        } finally {
+          setIsDeletingMessageId(null);
+          setConfirmModalData((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
+
+  const handleDeleteConversation = (convId: string) => {
+    setConfirmModalData({
+      isOpen: true,
+      title: "Delete Entire Conversation?",
+      description: "This will permanently delete this conversation and all associated messages between the participants.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          setIsDeletingConvId(convId);
+          const res = await fetch(`/api/admin/chats?conversationId=${convId}`, { method: "DELETE" });
+          if (res.ok) {
+            if (selectedConversationId === convId) {
+              setSelectedConversationId(null);
+              setSelectedConversation(null);
+              setConversationMessages([]);
+            }
+            fetchAdminChats();
+          }
+        } catch (err) {
+          console.error("Error deleting conversation:", err);
+        } finally {
+          setIsDeletingConvId(null);
+          setConfirmModalData((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
+
   const fetchAuditLogs = async (page = 1, search = auditLogSearch, category = auditLogCategory) => {
     try {
       setAuditLogsLoading(true);
@@ -344,11 +537,14 @@ export default function AdminDashboardPage() {
     document.body.removeChild(link);
   };
 
-  // Load audit logs when tab becomes active
+  // Load audit logs or chats when tab becomes active
   const prevTabRef = React.useRef<string>("");
   React.useEffect(() => {
     if (activeTab === "audit_log" && prevTabRef.current !== "audit_log") {
       fetchAuditLogs(1, "", "ALL");
+    }
+    if (activeTab === "chats" && prevTabRef.current !== "chats") {
+      fetchAdminChats();
     }
     prevTabRef.current = activeTab;
   }, [activeTab]);
@@ -400,6 +596,32 @@ export default function AdminDashboardPage() {
       fetchAdminData(false);
       if (activeTab === "audit_log") {
         fetchAuditLogs(auditLogPage, auditLogSearch, auditLogCategory);
+      }
+      if (activeTab === "chats") {
+        fetchAdminChats();
+        if (selectedConversationId && activeAdminCryptoKey) {
+          fetch(`/api/admin/chats?conversationId=${selectedConversationId}`, { cache: "no-store" })
+            .then((r) => r.json())
+            .then(async (d) => {
+              if (d.messages) {
+                setConversationMessages(d.messages);
+                const decrypted: Record<string, string> = {};
+                for (const m of d.messages) {
+                  if (m.encryptedContent && m.iv) {
+                    try {
+                      decrypted[m.id] = await decryptMessage(m.encryptedContent, m.iv, activeAdminCryptoKey);
+                    } catch {
+                      decrypted[m.id] = m.encryptedContent;
+                    }
+                  } else {
+                    decrypted[m.id] = m.encryptedContent || "";
+                  }
+                }
+                setDecryptedAdminMessages(decrypted);
+              }
+            })
+            .catch(() => {});
+        }
       }
     },
   });
@@ -1378,6 +1600,7 @@ export default function AdminDashboardPage() {
     { id: "live_classes", label: "Live Classes & Meets", icon: Video },
     { id: "users", label: "User Management", icon: Users },
     { id: "courses", label: "Course Management", icon: BookOpen },
+    { id: "chats", label: "Chat Conversations", icon: MessageSquareLock },
     { id: "finances", label: "Course Purchases & Revenue", icon: DollarSign },
     { id: "pricing", label: "Pricing & Token Bundles", icon: Coins },
     { id: "audit_log", label: "Audit Log & History", icon: FileText },
@@ -1496,6 +1719,8 @@ export default function AdminDashboardPage() {
                     ? "User Management"
                     : activeTab === "courses"
                     ? "Course Management"
+                    : activeTab === "chats"
+                    ? "Chat Monitoring & Direct Conversations"
                     : activeTab === "finances"
                     ? "Financials & Tuition"
                     : activeTab === "pricing"
@@ -1525,6 +1750,18 @@ export default function AdminDashboardPage() {
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${loading ? "animate-spin" : ""}`} />
                 <span className="hidden sm:inline">Refresh Data</span>
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleOpenClearDataModal}
+                disabled={loading || isClearingAllData}
+                className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 hover:border-rose-300 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs transition-all"
+                title="Clear all LMS data except admin login"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span className="hidden sm:inline">Clear All Data</span>
               </Button>
 
               {activeTab === "live_classes" && (
@@ -2105,6 +2342,60 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
               </div>
+
+              {/* Danger Zone: Clear Platform Data */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-white border border-rose-200 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                      <Trash2 className="w-5 h-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-black text-slate-900">Platform Data Reset & Purge</h3>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700">
+                          High Risk Action
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                        Instantly clear all courses, modules, enrollments, student records, faculty tutors, messages, live classes, and uploaded files. 
+                        <strong> Administrator accounts and credentials are preserved</strong> so you remain logged in and can administer the platform.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={handleOpenClearDataModal}
+                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-9 px-4 rounded-xl gap-2 shadow-xs shrink-0 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Clear All LMS Data</span>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                    <div className="font-bold text-slate-700 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                      <span>Data That Will Be Cleared:</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      All courses, syllabus modules & lessons, materials, student enrollments, progress, tutor & student accounts, live Google Meet sessions, trial bookings, and chat messages.
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
+                    <div className="font-bold text-emerald-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span>Data That Will Be Preserved:</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 leading-relaxed">
+                      All Administrator accounts (email, password hash, role) so you retain instant access. Token bundle pricing defaults will also be retained.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2427,6 +2718,394 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "chats" && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Top Chat Monitoring KPI Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Active Direct Conversations</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {adminChatStats.totalConversations} Threads
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Active 1-on-1 Academic Conversations
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Total Transmitted Messages</span>
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {adminChatStats.totalMessages} Messages
+                  </div>
+                  <div className="text-[11px] text-indigo-600 font-semibold">
+                    Encrypted Ledger History
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-emerald-600">Institutional Governance</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mt-1">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Live Decrypted Inspection</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Safeguarding & Academic Compliance Audit
+                  </div>
+                </div>
+              </div>
+
+              {/* Two-Column Chat Workspace */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column: Conversation Directory */}
+                <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs flex flex-col h-[650px]">
+                  {/* Left Column Header & Search */}
+                  <div className="p-4 border-b border-slate-100 space-y-3 bg-slate-50/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageSquareLock className="w-4 h-4 text-blue-600" />
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900">
+                          Conversations Directory
+                        </h3>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-800 text-[10px] font-mono">
+                        {adminConversations.length} Active
+                      </Badge>
+                    </div>
+
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder="Search student or faculty member..."
+                        value={adminChatsSearch}
+                        onChange={(e) => {
+                          setAdminChatsSearch(e.target.value);
+                          fetchAdminChats(e.target.value);
+                        }}
+                        className="pl-8 h-9 text-xs rounded-xl border-slate-200 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Conversation Cards List */}
+                  <div className="flex-1 overflow-y-auto p-2 space-y-1.5 divide-y divide-slate-50">
+                    {adminChatsLoading && adminConversations.length === 0 ? (
+                      <div className="py-20 text-center space-y-2">
+                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin mx-auto" />
+                        <p className="text-xs text-slate-400">Loading conversation threads...</p>
+                      </div>
+                    ) : adminConversations.length === 0 ? (
+                      <div className="py-20 text-center space-y-2 px-4">
+                        <MessageSquare className="w-8 h-8 text-slate-300 mx-auto" />
+                        <div className="font-bold text-xs text-slate-700">No Chat Conversations Found</div>
+                        <p className="text-[11px] text-slate-400">
+                          {adminChatsSearch
+                            ? "No conversation matched your search criteria."
+                            : "Direct conversations between students and tutors will appear here."}
+                        </p>
+                      </div>
+                    ) : (
+                      adminConversations.map((conv) => {
+                        const isSelected = selectedConversationId === conv.id;
+                        const partA = conv.participantA;
+                        const partB = conv.participantB;
+                        const msgCount = conv._count?.messages ?? 0;
+
+                        return (
+                          <div
+                            key={conv.id}
+                            onClick={() => handleSelectConversation(conv)}
+                            className={`p-3 rounded-xl transition-all cursor-pointer border group relative ${
+                              isSelected
+                                ? "bg-blue-50/90 border-blue-200 shadow-2xs"
+                                : "bg-white hover:bg-slate-50 border-transparent hover:border-slate-200"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              {/* Participant Avatars & Info */}
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="flex -space-x-2 shrink-0">
+                                  <Avatar className="w-7 h-7 ring-2 ring-white">
+                                    {partA?.avatar && <AvatarImage src={partA.avatar} />}
+                                    <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-bold">
+                                      {partA?.name?.charAt(0) || "U"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <Avatar className="w-7 h-7 ring-2 ring-white">
+                                    {partB?.avatar && <AvatarImage src={partB.avatar} />}
+                                    <AvatarFallback className="bg-sky-100 text-sky-700 text-[10px] font-bold">
+                                      {partB?.name?.charAt(0) || "U"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-bold text-slate-900 truncate">
+                                    {partA?.name || "User A"} <span className="text-slate-400 font-normal">&</span> {partB?.name || "User B"}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500 truncate">
+                                    <span className={`px-1.5 py-0.2 rounded font-semibold ${partA?.role === "STUDENT" ? "bg-blue-50 text-blue-700" : "bg-sky-50 text-sky-700"}`}>
+                                      {partA?.role || "USER"}
+                                    </span>
+                                    <span>•</span>
+                                    <span className={`px-1.5 py-0.2 rounded font-semibold ${partB?.role === "STUDENT" ? "bg-blue-50 text-blue-700" : "bg-sky-50 text-sky-700"}`}>
+                                      {partB?.role || "USER"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Time & Msg Count */}
+                              <div className="text-right shrink-0 space-y-0.5">
+                                <div className="text-[10px] text-slate-400">
+                                  {conv.lastMessageAt ? getRelativeTimeString(conv.lastMessageAt) : "Recent"}
+                                </div>
+                                <span className="inline-block px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600">
+                                  {msgCount} {msgCount === 1 ? "msg" : "msgs"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Thread Delete Quick Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteConversation(conv.id);
+                              }}
+                              className="absolute right-2.5 bottom-2.5 p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Delete conversation thread"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Column: Active Conversation Transcript & Messages */}
+                <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs flex flex-col h-[650px]">
+                  {!selectedConversation ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3 bg-slate-50/30">
+                      <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
+                        <MessageSquareLock className="w-7 h-7" />
+                      </div>
+                      <div className="space-y-1 max-w-sm">
+                        <h4 className="font-bold text-sm text-slate-900">Institutional Chat Monitoring</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Select any direct message conversation from the directory on the left to inspect transcripts, timestamps, and safeguarding records.
+                        </p>
+                      </div>
+                      <div className="pt-2 flex items-center gap-1.5 text-[11px] text-slate-400 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>All E2EE messages are verified & decrypted for academic compliance</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Active Conversation Header */}
+                      <div className="p-4 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex -space-x-2 shrink-0">
+                            <Avatar className="w-8 h-8 ring-2 ring-white">
+                              {selectedConversation.participantA?.avatar && (
+                                <AvatarImage src={selectedConversation.participantA.avatar} />
+                              )}
+                              <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-bold">
+                                {selectedConversation.participantA?.name?.charAt(0) || "A"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <Avatar className="w-8 h-8 ring-2 ring-white">
+                              {selectedConversation.participantB?.avatar && (
+                                <AvatarImage src={selectedConversation.participantB.avatar} />
+                              )}
+                              <AvatarFallback className="bg-sky-100 text-sky-700 text-xs font-bold">
+                                {selectedConversation.participantB?.name?.charAt(0) || "B"}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 truncate">
+                              <span>{selectedConversation.participantA?.name}</span>
+                              <span className="text-slate-400">&</span>
+                              <span>{selectedConversation.participantB?.name}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold mt-0.5">
+                              <Lock className="w-3 h-3 text-emerald-600" />
+                              <span>E2EE Transcript Decrypted</span>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-500 font-normal">
+                                {conversationMessages.length} total messages
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Search in messages & Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="relative w-36 sm:w-44">
+                            <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                            <Input
+                              placeholder="Search transcript..."
+                              value={chatMessageSearch}
+                              onChange={(e) => setChatMessageSearch(e.target.value)}
+                              className="pl-7 h-8 text-[11px] rounded-lg border-slate-200 bg-white"
+                            />
+                          </div>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSelectConversation(selectedConversation)}
+                            disabled={loadingConversationMessages}
+                            className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-100 text-xs cursor-pointer shadow-2xs"
+                            title="Refresh messages"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${loadingConversationMessages ? "animate-spin text-blue-600" : ""}`} />
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteConversation(selectedConversation.id)}
+                            className="h-8 px-2.5 rounded-lg border-rose-200 text-rose-600 hover:bg-rose-50 text-xs cursor-pointer shadow-2xs"
+                            title="Delete entire thread"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Messages Scroll Area */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/30">
+                        {loadingConversationMessages ? (
+                          <div className="py-24 text-center space-y-2">
+                            <Loader2 className="w-6 h-6 text-blue-600 animate-spin mx-auto" />
+                            <p className="text-xs text-slate-400">Decrypting and loading messages...</p>
+                          </div>
+                        ) : conversationMessages.length === 0 ? (
+                          <div className="py-24 text-center space-y-2">
+                            <MessageSquare className="w-8 h-8 text-slate-300 mx-auto" />
+                            <p className="text-xs text-slate-500 font-semibold">No messages in this conversation yet</p>
+                          </div>
+                        ) : (
+                          conversationMessages
+                            .filter((m) => {
+                              if (!chatMessageSearch.trim()) return true;
+                              const content = decryptedAdminMessages[m.id] || m.encryptedContent || "";
+                              return content.toLowerCase().includes(chatMessageSearch.toLowerCase());
+                            })
+                            .map((msg) => {
+                              const isFromPartA = msg.senderId === selectedConversation.participantAId;
+                              const sender = isFromPartA ? selectedConversation.participantA : selectedConversation.participantB;
+                              const decryptedText = decryptedAdminMessages[msg.id] || msg.encryptedContent;
+                              const isDeleting = isDeletingMessageId === msg.id;
+
+                              return (
+                                <div
+                                  key={msg.id}
+                                  className={`flex items-start gap-2.5 group ${isFromPartA ? "justify-start" : "justify-end"}`}
+                                >
+                                  {isFromPartA && (
+                                    <Avatar className="w-7 h-7 ring-1 ring-slate-200 shrink-0 mt-0.5">
+                                      {sender?.avatar && <AvatarImage src={sender.avatar} />}
+                                      <AvatarFallback className="bg-blue-100 text-blue-800 text-[10px] font-bold">
+                                        {sender?.name?.charAt(0) || "A"}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  )}
+
+                                  <div className={`max-w-[78%] space-y-1 ${isFromPartA ? "items-start" : "items-end text-right"}`}>
+                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 px-1">
+                                      <span className="font-bold text-slate-700">{sender?.name || "Participant"}</span>
+                                      <span className={`px-1 py-0.2 rounded text-[9px] font-bold ${
+                                        sender?.role === "STUDENT" ? "bg-blue-50 text-blue-700" : "bg-sky-50 text-sky-700"
+                                      }`}>
+                                        {sender?.role || "USER"}
+                                      </span>
+                                      <span>•</span>
+                                      <span>{getRelativeTimeString(msg.createdAt)}</span>
+                                    </div>
+
+                                    <div className="relative group/bubble flex items-center gap-1.5">
+                                      {!isFromPartA && (
+                                        <button
+                                          onClick={() => handleDeleteChatMessage(msg.id)}
+                                          disabled={isDeleting}
+                                          className="opacity-0 group-hover/bubble:opacity-100 transition-opacity p-1 text-slate-400 hover:text-red-600 rounded cursor-pointer"
+                                          title="Delete message"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      )}
+
+                                      <div
+                                        className={`p-3 rounded-2xl text-xs leading-relaxed shadow-2xs ${
+                                          isFromPartA
+                                            ? "bg-white border border-slate-200/80 text-slate-800 rounded-tl-xs"
+                                            : "bg-blue-600 text-white rounded-tr-xs"
+                                        }`}
+                                      >
+                                        <p className="whitespace-pre-wrap break-words">{decryptedText}</p>
+                                      </div>
+
+                                      {isFromPartA && (
+                                        <button
+                                          onClick={() => handleDeleteChatMessage(msg.id)}
+                                          disabled={isDeleting}
+                                          className="opacity-0 group-hover/bubble:opacity-100 transition-opacity p-1 text-slate-400 hover:text-red-600 rounded cursor-pointer"
+                                          title="Delete message"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {!isFromPartA && (
+                                    <Avatar className="w-7 h-7 ring-1 ring-slate-200 shrink-0 mt-0.5">
+                                      {sender?.avatar && <AvatarImage src={sender.avatar} />}
+                                      <AvatarFallback className="bg-sky-100 text-sky-800 text-[10px] font-bold">
+                                        {sender?.name?.charAt(0) || "B"}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  )}
+                                </div>
+                              );
+                            })
+                        )}
+                      </div>
+
+                      {/* Footer compliance notice */}
+                      <div className="p-3 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Administrative Compliance Inspection • Messages are decrypted client-side for safety</span>
+                        </div>
+                        <span className="font-mono text-[10px] text-slate-400">Zero-Knowledge Relay</span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -5544,6 +6223,140 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Clear All Data Confirmation Modal ── */}
+      {showClearDataModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6 text-rose-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">
+                    Irreversible Operation
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  Clear All Platform Data
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Reset the LMS database to empty state while preserving administrator login access.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isClearingAllData && setShowClearDataModal(false)}
+                disabled={isClearingAllData}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-5 sm:p-6 space-y-4">
+              {clearDataSuccessMsg ? (
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">{clearDataSuccessMsg}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2.5 text-xs text-slate-600">
+                    <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200/80 space-y-1.5">
+                      <div className="font-bold text-rose-900 flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
+                        <span>This will permanently delete:</span>
+                      </div>
+                      <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-rose-800">
+                        <li>All student accounts, faculty tutors, and profiles</li>
+                        <li>All masterclass courses, modules, lessons & materials</li>
+                        <li>All course enrollments, student progress & certificates</li>
+                        <li>All live Google Meet events, schedules & bookings</li>
+                        <li>All 1-on-1 trial consultation requests</li>
+                        <li>All end-to-end encrypted chat messages</li>
+                        <li>All student token wallets & credit transaction logs</li>
+                        <li>All uploaded course handout & document files</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/80 flex items-center gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="text-[11px] text-emerald-800 font-semibold leading-tight">
+                        <strong>Administrator accounts are protected:</strong> Your admin email and password login will remain intact.
+                      </div>
+                    </div>
+                  </div>
+
+                  {clearDataErrorMsg && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>{clearDataErrorMsg}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      To confirm, type <span className="font-mono text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">CLEAR DATA</span> below:
+                    </label>
+                    <Input
+                      placeholder="CLEAR DATA"
+                      value={clearDataConfirmInput}
+                      onChange={(e) => {
+                        setClearDataConfirmInput(e.target.value);
+                        if (clearDataErrorMsg) setClearDataErrorMsg(null);
+                      }}
+                      disabled={isClearingAllData}
+                      className="h-10 text-xs font-mono border-slate-200 rounded-xl focus-visible:ring-rose-400"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClearDataModal(false)}
+                disabled={isClearingAllData}
+                className="text-xs font-semibold text-slate-700 h-9 px-4 rounded-xl border-slate-200"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleExecuteClearAllData}
+                disabled={
+                  isClearingAllData ||
+                  clearDataConfirmInput.trim().toUpperCase() !== "CLEAR DATA" ||
+                  Boolean(clearDataSuccessMsg)
+                }
+                className="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white h-9 px-5 rounded-xl shadow-xs shadow-rose-600/20 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+              >
+                {isClearingAllData ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Purging Platform Data...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Wipe Platform Data</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}

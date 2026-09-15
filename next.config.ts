@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
     DEFAULT_ADMIN_NAME: process.env.DEFAULT_ADMIN_NAME || "Administrator",
   },
   allowedDevOrigins: [
-    "lms.xoxod33p.tech",
-    "*.xoxod33p.tech",
+    "pulseedu.online ",
+    "*.pulseedu.online ",
     "54.169.4.38",
     "localhost",
     "localhost:3000",
@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Access-Control-Allow-Origin",
-            value: "https://lms.xoxod33p.tech",
+            value: "https://pulseedu.online ",
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -85,7 +85,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "lms.xoxod33p.tech",
+        hostname: "pulseedu.online ",
       },
       {
         protocol: "https",

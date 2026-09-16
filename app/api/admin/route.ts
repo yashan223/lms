@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
     // ──────────────────────────────────────────────────────────────────────
 
     if (action === "create_user" || action === "create_candidate") {
-      const { name, email, password, phone, role, headline, bio, initialCourseId } = body;
+      const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
       if (!email || typeof email !== "string" || !email.trim()) {
@@ -317,6 +317,17 @@ export async function POST(request: NextRequest) {
 
       const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "TutorPass123!" : "StudentPass123!");
       const hashedPassword = hashPassword(rawPassword);
+
+      let initialBio = bio || `Registered academic member of EduPulse Academy.`;
+      if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
+        try {
+          const parsed = initialBio.trim().startsWith("{") ? JSON.parse(initialBio) : { about: initialBio };
+          parsed.hourlyRate = String(hourlyRate || "65").trim();
+          initialBio = JSON.stringify(parsed);
+        } catch {
+          initialBio = JSON.stringify({ about: initialBio, hourlyRate: String(hourlyRate || "65").trim() });
+        }
+      }
 
       const newUser = await prisma.user.create({
         data: {
@@ -327,7 +338,7 @@ export async function POST(request: NextRequest) {
           emailVerified: assignedRole === Role.TUTOR ? null : new Date(),
           phone: phone ? phone.trim() : null,
           headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Faculty Tutor" : "London A/L Student"),
-          bio: bio || `Registered academic member of EduPulse Academy.`,
+          bio: initialBio,
           avatar: assignedRole === Role.ADMIN
             ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
             : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR"
@@ -382,14 +393,36 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_user") {
-      const { userId, name, email, phone, role, headline, bio, password } = body;
+      const { userId, name, email, phone, role, headline, bio, password, hourlyRate } = body;
+
+      let finalBio = bio;
+      if (hourlyRate !== undefined) {
+        let parsedBio: any = {};
+        try {
+          if (finalBio && typeof finalBio === "string" && finalBio.trim().startsWith("{")) {
+            parsedBio = JSON.parse(finalBio);
+          } else {
+            const existing = await prisma.user.findUnique({ where: { id: userId }, select: { bio: true } });
+            if (existing?.bio && existing.bio.trim().startsWith("{")) {
+              parsedBio = JSON.parse(existing.bio);
+            } else if (finalBio) {
+              parsedBio = { about: finalBio };
+            }
+          }
+        } catch {
+          parsedBio = { about: finalBio || "" };
+        }
+        parsedBio.hourlyRate = String(hourlyRate).trim() || "65";
+        finalBio = JSON.stringify(parsedBio);
+      }
+
       const updateData: any = {
         name,
         email: email.trim().toLowerCase(),
         phone: phone ? phone.trim() : null,
         role: (role as Role) || Role.STUDENT,
         headline,
-        bio,
+        bio: finalBio,
       };
       if (password) {
         updateData.passwordHash = password;

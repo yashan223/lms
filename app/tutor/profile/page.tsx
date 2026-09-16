@@ -32,6 +32,7 @@ import {
   Check,
   RefreshCw,
   BadgeCheck,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -744,18 +745,28 @@ function TutorProfileContent() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="font-bold text-xs text-slate-700 block">
-                      Hourly Rate ($ / hr)
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-xs text-slate-700 block">
+                        Hourly Rate ($ / hr)
+                      </label>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        <Lock className="w-2.5 h-2.5" />
+                        Set by Admin
+                      </span>
+                    </div>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
                       <Input
                         value={hourlyRate}
-                        onChange={(e) => setHourlyRate(e.target.value)}
+                        disabled
+                        readOnly
                         placeholder="65"
-                        className="rounded-xl h-9 text-xs pl-7"
+                        className="rounded-xl h-9 text-xs pl-7 bg-slate-100/90 text-slate-700 font-semibold cursor-not-allowed border-dashed"
                       />
                     </div>
+                    <p className="text-[10px] text-slate-400">
+                      Tutor hourly rates are managed by academy administration.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">

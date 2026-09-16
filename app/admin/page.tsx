@@ -207,6 +207,7 @@ export default function AdminDashboardPage() {
   const [formUserRole, setFormUserRole] = useState("STUDENT");
   const [formUserHeadline, setFormUserHeadline] = useState("");
   const [formUserBio, setFormUserBio] = useState("");
+  const [formUserHourlyRate, setFormUserHourlyRate] = useState("65");
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
   // Grant Free Credit Modal State
@@ -670,6 +671,16 @@ export default function AdminDashboardPage() {
     }, 0);
   }, [coursesList]);
 
+  const getUserHourlyRate = (user: any): string => {
+    if (!user?.bio) return "65";
+    try {
+      const parsed = typeof user.bio === "string" && user.bio.trim().startsWith("{") ? JSON.parse(user.bio) : null;
+      return parsed?.hourlyRate ? String(parsed.hourlyRate) : "65";
+    } catch {
+      return "65";
+    }
+  };
+
   const handleOpenAddUser = () => {
     setFormUserName("");
     setFormUserEmail("");
@@ -678,6 +689,7 @@ export default function AdminDashboardPage() {
     setFormUserRole("STUDENT");
     setFormUserHeadline("");
     setFormUserBio("");
+    setFormUserHourlyRate("65");
     setShowAddUserModal(true);
   };
 
@@ -696,6 +708,7 @@ export default function AdminDashboardPage() {
           role: formUserRole,
           headline: formUserHeadline,
           bio: formUserBio,
+          hourlyRate: formUserHourlyRate,
         }),
       });
 
@@ -719,6 +732,7 @@ export default function AdminDashboardPage() {
     setFormUserRole(user.role);
     setFormUserHeadline(user.headline || "");
     setFormUserBio(user.bio || "");
+    setFormUserHourlyRate(getUserHourlyRate(user));
     setShowEditUserModal(true);
   };
 
@@ -738,6 +752,7 @@ export default function AdminDashboardPage() {
           role: formUserRole,
           headline: formUserHeadline,
           bio: formUserBio,
+          hourlyRate: formUserHourlyRate,
         }),
       });
 
@@ -2389,7 +2404,7 @@ export default function AdminDashboardPage() {
                       <tr>
                         <th className="py-3.5 px-4">User Member</th>
                         <th className="py-3.5 px-4">System Role</th>
-                        <th className="py-3.5 px-4">Learning Credit</th>
+                        <th className="py-3.5 px-4">Credit / Rate</th>
                         <th className="py-3.5 px-4">Academic Title / Headline</th>
                         <th className="py-3.5 px-4">Enrolled / Taught Courses</th>
                         <th className="py-3.5 px-4">Registration Date</th>
@@ -2441,6 +2456,13 @@ export default function AdminDashboardPage() {
                                 <span className="font-mono">{u.tokenWallet?.balance ?? 0} Hrs</span>
                                 <Plus className="w-3 h-3 text-amber-700 opacity-60 group-hover:opacity-100" />
                               </button>
+                            ) : u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR" ? (
+                              <span
+                                className="inline-flex items-center gap-1 text-xs font-mono font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200"
+                                title="Tutor Hourly Rate (Set by Admin)"
+                              >
+                                ${getUserHourlyRate(u)}/hr
+                              </span>
                             ) : (
                               <span className="text-slate-400 text-xs font-mono">—</span>
                             )}
@@ -4469,6 +4491,25 @@ export default function AdminDashboardPage() {
                 <label className="font-bold block mb-1">Academic Title / Headline</label>
                 <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
+              {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
+                <div>
+                  <label className="font-bold block mb-1">Hourly Rate ($ / hr)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      placeholder="65"
+                      value={formUserHourlyRate}
+                      onChange={(e) => setFormUserHourlyRate(e.target.value)}
+                      className="rounded-xl pl-7 focus-visible:ring-blue-400"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Tutors cannot modify their own hourly rate. Set and managed exclusively by academy admin.
+                  </p>
+                </div>
+              )}
               <div className="pt-2 flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowAddUserModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
                 <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Create User</Button>
@@ -4513,6 +4554,25 @@ export default function AdminDashboardPage() {
                 <label className="font-bold block mb-1">Academic Title</label>
                 <Input value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
+              {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
+                <div>
+                  <label className="font-bold block mb-1">Hourly Rate ($ / hr)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      placeholder="65"
+                      value={formUserHourlyRate}
+                      onChange={(e) => setFormUserHourlyRate(e.target.value)}
+                      className="rounded-xl pl-7 focus-visible:ring-blue-400"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Tutors cannot modify their own hourly rate. Set and managed exclusively by academy admin.
+                  </p>
+                </div>
+              )}
               <div className="pt-2 flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowEditUserModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
                 <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Save Changes</Button>

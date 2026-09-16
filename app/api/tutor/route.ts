@@ -401,12 +401,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Fetch existing tutor to preserve admin-configured hourly rate
+      const existingTutor = await prisma.user.findUnique({
+        where: { id: tutorId },
+        select: { bio: true },
+      });
+
+      let existingHourlyRate = "65";
+      if (existingTutor?.bio) {
+        try {
+          const parsedExisting = JSON.parse(existingTutor.bio);
+          if (parsedExisting.hourlyRate) existingHourlyRate = String(parsedExisting.hourlyRate);
+        } catch {}
+      }
+
+      // Ensure hourlyRate cannot be modified by tutor (must retain admin-set rate)
+      let finalBio = bio ? bio.trim() : undefined;
+      if (finalBio) {
+        try {
+          const parsedBio = JSON.parse(finalBio);
+          parsedBio.hourlyRate = existingHourlyRate;
+          finalBio = JSON.stringify(parsedBio);
+        } catch {}
+      }
+
       const updatedTutor = await prisma.user.update({
         where: { id: tutorId },
         data: {
           name: name ? name.trim() : undefined,
           headline: headline ? headline.trim() : undefined,
-          bio: bio ? bio.trim() : undefined,
+          bio: finalBio,
           phone: phone ? phone.trim() : null,
           avatar: avatar || undefined,
         },

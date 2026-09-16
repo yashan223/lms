@@ -350,18 +350,6 @@ function TutorProfileContent() {
     }
   };
 
-  // Calculate Profile Strength
-  const profileStrength = Math.min(
-    100,
-    (name ? 15 : 0) +
-      (headline ? 15 : 0) +
-      (avatar ? 15 : 0) +
-      (degrees.length > 0 ? 15 : 0) +
-      (specializations.length > 0 ? 15 : 0) +
-      (certifications.length > 0 ? 10 : 0) +
-      (about && about.length > 50 ? 15 : 0)
-  );
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
@@ -466,7 +454,7 @@ function TutorProfileContent() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Real-Time Live Preview & Strength Meter (4 cols) */}
+          {/* Left Column: Real-Time Live Preview (4 cols) */}
           <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-5">
             {/* Live Preview Card */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 sticky top-24">
@@ -568,26 +556,6 @@ function TutorProfileContent() {
                 </div>
                 <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
                   {about || "Experienced faculty lecturer focused on exam methodology and structured student mastery."}
-                </p>
-              </div>
-
-              {/* Profile Completion Bar */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-700 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Profile Strength</span>
-                  </span>
-                  <span className="text-blue-600">{profileStrength}%</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-blue-600 to-emerald-500 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${profileStrength}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 leading-tight">
-                  High profile completion rates increase student consultation and enrollment inquiries by 3.4x.
                 </p>
               </div>
             </div>

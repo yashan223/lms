@@ -14,6 +14,7 @@ import {
   Users,
   MessageSquareLock,
   Minimize2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,7 @@ export function EncryptedChatDrawer({
   const [showContactsList, setShowContactsList] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCryptoKey, setActiveCryptoKey] = useState<CryptoKey | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -201,6 +203,7 @@ export function EncryptedChatDrawer({
   const handleStartConversationWith = async (contactId: string) => {
     try {
       setLoadingMessages(true);
+      setErrorMessage(null);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -217,9 +220,13 @@ export function EncryptedChatDrawer({
         setShowContactsList(false);
         await fetchMessages(conv.id, conv.otherUser);
         await fetchConversations();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMessage(data.error || "Cannot initiate messaging. A requested 1-on-1 trial or enrolled course is required.");
       }
     } catch (err) {
       console.error("Error starting conversation:", err);
+      setErrorMessage("Failed to start conversation. Please try again.");
     } finally {
       setLoadingMessages(false);
     }
@@ -234,6 +241,7 @@ export function EncryptedChatDrawer({
 
     try {
       setIsSending(true);
+      setErrorMessage(null);
 
       const { encryptedContent, iv } = await encryptMessage(plainText, activeCryptoKey);
 
@@ -256,9 +264,13 @@ export function EncryptedChatDrawer({
         setDecryptedMap((prev) => ({ ...prev, [newMsg.id]: plainText }));
         setTimeout(scrollToBottom, 50);
         fetchConversations();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMessage(data.error || "Failed to send message. A requested 1-on-1 trial or enrolled course is required.");
       }
     } catch (err) {
       console.error("Error sending encrypted message:", err);
+      setErrorMessage("Network error while sending message.");
     } finally {
       setIsSending(false);
       inputRef.current?.focus();
@@ -360,6 +372,21 @@ export function EncryptedChatDrawer({
           </div>
 
           <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+            {errorMessage && (
+              <div className="mx-3 mt-2.5 p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-2 shrink-0 shadow-2xs animate-in fade-in">
+                <div className="flex items-start gap-1.5 min-w-0">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
+                  <span className="leading-tight text-[11px] font-medium">{errorMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setErrorMessage(null)}
+                  className="p-0.5 text-rose-400 hover:text-rose-700 rounded cursor-pointer shrink-0"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             {activeConversation ? (
 
               <div className="flex-1 flex flex-col overflow-hidden">
@@ -466,13 +493,16 @@ export function EncryptedChatDrawer({
 
                   <div className="flex items-center justify-between pt-0.5">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      {showContactsList ? "Faculty & Students" : "Recent Chats"}
+                      {showContactsList ? "Eligible Contacts" : "Recent Chats"}
                     </span>
 
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => setShowContactsList(!showContactsList)}
+                      onClick={() => {
+                        setShowContactsList(!showContactsList);
+                        setErrorMessage(null);
+                      }}
                       className="h-6 px-2 text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg cursor-pointer"
                     >
                       {showContactsList ? "View Chats" : "+ New Message"}
@@ -512,9 +542,14 @@ export function EncryptedChatDrawer({
                         </div>
                       ))
                     ) : (
-                      <div className="p-8 text-center space-y-1 text-xs text-slate-400">
-                        <Users className="w-6 h-6 mx-auto text-slate-300 mb-1" />
-                        <p className="font-bold text-slate-600">No contacts found</p>
+                      <div className="p-8 text-center space-y-2 text-xs text-slate-400">
+                        <Users className="w-7 h-7 mx-auto text-slate-300 mb-1" />
+                        <p className="font-bold text-slate-700">No eligible contacts</p>
+                        <p className="text-[11px] text-slate-500 max-w-[260px] mx-auto leading-relaxed">
+                          {currentUser?.role === "STUDENT"
+                            ? "You can message tutors once you have requested a 1-on-1 trial session or purchased/enrolled in their course."
+                            : "Students will appear here once they request a 1-on-1 trial session or enroll in your course."}
+                        </p>
                       </div>
                     )
                   ) : (
@@ -555,15 +590,20 @@ export function EncryptedChatDrawer({
                       <div className="p-8 text-center space-y-2 text-xs text-slate-400">
                         <MessageSquare className="w-8 h-8 mx-auto text-slate-300" />
                         <p className="font-bold text-slate-700">No active conversations</p>
-                        <p className="text-[11px] text-slate-500">
-                          Click &quot;+ New Message&quot; to message your tutor or student.
+                        <p className="text-[11px] text-slate-500 max-w-[260px] mx-auto leading-relaxed">
+                          {currentUser?.role === "STUDENT"
+                            ? "Direct messaging is available for tutors of your enrolled courses or 1-on-1 trial requests."
+                            : "Direct messaging is available for students with an enrolled course or 1-on-1 trial request."}
                         </p>
                         <Button
                           size="sm"
-                          onClick={() => setShowContactsList(true)}
+                          onClick={() => {
+                            setShowContactsList(true);
+                            setErrorMessage(null);
+                          }}
                           className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                         >
-                          + Start New Chat
+                          + View Eligible Contacts
                         </Button>
                       </div>
                     )

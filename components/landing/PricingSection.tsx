@@ -3,36 +3,55 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { TokenBundle, DEFAULT_BUNDLES } from "@/lib/bundle-types";
-import { formatStudentPrice } from "@/lib/currency";
+import { formatStudentPrice, isSriLankanStudent } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ArrowRight, Award } from "lucide-react";
 
 interface PricingSectionProps {
   initialBundles?: TokenBundle[];
+  initialCountry?: string | null;
+  initialIsSriLanka?: boolean;
 }
 
-export function PricingSection({ initialBundles }: PricingSectionProps) {
+export function PricingSection({
+  initialBundles,
+  initialCountry,
+  initialIsSriLanka,
+}: PricingSectionProps) {
   const [bundles, setBundles] = useState<TokenBundle[]>(
     initialBundles && initialBundles.length > 0 ? initialBundles : DEFAULT_BUNDLES
   );
-  const [studentCountry, setStudentCountry] = useState<string | null>(null);
+  const [studentCountry, setStudentCountry] = useState<string | null>(
+    initialCountry || (initialIsSriLanka ? "Sri Lanka" : null)
+  );
 
   useEffect(() => {
     async function loadBundles() {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCountry = urlParams.get("country");
+        const bundlesUrl = urlCountry ? `/api/bundles?country=${encodeURIComponent(urlCountry)}` : "/api/bundles";
+
         const [bundlesRes, dashboardRes] = await Promise.all([
-          fetch("/api/bundles"),
-          fetch("/api/dashboard"),
+          fetch(bundlesUrl),
+          fetch("/api/dashboard").catch(() => null),
         ]);
+
         if (bundlesRes.ok) {
           const data = await bundlesRes.json();
           if (data.bundles && Array.isArray(data.bundles) && data.bundles.length > 0) {
             setBundles(data.bundles);
           }
+          if (data.country) {
+            setStudentCountry(data.country);
+          }
         }
-        if (dashboardRes.ok) {
+
+        if (dashboardRes && dashboardRes.ok) {
           const dashboardData = await dashboardRes.json();
-          setStudentCountry(dashboardData.user?.country || null);
+          if (dashboardData.user?.country) {
+            setStudentCountry(dashboardData.user.country);
+          }
         }
       } catch (err) {
         console.error("Failed to load dynamic bundles in PricingSection:", err);

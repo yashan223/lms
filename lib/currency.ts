@@ -1,5 +1,11 @@
 export function isSriLankanStudent(country?: string | null): boolean {
-  return country?.trim().toLowerCase() === "sri lanka";
+  if (!country) return false;
+  const c = country.trim().toLowerCase();
+  return c === "sri lanka" || c === "lk" || c === "lka" || c === "srilanka";
+}
+
+export function getPackageCurrency(country?: string | null): "LKR" | "USD" {
+  return isSriLankanStudent(country) ? "LKR" : "USD";
 }
 
 export function formatStudentPrice(

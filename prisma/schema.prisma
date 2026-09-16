@@ -96,6 +96,7 @@ model User {
 
   // Notification Relations
   notifications  Notification[]
+  payments       Payment[]
 
   @@map("users")
 }
@@ -516,4 +517,41 @@ model AuditLog {
   @@index([action])
   @@index([category])
   @@map("audit_logs")
+}
+
+// ========================================================
+// PAYMENTS.LK GATEWAY TRANSACTIONS
+// ========================================================
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  checkoutId    String?       @unique
+  reference     String        @unique
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountCents   Int           // e.g. 720000 = Rs. 7,200.00
+  currency      String        @default("LKR")
+  status        PaymentStatus @default(PENDING)
+  itemType      String        // "TOKEN_BUNDLE" | "COURSE"
+  itemId        String        // pack-6, pack-16, or courseId
+  itemTitle     String        // Bundle or course name
+  tokens        Int?          // Credit amount (if token bundle)
+  checkoutUrl   String?
+  paymentMethod String?
+  rawWebhook    Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([reference])
+  @@index([checkoutId])
+  @@map("payments")
 }

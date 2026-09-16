@@ -367,30 +367,25 @@ function DashboardContent() {
   const handlePurchaseTokenPack = async (packageId: string) => {
     try {
       setTokenPurchasing(true);
-      setTokenFeedbackMsg("");
-      const res = await fetch("/api/tokens", {
+      setTokenFeedbackMsg("Connecting to Payments.lk...");
+      const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "purchase_tokens",
-          packageId,
+          itemType: "TOKEN_BUNDLE",
+          itemId: packageId,
         }),
       });
       const result = await res.json();
-      if (res.ok) {
-        setTokenBalance(result.balance);
-        setTokenFeedbackMsg(result.message || "Hours added successfully!");
-        setTimeout(() => {
-          setShowBuyTokensModal(false);
-          setTokenFeedbackMsg("");
-          fetchDashboardData(false);
-        }, 1500);
+      if (res.ok && result.checkoutUrl) {
+        setTokenFeedbackMsg("Redirecting to Payments.lk 3D Secure Checkout...");
+        window.location.href = result.checkoutUrl;
       } else {
-        setTokenFeedbackMsg(result.error || "Failed to complete purchase.");
+        setTokenFeedbackMsg(result.error || "Failed to initialize checkout session.");
+        setTokenPurchasing(false);
       }
     } catch (err) {
-      setTokenFeedbackMsg("Network error during token top-up.");
-    } finally {
+      setTokenFeedbackMsg("Network error during checkout initialization.");
       setTokenPurchasing(false);
     }
   };
@@ -2153,8 +2148,10 @@ function DashboardContent() {
 
             <div className="bg-slate-50 rounded-2xl p-3 text-[11px] text-slate-500 border border-slate-200/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Secure Card Payment • Zero fees • Instant credit to balance.</span>
+                <CreditCard className="w-4 h-4 text-sky-600 shrink-0" />
+                <span>
+                  <strong>Payments.lk</strong> · 3D Secure · Visa, Mastercard, Amex & LankaQR
+                </span>
               </div>
               <span className="font-mono font-bold text-slate-700">Current: {tokenBalance} Hrs</span>
             </div>

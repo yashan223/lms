@@ -159,7 +159,7 @@ export function PricingSection({
                 </div>
 
                 <Link
-                  href="/register"
+                  href={`/dashboard?buyBundle=${encodeURIComponent(plan.id)}`}
                   className={`w-full text-sm font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-all ${
                     plan.popular
                       ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30"
@@ -172,6 +172,19 @@ export function PricingSection({
               </div>
             );
           })}
+        </div>
+
+        {/* Payments.lk Trust Badge */}
+        <div className="mt-12 text-center">
+          <div className="inline-flex flex-wrap items-center justify-center gap-3 px-6 py-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600">
+            <span className="font-semibold text-slate-900">Protected by Payments.lk</span>
+            <span className="text-slate-300 hidden sm:inline">•</span>
+            <span>3D Secure Hosted Checkouts</span>
+            <span className="text-slate-300 hidden sm:inline">•</span>
+            <span>Visa, Mastercard, Amex, LankaQR & LankaPay</span>
+            <span className="text-slate-300 hidden sm:inline">•</span>
+            <span className="text-emerald-700 font-medium">Instant Academic Credit</span>
+          </div>
         </div>
       </div>
     </section>

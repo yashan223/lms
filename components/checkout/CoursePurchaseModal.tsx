@@ -431,34 +431,68 @@ export function CoursePurchaseModal({
                   <span>Sign In to Enroll</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
-              ) : !hasSufficientTokens ? (
-                <Link
-                  href="/dashboard"
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-10 px-6 rounded-xl shadow-md flex items-center gap-2 transition-colors"
-                >
-                  <Coins className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-                  <span>Top Up Tokens ({price - (tokenBalance ?? 0)} Needed)</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
               ) : (
-                <Button
-                  type="submit"
-                  disabled={processing}
-                  className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-10 px-6 rounded-xl shadow-md cursor-pointer gap-2"
-                >
-                  {processing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Allocating Tokens...</span>
-                    </>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <Button
+                    type="button"
+                    disabled={processing}
+                    onClick={async () => {
+                      try {
+                        setProcessing(true);
+                        setErrorMessage(null);
+                        const res = await fetch("/api/checkout", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            itemType: "COURSE",
+                            itemId: course.id,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.checkoutUrl) {
+                          window.location.href = data.checkoutUrl;
+                        } else {
+                          setErrorMessage(data.error || "Failed to start Payments.lk checkout.");
+                          setProcessing(false);
+                        }
+                      } catch (err: any) {
+                        setErrorMessage("Network error connecting to Payments.lk.");
+                        setProcessing(false);
+                      }
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 px-4 rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>Pay Rs. {(price * 1200).toLocaleString("en-LK")} (Payments.lk)</span>
+                  </Button>
+
+                  {hasSufficientTokens ? (
+                    <Button
+                      type="submit"
+                      disabled={processing}
+                      className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-10 px-5 rounded-xl shadow-md cursor-pointer gap-1.5"
+                    >
+                      {processing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Coins className="w-3.5 h-3.5 text-amber-300" />
+                          <span>Spend {price} Tokens</span>
+                        </>
+                      )}
+                    </Button>
                   ) : (
-                    <>
-                      <Coins className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Confirm Enrollment ({price} Tokens)</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </>
+                    <Link
+                      href="/dashboard"
+                      className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Coins className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                      <span>Top Up Wallet</span>
+                    </Link>
                   )}
-                </Button>
+                </div>
               )}
             </div>
           </form>

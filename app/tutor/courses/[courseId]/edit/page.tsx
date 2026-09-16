@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -172,11 +172,16 @@ async function callTutorApi(payload: Record<string, unknown>) {
   return data;
 }
 
-export default function TutorEditCourseWorkspacePage() {
-  const params = useParams<{ courseId: string }>();
+export function TutorCourseWorkspaceContent({
+  isNewCourseProp,
+}: {
+  isNewCourseProp?: boolean;
+} = {}) {
+  const params = useParams<{ courseId?: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = params.courseId;
+  const courseId = params?.courseId;
+  const isNewCourse = Boolean(isNewCourseProp || courseId === "new" || !courseId);
 
   // Tabs
   const tabParam = searchParams.get("tab") as Tab | null;
@@ -268,6 +273,10 @@ export default function TutorEditCourseWorkspacePage() {
 
   // Fetch full course data and tutor context
   const loadData = async (silent = false) => {
+    if (isNewCourse) {
+      setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     try {
       const res = await fetch("/api/tutor", { cache: "no-store" });
@@ -327,6 +336,33 @@ export default function TutorEditCourseWorkspacePage() {
     e.preventDefault();
     setSavingDetails(true);
     try {
+      if (isNewCourse) {
+        if (!detailsForm.title.trim()) {
+          throw new Error("Course title is required.");
+        }
+        if (!detailsForm.description.trim()) {
+          throw new Error("Course description is required.");
+        }
+        const res = await callTutorApi({
+          action: "create_course",
+          title: detailsForm.title.trim(),
+          subjectCode: detailsForm.subjectCode.trim(),
+          category: detailsForm.category,
+          price: detailsForm.price,
+          level: detailsForm.level,
+          subtitle: detailsForm.subtitle.trim(),
+          description: detailsForm.description.trim(),
+          thumbnail: detailsForm.thumbnail.trim() || null,
+        });
+        showToast("success", "Course created successfully! Redirecting to full workspace...");
+        if (res.course?.id) {
+          router.push(`/tutor/courses/${res.course.id}/edit`);
+        } else {
+          router.push("/tutor?tab=courses");
+        }
+        return;
+      }
+
       await callTutorApi({
         action: "update_course",
         courseId,
@@ -380,15 +416,17 @@ export default function TutorEditCourseWorkspacePage() {
       if (!res.ok) throw new Error(data.error || "Failed to upload image");
 
       setDetailsForm((prev) => ({ ...prev, thumbnail: data.fileUrl }));
-      await callTutorApi({
-        action: "update_course",
-        courseId,
-        title: detailsForm.title,
-        description: detailsForm.description,
-        category: detailsForm.category,
-        thumbnail: data.fileUrl,
-      });
-      await loadData(true);
+      if (!isNewCourse) {
+        await callTutorApi({
+          action: "update_course",
+          courseId,
+          title: detailsForm.title,
+          description: detailsForm.description,
+          category: detailsForm.category,
+          thumbnail: data.fileUrl,
+        });
+        await loadData(true);
+      }
       showToast("success", "Course cover image uploaded and updated!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to upload cover image.");
@@ -606,8 +644,8 @@ export default function TutorEditCourseWorkspacePage() {
   };
 
   const filteredMaterials = useMemo(() => {
-    if (!course?.materials) return [];
-    return course.materials.filter((m) => {
+    const materials = course?.materials || [];
+    return materials.filter((m) => {
       const matchesCat = matCategoryFilter === "ALL" || m.category === matCategoryFilter;
       const q = matSearch.trim().toLowerCase();
       const matchesSearch =
@@ -623,10 +661,10 @@ export default function TutorEditCourseWorkspacePage() {
   // Students & Enrollment Handlers
   // -------------------------------------------------------------
   const filteredEnrollments = useMemo(() => {
-    if (!course?.enrollments) return [];
+    const enrollments = course?.enrollments || [];
     const q = studentSearch.trim().toLowerCase();
-    if (!q) return course.enrollments;
-    return course.enrollments.filter((e) => {
+    if (!q) return enrollments;
+    return enrollments.filter((e) => {
       const name = e.user?.name?.toLowerCase() || "";
       const email = e.user?.email?.toLowerCase() || "";
       return name.includes(q) || email.includes(q);
@@ -759,7 +797,7 @@ export default function TutorEditCourseWorkspacePage() {
     );
   }
 
-  if (!course) {
+  if (!course && !isNewCourse) {
     return (
       <div className="min-h-screen bg-[#f8fafc] p-6 flex flex-col items-center justify-center">
         <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-lg space-y-4">
@@ -782,28 +820,31 @@ export default function TutorEditCourseWorkspacePage() {
     );
   }
 
-  const totalLessons = course.modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
-  const totalDurationMin = course.modules.reduce(
-    (sum, m) => sum + (m.lessons || []).reduce((lSum, l) => lSum + (l.durationMin || 0), 0),
-    0
-  );
-  const totalTokensEarned = course.price * (course.enrollments?.length || 0);
+  const totalLessons = course ? course.modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0) : 0;
+  const totalDurationMin = course
+    ? course.modules.reduce(
+        (sum, m) => sum + (m.lessons || []).reduce((lSum, l) => lSum + (l.durationMin || 0), 0),
+        0
+      )
+    : 0;
+  const totalTokensEarned = course ? course.price * (course.enrollments?.length || 0) : 0;
 
   const tabList: { id: Tab; label: string; count?: number; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "overview", label: "Course Details", icon: BookOpen },
-    { id: "curriculum", label: "Curriculum & Syllabus", count: totalLessons, icon: Layers3 },
-    { id: "materials", label: "Study Materials", count: course.materials?.length, icon: FileText },
-    { id: "students", label: "Enrolled Students", count: course.enrollments?.length, icon: Users },
-    { id: "live_classes", label: "Live Google Meets", count: course.events?.length, icon: Video },
-    { id: "reviews", label: "Reviews & Ratings", count: course.reviews?.length, icon: Star },
+    { id: "overview", label: isNewCourse ? "Course Setup & Details" : "Course Details", icon: BookOpen },
+    { id: "curriculum", label: "Curriculum & Syllabus", count: isNewCourse ? undefined : totalLessons, icon: Layers3 },
+    { id: "materials", label: "Study Materials", count: isNewCourse ? undefined : course?.materials?.length, icon: FileText },
+    { id: "students", label: "Enrolled Students", count: isNewCourse ? undefined : course?.enrollments?.length, icon: Users },
+    { id: "live_classes", label: "Live Google Meets", count: isNewCourse ? undefined : course?.events?.length, icon: Video },
+    { id: "reviews", label: "Reviews & Ratings", count: isNewCourse ? undefined : course?.reviews?.length, icon: Star },
   ];
 
+  const currentStatus = course?.status || detailsForm.status;
   const statusBadgeColor =
-    course.status === "PUBLISHED"
+    currentStatus === "PUBLISHED"
       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-      : course.status === "PENDING_REVIEW"
+      : currentStatus === "PENDING_REVIEW"
       ? "bg-amber-50 text-amber-700 border-amber-200"
-      : course.status === "DRAFT"
+      : currentStatus === "DRAFT"
       ? "bg-slate-100 text-slate-700 border-slate-200"
       : "bg-rose-50 text-rose-700 border-rose-200";
 
@@ -824,51 +865,66 @@ export default function TutorEditCourseWorkspacePage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase tracking-widest font-black text-blue-600">
-                  Tutor Course Workspace
+                  {isNewCourse ? "New Course Creator" : "Tutor Course Workspace"}
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="text-[11px] font-mono font-bold text-slate-500">
-                  {course.subjectCode || "COURSE-ID"}
+                  {detailsForm.subjectCode || (isNewCourse ? "NEW-SYLLABUS" : "COURSE-ID")}
                 </span>
               </div>
               <h1 className="font-black text-base sm:text-lg text-slate-900 truncate leading-tight">
-                {course.title}
+                {detailsForm.title || (isNewCourse ? "Create New Curriculum Course" : course?.title)}
               </h1>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Quick Status Selector */}
-            <select
-              value={course.status}
-              onChange={(e) => handleQuickStatusChange(e.target.value)}
-              className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusBadgeColor}`}
-              title="Change course publishing state"
-            >
-              <option value="PUBLISHED">Published</option>
-              <option value="PENDING_REVIEW">Pending Review</option>
-              <option value="DRAFT">Draft</option>
-            </select>
+            {isNewCourse ? (
+              <Button
+                onClick={handleSaveDetails}
+                disabled={savingDetails || !detailsForm.title.trim() || !detailsForm.description.trim()}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl h-9 px-4 gap-1.5 shadow-xs cursor-pointer"
+              >
+                {savingDetails ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <span>{savingDetails ? "Creating Course..." : "Create Course"}</span>
+              </Button>
+            ) : (
+              <>
+                {/* Quick Status Selector */}
+                <select
+                  value={course?.status || "PUBLISHED"}
+                  onChange={(e) => handleQuickStatusChange(e.target.value)}
+                  className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusBadgeColor}`}
+                  title="Change course publishing state"
+                >
+                  <option value="PUBLISHED">Published</option>
+                  <option value="PENDING_REVIEW">Pending Review</option>
+                  <option value="DRAFT">Draft</option>
+                </select>
 
-            {/* Public Course Preview */}
-            <Link
-              href={`/courses/${course.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-              <span className="hidden sm:inline">Preview Course</span>
-            </Link>
+                {/* Public Course Preview */}
+                {course && (
+                  <Link
+                    href={`/courses/${course.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="hidden sm:inline">Preview Course</span>
+                  </Link>
+                )}
 
-            {/* Delete Course Button */}
-            <button
-              onClick={handleDeleteCourse}
-              className="h-9 w-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer"
-              title="Delete this course"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+                {/* Delete Course Button */}
+                <button
+                  onClick={handleDeleteCourse}
+                  className="h-9 w-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Delete this course"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -909,7 +965,7 @@ export default function TutorEditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Enrolled Students</span>
               <Users className="w-4 h-4 text-blue-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{course.enrollments?.length || 0}</div>
+            <div className="text-2xl font-black text-slate-900">{course?.enrollments?.length || 0}</div>
             <div className="text-[10px] text-slate-400">Active learners</div>
           </div>
 
@@ -918,7 +974,7 @@ export default function TutorEditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Modules</span>
               <Layers3 className="w-4 h-4 text-indigo-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{course.modules?.length || 0}</div>
+            <div className="text-2xl font-black text-slate-900">{course?.modules?.length || (isNewCourse ? 1 : 0)}</div>
             <div className="text-[10px] text-slate-400">Curriculum units</div>
           </div>
 
@@ -938,7 +994,7 @@ export default function TutorEditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Study Files</span>
               <FileText className="w-4 h-4 text-emerald-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{course.materials?.length || 0}</div>
+            <div className="text-2xl font-black text-slate-900">{course?.materials?.length || 0}</div>
             <div className="text-[10px] text-slate-400">Handouts & slides</div>
           </div>
 
@@ -947,7 +1003,7 @@ export default function TutorEditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Tuition Rate</span>
               <Coins className="w-4 h-4 text-amber-500" />
             </div>
-            <div className="text-2xl font-black text-amber-600">{course.price}</div>
+            <div className="text-2xl font-black text-amber-600">{detailsForm.price || "10"}</div>
             <div className="text-[10px] text-slate-400">Tokens / enrollment</div>
           </div>
         </section>
@@ -1001,7 +1057,7 @@ export default function TutorEditCourseWorkspacePage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-5 rounded-xl gap-2 shadow-xs cursor-pointer shrink-0"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? "Saving Details..." : "Save All Changes"}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Course..." : "Saving Details...") : (isNewCourse ? "Create Course & Continue" : "Save All Changes")}</span>
                 </Button>
               </div>
 
@@ -1172,14 +1228,38 @@ export default function TutorEditCourseWorkspacePage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-6 rounded-xl gap-2 shadow-xs cursor-pointer"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? "Saving Details..." : "Save All Changes"}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Course..." : "Saving Details...") : (isNewCourse ? "Create Course & Open Workspace" : "Save All Changes")}</span>
                 </Button>
               </div>
             </form>
           )}
 
+          {/* If new course, show guidance on other tabs */}
+          {isNewCourse && activeTab !== "overview" && (
+            <div className="p-12 text-center space-y-4 max-w-md mx-auto">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
+                <Layers3 className="w-7 h-7" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-bold text-base text-slate-900">
+                  Save Course Details to Unlock {tabList.find((t) => t.id === activeTab)?.label}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Fill in the course specifications, title, and description in the Course Details tab, then click <strong>Create Course &amp; Open Workspace</strong> to activate the curriculum builder, study file uploads, and student rosters.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold"
+              >
+                Go to Course Details Form
+              </Button>
+            </div>
+          )}
+
           {/* Tab 2: Curriculum & Syllabus Builder */}
-          {activeTab === "curriculum" && (
+          {!isNewCourse && activeTab === "curriculum" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -1216,7 +1296,7 @@ export default function TutorEditCourseWorkspacePage() {
               </form>
 
               {/* Modules List */}
-              {course.modules?.length === 0 ? (
+              {(course?.modules?.length || 0) === 0 ? (
                 <div className="text-center py-16 px-4 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 space-y-2">
                   <Layers3 className="w-10 h-10 text-slate-300 mx-auto" />
                   <h3 className="font-bold text-sm text-slate-700">No Curriculum Modules Added</h3>
@@ -1226,7 +1306,7 @@ export default function TutorEditCourseWorkspacePage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {course.modules.map((mod, modIdx) => {
+                  {(course?.modules || []).map((mod, modIdx) => {
                     const isAddingLessonHere = activeModuleForLesson === mod.id;
                     const modLessons = mod.lessons || [];
                     const modDuration = modLessons.reduce((sum, l) => sum + (l.durationMin || 0), 0);
@@ -1549,8 +1629,8 @@ export default function TutorEditCourseWorkspacePage() {
             </div>
           )}
 
-          {/* Tab 3: Study Materials & Files */}
-          {activeTab === "materials" && (
+          {/* Tab 3: Study Materials & Vaults */}
+          {!isNewCourse && activeTab === "materials" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -1737,8 +1817,8 @@ export default function TutorEditCourseWorkspacePage() {
             </div>
           )}
 
-          {/* Tab 4: Students & Enrollment */}
-          {activeTab === "students" && (
+          {/* Tab 4: Enrolled Scholars & Students */}
+          {!isNewCourse && activeTab === "students" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -1836,8 +1916,8 @@ export default function TutorEditCourseWorkspacePage() {
             </div>
           )}
 
-          {/* Tab 5: Live Classes & Google Meet */}
-          {activeTab === "live_classes" && (
+          {/* Tab 5: Live Classes & Google Meet Hub */}
+          {!isNewCourse && activeTab === "live_classes" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -1921,10 +2001,10 @@ export default function TutorEditCourseWorkspacePage() {
               {/* Sessions List */}
               <div className="space-y-4">
                 <h3 className="font-black text-sm text-slate-900">
-                  Scheduled & Past Live Sessions ({course.events?.length || 0})
+                  Scheduled & Past Live Sessions ({course?.events?.length || 0})
                 </h3>
 
-                {!course.events || course.events.length === 0 ? (
+                {(course?.events?.length || 0) === 0 ? (
                   <div className="text-center py-12 px-4 rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 space-y-1.5">
                     <Video className="w-8 h-8 text-slate-300 mx-auto" />
                     <h4 className="font-bold text-xs text-slate-700">No Live Classes Scheduled</h4>
@@ -1934,7 +2014,7 @@ export default function TutorEditCourseWorkspacePage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {course.events.map((eventItem) => {
+                    {(course?.events || []).map((eventItem) => {
                       const isLive = eventItem.status === "LIVE";
                       const isCompleted = eventItem.status === "COMPLETED";
                       const eventTime = new Date(eventItem.dueDate).toLocaleString("en-US", {
@@ -2050,8 +2130,8 @@ export default function TutorEditCourseWorkspacePage() {
             </div>
           )}
 
-          {/* Tab 6: Reviews & Ratings */}
-          {activeTab === "reviews" && (
+          {/* Tab 6: Course Reviews & Student Feedback */}
+          {!isNewCourse && activeTab === "reviews" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -2062,12 +2142,13 @@ export default function TutorEditCourseWorkspacePage() {
                 </div>
               </div>
 
-              {course.reviews && course.reviews.length > 0 ? (
+              {(course?.reviews?.length || 0) > 0 ? (
                 <div className="space-y-4">
                   <div className="p-5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center gap-4">
                     <div className="text-3xl font-black text-amber-800">
                       {(
-                        course.reviews.reduce((s, r) => s + r.rating, 0) / course.reviews.length
+                        (course?.reviews || []).reduce((s, r) => s + r.rating, 0) /
+                        (course?.reviews?.length || 1)
                       ).toFixed(1)}
                     </div>
                     <div>
@@ -2077,13 +2158,13 @@ export default function TutorEditCourseWorkspacePage() {
                         ))}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5">
-                        Based on {course.reviews.length} verified student reviews
+                        Based on {course?.reviews?.length || 0} verified student reviews
                       </div>
                     </div>
                   </div>
 
                   <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-2xs">
-                    {course.reviews.map((rev) => (
+                    {(course?.reviews || []).map((rev) => (
                       <div key={rev.id} className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -2142,3 +2223,24 @@ export default function TutorEditCourseWorkspacePage() {
     </main>
   );
 }
+
+export default function TutorEditCourseWorkspacePage({
+  isNewCourseProp,
+}: {
+  isNewCourseProp?: boolean;
+} = {}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
+          <h2 className="text-base font-bold text-slate-800">Loading Tutor Course Workspace...</h2>
+          <p className="text-xs text-slate-400 mt-1">Fetching syllabus, study materials, and student rosters...</p>
+        </div>
+      }
+    >
+      <TutorCourseWorkspaceContent isNewCourseProp={isNewCourseProp} />
+    </Suspense>
+  );
+}
+

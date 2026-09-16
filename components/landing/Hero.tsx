@@ -63,14 +63,6 @@ export function Hero() {
     },
   ];
 
-  const bottomCategoryTabs = [
-    { label: "London A/L (IAL)", color: "bg-purple-700", href: "#courses" },
-    { label: "London O/L (IGCSE)", color: "bg-cyan-600", href: "#courses" },
-    { label: "Pure Mathematics", color: "bg-lime-600", href: "#courses" },
-    { label: "Physics & Chemistry", color: "bg-pink-600", href: "#courses" },
-    { label: "Economics & Business", color: "bg-amber-700", href: "#courses" },
-    { label: "Biology & Life Sciences", color: "bg-indigo-700", href: "#courses" },
-  ];
 
   return (
     <section className="relative w-full overflow-hidden bg-white border-b border-slate-200">
@@ -89,65 +81,54 @@ export function Hero() {
 
         <div className="lg:col-span-6 px-6 sm:px-10 lg:px-12 xl:px-16 py-10 sm:py-14 flex flex-col justify-center items-center relative z-10 bg-white overflow-hidden">
           <div className="max-w-xl w-full flex flex-col items-center">
-          <div className="text-center space-y-3 mb-8">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.1]">
-              London A/L & O/L Academy
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-              Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, downloadable study materials, and past paper video vaults.
-            </p>
-          </div>
-
-          <div className="relative py-6 max-w-lg mx-auto w-full flex items-center justify-center">
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-              <div className="w-72 h-40 border border-slate-300 transform rotate-45" />
+            <div className="text-center space-y-3 mb-8">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.1]">
+                London A/L & O/L Academy
+              </h1>
+              <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
+                Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, downloadable study materials, and past paper video vaults.
+              </p>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5 relative z-10">
-              {diamondPrograms.map((prog) => {
-                const Icon = prog.icon;
+            <div className="relative py-6 max-w-lg mx-auto w-full flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+                <div className="w-72 h-40 border border-slate-300 transform rotate-45" />
+              </div>
 
-                return (
-                  <Link
-                    key={prog.id}
-                    href="#courses"
-                    className="group cursor-pointer flex flex-col items-center"
-                  >
-                    <div
-                      className={`w-18 h-18 sm:w-22 sm:h-22 ${prog.colorBg} rounded-2xl flex items-center justify-center shadow-lg transform rotate-45 transition-all duration-300 border-2 border-white/90 ring-2 ring-slate-100 group-hover:scale-105 group-hover:shadow-xl`}
+              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5 relative z-10">
+                {diamondPrograms.map((prog) => {
+                  const Icon = prog.icon;
+
+                  return (
+                    <Link
+                      key={prog.id}
+                      href="#courses"
+                      className="group cursor-pointer flex flex-col items-center"
                     >
-                      <div className="transform -rotate-45 flex flex-col items-center justify-center text-white text-center p-1">
-                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 drop-shadow-sm" />
-                        <span className="font-black text-[10px] sm:text-[11px] tracking-wider uppercase drop-shadow-sm">
-                          {prog.code}
-                        </span>
+                      <div
+                        className={`w-18 h-18 sm:w-22 sm:h-22 ${prog.colorBg} rounded-2xl flex items-center justify-center shadow-lg transform rotate-45 transition-all duration-300 border-2 border-white/90 ring-2 ring-slate-100 group-hover:scale-105 group-hover:shadow-xl`}
+                      >
+                        <div className="transform -rotate-45 flex flex-col items-center justify-center text-white text-center p-1">
+                          <Icon className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 drop-shadow-sm" />
+                          <span className="font-black text-[10px] sm:text-[11px] tracking-wider uppercase drop-shadow-sm">
+                            {prog.code}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center mt-3 max-w-[85px] leading-tight group-hover:text-blue-700 transition-colors">
-                      {prog.name}
-                    </span>
-                  </Link>
-                );
-              })}
+                      <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center mt-3 max-w-[85px] leading-tight group-hover:text-blue-700 transition-colors">
+                        {prog.name}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
           </div>
         </div>
       </div>
 
-      <div className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-slate-200">
-        {bottomCategoryTabs.map((tab, idx) => (
-          <Link
-            key={idx}
-            href={tab.href}
-            className={`${tab.color} text-white py-3 px-3 text-center text-xs font-bold tracking-wide hover:brightness-110 transition-all flex items-center justify-center border-r border-white/20 last:border-r-0`}
-          >
-            <span className="truncate">{tab.label}</span>
-          </Link>
-        ))}
-      </div>
     </section>
   );
 }

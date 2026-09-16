@@ -622,18 +622,11 @@ function TutorDashboardContent() {
   };
 
   const openCourseEditor = (course?: TutorCourse) => {
-    setEditingCourseId(course?.id || null);
-    setCourseFormError("");
-    setCourseForm({
-      title: course?.title || "",
-      subtitle: course?.subtitle || "",
-      description: (course as any)?.description || "",
-      category: course?.category || "",
-      subjectCode: course?.subjectCode || "",
-      price: String(course?.price ?? 0),
-      level: (course as any)?.level || "ADVANCED",
-    });
-    setShowCourseEditor(true);
+    if (!course) {
+      router.push("/tutor/courses/new");
+      return;
+    }
+    router.push(`/tutor/courses/${course.id}/edit`);
   };
 
   const handleSaveCourse = async (e: React.FormEvent) => {
@@ -1844,14 +1837,13 @@ function TutorDashboardContent() {
                       <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
                         Assigned Curriculum Courses
                       </h3>
-                      <Button
-                        size="sm"
-                        onClick={() => openCourseEditor()}
-                        className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 cursor-pointer"
+                      <Link
+                        href="/tutor/courses/new"
+                        className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 inline-flex items-center px-3 shadow-xs transition-colors cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        Add Course
-                      </Button>
+                        <span>Add Course</span>
+                      </Link>
                     </div>
 
                     <div className="relative w-full sm:w-56">
@@ -3528,7 +3520,6 @@ function TutorDashboardContent() {
                 <div className="min-w-0">
                   <h4 className="font-bold text-xs text-slate-900 truncate">{profileName || tutorName}</h4>
                   <p className="text-[11px] text-slate-500 truncate">{profileHeadline || tutor?.headline || "Subject Lead"}</p>
-                  <span className="text-[10px] text-emerald-700 font-bold">● Active Online</span>
                 </div>
               </div>
 
@@ -3714,47 +3705,7 @@ function TutorDashboardContent() {
         </div>
       )}
 
-      {showCourseEditor && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  {editingCourseId ? "Edit Course" : "Add Course"}
-                </h3>
-                <p className="text-xs text-slate-500">Changes require administrator approval before publishing.</p>
-              </div>
-              <button type="button" onClick={() => setShowCourseEditor(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {courseFormError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">{courseFormError}</div>}
-            <form onSubmit={handleSaveCourse} className="space-y-3 text-xs">
-              <Input required placeholder="Course title" value={courseForm.title} onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })} className="rounded-xl" />
-              <Input placeholder="Short subtitle" value={courseForm.subtitle} onChange={(e) => setCourseForm({ ...courseForm, subtitle: e.target.value })} className="rounded-xl" />
-              <textarea required rows={4} placeholder="Course description" value={courseForm.description} onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none" />
-              <div className="grid grid-cols-2 gap-2">
-                <Input required placeholder="Category" value={courseForm.category} onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })} className="rounded-xl" />
-                <Input placeholder="Subject code" value={courseForm.subjectCode} onChange={(e) => setCourseForm({ ...courseForm, subjectCode: e.target.value })} className="rounded-xl" />
-                <Input required type="number" min="0" step="0.01" placeholder="Token price" value={courseForm.price} onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })} className="rounded-xl" />
-                <select value={courseForm.level} onChange={(e) => setCourseForm({ ...courseForm, level: e.target.value })} className="h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                  <option value="BEGINNER">Beginner</option>
-                  <option value="INTERMEDIATE">Intermediate</option>
-                  <option value="ADVANCED">Advanced</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <Button type="button" variant="outline" onClick={() => setShowCourseEditor(false)} className="rounded-xl">Cancel</Button>
-                <Button type="submit" disabled={courseFormSaving} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-1.5">
-                  {courseFormSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                  {editingCourseId ? "Submit Changes" : "Submit for Approval"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">

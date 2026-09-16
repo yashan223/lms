@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { fulfillPayment } from "@/lib/payment-fulfillment";
+import { getPaymentsLkCheckout, isPaymentsLkConfigured } from "@/lib/payments-lk";
 import { EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -126,6 +128,68 @@ export async function GET(request: NextRequest) {
           },
         },
       });
+    }
+
+    if (user) {
+      // Auto-reconcile: ensure any successful payments have credited the wallet and created transaction rows
+      const unfulfilled = await prisma.payment.findMany({
+        where: {
+          userId: user.id,
+          status: "SUCCEEDED",
+        },
+      });
+
+      let reloaded = false;
+      for (const p of unfulfilled) {
+        const res = await fulfillPayment(p.id);
+        if (res.fulfilled) reloaded = true;
+      }
+
+      // Also check recent PENDING payments in Payments.lk in case webhook was blocked/delayed
+      if (isPaymentsLkConfigured()) {
+        const pendingPayments = await prisma.payment.findMany({
+          where: {
+            userId: user.id,
+            status: "PENDING",
+            checkoutId: { not: null },
+            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          },
+          take: 3,
+        });
+
+        for (const p of pendingPayments) {
+          if (p.checkoutId && !p.checkoutId.startsWith("chk_test_")) {
+            try {
+              const info = await getPaymentsLkCheckout(p.checkoutId);
+              if (info.payment?.status === "succeeded") {
+                const res = await fulfillPayment(
+                  p.id,
+                  info.payment.card?.scheme || "CARD",
+                  info
+                );
+                if (res.fulfilled) reloaded = true;
+              }
+            } catch (err) {
+              console.warn("Dashboard sync Payments.lk check error:", err);
+            }
+          }
+        }
+      }
+
+      if (reloaded) {
+        const freshWallet = await prisma.tokenWallet.findUnique({
+          where: { userId: user.id },
+          include: {
+            transactions: {
+              orderBy: { createdAt: "desc" },
+              take: 50,
+            },
+          },
+        });
+        if (freshWallet) {
+          user.tokenWallet = freshWallet;
+        }
+      }
     }
 
     const allCourses = await prisma.course.findMany({

@@ -5,6 +5,7 @@ import {
   verifyPaymentsLkWebhookSignature,
   getPaymentsLkWebhookSecret,
 } from "@/lib/payments-lk";
+import { fulfillPayment } from "@/lib/payment-fulfillment";
 
 export const dynamic = "force-dynamic";
 
@@ -84,129 +85,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "payment.succeeded") {
-      // Idempotency check: if already processed, do not double credit
-      if (payment.status === "SUCCEEDED") {
-        return NextResponse.json(
-          { received: true, message: "Already processed" },
-          { status: 200 }
-        );
-      }
-
-      await prisma.$transaction(async (tx) => {
-        // 1. Mark payment as SUCCEEDED
-        await tx.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: "SUCCEEDED",
-            paymentMethod: data.card?.scheme || data.paymentMethod || "CARD",
-            rawWebhook: payload,
-          },
-        });
-
-        // 2. Fulfill based on itemType
-        if (payment.itemType === "TOKEN_BUNDLE") {
-          const tokensToAdd = payment.tokens || 0;
-
-          // Find or create wallet
-          let wallet = await tx.tokenWallet.findUnique({
-            where: { userId: payment.userId },
-          });
-
-          if (!wallet) {
-            wallet = await tx.tokenWallet.create({
-              data: {
-                userId: payment.userId,
-                balance: 0,
-              },
-            });
-          }
-
-          // Credit wallet
-          await tx.tokenWallet.update({
-            where: { id: wallet.id },
-            data: {
-              balance: { increment: tokensToAdd },
-            },
-          });
-
-          // Create transaction
-          await tx.tokenTransaction.create({
-            data: {
-              walletId: wallet.id,
-              amount: tokensToAdd,
-              type: "PURCHASE",
-              description: `Purchased ${payment.itemTitle} via Payments.lk (+${tokensToAdd} Hours)`,
-              referenceId: payment.reference,
-            },
-          });
-
-          // Notify student
-          await tx.notification.create({
-            data: {
-              userId: payment.userId,
-              title: "💳 Payment Confirmed - Hours Credited!",
-              message: `Your payment of Rs. ${(payment.amountCents / 100).toLocaleString("en-LK")} was successful! ${tokensToAdd} learning hours have been added to your academic wallet.`,
-              type: "INFO",
-              link: "/dashboard",
-            },
-          });
-        } else if (payment.itemType === "COURSE") {
-          // Find course
-          const course = await tx.course.findFirst({
-            where: {
-              OR: [{ id: payment.itemId }, { slug: payment.itemId }],
-            },
-          });
-
-          if (course) {
-            // Check if already enrolled
-            const existingEnrollment = await tx.enrollment.findUnique({
-              where: {
-                userId_courseId: {
-                  userId: payment.userId,
-                  courseId: course.id,
-                },
-              },
-            });
-
-            if (!existingEnrollment) {
-              await tx.enrollment.create({
-                data: {
-                  userId: payment.userId,
-                  courseId: course.id,
-                },
-              });
-
-              await tx.event.create({
-                data: {
-                  title: `Welcome to ${course.title}`,
-                  description: `Purchased via Payments.lk. All lectures, materials, and masterclasses are now unlocked.`,
-                  dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                  courseId: course.id,
-                  userId: payment.userId,
-                },
-              });
-
-              await tx.notification.create({
-                data: {
-                  userId: payment.userId,
-                  title: "🎉 Course Access Unlocked!",
-                  message: `Payment successful for "${course.title}". You now have full access to all curriculum modules and study handbooks.`,
-                  type: "INFO",
-                  link: `/courses/${course.slug}`,
-                },
-              });
-            }
-          }
-        }
-      });
-
-      // Broadcast real-time events to connected clients
-      broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: payment.userId });
-      broadcastLMSEvent("ENROLLMENTS_CHANGED");
-      broadcastLMSEvent("COURSES_CHANGED");
-
-      return NextResponse.json({ received: true, fulfilled: true });
+      const result = await fulfillPayment(
+        payment.id,
+        data.card?.scheme || data.paymentMethod || "CARD",
+        payload
+      );
+      return NextResponse.json({ received: true, ...result });
     }
 
     if (type === "payment.failed") {

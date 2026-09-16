@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { getPaymentsLkCheckout, isPaymentsLkConfigured } from "@/lib/payments-lk";
+import { fulfillPayment } from "@/lib/payment-fulfillment";
 
 export const dynamic = "force-dynamic";
 
@@ -38,9 +39,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    // If payment is pending and Payments.lk is configured and checkoutId is present, we can query Payments.lk API
+    // If payment is pending and Payments.lk is configured and checkoutId is present, query Payments.lk API
     if (
-      payment.status === "PENDING" &&
       payment.checkoutId &&
       isPaymentsLkConfigured() &&
       !payment.checkoutId.startsWith("chk_test_")
@@ -48,19 +48,20 @@ export async function GET(request: NextRequest) {
       try {
         const checkoutInfo = await getPaymentsLkCheckout(payment.checkoutId);
         if (checkoutInfo.payment?.status === "succeeded") {
-          // If already succeeded on Payments.lk but webhook was delayed, sync it
-          await prisma.payment.update({
-            where: { id: payment.id },
-            data: {
-              status: "SUCCEEDED",
-              paymentMethod: checkoutInfo.payment.card?.scheme || "CARD",
-            },
-          });
+          // Fulfill payment (credits wallet and creates transaction ledger row)
+          await fulfillPayment(
+            payment.id,
+            checkoutInfo.payment.card?.scheme || "CARD",
+            checkoutInfo
+          );
           payment.status = "SUCCEEDED";
         }
       } catch (err) {
         console.warn("Could not query Payments.lk checkout status:", err);
       }
+    } else if (payment.status === "SUCCEEDED") {
+      // Ensure fulfillment was completed even if status was updated elsewhere
+      await fulfillPayment(payment.id);
     }
 
     return NextResponse.json({

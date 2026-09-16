@@ -82,6 +82,7 @@ async function writeAuditLog(opts: {
         ipAddress: opts.ipAddress ?? null,
       },
     });
+    broadcastLMSEvent("AUDIT_LOG_CHANGED", { action: opts.action, category, adminEmail: opts.adminEmail });
   } catch (auditErr) {
     console.error("[AuditLog] Failed to write audit log entry:", auditErr);
   }

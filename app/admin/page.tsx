@@ -4150,13 +4150,8 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
 
-                  {/* Actions & Live Status Indicator */}
+                  {/* Actions & Refresh */}
                   <div className="flex items-center gap-2">
-                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>Live Audit Stream</span>
-                    </div>
-
                     <Button
                       size="sm"
                       variant="outline"

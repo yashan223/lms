@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface TutorAvailabilitySlot {
   id: string;
@@ -123,6 +124,14 @@ export function TutorAvailabilityManager({
   useEffect(() => {
     fetchAvailability();
   }, [tutor?.id]);
+
+  useRealtimeSync({
+    events: ["TUTOR_AVAILABILITY_CHANGED", "EVENTS_CHANGED", "TRIALS_CHANGED"],
+    onSync: () => {
+      fetchAvailability();
+      onRefresh?.();
+    },
+  });
 
   // Toggle Day selection for multi-day batch addition
   const toggleDaySelection = (dayVal: number) => {

@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface TutorAvailabilitySlot {
   startTime: string;
@@ -232,6 +233,15 @@ function RescheduleContent() {
 
     fetchData();
   }, [trialId]);
+
+  useRealtimeSync({
+    events: ["TRIALS_CHANGED", "EVENTS_CHANGED", "TUTOR_AVAILABILITY_CHANGED"],
+    onSync: () => {
+      if (trial) {
+        loadTrialAvailability(trial);
+      }
+    },
+  });
 
   // Selected Day Slots
   const currentDayData = useMemo(() => {

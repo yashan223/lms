@@ -662,7 +662,7 @@ function TutorDashboardContent() {
   }, []);
 
   useRealtimeSync({
-    events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED", "EVENTS_CHANGED", "USERS_CHANGED", "TRIALS_CHANGED"],
+    events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED", "EVENTS_CHANGED", "USERS_CHANGED", "TRIALS_CHANGED", "MATERIALS_CHANGED", "TUTOR_AVAILABILITY_CHANGED", "NOTIFICATIONS_CHANGED"],
     onSync: () => {
       fetchTutorData(false);
     },

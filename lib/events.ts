@@ -13,6 +13,7 @@ export type LMSEventType =
   | "NOTIFICATIONS_CHANGED"
   | "TUTOR_AVAILABILITY_CHANGED"
   | "STUDENT_AVAILABILITY_CHANGED"
+  | "AUDIT_LOG_CHANGED"
   | "PING";
 
 export interface LMSEventPayload {

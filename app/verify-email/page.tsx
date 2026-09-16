@@ -174,7 +174,7 @@ function VerifyEmailContent() {
           <Link href="/" className="flex items-center gap-2 group">
             <img
               src="/logo-wide.png"
-              alt="EduPulse London A/L & O/L Academy"
+              alt="PulseEDU Global"
               className="h-11 sm:h-13 w-auto object-contain transition-transform group-hover:scale-[1.02]"
             />
           </Link>

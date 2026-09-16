@@ -930,7 +930,7 @@ function DashboardContent() {
             <Link href="/" className="flex items-center gap-2 group py-1">
               <img
                 src="/logo-wide.png"
-                alt="EduPulse London A/L & O/L Academy"
+                alt="PulseEDU Global"
                 className="h-9 sm:h-11 md:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
               />
             </Link>

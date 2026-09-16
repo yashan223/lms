@@ -35,7 +35,7 @@ export function buildGoogleCalendarUrl({
   const detailsLines: string[] = [];
   if (courseTitle) detailsLines.push(`📘 Course: ${courseTitle}`);
   if (description) detailsLines.push(`📝 Details: ${description}`);
-  detailsLines.push(`🎓 EduPulse LMS • London A/L & O/L Academy (Faculty Academic Calendar)`);
+  detailsLines.push(`🎓 PulseEDU Global • LMS (Faculty Academic Calendar)`);
 
   const params = new URLSearchParams({
     action: "TEMPLATE",

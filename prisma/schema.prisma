@@ -1,4 +1,4 @@
-// Prisma Schema for EduPulse LMS (London A/L & O/L Academy)
+// Prisma Schema for PulseEDU Global (LMS)
 
 generator client {
   provider = "prisma-client-js"

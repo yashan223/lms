@@ -1306,7 +1306,7 @@ function TutorDashboardContent() {
             <Link href="/" className="flex items-center gap-2.5 py-1">
               <img
                 src="/logo-wide.png"
-                alt="EduPulse London A/L & O/L Academy"
+                alt="PulseEDU Global"
                 className="h-11 sm:h-12 w-auto object-contain transition-transform hover:scale-[1.02]"
               />
             </Link>

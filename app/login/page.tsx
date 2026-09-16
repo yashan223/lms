@@ -75,7 +75,7 @@ export default function LoginPage() {
           <Link href="/" className="flex items-center gap-2 group">
             <img
               src="/logo-wide.png"
-              alt="EduPulse London A/L & O/L Academy"
+              alt="EduPulse Global"
               className="h-11 sm:h-13 w-auto object-contain transition-transform group-hover:scale-[1.02]"
             />
           </Link>
@@ -260,7 +260,7 @@ export default function LoginPage() {
       </main>
 
       <footer className="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
-        EduPulse London A/L & O/L Academy • Authorized Assessment Center #EDU-92810
+        PulseEDU Global
       </footer>
     </div>
   );

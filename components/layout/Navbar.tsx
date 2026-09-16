@@ -103,7 +103,7 @@ export function Navbar() {
         <Link href="/" className="flex items-center gap-2 group py-1.5 sm:py-2">
           <img
             src="/logo-wide.png"
-            alt="EduPulse London A/L & O/L Academy"
+            alt="PulseEDU Global"
             className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto object-contain transition-transform group-hover:scale-[1.02]"
           />
         </Link>

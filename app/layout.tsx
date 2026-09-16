@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduPulse | London A/L & O/L Academy",
+  title: "PulseEDU | Global",
   description:
     "Unified multi-role learning platform with accredited courses, interactive faculty curriculum studio, and system administrator control center.",
   icons: {

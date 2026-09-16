@@ -83,7 +83,7 @@ export function Hero() {
           <div className="max-w-xl w-full flex flex-col items-center">
             <div className="text-center space-y-3 mb-8">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.1]">
-                London A/L & O/L Academy
+                PulseEDU Global
               </h1>
               <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
                 Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, downloadable study materials, and past paper video vaults.

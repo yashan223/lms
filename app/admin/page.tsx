@@ -4497,12 +4497,12 @@ export default function AdminDashboardPage() {
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
                     <Input
-                      type="number"
-                      min="1"
+                      type="text"
+                      inputMode="numeric"
                       placeholder="65"
                       value={formUserHourlyRate}
                       onChange={(e) => setFormUserHourlyRate(e.target.value)}
-                      className="rounded-xl pl-7 focus-visible:ring-blue-400"
+                      className="rounded-xl pl-7 focus-visible:ring-blue-400 font-mono"
                     />
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1">
@@ -4560,12 +4560,12 @@ export default function AdminDashboardPage() {
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
                     <Input
-                      type="number"
-                      min="1"
+                      type="text"
+                      inputMode="numeric"
                       placeholder="65"
                       value={formUserHourlyRate}
                       onChange={(e) => setFormUserHourlyRate(e.target.value)}
-                      className="rounded-xl pl-7 focus-visible:ring-blue-400"
+                      className="rounded-xl pl-7 focus-visible:ring-blue-400 font-mono"
                     />
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1">
@@ -4686,7 +4686,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Tokens Required (Tokens)</label>
-                  <Input type="number" required min="0" placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
+                  <Input type="text" inputMode="numeric" required placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
               <div>
@@ -4748,7 +4748,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Tokens Required (Tokens)</label>
-                  <Input type="number" required min="0" placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
+                  <Input type="text" inputMode="numeric" required placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
               <div>
@@ -4845,11 +4845,12 @@ export default function AdminDashboardPage() {
                           className="bg-white text-xs h-8 rounded-lg flex-1"
                         />
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="Mins"
                           value={newLessonDuration}
                           onChange={(e) => setNewLessonDuration(e.target.value)}
-                          className="bg-white text-xs h-8 w-16 rounded-lg"
+                          className="bg-white text-xs h-8 w-16 rounded-lg font-mono"
                         />
                         <Button type="submit" size="sm" className="bg-blue-500 text-white text-xs h-8 rounded-lg cursor-pointer">Add</Button>
                         <Button type="button" variant="outline" size="sm" onClick={() => setSelectedModuleIdForLesson("")} className="text-xs h-8 rounded-lg cursor-pointer px-2" aria-label="Close"><X className="w-3.5 h-3.5" /></Button>

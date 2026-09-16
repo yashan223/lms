@@ -23,7 +23,6 @@ import {
   Radio,
   Save,
   Search,
-  Sparkles,
   Star,
   Trash2,
   Upload,

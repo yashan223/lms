@@ -52,7 +52,7 @@ import {
   Video,
   Radio,
   Coins,
-  Sparkles,
+  Zap,
   ArrowRight,
   PlusCircle,
   Copy,
@@ -3446,7 +3446,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Instant Publishing</span>
                     <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4" />
+                      <Zap className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">

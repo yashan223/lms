@@ -19,7 +19,6 @@ import {
   Award,
   FileText,
   Globe,
-  Sparkles,
   ArrowLeft,
   ExternalLink,
   Eye,
@@ -1138,7 +1137,7 @@ function TutorProfileContent() {
               <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950 via-[#0c2461] to-slate-900 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h4 className="font-bold text-base text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <BadgeCheck className="w-4 h-4 text-amber-400" />
                     <span>Ready to publish your updated credentials?</span>
                   </h4>
                   <p className="text-xs text-blue-200">

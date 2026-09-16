@@ -11,7 +11,6 @@ import {
   AlertCircle,
   AlertTriangle,
   Loader2,
-  Sparkles,
   CalendarCheck,
   Video,
   BookOpen,

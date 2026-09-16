@@ -20,7 +20,6 @@ import {
   ExternalLink,
   GraduationCap,
   CalendarClock,
-  Sparkles,
   Phone,
   Mail,
   ShieldCheck,
@@ -840,7 +839,7 @@ function RescheduleContent() {
                                     }`}
                                     title="Matches student's preferred study hours!"
                                   >
-                                    <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                                    <Zap className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />
                                     Mutual Match
                                   </span>
                                 )}
@@ -873,7 +872,7 @@ function RescheduleContent() {
                 <div className="pt-4 border-t border-slate-100 space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <CalendarClock className="w-3.5 h-3.5 text-indigo-600" />
                       <span>Custom Date &amp; Time Selection</span>
                     </label>
                     <span className="text-[10px] text-slate-400">

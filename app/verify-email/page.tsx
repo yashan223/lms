@@ -12,7 +12,6 @@ import {
   AlertCircle,
   RefreshCw,
   Clock,
-  Sparkles,
   ShieldCheck,
   Send,
   Edit2,
@@ -218,7 +217,7 @@ function VerifyEmailContent() {
 
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-[11px] font-bold">
-                  <Sparkles className="w-3 h-3" />
+                  <ShieldCheck className="w-3 h-3" />
                   <span>Account Verified</span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">

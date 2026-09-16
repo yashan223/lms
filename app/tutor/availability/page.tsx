@@ -19,7 +19,6 @@ import {
   ArrowLeft,
   CalendarClock,
   ShieldCheck,
-  Sparkles,
   ExternalLink,
   ChevronRight,
   Zap,

@@ -25,7 +25,6 @@ import {
   Save,
   Search,
   ShieldAlert,
-  Sparkles,
   Star,
   Trash2,
   Upload,
@@ -1198,7 +1197,7 @@ export default function EditCourseWorkspacePage() {
                     />
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
                         Featured Course
                       </span>
                       <span className="text-[10px] text-slate-500 block">Promote on student dashboard showcase</span>

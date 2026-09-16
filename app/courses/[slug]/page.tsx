@@ -41,7 +41,6 @@ import {
   Calculator,
   FlaskConical,
   FileCode,
-  Sparkles,
   Coins,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";

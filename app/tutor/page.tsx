@@ -51,7 +51,8 @@ import {
   Check,
   Upload,
   Camera,
-  Sparkles,
+  BadgeCheck,
+  Palette,
   School,
   Briefcase,
   Share2,
@@ -2815,7 +2816,7 @@ function TutorDashboardContent() {
                 <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                      <Sparkles className="w-5 h-5" />
+                      <Palette className="w-5 h-5" />
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-purple-950">Dedicated Profile Customization Studio Available</h4>
@@ -3459,7 +3460,7 @@ function TutorDashboardContent() {
                   <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950 via-[#0c2461] to-slate-900 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <h4 className="font-bold text-base text-white flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        <BadgeCheck className="w-4 h-4 text-amber-400" />
                         <span>Ready to update your public credentials?</span>
                       </h4>
                       <p className="text-xs text-blue-200">

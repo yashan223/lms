@@ -14,7 +14,7 @@ import {
   Video,
   Loader2,
   ArrowRight,
-  Sparkles,
+  Unlock,
   AlertCircle,
   Wallet,
 } from "lucide-react";
@@ -210,7 +210,7 @@ export function CoursePurchaseModal({
 
             <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-left space-y-2 text-xs">
               <div className="font-bold text-emerald-950 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <Unlock className="w-4 h-4 text-emerald-600" />
                 <span>Everything Now Unlocked:</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">

@@ -60,16 +60,21 @@ async function dispatchResendEmail(params: {
   }
 
   let sender = fromEmail.includes("<") ? fromEmail : `EduPulse Academy <${fromEmail}>`;
+  const replyTo = process.env.RESEND_REPLY_TO || (fromEmail.match(/<([^>]+)>/)?.[1] ?? fromEmail);
 
   try {
     let result = await resend.emails.send({
       from: sender,
       to: params.to,
+      replyTo: replyTo,
       subject: params.subject,
       html: params.html,
       text: params.text,
       headers: {
         "X-Entity-Ref-ID": Date.now().toString(),
+        "Auto-Submitted": "auto-generated",
+        "X-Auto-Response-Suppress": "All",
+        "Precedence": "bulk",
       },
     });
 
@@ -81,11 +86,14 @@ async function dispatchResendEmail(params: {
         result = await resend.emails.send({
           from: sender,
           to: params.to,
+          replyTo: replyTo,
           subject: params.subject,
           html: params.html,
           text: params.text,
           headers: {
             "X-Entity-Ref-ID": Date.now().toString(),
+            "Auto-Submitted": "auto-generated",
+            "X-Auto-Response-Suppress": "All",
           },
         });
       }
@@ -99,7 +107,7 @@ async function dispatchResendEmail(params: {
         result.error.name === "validation_error"
       ) {
         userFriendlyError =
-          "Resend test sandbox restriction: onboarding@resend.dev can only deliver emails to your registered Resend email address (yashanpererax200302@gmail.com). To send to all students, please verify your custom domain in your Resend dashboard (resend.com/domains) and set RESEND_FROM_EMAIL.";
+          "Resend test sandbox restriction: onboarding@resend.dev can only deliver emails to your registered Resend email address. To send to all students, please verify your custom domain in your Resend dashboard (resend.com/domains) and set RESEND_FROM_EMAIL.";
       }
       return { success: false, error: userFriendlyError };
     }

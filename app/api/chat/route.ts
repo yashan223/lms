@@ -24,7 +24,7 @@ async function canUsersChat(
   const isATutor = userA.role === Role.TUTOR || (userA.role as any) === "INSTRUCTOR";
   const isBTutor = userB.role === Role.TUTOR || (userB.role as any) === "INSTRUCTOR";
 
-  // Messaging is only permitted between a student and a faculty tutor/instructor
+  // Messaging is only permitted between a student and a tutor/instructor
   if (!((isAStudent && isBTutor) || (isBStudent && isATutor))) {
     return false;
   }

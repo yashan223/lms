@@ -314,7 +314,7 @@ function RescheduleContent() {
       setShowAvailabilityModal(true);
       setStatusMsg({
         type: "error",
-        text: "Please configure your study availability first so faculty knows your preferred study hours.",
+        text: "Please configure your study availability first so tutors know your preferred study hours.",
       });
       return;
     }
@@ -442,7 +442,7 @@ function RescheduleContent() {
                 </Badge>
               </div>
               <p className="text-[11px] text-slate-500 hidden sm:block">
-                View real-time faculty availability and avoid overlapping with scheduled academy classes
+                View real-time tutor availability and avoid overlapping with scheduled academy classes
               </p>
             </div>
           </div>
@@ -496,7 +496,7 @@ function RescheduleContent() {
                   </span>
                 </h4>
                 <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                  Please configure your study availability so faculty tutors can coordinate your session times without schedule clashes.
+                  Please configure your study availability so tutors can coordinate your session times without schedule clashes.
                 </p>
               </div>
             </div>
@@ -512,7 +512,7 @@ function RescheduleContent() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Trial & Faculty Summary */}
+          {/* Left Column: Trial & Tutor Summary */}
           <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-5">
             {/* Consultation Card */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
@@ -653,11 +653,11 @@ function RescheduleContent() {
                 )}
               </div>
 
-              {/* Faculty / Tutor Card */}
+              {/* Tutor Card */}
               {tutorInfo && (
                 <div className="pt-3 border-t border-slate-100 space-y-2.5">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Faculty Instructor
+                    Tutor
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden shadow-xs">
@@ -676,7 +676,7 @@ function RescheduleContent() {
                         {tutorInfo.name}
                       </div>
                       <div className="text-[11px] text-slate-500 truncate">
-                        {tutorInfo.headline || "Senior Faculty Lead"}
+                        {tutorInfo.headline || "Senior Tutor Lead"}
                       </div>
                     </div>
                   </div>
@@ -697,7 +697,7 @@ function RescheduleContent() {
                       <span>Select Date &amp; Available Time Slot</span>
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Choose an open time slot from faculty office hours and seminar schedules
+                      Choose an open time slot from tutor office hours and seminar schedules
                     </p>
                   </div>
 
@@ -780,7 +780,7 @@ function RescheduleContent() {
                     <div className="p-8 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 space-y-1">
                       <div className="font-bold text-slate-700">No time slots for this date</div>
                       <p className="text-[11px]">
-                        The faculty tutor has no consultation hours or scheduled openings on this day. Please select another date.
+                        The tutor has no consultation hours or scheduled openings on this day. Please select another date.
                       </p>
                     </div>
                   ) : (

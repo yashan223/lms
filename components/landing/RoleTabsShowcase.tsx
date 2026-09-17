@@ -34,7 +34,7 @@ export function RoleTabsShowcase() {
             </span>
           </h2>
           <p className="text-base text-slate-600 leading-relaxed">
-            EduPulse delivers specialized workspaces designed specifically for students, faculty educators, and system administrators.
+            EduPulse delivers specialized workspaces designed specifically for students, tutors, and system administrators.
           </p>
         </div>
 
@@ -97,7 +97,7 @@ export function RoleTabsShowcase() {
                       },
                       {
                         title: "24/7 Academic Tutor & Token Hours",
-                        desc: "Book 1-on-1 hours with expert faculty tutors and manage learning credits.",
+                        desc: "Book 1-on-1 hours with expert tutors and manage learning credits.",
                       },
                       {
                         title: "Accredited Verifiable Credentials",
@@ -194,7 +194,7 @@ export function RoleTabsShowcase() {
                   </h3>
 
                   <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                    A comprehensive academic workspace that allows faculty tutors to curate syllabus modules, host live video classes, manage 1-on-1 consultations, and track student mastery.
+                    A comprehensive academic workspace that allows tutors to curate syllabus modules, host live video classes, manage 1-on-1 consultations, and track student mastery.
                   </p>
 
                   <div className="space-y-3">
@@ -402,7 +402,7 @@ export function RoleTabsShowcase() {
                     <div className="p-3 bg-white rounded-xl border border-slate-200">
                       <div className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
                         <Users className="w-4 h-4 text-indigo-600" />
-                        Faculty Chairs
+                        Active Tutors
                       </div>
                       <div className="text-lg font-black text-slate-900">185 Active</div>
                       <p className="text-[10px] text-slate-500">4 QA pending</p>

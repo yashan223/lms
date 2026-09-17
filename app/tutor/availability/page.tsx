@@ -343,7 +343,7 @@ function TutorAvailabilityContent() {
             <div className="space-y-1.5 max-w-2xl">
               <div className="flex items-center gap-2.5">
                 <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-extrabold uppercase tracking-wider">
-                  Faculty Studio
+                  Tutor Studio
                 </span>
                 <span className="text-slate-300">•</span>
                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
@@ -876,7 +876,7 @@ export default function TutorAvailabilityPage() {
         <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
           <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
           <p className="text-sm font-semibold tracking-wider uppercase text-blue-200">
-            Loading Faculty Availability Studio...
+            Loading Tutor Availability Studio...
           </p>
         </div>
       }

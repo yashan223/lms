@@ -51,7 +51,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     ctaText: "Get 16 Hours Bundle",
     features: [
       "16 tokens (1 token = 1 hour learning credit)",
-      "Weekly 1-on-1 sessions with Faculty Tutors",
+      "Weekly 1-on-1 sessions with Tutors",
       "Access all subject live seminar masterclasses",
       "Priority scheduling & reschedule flexibility",
       "Comprehensive worked past paper clinics",
@@ -74,7 +74,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     features: [
       "24 tokens (1 token = 1 hour learning credit)",
       "Total schedule control across Pure Maths & Sciences",
-      "Unlimited 1-on-1 faculty tutor booking",
+      "Unlimited 1-on-1 tutor booking",
       "Comprehensive syllabus & mock exam coverage",
       "Zero expiration: use tokens throughout the academic year",
       "VIP tutor support & study material downloads",

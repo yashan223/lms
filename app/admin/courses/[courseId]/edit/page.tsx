@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -153,7 +153,7 @@ type UserOption = {
   avatar?: string | null;
 };
 
-type Faculty = {
+type TutorMember = {
   id: string;
   name?: string | null;
   email?: string | null;
@@ -192,11 +192,16 @@ async function callAdminApi(payload: Record<string, unknown>) {
   return data;
 }
 
-export default function EditCourseWorkspacePage() {
-  const params = useParams<{ courseId: string }>();
+export function AdminCourseWorkspaceContent({
+  isNewCourseProp,
+}: {
+  isNewCourseProp?: boolean;
+} = {}) {
+  const params = useParams<{ courseId?: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = params.courseId;
+  const courseId = params?.courseId;
+  const isNewCourse = Boolean(isNewCourseProp || courseId === "new" || !courseId);
 
   // Tabs
   const tabParam = searchParams.get("tab") as Tab | null;
@@ -208,7 +213,7 @@ export default function EditCourseWorkspacePage() {
 
   // Core data states
   const [course, setCourse] = useState<Course | null>(null);
-  const [faculty, setFaculty] = useState<Faculty[]>([]);
+  const [tutorList, setTutorList] = useState<TutorMember[]>([]);
   const [allUsers, setAllUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingDetails, setSavingDetails] = useState(false);
@@ -294,6 +299,29 @@ export default function EditCourseWorkspacePage() {
 
   // Fetch full course data and platform context
   const loadData = async (silent = false) => {
+    if (isNewCourse) {
+      if (!silent) setLoading(true);
+      try {
+        const res = await fetch("/api/admin", { cache: "no-store" });
+        const data = await res.json();
+        if (res.ok) {
+          const fetchedTutors = data.tutors || data.faculty || [];
+          setTutorList(fetchedTutors);
+          setAllUsers(data.allUsers || []);
+          if (fetchedTutors.length > 0 && !detailsForm.tutorId) {
+            setDetailsForm((prev) => ({
+              ...prev,
+              tutorId: prev.tutorId || fetchedTutors[0].id,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load tutors for new course:", err);
+      } finally {
+        if (!silent) setLoading(false);
+      }
+      return;
+    }
     if (!silent) setLoading(true);
     try {
       const res = await fetch("/api/admin", { cache: "no-store" });
@@ -301,14 +329,14 @@ export default function EditCourseWorkspacePage() {
       if (!res.ok) throw new Error(data.error || "Failed to load admin data");
 
       const found = (data.courses || []).find((c: Course) => c.id === courseId);
-      if (!found) throw new Error("Course not found in system database.");
+      if (!found) throw new Error("Masterclass not found in system database.");
 
       // Also grab events linked to this course from data.events if course.events isn't loaded
       const courseEvents = found.events || (data.events || []).filter((e: any) => e.courseId === courseId);
       const enrichedCourse = { ...found, events: courseEvents };
 
       setCourse(enrichedCourse);
-      setFaculty(data.faculty || []);
+      setTutorList(data.tutors || data.faculty || []);
       setAllUsers(data.allUsers || []);
 
       setDetailsForm({
@@ -353,10 +381,41 @@ export default function EditCourseWorkspacePage() {
   // -------------------------------------------------------------
   // Course Details Handlers
   // -------------------------------------------------------------
-  const handleSaveDetails = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSaveDetails = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
     setSavingDetails(true);
     try {
+      if (isNewCourse) {
+        if (!detailsForm.title.trim()) {
+          throw new Error("Masterclass title is required.");
+        }
+        if (!detailsForm.description.trim()) {
+          throw new Error("Masterclass description is required.");
+        }
+        const res = await callAdminApi({
+          action: "create_course",
+          title: detailsForm.title.trim(),
+          subjectCode: detailsForm.subjectCode.trim() || undefined,
+          category: detailsForm.category,
+          price: detailsForm.price,
+          level: detailsForm.level,
+          status: detailsForm.status,
+          tutorId: detailsForm.tutorId || null,
+          instructorId: detailsForm.tutorId || null,
+          subtitle: detailsForm.subtitle.trim(),
+          description: detailsForm.description.trim(),
+          thumbnail: detailsForm.thumbnail.trim() || null,
+          featured: detailsForm.featured,
+        });
+        showToast("success", "Masterclass created successfully! Redirecting to full workspace...");
+        if (res.course?.id) {
+          router.push(`/admin/courses/${res.course.id}/edit`);
+        } else {
+          router.push("/admin?tab=courses");
+        }
+        return;
+      }
+
       await callAdminApi({
         action: "update_course",
         courseId,
@@ -373,15 +432,19 @@ export default function EditCourseWorkspacePage() {
         featured: detailsForm.featured,
       });
       await loadData(true);
-      showToast("success", "Course details saved successfully!");
+      showToast("success", "Masterclass details saved successfully!");
     } catch (err: any) {
-      showToast("error", err.message || "Failed to save course details.");
+      showToast("error", err.message || "Failed to save masterclass details.");
     } finally {
       setSavingDetails(false);
     }
   };
 
   const handleQuickStatusChange = async (newStatus: string) => {
+    if (isNewCourse) {
+      setDetailsForm((prev) => ({ ...prev, status: newStatus }));
+      return;
+    }
     try {
       await callAdminApi({
         action: "update_course",
@@ -390,9 +453,9 @@ export default function EditCourseWorkspacePage() {
       });
       setDetailsForm((prev) => ({ ...prev, status: newStatus }));
       await loadData(true);
-      showToast("success", `Course status updated to ${newStatus}`);
+      showToast("success", `Masterclass status updated to ${newStatus}`);
     } catch (err: any) {
-      showToast("error", err.message || "Failed to update course status.");
+      showToast("error", err.message || "Failed to update masterclass status.");
     }
   };
 
@@ -409,13 +472,15 @@ export default function EditCourseWorkspacePage() {
       if (!res.ok) throw new Error(data.error || "Failed to upload image");
 
       setDetailsForm((prev) => ({ ...prev, thumbnail: data.fileUrl }));
-      await callAdminApi({
-        action: "update_course",
-        courseId,
-        thumbnail: data.fileUrl,
-      });
-      await loadData(true);
-      showToast("success", "Course thumbnail uploaded and updated!");
+      if (!isNewCourse) {
+        await callAdminApi({
+          action: "update_course",
+          courseId,
+          thumbnail: data.fileUrl,
+        });
+        await loadData(true);
+      }
+      showToast("success", "Masterclass thumbnail uploaded successfully!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to upload cover image.");
     } finally {
@@ -428,15 +493,15 @@ export default function EditCourseWorkspacePage() {
       isOpen: true,
       title: `Delete "${course?.title}"?`,
       description:
-        "This will permanently delete this course, all its modules, lessons, study materials, student enrollments, and associated records. This action cannot be undone.",
+        "This will permanently delete this masterclass, all its modules, lessons, study materials, student enrollments, and associated records. This action cannot be undone.",
       variant: "danger",
-      confirmText: "Delete Course Permanently",
+      confirmText: "Delete Masterclass Permanently",
       onConfirm: async () => {
         try {
           await callAdminApi({ action: "delete_course", courseId });
           router.push("/admin?tab=courses");
         } catch (err: any) {
-          showToast("error", err.message || "Failed to delete course.");
+          showToast("error", err.message || "Failed to delete masterclass.");
         }
       },
     });
@@ -810,22 +875,22 @@ export default function EditCourseWorkspacePage() {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-600">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-        <h2 className="text-base font-bold text-slate-800">Loading Course Workspace...</h2>
+        <h2 className="text-base font-bold text-slate-800">Loading Masterclass Workspace...</h2>
         <p className="text-xs text-slate-400 mt-1">Fetching curriculum, materials, and student rosters...</p>
       </div>
     );
   }
 
-  if (!course) {
+  if (!course && !isNewCourse) {
     return (
       <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center justify-center">
         <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-lg space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-black text-slate-900">Course Not Found</h2>
+          <h2 className="text-lg font-black text-slate-900">Masterclass Not Found</h2>
           <p className="text-xs text-slate-500">
-            {bannerMsg?.text || "The requested course could not be located in the platform database."}
+            {bannerMsg?.text || "The requested masterclass could not be located in the platform database."}
           </p>
           <Link
             href="/admin?tab=courses"
@@ -839,28 +904,29 @@ export default function EditCourseWorkspacePage() {
     );
   }
 
-  const totalLessons = course.modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
-  const totalDurationMin = course.modules.reduce(
+  const totalLessons = course?.modules?.reduce((sum, m) => sum + (m.lessons?.length || 0), 0) || 0;
+  const totalDurationMin = course?.modules?.reduce(
     (sum, m) => sum + (m.lessons || []).reduce((lSum, l) => lSum + (l.durationMin || 0), 0),
     0
-  );
-  const totalTokensEarned = course.price * (course.enrollments?.length || 0);
+  ) || 0;
+  const totalTokensEarned = (course?.price || 0) * (course?.enrollments?.length || 0);
 
   const tabList: { id: Tab; label: string; count?: number; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "overview", label: "Course Details", icon: BookOpen },
-    { id: "curriculum", label: "Curriculum & Syllabus", count: totalLessons, icon: Layers3 },
-    { id: "materials", label: "Study Materials", count: course.materials?.length, icon: FileText },
-    { id: "students", label: "Enrolled Students", count: course.enrollments?.length, icon: Users },
-    { id: "live_classes", label: "Live Google Meets", count: course.events?.length, icon: Video },
-    { id: "reviews", label: "Reviews & Ratings", count: course.reviews?.length, icon: Star },
+    { id: "overview", label: isNewCourse ? "Masterclass Setup & Details" : "Masterclass Details", icon: BookOpen },
+    { id: "curriculum", label: "Curriculum & Syllabus", count: isNewCourse ? undefined : totalLessons, icon: Layers3 },
+    { id: "materials", label: "Study Materials", count: isNewCourse ? undefined : course?.materials?.length, icon: FileText },
+    { id: "students", label: "Enrolled Students", count: isNewCourse ? undefined : course?.enrollments?.length, icon: Users },
+    { id: "live_classes", label: "Live Google Meets", count: isNewCourse ? undefined : course?.events?.length, icon: Video },
+    { id: "reviews", label: "Reviews & Ratings", count: isNewCourse ? undefined : course?.reviews?.length, icon: Star },
   ];
 
+  const currentStatus = isNewCourse ? detailsForm.status : (course?.status || "PUBLISHED");
   const statusBadgeColor =
-    course.status === "PUBLISHED"
+    currentStatus === "PUBLISHED"
       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-      : course.status === "PENDING_REVIEW"
+      : currentStatus === "PENDING_REVIEW"
       ? "bg-amber-50 text-amber-700 border-amber-200"
-      : course.status === "DRAFT"
+      : currentStatus === "DRAFT"
       ? "bg-slate-100 text-slate-700 border-slate-200"
       : "bg-rose-50 text-rose-700 border-rose-200";
 
@@ -881,52 +947,67 @@ export default function EditCourseWorkspacePage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase tracking-widest font-black text-blue-600">
-                  Course Workspace
+                  {isNewCourse ? "New Masterclass Creator" : "Masterclass Workspace"}
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="text-[11px] font-mono font-bold text-slate-500">
-                  {course.subjectCode || "COURSE-ID"}
+                  {detailsForm.subjectCode || (isNewCourse ? "NEW-SYLLABUS" : "COURSE-ID")}
                 </span>
               </div>
               <h1 className="font-black text-base sm:text-lg text-slate-900 truncate leading-tight">
-                {course.title}
+                {detailsForm.title || (isNewCourse ? "Create New Masterclass" : course?.title)}
               </h1>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Quick Status Picker */}
-            <select
-              value={course.status}
-              onChange={(e) => handleQuickStatusChange(e.target.value)}
-              className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusBadgeColor}`}
-              title="Click to quickly change course status"
-            >
-              <option value="PUBLISHED">Published</option>
-              <option value="DRAFT">Draft</option>
-              <option value="PENDING_REVIEW">Pending Review</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
+            {isNewCourse ? (
+              <Button
+                onClick={() => handleSaveDetails()}
+                disabled={savingDetails || !detailsForm.title.trim() || !detailsForm.description.trim()}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl h-9 px-4 gap-1.5 shadow-xs cursor-pointer"
+              >
+                {savingDetails ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <span>{savingDetails ? "Creating Masterclass..." : "Create Masterclass"}</span>
+              </Button>
+            ) : (
+              <>
+                {/* Quick Status Picker */}
+                <select
+                  value={course?.status || "PUBLISHED"}
+                  onChange={(e) => handleQuickStatusChange(e.target.value)}
+                  className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusBadgeColor}`}
+                  title="Click to quickly change masterclass status"
+                >
+                  <option value="PUBLISHED">Published</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="PENDING_REVIEW">Pending Review</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
 
-            {/* Public Student-Facing Preview */}
-            <Link
-              href={`/courses/${course.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-              <span className="hidden sm:inline">Preview Course</span>
-            </Link>
+                {/* Public Student-Facing Preview */}
+                {course && (
+                  <Link
+                    href={`/courses/${course.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="hidden sm:inline">Preview Masterclass</span>
+                  </Link>
+                )}
 
-            {/* Delete Course Button */}
-            <button
-              onClick={handleDeleteCourse}
-              className="h-9 w-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer"
-              title="Delete this course permanently"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+                {/* Delete Masterclass Button */}
+                <button
+                  onClick={handleDeleteCourse}
+                  className="h-9 w-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Delete this masterclass permanently"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -967,7 +1048,7 @@ export default function EditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Enrolled Students</span>
               <Users className="w-4 h-4 text-blue-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{course.enrollments?.length || 0}</div>
+            <div className="text-2xl font-black text-slate-900">{course?.enrollments?.length || 0}</div>
             <div className="text-[10px] text-slate-400">Active learners</div>
           </div>
 
@@ -976,7 +1057,7 @@ export default function EditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Modules</span>
               <Layers3 className="w-4 h-4 text-indigo-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{course.modules?.length || 0}</div>
+            <div className="text-2xl font-black text-slate-900">{course?.modules?.length || (isNewCourse ? 1 : 0)}</div>
             <div className="text-[10px] text-slate-400">Curriculum units</div>
           </div>
 
@@ -985,9 +1066,9 @@ export default function EditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Total Lessons</span>
               <GraduationCap className="w-4 h-4 text-violet-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{totalLessons}</div>
+            <div className="text-2xl font-black text-slate-900">{isNewCourse ? 2 : totalLessons}</div>
             <div className="text-[10px] text-slate-400">
-              {totalDurationMin > 0 ? `${Math.round(totalDurationMin / 60)}h ${totalDurationMin % 60}m` : "Self-paced"}
+              {totalDurationMin > 0 ? `${Math.round(totalDurationMin / 60)}h ${totalDurationMin % 60}m` : (isNewCourse ? "60 mins default" : "Self-paced")}
             </div>
           </div>
 
@@ -996,7 +1077,7 @@ export default function EditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Study Files</span>
               <FileText className="w-4 h-4 text-emerald-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{course.materials?.length || 0}</div>
+            <div className="text-2xl font-black text-slate-900">{course?.materials?.length || 0}</div>
             <div className="text-[10px] text-slate-400">Handouts & slides</div>
           </div>
 
@@ -1005,7 +1086,7 @@ export default function EditCourseWorkspacePage() {
               <span className="text-[11px] font-bold text-slate-500">Tuition Rate</span>
               <Coins className="w-4 h-4 text-amber-500" />
             </div>
-            <div className="text-2xl font-black text-amber-600">{course.price}</div>
+            <div className="text-2xl font-black text-amber-600">{detailsForm.price || course?.price || 10}</div>
             <div className="text-[10px] text-slate-400">Tokens / enrollment</div>
           </div>
 
@@ -1015,10 +1096,10 @@ export default function EditCourseWorkspacePage() {
               <CircleUserRound className="w-4 h-4 text-sky-500" />
             </div>
             <div className="text-sm font-black text-slate-900 truncate mt-1">
-              {course.tutor?.name || "Unassigned"}
+              {tutorList.find((f) => f.id === detailsForm.tutorId)?.name || course?.tutor?.name || "Unassigned"}
             </div>
             <div className="text-[10px] text-slate-400 truncate">
-              {course.tutor?.email || "No lecturer linked"}
+              {tutorList.find((f) => f.id === detailsForm.tutorId)?.email || course?.tutor?.email || "No lecturer linked"}
             </div>
           </div>
         </section>
@@ -1056,14 +1137,14 @@ export default function EditCourseWorkspacePage() {
             })}
           </div>
 
-          {/* Tab 1: Course Details & Settings */}
+          {/* Tab 1: Masterclass Details & Settings */}
           {activeTab === "overview" && (
             <form onSubmit={handleSaveDetails} className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Course Identification & Core Details</h2>
+                  <h2 className="text-lg font-black text-slate-900">Masterclass Identification & Core Details</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Configure official academic metadata, pricing, faculty assignment, and branding.
+                    Configure official academic metadata, pricing, tutor assignment, and branding.
                   </p>
                 </div>
                 <Button
@@ -1072,21 +1153,21 @@ export default function EditCourseWorkspacePage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-5 rounded-xl gap-2 shadow-xs cursor-pointer shrink-0"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? "Saving Details..." : "Save All Changes"}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Masterclass..." : "Saving Details...") : (isNewCourse ? "Create Masterclass & Continue" : "Save All Changes")}</span>
                 </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {/* Course Title */}
+                {/* Masterclass Title */}
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
-                    Course Title <span className="text-red-500">*</span>
+                    Masterclass Title <span className="text-red-500">*</span>
                   </label>
                   <Input
                     required
                     value={detailsForm.title}
                     onChange={(e) => setDetailsForm({ ...detailsForm, title: e.target.value })}
-                    placeholder="e.g. Pure Mathematics & Mechanics Core"
+                    placeholder="e.g. Pure Mathematics & Mechanics Masterclass"
                     className="h-10 text-xs rounded-xl"
                   />
                 </div>
@@ -1156,14 +1237,14 @@ export default function EditCourseWorkspacePage() {
 
                 {/* Lead Lecturer */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Lead Lecturer / Faculty</label>
+                  <label className="text-xs font-bold text-slate-700">Lead Lecturer / Tutor</label>
                   <select
                     value={detailsForm.tutorId}
                     onChange={(e) => setDetailsForm({ ...detailsForm, tutorId: e.target.value })}
                     className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="">Select Lecturer...</option>
-                    {faculty.map((f) => (
+                    {tutorList.map((f) => (
                       <option key={f.id} value={f.id}>
                         {f.name || f.email} ({f.email})
                       </option>
@@ -1182,11 +1263,11 @@ export default function EditCourseWorkspacePage() {
                     <option value="PUBLISHED">Published (Available to Students)</option>
                     <option value="DRAFT">Draft (Under Preparation)</option>
                     <option value="PENDING_REVIEW">Pending Review</option>
-                    <option value="ARCHIVED">Archived (Retired Course)</option>
+                    <option value="ARCHIVED">Archived (Retired Masterclass)</option>
                   </select>
                 </div>
 
-                {/* Featured Course Checkbox */}
+                {/* Featured Masterclass Checkbox */}
                 <div className="space-y-1.5 flex flex-col justify-end">
                   <label className="flex items-center gap-2.5 p-2.5 border border-slate-200 rounded-xl bg-slate-50/50 cursor-pointer hover:bg-slate-100/50 transition-colors">
                     <input
@@ -1198,7 +1279,7 @@ export default function EditCourseWorkspacePage() {
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                        Featured Course
+                        Featured Masterclass
                       </span>
                       <span className="text-[10px] text-slate-500 block">Promote on student dashboard showcase</span>
                     </div>
@@ -1207,7 +1288,7 @@ export default function EditCourseWorkspacePage() {
 
                 {/* Short Subtitle */}
                 <div className="md:col-span-3 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Course Tagline / Short Summary</label>
+                  <label className="text-xs font-bold text-slate-700">Masterclass Tagline / Short Summary</label>
                   <Input
                     value={detailsForm.subtitle}
                     onChange={(e) => setDetailsForm({ ...detailsForm, subtitle: e.target.value })}
@@ -1216,15 +1297,15 @@ export default function EditCourseWorkspacePage() {
                   />
                 </div>
 
-                {/* Course Cover / Thumbnail */}
+                {/* Masterclass Cover / Thumbnail */}
                 <div className="md:col-span-3 space-y-2">
-                  <label className="text-xs font-bold text-slate-700 block">Course Cover Thumbnail</label>
+                  <label className="text-xs font-bold text-slate-700 block">Masterclass Cover Thumbnail</label>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-slate-200 rounded-2xl bg-slate-50/40">
                     <div className="w-32 h-20 rounded-xl bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
                       {detailsForm.thumbnail ? (
                         <img
                           src={detailsForm.thumbnail}
-                          alt="Course Cover"
+                          alt="Masterclass Cover"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -1253,21 +1334,21 @@ export default function EditCourseWorkspacePage() {
                       <Input
                         value={detailsForm.thumbnail}
                         onChange={(e) => setDetailsForm({ ...detailsForm, thumbnail: e.target.value })}
-                        placeholder="https://example.com/course-cover.jpg"
+                        placeholder="https://example.com/masterclass-cover.jpg"
                         className="h-9 text-xs rounded-xl bg-white"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Full Course Description */}
+                {/* Full Masterclass Description */}
                 <div className="md:col-span-3 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Comprehensive Course Syllabus Description</label>
+                  <label className="text-xs font-bold text-slate-700">Comprehensive Masterclass Syllabus Description</label>
                   <textarea
                     rows={6}
                     value={detailsForm.description}
                     onChange={(e) => setDetailsForm({ ...detailsForm, description: e.target.value })}
-                    placeholder="Elaborate on course prerequisites, learning objectives, exam board specifications, and weekly milestones..."
+                    placeholder="Elaborate on masterclass prerequisites, learning objectives, exam board specifications, and weekly milestones..."
                     className="w-full rounded-2xl border border-slate-200 p-4 text-xs font-medium leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   />
                 </div>
@@ -1280,14 +1361,38 @@ export default function EditCourseWorkspacePage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-6 rounded-xl gap-2 shadow-xs cursor-pointer"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? "Saving Details..." : "Save All Changes"}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Masterclass..." : "Saving Details...") : (isNewCourse ? "Create Masterclass & Open Workspace" : "Save All Changes")}</span>
                 </Button>
               </div>
             </form>
           )}
 
+          {/* If new course, show guidance on other tabs */}
+          {isNewCourse && activeTab !== "overview" && (
+            <div className="p-12 text-center space-y-4 max-w-md mx-auto">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
+                <Layers3 className="w-7 h-7" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-bold text-base text-slate-900">
+                  Save Masterclass Details to Unlock {tabList.find((t) => t.id === activeTab)?.label}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Fill in the masterclass specifications, title, and description in the Masterclass Details tab, then click <strong>Create Masterclass &amp; Open Workspace</strong> to activate the curriculum builder, study file uploads, student rosters, and live class scheduler.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold"
+              >
+                Go to Masterclass Details Form
+              </Button>
+            </div>
+          )}
+
           {/* Tab 2: Curriculum & Syllabus Builder */}
-          {activeTab === "curriculum" && (
+          {!isNewCourse && activeTab === "curriculum" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -1658,11 +1763,11 @@ export default function EditCourseWorkspacePage() {
           )}
 
           {/* Tab 3: Study Materials & Files */}
-          {activeTab === "materials" && (
+          {!isNewCourse && activeTab === "materials" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Course Materials & Document Repository</h2>
+                  <h2 className="text-lg font-black text-slate-900">Masterclass Materials & Document Repository</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Attach handouts, lecture slides, formula booklets, practice solution sets, and mock papers.
                   </p>
@@ -1845,8 +1950,8 @@ export default function EditCourseWorkspacePage() {
             </div>
           )}
 
-          {/* Tab 4: Students & Enrollment */}
-          {activeTab === "students" && (
+          {/* Tab 4: Student Roster & Direct Enrolling */}
+          {!isNewCourse && activeTab === "students" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -1978,8 +2083,8 @@ export default function EditCourseWorkspacePage() {
             </div>
           )}
 
-          {/* Tab 5: Live Classes & Google Meet */}
-          {activeTab === "live_classes" && (
+          {/* Tab 5: Live Classes & Google Meets */}
+          {!isNewCourse && activeTab === "live_classes" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -2192,8 +2297,8 @@ export default function EditCourseWorkspacePage() {
             </div>
           )}
 
-          {/* Tab 6: Reviews & Ratings */}
-          {activeTab === "reviews" && (
+          {/* Tab 6: Course Feedback & Student Reviews */}
+          {!isNewCourse && activeTab === "reviews" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
@@ -2282,5 +2387,25 @@ export default function EditCourseWorkspacePage() {
         confirmText={confirmModal.confirmText}
       />
     </main>
+  );
+}
+
+export default function AdminEditCourseWorkspacePage({
+  isNewCourseProp,
+}: {
+  isNewCourseProp?: boolean;
+} = {}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
+          <h2 className="text-base font-bold text-slate-800">Loading Admin Masterclass Workspace...</h2>
+          <p className="text-xs text-slate-400 mt-1">Fetching curriculum, materials, and student rosters...</p>
+        </div>
+      }
+    >
+      <AdminCourseWorkspaceContent isNewCourseProp={isNewCourseProp} />
+    </Suspense>
   );
 }

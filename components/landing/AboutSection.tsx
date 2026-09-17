@@ -28,8 +28,8 @@ export function AboutSection() {
     {
       icon: Users,
       title: "Senior Lead Lecturers",
-      description: "Learn directly from active university and college faculty who structure course content, author study materials, and guide students.",
-      badge: "Expert Faculty",
+      description: "Learn directly from active university and college educators who structure course content, author study materials, and guide students.",
+      badge: "Expert Tutors",
       badgeColor: "bg-purple-100 text-purple-800",
     },
     {

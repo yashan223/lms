@@ -135,7 +135,7 @@ export default function CourseDetailPage({
             instructor: {
               name: data.course.instructor?.name || "Dr. Sarah Jenkins",
               avatar: data.course.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-              roleTitle: data.course.instructor?.headline || "Senior Faculty Tutor in Mathematics",
+              roleTitle: data.course.instructor?.headline || "Senior Tutor in Mathematics",
               bio: data.course.instructor?.bio || "Subject Lead with 18+ years teaching London A/L & O/L specification.",
             },
           };
@@ -434,7 +434,7 @@ export default function CourseDetailPage({
                       className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
                     >
                       <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Book 1-on-1 Faculty Trial (30 Mins)</span>
+                      <span>Book 1-on-1 Trial (30 Mins)</span>
                     </button>
                   </div>
                 ) : (
@@ -933,14 +933,14 @@ export default function CourseDetailPage({
                     </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
                       <Users className="w-4 h-4 text-indigo-600" />
-                      <span>Live Faculty Q&A Access</span>
+                      <span>Live Tutor Q&A Access</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
-                <h3 className="font-bold text-sm text-slate-900">Lead Faculty Educator</h3>
+                <h3 className="font-bold text-sm text-slate-900">Lead Tutor</h3>
                 <div className="flex items-center gap-3">
                   <Avatar className="w-12 h-12 ring-2 ring-blue-500/20">
                     <AvatarImage src={course?.instructor?.avatar} alt={course?.instructor?.name} />

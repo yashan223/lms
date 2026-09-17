@@ -338,10 +338,10 @@ export function TutorCourseWorkspaceContent({
     try {
       if (isNewCourse) {
         if (!detailsForm.title.trim()) {
-          throw new Error("Course title is required.");
+          throw new Error("Masterclass title is required.");
         }
         if (!detailsForm.description.trim()) {
-          throw new Error("Course description is required.");
+          throw new Error("Masterclass description is required.");
         }
         const res = await callTutorApi({
           action: "create_course",
@@ -354,7 +354,7 @@ export function TutorCourseWorkspaceContent({
           description: detailsForm.description.trim(),
           thumbnail: detailsForm.thumbnail.trim() || null,
         });
-        showToast("success", "Course created successfully! Redirecting to full workspace...");
+        showToast("success", "Masterclass created successfully! Redirecting to full workspace...");
         if (res.course?.id) {
           router.push(`/tutor/courses/${res.course.id}/edit`);
         } else {
@@ -377,9 +377,9 @@ export function TutorCourseWorkspaceContent({
         thumbnail: detailsForm.thumbnail.trim() || null,
       });
       await loadData(true);
-      showToast("success", "Course details saved successfully!");
+      showToast("success", "Masterclass details saved successfully!");
     } catch (err: any) {
-      showToast("error", err.message || "Failed to save course details.");
+      showToast("error", err.message || "Failed to save masterclass details.");
     } finally {
       setSavingDetails(false);
     }
@@ -397,9 +397,9 @@ export function TutorCourseWorkspaceContent({
       });
       setDetailsForm((prev) => ({ ...prev, status: newStatus }));
       await loadData(true);
-      showToast("success", `Course status updated to ${newStatus}`);
+      showToast("success", `Masterclass status updated to ${newStatus}`);
     } catch (err: any) {
-      showToast("error", err.message || "Failed to update course status.");
+      showToast("error", err.message || "Failed to update masterclass status.");
     }
   };
 
@@ -427,7 +427,7 @@ export function TutorCourseWorkspaceContent({
         });
         await loadData(true);
       }
-      showToast("success", "Course cover image uploaded and updated!");
+      showToast("success", "Masterclass cover image uploaded and updated!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to upload cover image.");
     } finally {
@@ -804,9 +804,9 @@ export function TutorCourseWorkspaceContent({
           <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-black text-slate-900">Course Not Found</h2>
+          <h2 className="text-lg font-black text-slate-900">Masterclass Not Found</h2>
           <p className="text-xs text-slate-500">
-            {bannerMsg?.text || "The requested course could not be located in your tutor teaching portfolio."}
+            {bannerMsg?.text || "The requested masterclass could not be located in your tutor teaching portfolio."}
           </p>
           <Link
             href="/tutor?tab=courses"
@@ -830,7 +830,7 @@ export function TutorCourseWorkspaceContent({
   const totalTokensEarned = course ? course.price * (course.enrollments?.length || 0) : 0;
 
   const tabList: { id: Tab; label: string; count?: number; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "overview", label: isNewCourse ? "Course Setup & Details" : "Course Details", icon: BookOpen },
+    { id: "overview", label: isNewCourse ? "Masterclass Setup & Details" : "Masterclass Details", icon: BookOpen },
     { id: "curriculum", label: "Curriculum & Syllabus", count: isNewCourse ? undefined : totalLessons, icon: Layers3 },
     { id: "materials", label: "Study Materials", count: isNewCourse ? undefined : course?.materials?.length, icon: FileText },
     { id: "students", label: "Enrolled Students", count: isNewCourse ? undefined : course?.enrollments?.length, icon: Users },
@@ -865,7 +865,7 @@ export function TutorCourseWorkspaceContent({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase tracking-widest font-black text-blue-600">
-                  {isNewCourse ? "New Course Creator" : "Tutor Course Workspace"}
+                  {isNewCourse ? "New Masterclass Creator" : "Tutor Masterclass Workspace"}
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="text-[11px] font-mono font-bold text-slate-500">
@@ -873,7 +873,7 @@ export function TutorCourseWorkspaceContent({
                 </span>
               </div>
               <h1 className="font-black text-base sm:text-lg text-slate-900 truncate leading-tight">
-                {detailsForm.title || (isNewCourse ? "Create New Curriculum Course" : course?.title)}
+                {detailsForm.title || (isNewCourse ? "Create New Masterclass" : course?.title)}
               </h1>
             </div>
           </div>
@@ -886,7 +886,7 @@ export function TutorCourseWorkspaceContent({
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl h-9 px-4 gap-1.5 shadow-xs cursor-pointer"
               >
                 {savingDetails ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                <span>{savingDetails ? "Creating Course..." : "Create Course"}</span>
+                <span>{savingDetails ? "Creating Masterclass..." : "Create Masterclass"}</span>
               </Button>
             ) : (
               <>
@@ -911,7 +911,7 @@ export function TutorCourseWorkspaceContent({
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 transition-colors"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="hidden sm:inline">Preview Course</span>
+                    <span className="hidden sm:inline">Preview Masterclass</span>
                   </Link>
                 )}
 
@@ -919,7 +919,7 @@ export function TutorCourseWorkspaceContent({
                 <button
                   onClick={handleDeleteCourse}
                   className="h-9 w-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer"
-                  title="Delete this course"
+                  title="Delete this masterclass"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -1041,12 +1041,12 @@ export function TutorCourseWorkspaceContent({
             })}
           </div>
 
-          {/* Tab 1: Course Details & Settings */}
+          {/* Tab 1: Masterclass Details & Settings */}
           {activeTab === "overview" && (
             <form onSubmit={handleSaveDetails} className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Course Identification & Core Details</h2>
+                  <h2 className="text-lg font-black text-slate-900">Masterclass Identification & Core Details</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Configure curriculum title, academic school, tuition tokens, cover image, and syllabus breakdown.
                   </p>
@@ -1057,15 +1057,15 @@ export function TutorCourseWorkspaceContent({
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-5 rounded-xl gap-2 shadow-xs cursor-pointer shrink-0"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? (isNewCourse ? "Creating Course..." : "Saving Details...") : (isNewCourse ? "Create Course & Continue" : "Save All Changes")}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Masterclass..." : "Saving Details...") : (isNewCourse ? "Create Masterclass & Continue" : "Save All Changes")}</span>
                 </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {/* Course Title */}
+                {/* Masterclass Title */}
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
-                    Course Title <span className="text-red-500">*</span>
+                    Masterclass Title <span className="text-red-500">*</span>
                   </label>
                   <Input
                     required
@@ -1228,7 +1228,7 @@ export function TutorCourseWorkspaceContent({
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-6 rounded-xl gap-2 shadow-xs cursor-pointer"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? (isNewCourse ? "Creating Course..." : "Saving Details...") : (isNewCourse ? "Create Course & Open Workspace" : "Save All Changes")}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Masterclass..." : "Saving Details...") : (isNewCourse ? "Create Masterclass & Open Workspace" : "Save All Changes")}</span>
                 </Button>
               </div>
             </form>
@@ -1242,10 +1242,10 @@ export function TutorCourseWorkspaceContent({
               </div>
               <div className="space-y-1.5">
                 <h3 className="font-bold text-base text-slate-900">
-                  Save Course Details to Unlock {tabList.find((t) => t.id === activeTab)?.label}
+                  Save Masterclass Details to Unlock {tabList.find((t) => t.id === activeTab)?.label}
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Fill in the course specifications, title, and description in the Course Details tab, then click <strong>Create Course &amp; Open Workspace</strong> to activate the curriculum builder, study file uploads, and student rosters.
+                  Fill in the masterclass specifications, title, and description in the Masterclass Details tab, then click <strong>Create Masterclass &amp; Open Workspace</strong> to activate the curriculum builder, study file uploads, and student rosters.
                 </p>
               </div>
               <Button
@@ -1253,7 +1253,7 @@ export function TutorCourseWorkspaceContent({
                 onClick={() => setActiveTab("overview")}
                 className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold"
               >
-                Go to Course Details Form
+                Go to Masterclass Details Form
               </Button>
             </div>
           )}
@@ -2234,7 +2234,7 @@ export default function TutorEditCourseWorkspacePage({
       fallback={
         <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-slate-600">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-          <h2 className="text-base font-bold text-slate-800">Loading Tutor Course Workspace...</h2>
+          <h2 className="text-base font-bold text-slate-800">Loading Tutor Masterclass Workspace...</h2>
           <p className="text-xs text-slate-400 mt-1">Fetching syllabus, study materials, and student rosters...</p>
         </div>
       }

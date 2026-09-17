@@ -1,10 +1,10 @@
 "use client";
 
 import React, { Suspense } from "react";
-import TutorEditCourseWorkspacePage from "../[courseId]/edit/page";
+import AdminEditCourseWorkspacePage from "../[courseId]/edit/page";
 import { Loader2 } from "lucide-react";
 
-export default function NewCoursePage() {
+export default function AdminNewCoursePage() {
   return (
     <Suspense
       fallback={
@@ -15,7 +15,7 @@ export default function NewCoursePage() {
         </div>
       }
     >
-      <TutorEditCourseWorkspacePage isNewCourseProp={true} />
+      <AdminEditCourseWorkspacePage isNewCourseProp={true} />
     </Suspense>
   );
 }

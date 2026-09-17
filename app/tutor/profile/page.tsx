@@ -105,11 +105,11 @@ function TutorProfileContent() {
       if (data.tutor) {
         setTutor(data.tutor);
         setName(data.tutor.name || "");
-        setHeadline(data.tutor.headline || "Senior Faculty Lecturer");
+        setHeadline(data.tutor.headline || "Senior Tutor");
         setPhone(data.tutor.phone || "");
         setAvatar(data.tutor.avatar || "");
 
-        let parsedAbout = "Senior Faculty Educator specializing in London A/L & O/L specifications.";
+        let parsedAbout = "Senior Tutor specializing in London A/L & O/L specifications.";
         let parsedDegrees: AcademicDegree[] = [
           {
             id: "deg-1",
@@ -329,7 +329,7 @@ function TutorProfileContent() {
       if (res.ok) {
         setStatusMsg({
           type: "success",
-          text: "🎉 Faculty profile, academic degrees, and credentials saved successfully!",
+          text: "🎉 Tutor profile, academic degrees, and credentials saved successfully!",
         });
         setTutor(data.tutor);
       } else {
@@ -355,7 +355,7 @@ function TutorProfileContent() {
         <div className="w-12 h-12 rounded-2xl bg-[#0c2461] text-white flex items-center justify-center shadow-lg shadow-blue-950/20 mb-4 animate-bounce">
           <UserCheck className="w-6 h-6" />
         </div>
-        <h3 className="font-bold text-slate-800 text-base mb-1">Loading Faculty Studio Profile...</h3>
+        <h3 className="font-bold text-slate-800 text-base mb-1">Loading Tutor Studio Profile...</h3>
         <p className="text-xs text-slate-500 flex items-center justify-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
           <span>Synchronizing credentials, degrees &amp; examiner accreditations...</span>
@@ -373,7 +373,7 @@ function TutorProfileContent() {
             <Link
               href="/tutor"
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-              title="Return to Faculty Studio"
+              title="Return to Tutor Studio"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
@@ -395,7 +395,7 @@ function TutorProfileContent() {
           <div className="flex items-center gap-2.5">
             <Link href="/tutor">
               <Button variant="outline" size="sm" className="text-xs font-semibold rounded-xl">
-                Faculty Studio
+                Tutor Studio
               </Button>
             </Link>
             <Button
@@ -482,9 +482,9 @@ function TutorProfileContent() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <h3 className="font-extrabold text-sm text-slate-900 truncate">
-                      {name || "Dr. Faculty Lecturer"}
+                      {name || "Senior Tutor"}
                     </h3>
-                    <span title="Verified Faculty">
+                    <span title="Verified Tutor">
                       <BadgeCheck className="w-4 h-4 text-blue-600 shrink-0" />
                     </span>
                   </div>
@@ -554,7 +554,7 @@ function TutorProfileContent() {
                   Teaching Philosophy Preview
                 </div>
                 <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
-                  {about || "Experienced faculty lecturer focused on exam methodology and structured student mastery."}
+                  {about || "Experienced tutor focused on exam methodology and structured student mastery."}
                 </p>
               </div>
             </div>
@@ -706,7 +706,7 @@ function TutorProfileContent() {
                     <Input
                       value={experienceYears}
                       onChange={(e) => setExperienceYears(e.target.value)}
-                      placeholder="e.g. 12+ Years Lead Faculty"
+                      placeholder="e.g. 12+ Years Lead Tutor"
                       className="rounded-xl h-9 text-xs"
                     />
                   </div>

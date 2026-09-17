@@ -238,7 +238,7 @@ export function StudentAvailabilityModal({
                 </Badge>
               </div>
               <p className="text-xs text-slate-500">
-                Let faculty know when you are available for 1-on-1 private mentoring and consultation sessions
+                Let tutors know when you are available for 1-on-1 private mentoring and consultation sessions
               </p>
             </div>
           </div>
@@ -260,7 +260,7 @@ export function StudentAvailabilityModal({
           <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2.5">
             <GraduationCap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="space-y-0.5 leading-relaxed">
-              <span className="font-bold">How Tutor Matching Works:</span> When faculty tutors schedule
+              <span className="font-bold">How Tutor Matching Works:</span> When tutors schedule
               or reschedule a 1-on-1 mentoring class or free trial session with you, your available hours will be
               clearly shown to them, helping you both find a mutual time that fits.
             </div>

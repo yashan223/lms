@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     if (!resolvedTutorId) {
       return NextResponse.json(
-        { error: "No faculty tutor found." },
+        { error: "No tutor found." },
         { status: 404 }
       );
     }

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  GraduationCap,
   CheckCircle2,
   ArrowRight,
   Globe,
@@ -32,22 +31,16 @@ export function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             <div className="lg:col-span-2 space-y-4">
-              <Link href="/" className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-sky-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30">
-                  <GraduationCap className="w-6 h-6" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-extrabold text-xl tracking-tight text-slate-900">
-                    Edu<span className="text-blue-600">Pulse</span>
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-medium">
-                    Unified Multi-Role Learning Platform
-                  </span>
-                </div>
+              <Link href="/" className="inline-flex items-center gap-2 group py-1">
+                <img
+                  src="/logo-wide.png"
+                  alt="PulseEDU Global"
+                  className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+                />
               </Link>
 
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-sm">
-                Empowering students, faculty educators, and system administrators with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
+                Empowering students, tutors, and system administrators with accredited interactive curriculum, automated grading rubrics, and university-wide governance.
               </p>
 
               <div className="flex items-center gap-2 pt-2 text-slate-400">

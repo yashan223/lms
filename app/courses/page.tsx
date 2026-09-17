@@ -27,12 +27,15 @@ import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
+  const [tutors, setTutors] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<"masterclasses" | "tutors">("masterclasses");
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedLevel, setSelectedLevel] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
+  const [selectedTrialTutorId, setSelectedTrialTutorId] = useState<string | undefined>(undefined);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPurchaseCourse, setSelectedPurchaseCourse] = useState<any | null>(null);
 
@@ -69,14 +72,18 @@ export default function CoursesPage() {
             durationHours: 58,
             lessonsCount: c.modules?.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0) || 12,
             instructor: {
+              id: c.instructor?.id,
               name: c.instructor?.name || "Dr. Sarah Jenkins",
               avatar: c.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-              roleTitle: c.instructor?.headline || "Senior Faculty Lecturer",
+              roleTitle: c.instructor?.headline || "Senior Tutor",
             },
             skills: ["Calculus Proofs", "Vectors", "Method Marks", "Topic Mastery"],
             tags: [c.category],
           }));
           setCourses(formatted);
+        }
+        if (data.tutors && Array.isArray(data.tutors)) {
+          setTutors(data.tutors);
         }
       }
     } catch (err) {
@@ -114,39 +121,83 @@ export default function CoursesPage() {
     });
   }, [courses, selectedCategory, selectedLevel, searchQuery]);
 
+  const filteredTutors = useMemo(() => {
+    return tutors.filter((tutor) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        tutor.name?.toLowerCase().includes(q) ||
+        tutor.headline?.toLowerCase().includes(q) ||
+        tutor.bio?.toLowerCase().includes(q) ||
+        (tutor.createdCourses &&
+          tutor.createdCourses.some(
+            (c: any) =>
+              c.title?.toLowerCase().includes(q) ||
+              c.subjectCode?.toLowerCase().includes(q) ||
+              c.category?.toLowerCase().includes(q)
+          ));
+      const matchCat =
+        selectedCategory === "All" ||
+        (tutor.createdCourses && tutor.createdCourses.some((c: any) => c.category === selectedCategory)) ||
+        (tutor.headline && tutor.headline.toLowerCase().includes(selectedCategory.toLowerCase()));
+      return matchSearch && matchCat;
+    });
+  }, [tutors, searchQuery, selectedCategory]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900">
       <Navbar />
 
       <main className="flex-1 py-8 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
-              {[
-                { id: "ALL", label: "All Qualifications" },
-                { id: "AL", label: "London A/L (IAL)" },
-                { id: "OL", label: "London O/L (IGCSE)" },
-              ].map((lvl) => (
-                <button
-                  key={lvl.id}
-                  onClick={() => setSelectedLevel(lvl.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    selectedLevel === lvl.id
-                      ? "bg-[#0c2461] text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {lvl.label}
-                </button>
-              ))}
+          
+          {/* Main View Switcher: Masterclasses vs Tutors */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+              <button
+                onClick={() => setViewMode("masterclasses")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  viewMode === "masterclasses"
+                    ? "bg-[#0c2461] text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Browse Masterclasses</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                  viewMode === "masterclasses" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                }`}>
+                  {courses.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setViewMode("tutors")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  viewMode === "tutors"
+                    ? "bg-[#0c2461] text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <GraduationCap className="w-4 h-4 text-amber-400" />
+                <span>Tutors Conducting Classes</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                  viewMode === "tutors" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                }`}>
+                  {tutors.length}
+                </span>
+              </button>
             </div>
 
             <div className="relative w-full md:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <Input
                 type="text"
-                placeholder="Search by unit code, topic, examiner..."
+                placeholder={
+                  viewMode === "masterclasses"
+                    ? "Search masterclass, unit code, topic..."
+                    : "Search tutor, subject, specialty..."
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-10 text-xs border-slate-200 rounded-xl"
@@ -154,12 +205,47 @@ export default function CoursesPage() {
             </div>
           </div>
 
+          {/* Level Filter (Shown for Masterclasses) */}
+          {viewMode === "masterclasses" && (
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
+                {[
+                  { id: "ALL", label: "All Qualifications" },
+                  { id: "AL", label: "London A/L (IAL)" },
+                  { id: "OL", label: "London O/L (IGCSE)" },
+                ].map((lvl) => (
+                  <button
+                    key={lvl.id}
+                    onClick={() => setSelectedLevel(lvl.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      selectedLevel === lvl.id
+                        ? "bg-[#0c2461] text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {lvl.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setViewMode("tutors")}
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Looking for Tutors Conducting Classes?</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Academic Categories Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   selectedCategory === cat
                     ? "bg-blue-600 text-white shadow-xs font-bold"
                     : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -170,143 +256,302 @@ export default function CoursesPage() {
             ))}
           </div>
 
-          {filteredCourses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
-                <div
-                  key={course.id}
-                  className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
-                >
-                  <div>
-                    <Link href={`/courses/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
-                      <img
-                        src={course.thumbnail}
-                        alt={course.title}
-                        className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+          {/* VIEW 1: MASTERCLASSES GRID */}
+          {viewMode === "masterclasses" && (
+            <>
+              {filteredCourses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredCourses.map((course) => (
+                    <div
+                      key={course.id}
+                      className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
+                    >
+                      <div>
+                        <Link href={`/courses/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
+                          <img
+                            src={course.thumbnail}
+                            alt={course.title}
+                            className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                        <Badge className="bg-white/95 text-[#0c2461] backdrop-blur-md text-[11px] font-bold shadow-xs">
-                          {course.level}
-                        </Badge>
-                      </div>
-
-                      <div className="absolute bottom-3 left-3 flex items-center text-white text-xs">
-                        <span className="bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md font-mono text-[11px]">
-                          {course.subjectCode}
-                        </span>
-                      </div>
-                    </Link>
-
-                    <div className="p-5 space-y-3">
-                      <Link href={`/courses/${course.slug}`} prefetch={true} className="block">
-                        <h3 className="font-bold text-slate-900 text-base hover:text-blue-700 transition-colors leading-snug line-clamp-2 cursor-pointer">
-                          {course.title}
-                        </h3>
-                      </Link>
-
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                        {course.subtitle}
-                      </p>
-
-                      <div className="flex items-center gap-4 text-xs text-slate-500 py-1 border-y border-slate-100">
-                        <span className="flex items-center gap-1 font-medium">
-                          <Clock className="w-3.5 h-3.5 text-blue-600" />
-                          {course.durationHours} hrs
-                        </span>
-                        <span className="flex items-center gap-1 font-medium">
-                          <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                          {course.lessonsCount} lessons
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 pt-1">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={course.instructor.avatar} alt={course.instructor.name} />
-                          <AvatarFallback>{course.instructor.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold text-slate-800 truncate">
-                            {course.instructor.name}
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                            <Badge className="bg-white/95 text-[#0c2461] backdrop-blur-md text-[11px] font-bold shadow-xs">
+                              {course.level}
+                            </Badge>
                           </div>
-                          <div className="text-[10px] text-slate-500 truncate">
-                            {course.instructor.roleTitle}
+
+                          <div className="absolute bottom-3 left-3 flex items-center text-white text-xs">
+                            <span className="bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md font-mono text-[11px]">
+                              {course.subjectCode}
+                            </span>
+                          </div>
+                        </Link>
+
+                        <div className="p-5 space-y-3">
+                          <Link href={`/courses/${course.slug}`} prefetch={true} className="block">
+                            <h3 className="font-bold text-slate-900 text-base hover:text-blue-700 transition-colors leading-snug line-clamp-2 cursor-pointer">
+                              {course.title}
+                            </h3>
+                          </Link>
+
+                          <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                            {course.subtitle}
+                          </p>
+
+                          <div className="flex items-center gap-4 text-xs text-slate-500 py-1 border-y border-slate-100">
+                            <span className="flex items-center gap-1 font-medium">
+                              <Clock className="w-3.5 h-3.5 text-blue-600" />
+                              {course.durationHours} hrs
+                            </span>
+                            <span className="flex items-center gap-1 font-medium">
+                              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                              {course.lessonsCount} lessons
+                            </span>
+                          </div>
+
+                          {/* Tutor Details on Card */}
+                          <div className="flex items-center justify-between pt-1">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Avatar className="w-8 h-8 shrink-0">
+                                <AvatarImage src={course.instructor.avatar} alt={course.instructor.name} />
+                                <AvatarFallback>{course.instructor.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold text-slate-800 truncate">
+                                  {course.instructor.name}
+                                </div>
+                                <div className="text-[10px] text-slate-500 truncate">
+                                  {course.instructor.roleTitle}
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSearchQuery(course.instructor.name);
+                                setViewMode("tutors");
+                              }}
+                              className="text-[10px] text-blue-600 hover:text-blue-800 font-bold whitespace-nowrap cursor-pointer hover:underline"
+                              title={`View ${course.instructor.name}'s profile & classes`}
+                            >
+                              View Tutor &gt;
+                            </button>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
-                        <Coins className="w-4 h-4" />
+                      <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                            <Coins className="w-4 h-4" />
+                          </div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-black text-slate-900">
+                              {course.price}
+                            </span>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                              Tokens
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => {
+                              setSelectedPurchaseCourse(course);
+                              setShowPurchaseModal(true);
+                            }}
+                            className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                            title="Enroll in course using tokens and unlock all study materials"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                            <span>Enroll ({course.price} Tokens)</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setSelectedTrialCourseId(course.id);
+                              setSelectedTrialTutorId(course.instructor?.id);
+                              setShowTrialModal(true);
+                            }}
+                            className="h-9 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                            title="Book a 30-min free online trial session"
+                          >
+                            <CalendarCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                            <span>Free Trial</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-slate-900">
-                          {course.price}
-                        </span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          Tokens
-                        </span>
-                      </div>
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => {
-                          setSelectedPurchaseCourse(course);
-                          setShowPurchaseModal(true);
-                        }}
-                        className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                        title="Enroll in course using tokens and unlock all study materials"
-                      >
-                        <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                        <span>Enroll ({course.price} Tokens)</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setSelectedTrialCourseId(course.id);
-                          setShowTrialModal(true);
-                        }}
-                        className="h-9 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                        title="Book a 30-min free online trial session"
-                      >
-                        <CalendarCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                        <span>Free Trial</span>
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
-              <p className="text-slate-500 font-semibold mb-2">
-                No syllabus units found matching your search.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("All");
-                  setSelectedLevel("ALL");
-                }}
-              >
-                Reset Filters
-              </Button>
-            </div>
+              ) : (
+                <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
+                  <p className="text-slate-500 font-semibold mb-2">
+                    No masterclasses found matching your search.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedCategory("All");
+                      setSelectedLevel("ALL");
+                    }}
+                  >
+                    Reset Filters
+                  </Button>
+                </div>
+              )}
+            </>
           )}
+
+          {/* VIEW 2: TUTORS CONDUCTING CLASSES */}
+          {viewMode === "tutors" && (
+            <>
+              {filteredTutors.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredTutors.map((tutor) => (
+                    <div
+                      key={tutor.id}
+                      className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
+                    >
+                      <div className="space-y-4">
+                        {/* Tutor Header Info */}
+                        <div className="flex items-start gap-4">
+                          <Avatar className="w-16 h-16 rounded-2xl border-2 border-blue-100 shadow-xs shrink-0">
+                            <AvatarImage src={tutor.avatar} alt={tutor.name} />
+                            <AvatarFallback className="text-lg font-bold bg-[#0c2461] text-white">
+                              {tutor.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="font-bold text-slate-900 text-base leading-snug">
+                                {tutor.name}
+                              </h3>
+                              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold py-0.5">
+                                Verified Tutor
+                              </Badge>
+                            </div>
+
+                            <p className="text-xs font-semibold text-blue-700 mt-1 line-clamp-2">
+                              {tutor.headline || "Senior Lecturer"}
+                            </p>
+
+                            {tutor.country && (
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                {tutor.country}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tutor Bio */}
+                        {tutor.bio && (
+                          <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            {tutor.bio}
+                          </p>
+                        )}
+
+                        {/* Masterclasses & Classes Conducted */}
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+                            <span className="flex items-center gap-1.5">
+                              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                              {tutor.createdCourses?.length || 0} Masterclasses
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Video className="w-3.5 h-3.5 text-emerald-600" />
+                              {tutor.events?.length || 0} Live Sessions
+                            </span>
+                          </div>
+
+                          {tutor.createdCourses && tutor.createdCourses.length > 0 && (
+                            <div className="space-y-1.5 pt-1">
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                                Classes & Masterclasses Conducted:
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {tutor.createdCourses.map((c: any) => (
+                                  <Link
+                                    key={c.id}
+                                    href={`/courses/${c.slug}`}
+                                    className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-semibold border border-blue-100 flex items-center gap-1 transition-colors"
+                                  >
+                                    <span className="font-mono font-bold">{c.subjectCode || "MC"}</span>
+                                    <span className="truncate max-w-[150px]">{c.title}</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action CTAs */}
+                      <div className="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                        <button
+                          onClick={() => {
+                            setSelectedTrialTutorId(tutor.id);
+                            setSelectedTrialCourseId(tutor.createdCourses?.[0]?.id);
+                            setShowTrialModal(true);
+                          }}
+                          className="flex-1 h-10 px-4 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <CalendarCheck className="w-3.5 h-3.5 text-amber-300" />
+                          <span>Book 1-on-1 Trial Class</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSearchQuery(tutor.name);
+                            setViewMode("masterclasses");
+                          }}
+                          className="h-10 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                          title="View all masterclasses by this tutor"
+                        >
+                          <span>Masterclasses</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
+                  <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500 font-semibold mb-2">
+                    No tutors found matching your search.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedCategory("All");
+                    }}
+                  >
+                    Reset Filters
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+
         </div>
       </main>
 
       <TrialRequestModal
         isOpen={showTrialModal}
-        onClose={() => setShowTrialModal(false)}
+        onClose={() => {
+          setShowTrialModal(false);
+          setSelectedTrialCourseId(undefined);
+          setSelectedTrialTutorId(undefined);
+        }}
         initialCourseId={selectedTrialCourseId}
+        initialTutorId={selectedTrialTutorId}
         allCourses={courses}
       />
 

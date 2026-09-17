@@ -16,8 +16,8 @@ export function MetricsStrip() {
   const partners = [
     { name: "Oxford Academic", tag: "Research Partner" },
     { name: "Cambridge Guild", tag: "Curriculum Sponsor" },
-    { name: "Earth Sciences Inst.", tag: "Accredited Faculty" },
-    { name: "Harvard Faculty Net", tag: "Academic Partner" },
+    { name: "Earth Sciences Inst.", tag: "Accredited Educators" },
+    { name: "Harvard Educator Net", tag: "Academic Partner" },
     { name: "Sorbonne Alliance", tag: "Fellowship Network" },
     { name: "Stanford Research", tag: "Global Partner" },
   ];

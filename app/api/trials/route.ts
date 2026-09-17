@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
         if (studentAvailCount === 0) {
           return NextResponse.json(
             {
-              error: "You must set up your study availability before requesting a free trial session. This ensures faculty tutors know your available hours to coordinate classes.",
+              error: "You must set up your study availability before requesting a free trial session. This ensures tutors know your available hours to coordinate classes.",
               code: "STUDY_AVAILABILITY_REQUIRED",
               requiresAvailabilitySetup: true,
             },
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Send in-app notification to tutor/faculty
+      // Send in-app notification to tutor
       if (resolvedTutorId) {
         await prisma.notification.create({
           data: {
@@ -370,12 +370,12 @@ export async function POST(request: NextRequest) {
         const courseCode = updatedTrial.course?.subjectCode || "";
         const eventTitle = `30-Min Free Trial: ${courseTitle} (${updatedTrial.studentName})`;
         const eventDescription = [
-          `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+          `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
           `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
           `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
           `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
           `Classroom Link: ${link}`,
-          updatedTrial.notes ? `Faculty Notes: ${updatedTrial.notes}` : "",
+          updatedTrial.notes ? `Tutor Notes: ${updatedTrial.notes}` : "",
         ].filter(Boolean).join("\n\n");
 
         let resolvedStudentId = updatedTrial.studentId;
@@ -637,12 +637,12 @@ export async function POST(request: NextRequest) {
       const courseCode = updatedTrial.course?.subjectCode || "";
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
       const eventDescription = [
-        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
         `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
         `Classroom Link: ${link}`,
-        updatedTrial.notes ? `Faculty Notes: ${updatedTrial.notes}` : "",
+        updatedTrial.notes ? `Tutor Notes: ${updatedTrial.notes}` : "",
       ].filter(Boolean).join("\n\n");
 
       const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;

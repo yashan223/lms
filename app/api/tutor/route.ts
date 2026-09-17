@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
         id: tutor.id,
         name: tutor.name,
         email: tutor.email,
-        headline: tutor.headline || "Senior Faculty Lecturer",
+        headline: tutor.headline || "Senior Tutor",
         bio: tutor.bio || "Subject Lead with specialized expertise in London A/L & O/L specifications.",
         phone: tutor.phone || "",
         avatar: tutor.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
@@ -467,7 +467,7 @@ export async function POST(request: NextRequest) {
       let meetLink = getSafeMeetingLink(meetingLink);
 
       const fullDescription = [
-        description?.trim() || "Live curriculum masterclass with Senior Faculty.",
+        description?.trim() || "Live curriculum masterclass with Senior Tutor.",
         `\n\nGoogle Meet Classroom: ${meetLink}`,
       ]
         .join("")
@@ -714,12 +714,12 @@ export async function POST(request: NextRequest) {
       const courseCode = updatedTrial.course?.subjectCode || "";
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
       const eventDescription = [
-        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
         `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
         `Classroom Link: ${link}`,
-        updatedTrial.notes ? `Faculty Notes: ${updatedTrial.notes}` : "",
+        updatedTrial.notes ? `Tutor Notes: ${updatedTrial.notes}` : "",
       ].filter(Boolean).join("\n\n");
 
       const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;
@@ -887,12 +887,12 @@ export async function POST(request: NextRequest) {
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
       const link = updatedTrial.meetingLink || "https://meet.google.com/new";
       const eventDescription = [
-        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
         `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
         `Classroom Link: ${link}`,
-        updatedTrial.notes ? `Faculty Notes: ${updatedTrial.notes}` : "",
+        updatedTrial.notes ? `Tutor Notes: ${updatedTrial.notes}` : "",
       ].filter(Boolean).join("\n\n");
 
       const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;

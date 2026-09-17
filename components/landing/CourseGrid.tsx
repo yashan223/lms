@@ -56,7 +56,7 @@ export function CourseGrid() {
               instructor: {
                 name: c.instructor?.name || "Dr. Sarah Jenkins",
                 avatar: c.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-                roleTitle: c.instructor?.headline || "Senior Faculty Lecturer",
+                roleTitle: c.instructor?.headline || "Senior Tutor",
               },
               skills: ["Unit Proofs", "Calculus & Analysis", "Topic Mastery", "Interactive Labs"],
               tags: [c.category],

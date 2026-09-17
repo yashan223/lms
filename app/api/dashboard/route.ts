@@ -307,12 +307,12 @@ export async function GET(request: NextRequest) {
           const eventTitle = `1-on-1 Trial: ${courseTitle} (${trial.studentName || user.name})`;
           const link = trial.meetingLink || "https://meet.google.com/new";
           const eventDesc = [
-            `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+            `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
             `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
             `Topic / Focus: ${trial.topic || "30-Min Free Trial & Syllabus Overview"}`,
             `Student: ${trial.studentName} (${trial.studentEmail})`,
             `Classroom Link: ${link}`,
-            trial.notes ? `Faculty Notes: ${trial.notes}` : "",
+            trial.notes ? `Tutor Notes: ${trial.notes}` : "",
             `Trial ID: ${trial.id}`,
           ].filter(Boolean).join("\n\n");
 
@@ -381,7 +381,7 @@ export async function POST(request: NextRequest) {
       const roleCookie = request.cookies.get("edupulse_user_role")?.value;
       if (roleCookie === "STUDENT") {
         return NextResponse.json(
-          { error: "Students cannot create calendar events. Academic events and classes are scheduled by faculty tutors and administrators." },
+          { error: "Students cannot create calendar events. Academic events and classes are scheduled by tutors and administrators." },
           { status: 403 }
         );
       }

@@ -433,7 +433,7 @@ function DashboardContent() {
             instructor: {
               name: data.course.instructor?.name || "Dr. Sarah Jenkins",
               avatar: data.course.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-              roleTitle: data.course.instructor?.headline || "Senior Faculty Tutor in Mathematics",
+              roleTitle: data.course.instructor?.headline || "Senior Tutor in Mathematics",
               bio: data.course.instructor?.bio || "Subject Lead with 18+ years teaching London A/L & O/L specification.",
             },
           };
@@ -479,7 +479,7 @@ function DashboardContent() {
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (userRole === "STUDENT") {
-      setEventError("Only faculty tutors and administrators can schedule academic classes and events.");
+      setEventError("Only tutors and administrators can schedule academic classes and events.");
       return;
     }
     if (!newEventTitle.trim()) {
@@ -862,7 +862,7 @@ function DashboardContent() {
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
         <p className="text-sm font-semibold tracking-wider uppercase text-slate-500">
           {(user?.role === "TUTOR" || user?.role === "INSTRUCTOR")
-            ? "Redirecting to Faculty Tutor Studio..."
+            ? "Redirecting to Tutor Studio..."
             : user?.role === "ADMIN"
             ? "Redirecting to Admin Console..."
             : "Loading Student Portal..."}
@@ -997,7 +997,7 @@ function DashboardContent() {
                   </span>
                 </h4>
                 <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                  Configure your weekly study hours to unlock 1-on-1 class scheduling, free faculty trial requests, and clash-free calendar bookings.
+                  Configure your weekly study hours to unlock 1-on-1 class scheduling, free trial requests, and clash-free calendar bookings.
                 </p>
               </div>
             </div>
@@ -1529,7 +1529,7 @@ function DashboardContent() {
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
                   <CalendarCheck className="w-3 h-3 text-blue-600" />
-                  <span>Synced with Faculty Schedule</span>
+                  <span>Synced with Tutor Schedule</span>
                 </span>
                 <button
                   onClick={goToToday}

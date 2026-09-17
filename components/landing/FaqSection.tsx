@@ -43,7 +43,7 @@ export function FaqSection() {
           ))}
         </Accordion>
 
-        <div className="mt-16 rounded-3xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 p-8 sm:p-12 text-white shadow-xl shadow-blue-600/20 text-center relative overflow-hidden">
+        <div className="mt-16 rounded-3xl bg-gradient-to-r from-[#081845] via-[#0c2461] to-[#142d6d] p-8 sm:p-12 text-white shadow-2xl shadow-[#0c2461]/30 border border-blue-900/50 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 blur-3xl rounded-full pointer-events-none" />
 
           <div className="max-w-2xl mx-auto space-y-4">
@@ -51,20 +51,20 @@ export function FaqSection() {
               Ready to excel in your London A/L & O/L studies?
             </h3>
             <p className="text-blue-100 text-xs sm:text-sm leading-relaxed">
-              Explore syllabus units, download study handbooks, and join live masterclasses led by senior faculty educators.
+              Explore syllabus units, download study handbooks, and join live masterclasses led by senior tutors.
             </p>
 
             <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/courses"
-                className="inline-flex items-center justify-center text-blue-700 font-bold gap-2 text-sm h-12 px-6 rounded-xl bg-white hover:bg-blue-50 shadow-md transition-all"
+                className="inline-flex items-center justify-center text-[#0c2461] font-bold gap-2 text-sm h-12 px-6 rounded-xl bg-white hover:bg-slate-100 shadow-md transition-all"
               >
-                <BookOpen className="w-4 h-4 text-blue-600" />
+                <BookOpen className="w-4 h-4 text-[#0c2461]" />
                 <span>Explore Courses & Syllabus</span>
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center text-white font-bold gap-2 text-sm h-12 px-6 rounded-xl bg-blue-800/80 hover:bg-blue-800 border border-white/20 shadow-md transition-all"
+                className="inline-flex items-center justify-center text-white font-bold gap-2 text-sm h-12 px-6 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-xs shadow-md transition-all"
               >
                 <GraduationCap className="w-4 h-4 text-sky-300" />
                 <span>Get Started</span>

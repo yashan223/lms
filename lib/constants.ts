@@ -59,7 +59,7 @@ export const ACADEMY_TESTIMONIALS: Testimonial[] = [
     role: "Chief Academic Registrar & System Administrator",
     affiliation: "London International Academy Network",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    content: "Administering student registrations, faculty allocations, and tracking syllabus progress across 140 academic centers has never been smoother.",
+    content: "Administering student registrations, tutor allocations, and tracking syllabus progress across 140 academic centers has never been smoother.",
     rating: 5,
     userType: "ADMIN",
   },
@@ -97,7 +97,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     ctaText: "Get 16 Hours Bundle",
     features: [
       "16 tokens (1 token = 1 hour learning credit)",
-      "Weekly 1-on-1 sessions with Faculty Tutors",
+      "Weekly 1-on-1 sessions with Tutors",
       "Access all subject live seminar masterclasses",
       "Priority scheduling & reschedule flexibility",
       "Comprehensive worked past paper clinics",
@@ -117,7 +117,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       "24 tokens (1 token = 1 hour learning credit)",
       "Total schedule control across Pure Maths & Sciences",
-      "Unlimited 1-on-1 faculty tutor booking",
+      "Unlimited 1-on-1 tutor booking",
       "Comprehensive syllabus & mock exam coverage",
       "Zero expiration: use tokens throughout the academic year",
       "VIP tutor support & study material downloads",
@@ -130,7 +130,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "faq-1",
     category: "General",
     question: "How does the token and hours purchase system work?",
-    answer: "You purchase a bundle of tokens (6h, 16h, or 24h packs). Each token equals 1 hour of learning credit. As a student, you have complete freedom to decide how and when to spend your hours—whether on 1-on-1 private tutoring with faculty tutors, live interactive masterclasses, or exam revision.",
+    answer: "You purchase a bundle of tokens (6h, 16h, or 24h packs). Each token equals 1 hour of learning credit. As a student, you have complete freedom to decide how and when to spend your hours—whether on 1-on-1 private tutoring with tutors, live interactive masterclasses, or exam revision.",
   },
   {
     id: "faq-2",
@@ -142,7 +142,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "faq-3",
     category: "Tutors",
     question: "Who are the tutors on EduPulse?",
-    answer: "All courses and 1-on-1 sessions are conducted by experienced Faculty Tutors specialized in the London A/L and O/L curriculum specifications.",
+    answer: "All courses and 1-on-1 sessions are conducted by experienced Tutors specialized in the London A/L and O/L curriculum specifications.",
   },
   {
     id: "faq-4",

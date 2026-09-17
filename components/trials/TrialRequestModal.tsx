@@ -191,7 +191,7 @@ export function TrialRequestModal({
         setStudentAvailabilities(checkData.availabilities);
       }
 
-      setAvailSuccessMsg("Your study availability has been configured! Matching faculty slots are highlighted below.");
+      setAvailSuccessMsg("Your study availability has been configured! Matching tutor slots are highlighted below.");
       setStep("REQUEST_TRIAL");
       fetchTutorSlots();
     } catch (err: any) {
@@ -305,7 +305,7 @@ export function TrialRequestModal({
                     Step 1: Set Up Your Study Hours First
                   </h4>
                   <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                    Faculty instructors schedule 1-on-1 masterclasses and trials around your routine. Choose when you are free to study to immediately unlock trial booking!
+                    Tutors schedule 1-on-1 masterclasses and trials around your routine. Choose when you are free to study to immediately unlock trial booking!
                   </p>
                 </div>
               </div>
@@ -492,7 +492,7 @@ export function TrialRequestModal({
               </div>
               {(selectedCourse?.instructor?.name || initialTutorId) && (
                 <div className="text-[11px] text-slate-500 pt-0.5">
-                  Faculty: <span className="font-semibold text-slate-700">{selectedCourse?.instructor?.name || "Senior Faculty Instructor"}</span>
+                  Tutor: <span className="font-semibold text-slate-700">{selectedCourse?.instructor?.name || "Senior Tutor"}</span>
                 </div>
               )}
             </div>
@@ -508,7 +508,7 @@ export function TrialRequestModal({
               {openSlots.length > 0 && (
                 <div className="mb-2 space-y-1">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Quick Available Faculty Slots:
+                    Quick Available Tutor Slots:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {openSlots.map((s, idx) => (
@@ -575,7 +575,7 @@ export function TrialRequestModal({
                 <span>30-Minute Live Online Interactive Consultation</span>
               </div>
               <p className="text-slate-600 leading-relaxed">
-                Connect directly with our subject faculty over video for syllabus diagnostics, problem-solving, and a tailored study plan.
+                Connect directly with our subject tutors over video for syllabus diagnostics, problem-solving, and a tailored study plan.
               </p>
             </div>
 

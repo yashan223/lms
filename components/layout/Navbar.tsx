@@ -79,7 +79,7 @@ export function Navbar() {
       case "TUTOR":
       case "INSTRUCTOR":
         return {
-          label: "Faculty Tutor",
+          label: "Tutor",
           shortRole: "Tutor",
           badgeVariant: "roleTutor" as const,
           avatarGradient: "from-blue-600 via-indigo-600 to-blue-700",
@@ -146,7 +146,7 @@ export function Navbar() {
               ) : userRole === "TUTOR" || userRole === "INSTRUCTOR" ? (
                 <Link
                   href="/tutor"
-                  title="Faculty Tutor Studio"
+                  title="Tutor Studio"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
                 >
                   <GraduationCap className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
@@ -252,7 +252,7 @@ export function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-purple-700 hover:text-purple-800 py-1.5 px-2 rounded-lg hover:bg-purple-50/50 font-black"
               >
-                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "FACULTY TUTOR STUDIO" : "MY DASHBOARD"}
+                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "TUTOR STUDIO" : "MY DASHBOARD"}
               </Link>
             )}
             <Link

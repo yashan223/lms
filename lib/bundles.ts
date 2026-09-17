@@ -29,7 +29,7 @@ export async function getBundles(): Promise<TokenBundle[]> {
               ? b.features
               : fallback?.features || [
                   `${b.tokens} tokens (1 token = 1 hour learning credit)`,
-                  "1-on-1 private tutoring with Faculty Tutors",
+                  "1-on-1 private tutoring with Tutors",
                   "Access to live syllabus masterclasses",
                   "Instant token crediting to student wallet",
                   "Full flexibility: student decides how to spend",

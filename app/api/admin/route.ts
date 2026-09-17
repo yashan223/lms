@@ -235,7 +235,7 @@ export async function GET(request: NextRequest) {
     }
 
     const candidates = allUsers.filter((u) => u.role === Role.STUDENT);
-    const faculty = allUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
+    const tutors = allUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
     const admins = allUsers.filter((u) => u.role === Role.ADMIN);
 
     const adminName =
@@ -258,7 +258,8 @@ export async function GET(request: NextRequest) {
       adminProfile,
       allUsers,
       candidates,
-      faculty,
+      tutors,
+      faculty: tutors,
       admins,
       courses,
       events,
@@ -338,7 +339,7 @@ export async function POST(request: NextRequest) {
           role: assignedRole,
           emailVerified: assignedRole === Role.TUTOR ? null : new Date(),
           phone: phone ? phone.trim() : null,
-          headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Faculty Tutor" : "London A/L Student"),
+          headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Tutor" : "London A/L Student"),
           bio: initialBio,
           avatar: assignedRole === Role.ADMIN
             ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
@@ -565,7 +566,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create_course") {
-      const { title, slug, subtitle, description, category, subjectCode, price, tokens, tutorId, instructorId, level, status } = body;
+      const { title, slug, subtitle, description, category, subjectCode, price, tokens, tutorId, instructorId, level, status, thumbnail, featured } = body;
 
       let finalTutorId = tutorId || instructorId;
       if (!finalTutorId) {
@@ -588,6 +589,8 @@ export async function POST(request: NextRequest) {
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,
           tutorId: finalTutorId,
+          thumbnail: thumbnail || null,
+          featured: featured !== undefined ? Boolean(featured) : false,
           modules: {
             create: [
               {
@@ -977,12 +980,12 @@ export async function POST(request: NextRequest) {
       const eventTitle = `30-Min Free Trial: ${courseTitle} (${updated.studentName})`;
       const link = updated.meetingLink || "https://meet.google.com/new";
       const eventDescription = [
-        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Faculty.`,
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
         `Topic / Focus: ${updated.topic || "30-Min Free Trial & Syllabus Overview"}`,
         `Student: ${updated.studentName} (${updated.studentEmail})`,
         `Classroom Link: ${link}`,
-        updated.notes ? `Faculty Notes: ${updated.notes}` : "",
+        updated.notes ? `Tutor Notes: ${updated.notes}` : "",
       ].filter(Boolean).join("\n\n");
 
       if (updated.courseId) {

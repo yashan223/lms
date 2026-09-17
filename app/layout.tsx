@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PulseEDU | Global",
   description:
-    "Unified multi-role learning platform with accredited courses, interactive faculty curriculum studio, and system administrator control center.",
+    "Unified multi-role learning platform with accredited courses, interactive tutor curriculum studio, and system administrator control center.",
   icons: {
     icon: [
       { url: "/favicon.png?v=2", sizes: "any" },

@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [allUsersList, setAllUsersList] = useState<any[]>([]);
   const [coursesList, setCoursesList] = useState<any[]>([]);
-  const [facultyList, setFacultyList] = useState<any[]>([]);
+  const [tutorList, setTutorList] = useState<any[]>([]);
   const [eventsList, setEventsList] = useState<any[]>([]);
   const [adminName, setAdminName] = useState<string>(
     process.env.DEFAULT_ADMIN_NAME || "Administrator"
@@ -228,6 +228,7 @@ export default function AdminDashboardPage() {
   const [isSavingBundles, setIsSavingBundles] = useState(false);
   const [bundleSaveMsg, setBundleSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [adminCourseViewMode, setAdminCourseViewMode] = useState<"masterclasses" | "tutors">("masterclasses");
   const [courseSearch, setCourseSearch] = useState("");
   const [courseCatFilter, setCourseCatFilter] = useState("ALL");
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
@@ -570,7 +571,7 @@ export default function AdminDashboardPage() {
         const data = await res.json();
         setAllUsersList(data.allUsers || []);
         setCoursesList(data.courses || []);
-        setFacultyList(data.faculty || []);
+        setTutorList(data.tutors || data.faculty || []);
         setEventsList(data.events || []);
         setPendingClassesList(data.pendingClasses || []);
         setPendingTrialsList(data.pendingTrials || []);
@@ -936,7 +937,7 @@ export default function AdminDashboardPage() {
       ctaText: `Get ${newHours} Hours Pack`,
       features: [
         `${newHours} tokens (1 token = 1 hour learning credit)`,
-        "Flexible 1-on-1 private tutoring with Faculty Tutors",
+        "Flexible 1-on-1 private tutoring with Tutors",
         "Access to all live syllabus interactive classes",
         "Instant wallet crediting with zero expiration",
         "Full syllabus and past paper walkthrough clinics",
@@ -1048,17 +1049,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleOpenAddCourse = () => {
-    setCourseFormTitle("");
-    setCourseFormCode("MATH-AS-01");
-    setCourseFormCategory("School of Mathematics & Computing");
-    setCourseFormPrice("10");
-    setCourseFormLevel("ADVANCED");
-    setCourseFormStatus("PUBLISHED");
-    setCourseFormSubtitle("Comprehensive syllabus lecture walkthroughs, unit proofs, and problem sets.");
-    if (facultyList.length > 0) {
-      setCourseFormInstructorId(facultyList[0].id);
-    }
-    setShowAddCourseModal(true);
+    router.push("/admin/courses/new");
   };
 
   const handleCreateCourse = async (e: React.FormEvent) => {
@@ -1388,7 +1379,7 @@ export default function AdminDashboardPage() {
     setConfirmModalData({
       isOpen: true,
       title: `Cancel Class: ${event.title}?`,
-      description: `This will cancel this live Google Meet class session and remove it from faculty and student calendars.`,
+      description: `This will cancel this live Google Meet class session and remove it from tutor and student calendars.`,
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -1591,9 +1582,9 @@ export default function AdminDashboardPage() {
     { id: "approvals", label: "Tutor Approvals", icon: ShieldCheck },
     { id: "live_classes", label: "Live Classes & Meets", icon: Video },
     { id: "users", label: "User Management", icon: Users },
-    { id: "courses", label: "Course Management", icon: BookOpen },
+    { id: "courses", label: "Masterclass Management", icon: BookOpen },
     { id: "chats", label: "Chat Conversations", icon: MessageSquareLock },
-    { id: "finances", label: "Course Purchases & Revenue", icon: DollarSign },
+    { id: "finances", label: "Masterclass Purchases & Revenue", icon: DollarSign },
     { id: "pricing", label: "Pricing & Token Bundles", icon: Coins },
     { id: "audit_log", label: "Audit Log & History", icon: FileText },
   ];
@@ -1767,7 +1758,7 @@ export default function AdminDashboardPage() {
                   className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 text-blue-100" />
-                  <span>+ Create Course</span>
+                  <span>+ Create Masterclass</span>
                 </Button>
               )}
 
@@ -1830,7 +1821,7 @@ export default function AdminDashboardPage() {
             <div className="py-24 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
               <div className="text-sm font-bold text-slate-800">Loading Institutional Records...</div>
-              <p className="text-xs text-slate-400">Synchronizing students, faculty lecturers, and curriculum.</p>
+              <p className="text-xs text-slate-400">Synchronizing students, tutors, and curriculum.</p>
             </div>
           )}
           {activeTab === "overview" && (
@@ -1842,7 +1833,7 @@ export default function AdminDashboardPage() {
                     <Users className="w-4 h-4 text-blue-500" />
                   </div>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">{allUsersList.length} Active</div>
-                  <div className="text-[11px] text-slate-500">{allUsersList.filter(u => u.role === "STUDENT").length} Students • {facultyList.length} Faculty</div>
+                  <div className="text-[11px] text-slate-500">{allUsersList.filter(u => u.role === "STUDENT").length} Students • {tutorList.length} Tutors</div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -1960,13 +1951,13 @@ export default function AdminDashboardPage() {
 
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-indigo-600">Authorized Faculty</span>
+                    <span className="text-xs font-bold text-indigo-600">Authorized Tutors</span>
                     <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                       <Users className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
-                    {facultyList.length} Tutors
+                    {tutorList.length} Tutors
                   </div>
                   <div className="text-[11px] text-slate-500 font-medium">Senior Lecturers</div>
                 </div>
@@ -2025,7 +2016,7 @@ export default function AdminDashboardPage() {
                           Live Classes Currently In Progress ({liveNowCount})
                         </h3>
                         <p className="text-xs text-red-700">
-                          Active Google Meet classrooms with students & faculty connected
+                          Active Google Meet classrooms with students & tutors connected
                         </p>
                       </div>
                     </div>
@@ -2061,11 +2052,11 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center gap-2 min-w-0">
                                 <Avatar className="w-7 h-7 ring-1 ring-slate-200">
                                   <AvatarImage src={ev.course?.instructor?.avatar || ev.user?.avatar} />
-                                  <AvatarFallback>FL</AvatarFallback>
+                                  <AvatarFallback>TL</AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0">
                                   <div className="font-bold text-slate-800 truncate text-[11px]">
-                                    {ev.course?.instructor?.name || ev.user?.name || "Senior Faculty Tutor"}
+                                    {ev.course?.instructor?.name || ev.user?.name || "Senior Tutor"}
                                   </div>
                                   <div className="text-[10px] text-slate-400">Class Instructor</div>
                                 </div>
@@ -2199,7 +2190,7 @@ export default function AdminDashboardPage() {
                                 <span className="text-slate-500">
                                   Instructor:{" "}
                                   <strong className="text-slate-800">
-                                    {ev.course?.instructor?.name || ev.user?.name || "Senior Faculty"}
+                                    {ev.course?.instructor?.name || ev.user?.name || "Senior Tutor"}
                                   </strong>
                                 </span>
 
@@ -2338,7 +2329,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-indigo-600">Faculty & Admins</span>
+                  <span className="text-xs font-medium text-indigo-600">Tutors & Admins</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {allUsersList.filter((u) => u.role !== "STUDENT").length} Staff
                   </div>
@@ -2527,109 +2518,316 @@ export default function AdminDashboardPage() {
 
           {activeTab === "courses" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-slate-500">Total Active Courses</span>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{coursesList.length} Courses</div>
+                  <span className="text-xs font-medium text-slate-500">Total Masterclasses</span>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">{coursesList.length} Units</div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-blue-600">Published Status</span>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
+                  <span className="text-xs font-medium text-emerald-600">Published Status</span>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
                     {coursesList.filter((c) => c.status === "PUBLISHED").length} Active
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-sky-600">Total Curriculum Modules</span>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">
+                  <span className="text-xs font-medium text-blue-600">Curriculum Modules</span>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
                     {coursesList.reduce((acc, c) => acc + (c.modules?.length || 0), 0)} Modules
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="relative w-full sm:w-80">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <Input
-                    placeholder="Search course title, code, or category..."
-                    value={courseSearch}
-                    onChange={(e) => setCourseSearch(e.target.value)}
-                    className="pl-9 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-400"
-                  />
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-xs font-medium text-indigo-600">Tutors Conducting Classes</span>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {tutorList.length} Tutors
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">Conducting Masterclasses</div>
                 </div>
-
-                <Button
-                  onClick={handleOpenAddCourse}
-                  className="w-full md:w-auto text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 text-blue-100" />
-                  <span>+ Create New Course</span>
-                </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3 flex flex-col justify-between"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-blue-50 text-blue-700 border border-blue-200 font-mono text-[10px]">
-                          {course.subjectCode || "MATH-101"}
-                        </Badge>
-                        <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">
-                          {course.status}
-                        </Badge>
-                      </div>
+              {/* View Mode Switcher: Masterclasses vs Tutors */}
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+                <button
+                  onClick={() => setAdminCourseViewMode("masterclasses")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    adminCourseViewMode === "masterclasses"
+                      ? "bg-[#0c2461] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Masterclasses Grid ({filteredCourses.length})</span>
+                </button>
 
-                      <h4 className="font-bold text-slate-900 text-sm leading-snug">
-                        {course.title}
-                      </h4>
+                <button
+                  onClick={() => setAdminCourseViewMode("tutors")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    adminCourseViewMode === "tutors"
+                      ? "bg-[#0c2461] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Tutors Conducting Classes ({tutorList.length})</span>
+                </button>
+              </div>
 
-                      <p className="text-xs text-slate-500 line-clamp-2">
-                        {course.subtitle || course.description}
-                      </p>
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                        <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> {course.modules?.length || 0} Modules</span>
-                        <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-slate-400" /> {course.materials?.length || 0} Files</span>
-                        <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-slate-400" /> {course.enrollments?.length || 0} Enrolled</span>
-                        <span className="font-bold text-amber-600 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
-                          <Coins className="w-3.5 h-3.5" />
-                          {course.price} Tokens
-                        </span>
-                      </div>
+              {/* SUB-VIEW 1: MASTERCLASSES */}
+              {adminCourseViewMode === "masterclasses" && (
+                <>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full sm:w-80">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder="Search masterclass title, code, or category..."
+                        value={courseSearch}
+                        onChange={(e) => setCourseSearch(e.target.value)}
+                        className="pl-9 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-400"
+                      />
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <Link
-                        href={`/admin/courses/${course.id}/edit`}
-                        className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 h-8 rounded-xl flex-1 cursor-pointer transition-colors shadow-2xs"
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Button
+                        onClick={handleOpenAddCourse}
+                        className="w-full md:w-auto text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Edit Course & Content</span>
-                      </Link>
-
-                      <Link
-                        href={`/courses/${course.slug}`}
-                        target="_blank"
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
-                        title="Preview Public Course Page"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Link>
-
-                      <button
-                        onClick={() => handleDeleteCourse(course)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-                        title="Delete Course"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <Plus className="w-4 h-4 text-blue-100" />
+                        <span>+ Create New Masterclass</span>
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {filteredCourses.map((course) => (
+                      <div
+                        key={course.id}
+                        className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3 flex flex-col justify-between"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 font-mono text-[10px]">
+                              {course.subjectCode || "MATH-101"}
+                            </Badge>
+                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">
+                              {course.status}
+                            </Badge>
+                          </div>
+
+                          <h4 className="font-bold text-slate-900 text-sm leading-snug">
+                            {course.title}
+                          </h4>
+
+                          <p className="text-xs text-slate-500 line-clamp-2">
+                            {course.subtitle || course.description}
+                          </p>
+
+                          {/* Tutor Information on Masterclass Card */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                            <Avatar className="w-6 h-6 border border-slate-200 shrink-0">
+                              <AvatarImage src={course.tutor?.avatar} />
+                              <AvatarFallback className="text-[9px] bg-blue-50 text-blue-700 font-bold">
+                                {(course.tutor?.name || "T")[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <span className="text-xs font-bold text-slate-800 truncate block">
+                                {course.tutor?.name || "Unassigned Tutor"}
+                              </span>
+                              {course.tutor?.headline && (
+                                <span className="text-[10px] text-slate-400 truncate block">
+                                  {course.tutor.headline}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                            <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> {course.modules?.length || 0} Modules</span>
+                            <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-slate-400" /> {course.materials?.length || 0} Files</span>
+                            <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-slate-400" /> {course.enrollments?.length || 0} Enrolled</span>
+                            <span className="font-bold text-amber-600 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
+                              <Coins className="w-3.5 h-3.5" />
+                              {course.price} Tokens
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <Link
+                            href={`/admin/courses/${course.id}/edit`}
+                            className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 h-8 rounded-xl flex-1 cursor-pointer transition-colors shadow-2xs"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Edit Masterclass & Content</span>
+                          </Link>
+
+                          <Link
+                            href={`/courses/${course.slug}`}
+                            target="_blank"
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
+                            title="Preview Public Masterclass Page"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+
+                          <button
+                            onClick={() => handleDeleteCourse(course)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                            title="Delete Masterclass"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* SUB-VIEW 2: TUTORS CONDUCTING CLASSES */}
+              {adminCourseViewMode === "tutors" && (
+                <>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full sm:w-80">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder="Search tutor name, email, specialty..."
+                        value={courseSearch}
+                        onChange={(e) => setCourseSearch(e.target.value)}
+                        className="pl-9 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-400"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href="/admin/courses/new"
+                        className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 h-10 px-4 rounded-xl shadow-xs shadow-blue-500/20 inline-flex items-center justify-center cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4 text-blue-100" />
+                        <span>+ Assign New Masterclass</span>
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {tutorList
+                      .filter((tutor) => {
+                        const q = courseSearch.toLowerCase().trim();
+                        if (!q) return true;
+                        return (
+                          tutor.name?.toLowerCase().includes(q) ||
+                          tutor.email?.toLowerCase().includes(q) ||
+                          tutor.headline?.toLowerCase().includes(q) ||
+                          tutor.bio?.toLowerCase().includes(q)
+                        );
+                      })
+                      .map((tutor) => {
+                        const tutorCourses = coursesList.filter(
+                          (c) => c.tutorId === tutor.id || c.tutor?.id === tutor.id
+                        );
+                        const tutorLiveClasses = eventsList.filter(
+                          (e) => e.userId === tutor.id || e.course?.tutorId === tutor.id
+                        );
+
+                        return (
+                          <div
+                            key={tutor.id}
+                            className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4 flex flex-col justify-between"
+                          >
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <Avatar className="w-12 h-12 rounded-xl border border-slate-200 shrink-0">
+                                  <AvatarImage src={tutor.avatar} alt={tutor.name} />
+                                  <AvatarFallback className="text-sm font-bold bg-[#0c2461] text-white">
+                                    {tutor.name.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <h4 className="font-bold text-slate-900 text-sm truncate">
+                                      {tutor.name}
+                                    </h4>
+                                    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold py-0.5">
+                                      Tutor
+                                    </Badge>
+                                  </div>
+                                  <p className="text-[11px] text-blue-700 font-semibold truncate">
+                                    {tutor.headline || "Senior Lecturer"}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 font-mono truncate">
+                                    {tutor.email}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {tutor.bio && (
+                                <p className="text-xs text-slate-500 line-clamp-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                  {tutor.bio}
+                                </p>
+                              )}
+
+                              {/* Stats Bar */}
+                              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-center">
+                                <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100">
+                                  <div className="text-sm font-black text-blue-900">{tutorCourses.length}</div>
+                                  <div className="text-[10px] text-blue-700 font-medium">Masterclasses</div>
+                                </div>
+                                <div className="p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                                  <div className="text-sm font-black text-emerald-900">{tutorLiveClasses.length}</div>
+                                  <div className="text-[10px] text-emerald-700 font-medium">Live Sessions</div>
+                                </div>
+                              </div>
+
+                              {/* Masterclasses List */}
+                              <div className="space-y-1.5 pt-1">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                  Masterclasses Taught:
+                                </span>
+                                {tutorCourses.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {tutorCourses.map((c) => (
+                                      <Link
+                                        key={c.id}
+                                        href={`/admin/courses/${c.id}/edit`}
+                                        className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 text-[10px] font-medium border border-slate-200 transition-colors flex items-center gap-1"
+                                      >
+                                        <span className="font-mono font-bold text-blue-700">{c.subjectCode || "MC"}</span>
+                                        <span className="truncate max-w-[120px]">{c.title}</span>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-slate-400 italic">No masterclasses created yet.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                              <Link
+                                href="/admin/courses/new"
+                                className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 h-8 rounded-xl cursor-pointer transition-colors shadow-2xs"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>+ New Masterclass</span>
+                              </Link>
+
+                              <button
+                                onClick={() => {
+                                  setActiveTab("live_classes");
+                                  setLiveClassSearch(tutor.name);
+                                }}
+                                className="px-3 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                                title="View tutor's live classes"
+                              >
+                                View Classes
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -2705,7 +2903,7 @@ export default function AdminDashboardPage() {
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <Input
-                        placeholder="Search student or faculty member..."
+                        placeholder="Search student or tutor..."
                         value={adminChatsSearch}
                         onChange={(e) => {
                           setAdminChatsSearch(e.target.value);
@@ -3073,7 +3271,7 @@ export default function AdminDashboardPage() {
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Faculty Honorarium Pool</span>
+                    <span className="text-xs font-medium text-slate-500">Tutor Honorarium Pool</span>
                     <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                       <Award className="w-4 h-4" />
                     </div>
@@ -3661,7 +3859,7 @@ export default function AdminDashboardPage() {
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {totalPendingApprovals} Pending
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">Faculty actions requiring sign-off</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Tutor actions requiring sign-off</div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -3757,7 +3955,7 @@ export default function AdminDashboardPage() {
                   <div>
                     <h3 className="font-bold text-base text-slate-900">All Tutor Actions Verified & Approved</h3>
                     <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                      No faculty live class proposals, session reschedules, or trial bookings are pending admin sign-off at this time.
+                      No tutor live class proposals, session reschedules, or trial bookings are pending admin sign-off at this time.
                     </p>
                   </div>
                 </div>
@@ -3765,7 +3963,7 @@ export default function AdminDashboardPage() {
                 <div className="space-y-4">
                   {/* Live Classes Pending */}
                   {(approvalSubTab === "ALL" || approvalSubTab === "CLASSES") && pendingClassesList.map((cls) => {
-                    const tutorName = cls.course?.tutor?.name || cls.user?.name || "Senior Faculty";
+                    const tutorName = cls.course?.tutor?.name || cls.user?.name || "Senior Tutor";
                     const isProcessing = processingApprovalId === cls.id;
 
                     return (
@@ -3926,7 +4124,7 @@ export default function AdminDashboardPage() {
                             <span className="text-[10px] text-slate-500 font-mono block">{trial.studentEmail}</span>
                           </div>
                           <div>
-                            <span className="text-[11px] font-medium text-slate-400 block">Confirmed Faculty:</span>
+                            <span className="text-[11px] font-medium text-slate-400 block">Confirmed Tutor:</span>
                             <span className="font-bold text-slate-800">{tutorName}</span>
                           </div>
                           <div>
@@ -3935,7 +4133,7 @@ export default function AdminDashboardPage() {
                           </div>
                           {trial.notes && (
                             <div className="sm:col-span-3 pt-1 border-t border-slate-200/50">
-                              <span className="text-[11px] font-medium text-slate-400 block">Faculty Notes:</span>
+                              <span className="text-[11px] font-medium text-slate-400 block">Tutor Notes:</span>
                               <p className="text-slate-600 mt-0.5">{trial.notes}</p>
                             </div>
                           )}
@@ -3974,7 +4172,7 @@ export default function AdminDashboardPage() {
 
                   {/* Courses Pending */}
                   {(approvalSubTab === "ALL" || approvalSubTab === "COURSES") && pendingCoursesList.map((course) => {
-                    const tutorName = course.tutor?.name || "Faculty Lecturer";
+                    const tutorName = course.tutor?.name || "Senior Tutor";
                     const isProcessing = processingApprovalId === course.id;
 
                     return (
@@ -4473,7 +4671,7 @@ export default function AdminDashboardPage() {
                   <label className="font-bold block mb-1">Role</label>
                   <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
                     <option value="STUDENT">Student</option>
-                    <option value="TUTOR">Faculty Tutor</option>
+                    <option value="TUTOR">Tutor</option>
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
@@ -4541,7 +4739,7 @@ export default function AdminDashboardPage() {
                 <label className="font-bold block mb-1">Role</label>
                 <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
                   <option value="STUDENT">Student</option>
-                  <option value="TUTOR">Faculty Tutor</option>
+                  <option value="TUTOR">Tutor</option>
                   <option value="ADMIN">Administrator</option>
                 </select>
               </div>
@@ -4704,7 +4902,7 @@ export default function AdminDashboardPage() {
                 <div>
                   <label className="font-bold block mb-1">Lead Lecturer</label>
                   <select value={courseFormInstructorId} onChange={(e) => setCourseFormInstructorId(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                    {facultyList.map((f) => (
+                    {tutorList.map((f) => (
                       <option key={f.id} value={f.id}>{f.name}</option>
                     ))}
                   </select>
@@ -5120,7 +5318,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-slate-900">Decline & Request Revisions</h3>
-                  <p className="text-[11px] text-slate-500">Provide feedback reason to the faculty tutor</p>
+                  <p className="text-[11px] text-slate-500">Provide feedback reason to the tutor</p>
                 </div>
               </div>
               <button
@@ -6075,7 +6273,7 @@ export default function AdminDashboardPage() {
                         <span>This will permanently delete:</span>
                       </div>
                       <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-rose-800">
-                        <li>All student accounts, faculty tutors, and profiles</li>
+                        <li>All student accounts, tutors, and profiles</li>
                         <li>All masterclass courses, modules, lessons & materials</li>
                         <li>All course enrollments, student progress & certificates</li>
                         <li>All live Google Meet events, schedules & bookings</li>

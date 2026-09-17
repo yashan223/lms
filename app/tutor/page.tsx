@@ -480,11 +480,11 @@ function TutorDashboardContent() {
       if (data.tutor) {
         setTutor(data.tutor);
         setProfileName(data.tutor.name || "");
-        setProfileHeadline(data.tutor.headline || "Senior Faculty Lecturer");
+        setProfileHeadline(data.tutor.headline || "Senior Tutor");
         setProfilePhone(data.tutor.phone || "");
         setProfileAvatar(data.tutor.avatar || "");
 
-        let parsedAbout = "Senior Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum with a focus on deep conceptual proofs, problem sets, and examination masterclasses.";
+        let parsedAbout = "Senior Tutor specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum with a focus on deep conceptual proofs, problem sets, and examination masterclasses.";
         let parsedDegrees: AcademicDegree[] = [
           {
             id: "deg-1",
@@ -1294,7 +1294,7 @@ function TutorDashboardContent() {
     );
   }
 
-  const tutorName = tutor?.name || "Senior Faculty Lecturer";
+  const tutorName = tutor?.name || "Senior Tutor";
 
   return (
     <div className="min-h-screen bg-[#f4f6f9] flex flex-col font-sans text-slate-800">
@@ -1398,7 +1398,7 @@ function TutorDashboardContent() {
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Faculty Tools
+                Tutor Tools
               </h3>
 
               <div className="space-y-1.5 text-xs font-medium">
@@ -2185,7 +2185,7 @@ function TutorDashboardContent() {
                         <span>Online Session History & Duration Logs</span>
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Comprehensive faculty audit log of all completed online classes, recorded start & end times, and duration analytics.
+                        Comprehensive tutor audit log of all completed online classes, recorded start & end times, and duration analytics.
                       </p>
                     </div>
 
@@ -3031,7 +3031,7 @@ function TutorDashboardContent() {
                         <Input
                           value={profileExp}
                           onChange={(e) => setProfileExp(e.target.value)}
-                          placeholder="e.g. 12+ Years Lead Faculty"
+                          placeholder="e.g. 12+ Years Lead Tutor"
                           className="rounded-xl h-9 text-xs"
                         />
                       </div>
@@ -3541,7 +3541,7 @@ function TutorDashboardContent() {
               )}
 
               <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed border-t border-slate-100 pt-2">
-                {profileAbout || "Faculty Educator specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum."}
+                {profileAbout || "Tutor specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum."}
               </p>
 
               <button
@@ -3602,7 +3602,7 @@ function TutorDashboardContent() {
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
                   <CalendarCheck className="w-3 h-3 text-blue-600" />
-                  <span>Synced with Faculty Schedule</span>
+                  <span>Synced with Tutor Schedule</span>
                 </span>
                 <button
                   onClick={goToToday}
@@ -4250,7 +4250,7 @@ function TutorDashboardContent() {
 
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 block">
-                  Faculty Preparation Notes (Optional)
+                  Tutor Preparation Notes (Optional)
                 </label>
                 <textarea
                   rows={2}
@@ -4371,7 +4371,7 @@ function TutorDashboardContent() {
           tutor || {
             id: "instructor",
             name: tutorName,
-            email: "faculty@edupulse.uk",
+            email: "tutor@edupulse.uk",
             role: "INSTRUCTOR",
           }
         }

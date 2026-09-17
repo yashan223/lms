@@ -204,7 +204,7 @@ export function CoursePurchaseModal({
                 You&apos;re Enrolled in {course.title}!
               </h4>
               <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-                You have successfully allocated <strong className="text-slate-900">{price} Tokens</strong> to enroll. All verified study handbooks, formula sheets, video lectures, and live classroom sessions are now unlocked.
+                You have successfully allocated <strong className="text-slate-900">{price} Tokens</strong> to enroll. All verified study handbooks, formula sheets, video lessons, and live tuition sessions are now unlocked.
               </p>
             </div>
 

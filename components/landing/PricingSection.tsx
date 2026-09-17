@@ -90,7 +90,7 @@ export function PricingSection({
                   "Join live interactive syllabus masterclasses",
                   "Instant token crediting to student wallet",
                   "Full flexibility: student decides when & how to spend",
-                  "Access to course materials & lecture notes",
+                  "Access to course materials & study notes",
                 ];
 
             return (

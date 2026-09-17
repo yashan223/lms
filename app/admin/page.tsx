@@ -1933,7 +1933,7 @@ export default function AdminDashboardPage() {
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {upcomingCount} Sessions
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">Lectures & Masterclasses</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Classes & Masterclasses</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -1959,7 +1959,7 @@ export default function AdminDashboardPage() {
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {tutorList.length} Tutors
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">Senior Lecturers</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Certified Tutors</div>
                 </div>
               </div>
 
@@ -2752,7 +2752,7 @@ export default function AdminDashboardPage() {
                                     </Badge>
                                   </div>
                                   <p className="text-[11px] text-blue-700 font-semibold truncate">
-                                    {tutor.headline || "Senior Lecturer"}
+                                    {tutor.headline || "Expert Tutor"}
                                   </p>
                                   <p className="text-[10px] text-slate-400 font-mono truncate">
                                     {tutor.email}
@@ -3280,7 +3280,7 @@ export default function AdminDashboardPage() {
                     ${(totalCalculatedRevenue * 0.3).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                   <div className="text-[11px] text-purple-600 font-semibold">
-                    30% Pool for Senior Lecturers
+                    30% Pool for Certified Tutors
                   </div>
                 </div>
               </div>
@@ -3712,7 +3712,7 @@ export default function AdminDashboardPage() {
                           "Join live interactive syllabus masterclasses",
                           "Instant token crediting to student wallet",
                           "Full flexibility: student decides when & how to spend",
-                          "Access to course materials & lecture notes",
+                          "Access to course materials & study notes",
                         ];
 
                     return (
@@ -4900,7 +4900,7 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Lead Lecturer</label>
+                  <label className="font-bold block mb-1">Lead Tutor</label>
                   <select value={courseFormInstructorId} onChange={(e) => setCourseFormInstructorId(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
                     {tutorList.map((f) => (
                       <option key={f.id} value={f.id}>{f.name}</option>
@@ -5149,7 +5149,7 @@ export default function AdminDashboardPage() {
                     <option value="FORMULA_SHEET">Formula Sheet & Tables</option>
                     <option value="PRACTICE_SET">Practice Handbook & Solutions</option>
                     <option value="LAB_GUIDE">Practical Lab Guide</option>
-                    <option value="SLIDES">Lecture Slides</option>
+                    <option value="SLIDES">Class Slides</option>
                     <option value="OTHER">General Resource File</option>
                   </select>
                 </div>
@@ -5287,7 +5287,7 @@ export default function AdminDashboardPage() {
                   <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                   <p className="text-xs font-bold text-slate-600">No study materials uploaded yet</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Use the form above to attach lecture slides, formula booklets, handouts, and problem sets to this syllabus unit.
+                    Use the form above to attach class slides, formula booklets, handouts, and problem sets to this syllabus unit.
                   </p>
                 </div>
               )}

@@ -175,7 +175,7 @@ const MATERIAL_CATEGORIES = [
   { value: "FORMULA_SHEET", label: "Formula Sheet & Tables" },
   { value: "PRACTICE_SET", label: "Practice Handbook & Solutions" },
   { value: "LAB_GUIDE", label: "Practical Lab Guide" },
-  { value: "SLIDES", label: "Lecture Slides" },
+  { value: "SLIDES", label: "Class Slides" },
   { value: "OTHER", label: "General Resource File" },
 ];
 
@@ -1092,14 +1092,14 @@ export function AdminCourseWorkspaceContent({
 
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[11px] font-bold text-slate-500">Lead Lecturer</span>
+              <span className="text-[11px] font-bold text-slate-500">Lead Tutor</span>
               <CircleUserRound className="w-4 h-4 text-sky-500" />
             </div>
             <div className="text-sm font-black text-slate-900 truncate mt-1">
               {tutorList.find((f) => f.id === detailsForm.tutorId)?.name || course?.tutor?.name || "Unassigned"}
             </div>
             <div className="text-[10px] text-slate-400 truncate">
-              {tutorList.find((f) => f.id === detailsForm.tutorId)?.email || course?.tutor?.email || "No lecturer linked"}
+              {tutorList.find((f) => f.id === detailsForm.tutorId)?.email || course?.tutor?.email || "No tutor linked"}
             </div>
           </div>
         </section>
@@ -1235,15 +1235,15 @@ export function AdminCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Lead Lecturer */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Lead Lecturer / Tutor</label>
+                {/* Lead Tutor */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">Lead Tutor</label>
                   <select
                     value={detailsForm.tutorId}
                     onChange={(e) => setDetailsForm({ ...detailsForm, tutorId: e.target.value })}
-                    className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all shadow-2xs"
                   >
-                    <option value="">Select Lecturer...</option>
+                    <option value="">Select Tutor...</option>
                     {tutorList.map((f) => (
                       <option key={f.id} value={f.id}>
                         {f.name || f.email} ({f.email})
@@ -1434,7 +1434,7 @@ export function AdminCourseWorkspaceContent({
                   <Layers3 className="w-10 h-10 text-slate-300 mx-auto" />
                   <h3 className="font-bold text-sm text-slate-700">No Curriculum Modules Added</h3>
                   <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                    Get started by creating your first module using the form above to add lectures, videos, and study topics.
+                    Get started by creating your first module using the form above to add lessons, videos, and study topics.
                   </p>
                 </div>
               ) : (
@@ -1732,7 +1732,7 @@ export function AdminCourseWorkspaceContent({
                         </div>
                       </div>
                       <div>
-                        <label className="font-bold block mb-1">Lecture Video URL</label>
+                        <label className="font-bold block mb-1">Class Video URL</label>
                         <Input
                           placeholder="https://youtube.com/watch?v=..."
                           value={editingLesson.videoUrl}
@@ -1769,7 +1769,7 @@ export function AdminCourseWorkspaceContent({
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Masterclass Materials & Document Repository</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Attach handouts, lecture slides, formula booklets, practice solution sets, and mock papers.
+                    Attach handouts, class slides, formula booklets, practice solution sets, and mock papers.
                   </p>
                 </div>
               </div>

@@ -33,7 +33,7 @@ export function BentoFeatures() {
                 Live Interactive Seminars
               </h3>
               <p className="text-slate-600 text-xs leading-relaxed mb-4">
-                Host real-time academic lectures with synchronized discussion boards, breakout rooms, and live polling.
+                Host real-time tuition classes with synchronized discussion boards, breakout rooms, and live polling.
               </p>
             </div>
 

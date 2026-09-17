@@ -27,7 +27,7 @@ export function AboutSection() {
     },
     {
       icon: Users,
-      title: "Senior Lead Lecturers",
+      title: "Expert Online Tutors",
       description: "Learn directly from active university and college educators who structure course content, author study materials, and guide students.",
       badge: "Expert Tutors",
       badgeColor: "bg-purple-100 text-purple-800",
@@ -43,9 +43,9 @@ export function AboutSection() {
 
   const highlights = [
     "Comprehensive 10-Year past topic proofs and step-by-step video solutions",
-    "Downloadable lecture handbooks, unit formula sheets, and practical notes",
+    "Downloadable study handbooks, unit formula sheets, and practical notes",
     "24/7 AI-powered academic question and formula assistance",
-    "Structured syllabus progress tracking and lecture schedule alerts",
+    "Structured syllabus progress tracking and class schedule alerts",
     "Recognized academic standards partnered with global learning institutions",
   ];
 
@@ -59,7 +59,7 @@ export function AboutSection() {
             </h2>
 
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              EduPulse is a premier international learning platform dedicated to London A/L and London O/L students. We bridge digital interactive lectures, comprehensive topic walkthroughs, and certified lecturer evaluations to ensure students achieve academic mastery.
+              EduPulse is a premier international learning platform dedicated to London A/L and London O/L students. We bridge digital interactive classes, comprehensive topic walkthroughs, and certified tutor evaluations to ensure students achieve academic mastery.
             </p>
 
             <div className="space-y-2.5 pt-2">

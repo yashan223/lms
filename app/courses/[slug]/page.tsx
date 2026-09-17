@@ -332,7 +332,7 @@ export default function CourseDetailPage({
       case "LAB_GUIDE":
         return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px]">Practical Lab Guide</Badge>;
       default:
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px]">Lecture Handbook</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px]">Study Handbook</Badge>;
     }
   };
 
@@ -744,7 +744,7 @@ export default function CourseDetailPage({
                             </div>
                             <div>
                               <div className="text-xs text-sky-400 font-bold uppercase tracking-wider">
-                                {selectedLesson.isFreePreview ? "Free Lesson Preview" : "Interactive Lecture Player"}
+                                {selectedLesson.isFreePreview ? "Free Lesson Preview" : "Interactive Class Player"}
                               </div>
                               <h3 className="text-base sm:text-lg font-bold text-white max-w-md">
                                 {selectedLesson.title}
@@ -762,7 +762,7 @@ export default function CourseDetailPage({
                           </div>
                           <div className="space-y-1">
                             <div className="text-xs text-amber-400 font-bold uppercase tracking-wider">
-                              Full Syllabus Lecture • Enrolled Students Only
+                              Full Syllabus Class • Enrolled Students Only
                             </div>
                             <h3 className="text-base sm:text-lg font-bold text-white max-w-md">
                               {selectedLesson.title}
@@ -1014,7 +1014,7 @@ export default function CourseDetailPage({
                   onChange={(e) => setNewMaterialCategory(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="HANDOUT">📄 Lecture Handbook / Summary Notes</option>
+                  <option value="HANDOUT">📄 Study Handbook / Summary Notes</option>
                   <option value="FORMULA_SHEET">📐 Official Formula & Identity Sheet</option>
                   <option value="MOCK_PAPER">📝 Past Paper Worked Solutions</option>
                   <option value="LAB_GUIDE">🔬 Practical Laboratory Manual</option>

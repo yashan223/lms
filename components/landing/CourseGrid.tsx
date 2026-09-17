@@ -96,7 +96,7 @@ export function CourseGrid() {
               London A/L & O/L Subject Masterclasses
             </h2>
             <p className="text-sm sm:text-base text-slate-600">
-              Unit-by-unit syllabus coverage, comprehensive lecture walkthroughs, and structured topic masterclasses.
+              Unit-by-unit syllabus coverage, comprehensive tuition walkthroughs, and structured topic masterclasses.
             </p>
           </div>
 

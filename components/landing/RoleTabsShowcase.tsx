@@ -86,13 +86,13 @@ export function RoleTabsShowcase() {
                   </h3>
 
                   <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                    Designed to maximize academic retention. Students receive synchronized video playback, structured study notes, in-lecture bookmarks, and instant conceptual answers.
+                    Designed to maximize academic retention. Students receive synchronized video playback, structured study notes, in-class bookmarks, and instant conceptual answers.
                   </p>
 
                   <div className="space-y-3">
                     {[
                       {
-                        title: "HD Video Lecture Player with Auto-Resume",
+                        title: "HD Video Class Player with Auto-Resume",
                         desc: "Seamlessly continue across tablet, smartphone, and desktop.",
                       },
                       {
@@ -135,7 +135,7 @@ export function RoleTabsShowcase() {
                   <div className="relative aspect-video rounded-xl bg-slate-900 overflow-hidden shadow-md flex items-center justify-center group cursor-pointer">
                     <img
                       src="https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=800&auto=format&fit=crop&q=80"
-                      alt="Lecture Preview"
+                      alt="Class Preview"
                       className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -146,7 +146,7 @@ export function RoleTabsShowcase() {
 
                     <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
                       <span className="font-semibold truncate mr-2">
-                        Lecture 14: Carbon Accounting & International Treaties
+                        Class 14: Carbon Accounting & International Treaties
                       </span>
                       <span className="bg-black/50 px-2 py-0.5 rounded text-[11px] font-mono">
                         14:22 / 28:00
@@ -161,7 +161,7 @@ export function RoleTabsShowcase() {
                         Academic Notes
                       </div>
                       <p className="text-[11px] text-slate-500">
-                        Synchronized lecture transcript and highlighted bibliography.
+                        Synchronized class transcript and highlighted bibliography.
                       </p>
                     </div>
 
@@ -201,11 +201,11 @@ export function RoleTabsShowcase() {
                     {[
                       {
                         title: "Interactive Syllabus & Curriculum Builder",
-                        desc: "Easily organize lecture modules, reading materials, and worked solution packs.",
+                        desc: "Easily organize class modules, reading materials, and worked solution packs.",
                       },
                       {
                         title: "Material & Handbook Publisher",
-                        desc: "Easily distribute formula sheets, lecture handouts, and practice sets.",
+                        desc: "Easily distribute formula sheets, class handouts, and practice sets.",
                       },
                       {
                         title: "Honorarium Tracking & Student Analytics",
@@ -251,7 +251,7 @@ export function RoleTabsShowcase() {
                             Course Studio: Climate Economics
                           </div>
                           <div className="text-[10px] text-slate-500">
-                            Status: Published • 48 Lectures
+                            Status: Published • 48 Lessons
                           </div>
                         </div>
                       </div>
@@ -264,7 +264,7 @@ export function RoleTabsShowcase() {
                           <Video className="w-3.5 h-3.5 text-blue-600" />
                           Module 1: Foundations of Global Ecological Policy
                         </span>
-                        <span className="text-slate-400 text-[11px]">8 Lectures</span>
+                        <span className="text-slate-400 text-[11px]">8 Lessons</span>
                       </div>
 
                       <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
@@ -272,7 +272,7 @@ export function RoleTabsShowcase() {
                           <Video className="w-3.5 h-3.5 text-blue-600" />
                           Module 2: Carbon Markets & Strategic Finance
                         </span>
-                        <span className="text-slate-400 text-[11px]">12 Lectures</span>
+                        <span className="text-slate-400 text-[11px]">12 Lessons</span>
                       </div>
                     </div>
                   </div>

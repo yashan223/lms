@@ -126,7 +126,7 @@ export async function POST(
       await tx.event.create({
         data: {
           title: `Welcome to ${course.title}`,
-          description: `You have successfully enrolled in ${course.title} using ${coursePrice} Tokens. All lecture modules and study handbooks are now unlocked.`,
+          description: `You have successfully enrolled in ${course.title} using ${coursePrice} Tokens. All class modules and study handbooks are now unlocked.`,
           dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
           courseId: course.id,
           userId: user.id,

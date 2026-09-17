@@ -489,7 +489,7 @@ function TutorProfileContent() {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">
-                    {headline || "Senior Lead Lecturer in London A/L Pure Mathematics"}
+                    {headline || "Lead Tutor in London A/L Pure Mathematics"}
                   </p>
                   <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-500 flex-wrap">
                     <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
@@ -690,7 +690,7 @@ function TutorProfileContent() {
                     required
                     value={headline}
                     onChange={(e) => setHeadline(e.target.value)}
-                    placeholder="e.g. Senior Lead Lecturer & Certified Examiner (London A/L Pure Mathematics)"
+                    placeholder="e.g. Lead Tutor & Certified Examiner (London A/L Pure Mathematics)"
                     className="rounded-xl h-9 text-xs"
                   />
                   <p className="text-[10px] text-slate-400">
@@ -1069,7 +1069,7 @@ function TutorProfileContent() {
                     <span>6. Comprehensive Biography &amp; Teaching Philosophy</span>
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Describe your academic background, student A* accomplishments, error-checking methods, and lecture structure.
+                    Describe your academic background, student A* accomplishments, error-checking methods, and class structure.
                   </p>
                 </div>
 

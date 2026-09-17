@@ -438,7 +438,7 @@ export default function CoursesPage() {
                             </div>
 
                             <p className="text-xs font-semibold text-blue-700 mt-1 line-clamp-2">
-                              {tutor.headline || "Senior Lecturer"}
+                              {tutor.headline || "Expert Tutor"}
                             </p>
 
                             {tutor.country && (

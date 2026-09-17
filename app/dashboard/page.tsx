@@ -1789,7 +1789,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 italic py-2 text-center">
-                  No private files uploaded yet. Upload lecture notes, mock scripts, or revision guides.
+                  No private files uploaded yet. Upload study notes, mock scripts, or revision guides.
                 </p>
               )}
             </div>

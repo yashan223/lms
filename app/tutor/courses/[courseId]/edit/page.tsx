@@ -155,7 +155,7 @@ const MATERIAL_CATEGORIES = [
   { value: "FORMULA_SHEET", label: "Formula Sheet & Tables" },
   { value: "PRACTICE_SET", label: "Practice Handbook & Solutions" },
   { value: "LAB_GUIDE", label: "Practical Lab Guide" },
-  { value: "SLIDES", label: "Lecture Slides" },
+  { value: "SLIDES", label: "Class Slides" },
   { value: "OTHER", label: "General Resource File" },
 ];
 
@@ -1301,7 +1301,7 @@ export function TutorCourseWorkspaceContent({
                   <Layers3 className="w-10 h-10 text-slate-300 mx-auto" />
                   <h3 className="font-bold text-sm text-slate-700">No Curriculum Modules Added</h3>
                   <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                    Get started by creating your first module using the form above to add lectures, videos, and study topics.
+                    Get started by creating your first module using the form above to add lessons, videos, and study topics.
                   </p>
                 </div>
               ) : (
@@ -1599,7 +1599,7 @@ export function TutorCourseWorkspaceContent({
                         </div>
                       </div>
                       <div>
-                        <label className="font-bold block mb-1">Lecture Video URL</label>
+                        <label className="font-bold block mb-1">Class Video URL</label>
                         <Input
                           placeholder="https://youtube.com/watch?v=..."
                           value={editingLesson.videoUrl}
@@ -1636,7 +1636,7 @@ export function TutorCourseWorkspaceContent({
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Course Materials & Document Repository</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Upload and publish handouts, problem sheets, formula booklets, and lecture slides directly.
+                    Upload and publish handouts, problem sheets, formula booklets, and class slides directly.
                   </p>
                 </div>
               </div>

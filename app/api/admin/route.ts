@@ -582,7 +582,7 @@ export async function POST(request: NextRequest) {
           title,
           slug: generatedSlug,
           subtitle: subtitle || "Official Academic Curriculum Masterclass.",
-          description: description || "Comprehensive lecture walkthroughs, unit proofs, and coursework solutions.",
+          description: description || "Comprehensive lesson walkthroughs, unit proofs, and coursework solutions.",
           category: category || "School of Mathematics & Computing",
           subjectCode: subjectCode || "MATH-101",
           price: isNaN(tokenValue) ? 10.0 : tokenValue,

@@ -172,7 +172,7 @@ async function main() {
       title: "London A/L Physics (Units 1 to 6 Theory & Virtual Laboratory)",
       slug: "edexcel-ial-physics-unit-1-to-6",
       subtitle: "Mechanics, Electric Circuits, Fields, Particle Physics, and Practical Video Demonstrations.",
-      description: "Master all 6 units of International Advanced Level Physics with step-by-step lecture walkthroughs and experimental lab demonstrations.",
+      description: "Master all 6 units of International Advanced Level Physics with step-by-step lesson walkthroughs and experimental lab demonstrations.",
       category: "School of Computing & Engineering",
       subjectCode: "WPH11-16",
       price: 5.0,

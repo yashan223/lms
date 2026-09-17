@@ -164,7 +164,7 @@ export async function sendVerificationEmail({
                 Hello <strong>${name}</strong>,
               </p>
               <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-                Welcome to EduPulse Academy! Please verify your email address to activate your academic account and access your live classes, past papers, and course lecture materials.
+                Welcome to EduPulse Academy! Please verify your email address to activate your academic account and access your live classes, past papers, and course study materials.
               </p>
 
               <!-- CTA Button -->

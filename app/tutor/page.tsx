@@ -3015,7 +3015,7 @@ function TutorDashboardContent() {
                       <Input
                         value={profileHeadline}
                         onChange={(e) => setProfileHeadline(e.target.value)}
-                        placeholder="e.g. Senior Lead Lecturer & Certified Lead Examiner (London A/L Pure Mathematics)"
+                        placeholder="e.g. Lead Tutor & Certified Examiner (London A/L Pure Mathematics)"
                         className="rounded-xl h-9 text-xs"
                       />
                       <p className="text-[10px] text-slate-400">
@@ -3386,7 +3386,7 @@ function TutorDashboardContent() {
                         <span>Comprehensive Biography & Teaching Philosophy</span>
                       </h3>
                       <p className="text-xs text-slate-500">
-                        Describe your academic background, student pass rate accomplishments, error-checking methods, and lecture format.
+                        Describe your academic background, student pass rate accomplishments, error-checking methods, and class format.
                       </p>
                     </div>
 

@@ -117,7 +117,7 @@ function PaymentSuccessContent() {
             className="w-full py-3 px-6 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-2 transition"
           >
             <BookOpen className="w-4 h-4" />
-            <span>Browse Masterclass Curriculum</span>
+            <span>Browse Individual Classes</span>
           </Link>
         </div>
       </div>

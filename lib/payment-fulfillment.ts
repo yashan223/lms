@@ -153,7 +153,7 @@ export async function fulfillPayment(
           await tx.event.create({
             data: {
               title: `Welcome to ${course.title}`,
-              description: `Purchased via Payments.lk. All classes, materials, and masterclasses are now unlocked.`,
+              description: `Purchased via Payments.lk. All classes, materials, and individual classes are now unlocked.`,
               dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
               courseId: course.id,
               userId: payment.userId,

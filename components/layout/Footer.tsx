@@ -63,10 +63,10 @@ export function Footer() {
                   <Share2 className="w-4 h-4" />
                 </a>
                 <a
-                  href="#masterclasses"
+                  href="#courses"
                   className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center hover:text-blue-600 hover:border-blue-300 transition-colors shadow-sm"
                   aria-label="Video Hub"
-                  title="Video Lecture Hub"
+                  title="Video Class Hub"
                 >
                   <Video className="w-4 h-4" />
                 </a>

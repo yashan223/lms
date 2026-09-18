@@ -269,7 +269,7 @@ export async function GET(request: NextRequest) {
           ] as any;
         } else if (currentDayOfWeek === 6) {
           windows = [
-            { startTime: "10:00", endTime: "14:00", title: "Weekend Masterclass" },
+            { startTime: "10:00", endTime: "14:00", title: "Weekend Individual Class" },
           ] as any;
         }
       }
@@ -594,7 +594,7 @@ export async function POST(request: NextRequest) {
           endTime: "13:30",
           isRecurring: true,
           isActive: true,
-          title: "Weekend Masterclass Window",
+          title: "Weekend Individual Class Window",
           slotType: "ALL",
         });
       }

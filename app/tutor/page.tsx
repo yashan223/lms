@@ -484,7 +484,7 @@ function TutorDashboardContent() {
         setProfilePhone(data.tutor.phone || "");
         setProfileAvatar(data.tutor.avatar || "");
 
-        let parsedAbout = "Senior Tutor specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum with a focus on deep conceptual proofs, problem sets, and examination masterclasses.";
+        let parsedAbout = "Senior Tutor specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum with a focus on deep conceptual proofs, problem sets, and examination individual classes.";
         let parsedDegrees: AcademicDegree[] = [
           {
             id: "deg-1",
@@ -3395,7 +3395,7 @@ function TutorDashboardContent() {
                         rows={6}
                         value={profileAbout}
                         onChange={(e) => setProfileAbout(e.target.value)}
-                        placeholder="Write an engaging introduction about your teaching style, past student A* scores, masterclass structure, and passion for mathematics and sciences..."
+                        placeholder="Write an engaging introduction about your teaching style, past student A* scores, class structure, and passion for mathematics and sciences..."
                         className="w-full p-3.5 rounded-xl border border-slate-200 text-xs leading-relaxed resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
                       <div className="flex items-center justify-between text-[10px] text-slate-400">
@@ -3983,7 +3983,7 @@ function TutorDashboardContent() {
                   {rescheduleTargetEvent?.title || rescheduleTargetTrial?.topic || "Consultation Session"}
                 </div>
                 <div className="text-[11px] text-slate-600">
-                  {rescheduleTargetEvent?.course?.title || rescheduleTargetTrial?.course?.title || "London A/L Masterclass"}
+                  {rescheduleTargetEvent?.course?.title || rescheduleTargetTrial?.course?.title || "London A/L Individual Class"}
                 </div>
               </div>
 
@@ -4201,7 +4201,7 @@ function TutorDashboardContent() {
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-600">
-                  Course: <strong>{confirmingTrial.course?.title || "London A/L Masterclass"}</strong>
+                  Course: <strong>{confirmingTrial.course?.title || "London A/L Individual Class"}</strong>
                 </div>
                 {confirmingTrial.topic && (
                   <div className="text-[11px] text-slate-600">

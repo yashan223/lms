@@ -329,7 +329,7 @@ export function AdminCourseWorkspaceContent({
       if (!res.ok) throw new Error(data.error || "Failed to load admin data");
 
       const found = (data.courses || []).find((c: Course) => c.id === courseId);
-      if (!found) throw new Error("Masterclass not found in system database.");
+      if (!found) throw new Error("Individual class not found in system database.");
 
       // Also grab events linked to this course from data.events if course.events isn't loaded
       const courseEvents = found.events || (data.events || []).filter((e: any) => e.courseId === courseId);
@@ -387,10 +387,10 @@ export function AdminCourseWorkspaceContent({
     try {
       if (isNewCourse) {
         if (!detailsForm.title.trim()) {
-          throw new Error("Masterclass title is required.");
+          throw new Error("Class title is required.");
         }
         if (!detailsForm.description.trim()) {
-          throw new Error("Masterclass description is required.");
+          throw new Error("Class description is required.");
         }
         const res = await callAdminApi({
           action: "create_course",
@@ -407,7 +407,7 @@ export function AdminCourseWorkspaceContent({
           thumbnail: detailsForm.thumbnail.trim() || null,
           featured: detailsForm.featured,
         });
-        showToast("success", "Masterclass created successfully! Redirecting to full workspace...");
+        showToast("success", "Individual class created successfully! Redirecting to full workspace...");
         if (res.course?.id) {
           router.push(`/admin/courses/${res.course.id}/edit`);
         } else {
@@ -432,9 +432,9 @@ export function AdminCourseWorkspaceContent({
         featured: detailsForm.featured,
       });
       await loadData(true);
-      showToast("success", "Masterclass details saved successfully!");
+      showToast("success", "Class details saved successfully!");
     } catch (err: any) {
-      showToast("error", err.message || "Failed to save masterclass details.");
+      showToast("error", err.message || "Failed to save class details.");
     } finally {
       setSavingDetails(false);
     }
@@ -453,9 +453,9 @@ export function AdminCourseWorkspaceContent({
       });
       setDetailsForm((prev) => ({ ...prev, status: newStatus }));
       await loadData(true);
-      showToast("success", `Masterclass status updated to ${newStatus}`);
+      showToast("success", `Class status updated to ${newStatus}`);
     } catch (err: any) {
-      showToast("error", err.message || "Failed to update masterclass status.");
+      showToast("error", err.message || "Failed to update class status.");
     }
   };
 
@@ -480,7 +480,7 @@ export function AdminCourseWorkspaceContent({
         });
         await loadData(true);
       }
-      showToast("success", "Masterclass thumbnail uploaded successfully!");
+      showToast("success", "Class thumbnail uploaded successfully!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to upload cover image.");
     } finally {
@@ -493,15 +493,15 @@ export function AdminCourseWorkspaceContent({
       isOpen: true,
       title: `Delete "${course?.title}"?`,
       description:
-        "This will permanently delete this masterclass, all its modules, lessons, study materials, student enrollments, and associated records. This action cannot be undone.",
+        "This will permanently delete this individual class, all its modules, lessons, study materials, student enrollments, and associated records. This action cannot be undone.",
       variant: "danger",
-      confirmText: "Delete Masterclass Permanently",
+      confirmText: "Delete Class Permanently",
       onConfirm: async () => {
         try {
           await callAdminApi({ action: "delete_course", courseId });
           router.push("/admin?tab=courses");
         } catch (err: any) {
-          showToast("error", err.message || "Failed to delete masterclass.");
+          showToast("error", err.message || "Failed to delete class.");
         }
       },
     });
@@ -875,7 +875,7 @@ export function AdminCourseWorkspaceContent({
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-600">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-        <h2 className="text-base font-bold text-slate-800">Loading Masterclass Workspace...</h2>
+        <h2 className="text-base font-bold text-slate-800">Loading Individual Class Workspace...</h2>
         <p className="text-xs text-slate-400 mt-1">Fetching curriculum, materials, and student rosters...</p>
       </div>
     );
@@ -888,9 +888,9 @@ export function AdminCourseWorkspaceContent({
           <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-black text-slate-900">Masterclass Not Found</h2>
+          <h2 className="text-lg font-black text-slate-900">Individual Class Not Found</h2>
           <p className="text-xs text-slate-500">
-            {bannerMsg?.text || "The requested masterclass could not be located in the platform database."}
+            {bannerMsg?.text || "The requested class could not be located in the platform database."}
           </p>
           <Link
             href="/admin?tab=courses"
@@ -912,7 +912,7 @@ export function AdminCourseWorkspaceContent({
   const totalTokensEarned = (course?.price || 0) * (course?.enrollments?.length || 0);
 
   const tabList: { id: Tab; label: string; count?: number; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "overview", label: isNewCourse ? "Masterclass Setup & Details" : "Masterclass Details", icon: BookOpen },
+    { id: "overview", label: isNewCourse ? "Individual Class Setup & Details" : "Class Details", icon: BookOpen },
     { id: "curriculum", label: "Curriculum & Syllabus", count: isNewCourse ? undefined : totalLessons, icon: Layers3 },
     { id: "materials", label: "Study Materials", count: isNewCourse ? undefined : course?.materials?.length, icon: FileText },
     { id: "students", label: "Enrolled Students", count: isNewCourse ? undefined : course?.enrollments?.length, icon: Users },
@@ -947,7 +947,7 @@ export function AdminCourseWorkspaceContent({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase tracking-widest font-black text-blue-600">
-                  {isNewCourse ? "New Masterclass Creator" : "Masterclass Workspace"}
+                  {isNewCourse ? "New Individual Class Creator" : "Individual Class Workspace"}
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="text-[11px] font-mono font-bold text-slate-500">
@@ -955,7 +955,7 @@ export function AdminCourseWorkspaceContent({
                 </span>
               </div>
               <h1 className="font-black text-base sm:text-lg text-slate-900 truncate leading-tight">
-                {detailsForm.title || (isNewCourse ? "Create New Masterclass" : course?.title)}
+                {detailsForm.title || (isNewCourse ? "Create New Individual Class" : course?.title)}
               </h1>
             </div>
           </div>
@@ -968,7 +968,7 @@ export function AdminCourseWorkspaceContent({
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl h-9 px-4 gap-1.5 shadow-xs cursor-pointer"
               >
                 {savingDetails ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                <span>{savingDetails ? "Creating Masterclass..." : "Create Masterclass"}</span>
+                <span>{savingDetails ? "Creating Individual Class..." : "Create Individual Class"}</span>
               </Button>
             ) : (
               <>
@@ -977,7 +977,7 @@ export function AdminCourseWorkspaceContent({
                   value={course?.status || "PUBLISHED"}
                   onChange={(e) => handleQuickStatusChange(e.target.value)}
                   className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusBadgeColor}`}
-                  title="Click to quickly change masterclass status"
+                  title="Click to quickly change class status"
                 >
                   <option value="PUBLISHED">Published</option>
                   <option value="DRAFT">Draft</option>
@@ -994,15 +994,15 @@ export function AdminCourseWorkspaceContent({
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 transition-colors"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="hidden sm:inline">Preview Masterclass</span>
+                    <span className="hidden sm:inline">Preview Class</span>
                   </Link>
                 )}
 
-                {/* Delete Masterclass Button */}
+                {/* Delete Individual Class Button */}
                 <button
                   onClick={handleDeleteCourse}
                   className="h-9 w-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer"
-                  title="Delete this masterclass permanently"
+                  title="Delete this class permanently"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -1137,12 +1137,12 @@ export function AdminCourseWorkspaceContent({
             })}
           </div>
 
-          {/* Tab 1: Masterclass Details & Settings */}
+          {/* Tab 1: Individual Class Details & Settings */}
           {activeTab === "overview" && (
             <form onSubmit={handleSaveDetails} className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Masterclass Identification & Core Details</h2>
+                  <h2 className="text-lg font-black text-slate-900">Individual Class Identification & Core Details</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Configure official academic metadata, pricing, tutor assignment, and branding.
                   </p>
@@ -1153,21 +1153,21 @@ export function AdminCourseWorkspaceContent({
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-5 rounded-xl gap-2 shadow-xs cursor-pointer shrink-0"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? (isNewCourse ? "Creating Masterclass..." : "Saving Details...") : (isNewCourse ? "Create Masterclass & Continue" : "Save All Changes")}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Individual Class..." : "Saving Details...") : (isNewCourse ? "Create Individual Class & Continue" : "Save All Changes")}</span>
                 </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {/* Masterclass Title */}
+                {/* Individual Class Title */}
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
-                    Masterclass Title <span className="text-red-500">*</span>
+                    Individual Class Title <span className="text-red-500">*</span>
                   </label>
                   <Input
                     required
                     value={detailsForm.title}
                     onChange={(e) => setDetailsForm({ ...detailsForm, title: e.target.value })}
-                    placeholder="e.g. Pure Mathematics & Mechanics Masterclass"
+                    placeholder="e.g. Pure Mathematics & Mechanics Core Class"
                     className="h-10 text-xs rounded-xl"
                   />
                 </div>
@@ -1263,11 +1263,11 @@ export function AdminCourseWorkspaceContent({
                     <option value="PUBLISHED">Published (Available to Students)</option>
                     <option value="DRAFT">Draft (Under Preparation)</option>
                     <option value="PENDING_REVIEW">Pending Review</option>
-                    <option value="ARCHIVED">Archived (Retired Masterclass)</option>
+                    <option value="ARCHIVED">Archived (Retired Class)</option>
                   </select>
                 </div>
 
-                {/* Featured Masterclass Checkbox */}
+                {/* Featured Class Checkbox */}
                 <div className="space-y-1.5 flex flex-col justify-end">
                   <label className="flex items-center gap-2.5 p-2.5 border border-slate-200 rounded-xl bg-slate-50/50 cursor-pointer hover:bg-slate-100/50 transition-colors">
                     <input
@@ -1279,7 +1279,7 @@ export function AdminCourseWorkspaceContent({
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                        Featured Masterclass
+                        Featured Class
                       </span>
                       <span className="text-[10px] text-slate-500 block">Promote on student dashboard showcase</span>
                     </div>
@@ -1288,7 +1288,7 @@ export function AdminCourseWorkspaceContent({
 
                 {/* Short Subtitle */}
                 <div className="md:col-span-3 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Masterclass Tagline / Short Summary</label>
+                  <label className="text-xs font-bold text-slate-700">Class Tagline / Short Summary</label>
                   <Input
                     value={detailsForm.subtitle}
                     onChange={(e) => setDetailsForm({ ...detailsForm, subtitle: e.target.value })}
@@ -1297,15 +1297,15 @@ export function AdminCourseWorkspaceContent({
                   />
                 </div>
 
-                {/* Masterclass Cover / Thumbnail */}
+                {/* Class Cover / Thumbnail */}
                 <div className="md:col-span-3 space-y-2">
-                  <label className="text-xs font-bold text-slate-700 block">Masterclass Cover Thumbnail</label>
+                  <label className="text-xs font-bold text-slate-700 block">Class Cover Thumbnail</label>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-slate-200 rounded-2xl bg-slate-50/40">
                     <div className="w-32 h-20 rounded-xl bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
                       {detailsForm.thumbnail ? (
                         <img
                           src={detailsForm.thumbnail}
-                          alt="Masterclass Cover"
+                          alt="Class Cover"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -1334,21 +1334,21 @@ export function AdminCourseWorkspaceContent({
                       <Input
                         value={detailsForm.thumbnail}
                         onChange={(e) => setDetailsForm({ ...detailsForm, thumbnail: e.target.value })}
-                        placeholder="https://example.com/masterclass-cover.jpg"
+                        placeholder="https://example.com/class-cover.jpg"
                         className="h-9 text-xs rounded-xl bg-white"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Full Masterclass Description */}
+                {/* Full Class Description */}
                 <div className="md:col-span-3 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Comprehensive Masterclass Syllabus Description</label>
+                  <label className="text-xs font-bold text-slate-700">Comprehensive Class Syllabus Description</label>
                   <textarea
                     rows={6}
                     value={detailsForm.description}
                     onChange={(e) => setDetailsForm({ ...detailsForm, description: e.target.value })}
-                    placeholder="Elaborate on masterclass prerequisites, learning objectives, exam board specifications, and weekly milestones..."
+                    placeholder="Elaborate on prerequisites, learning objectives, exam board specifications, and weekly milestones..."
                     className="w-full rounded-2xl border border-slate-200 p-4 text-xs font-medium leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   />
                 </div>
@@ -1361,7 +1361,7 @@ export function AdminCourseWorkspaceContent({
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-6 rounded-xl gap-2 shadow-xs cursor-pointer"
                 >
                   {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? (isNewCourse ? "Creating Masterclass..." : "Saving Details...") : (isNewCourse ? "Create Masterclass & Open Workspace" : "Save All Changes")}</span>
+                  <span>{savingDetails ? (isNewCourse ? "Creating Individual Class..." : "Saving Details...") : (isNewCourse ? "Create Individual Class & Open Workspace" : "Save All Changes")}</span>
                 </Button>
               </div>
             </form>
@@ -1375,10 +1375,10 @@ export function AdminCourseWorkspaceContent({
               </div>
               <div className="space-y-1.5">
                 <h3 className="font-bold text-base text-slate-900">
-                  Save Masterclass Details to Unlock {tabList.find((t) => t.id === activeTab)?.label}
+                  Save Class Details to Unlock {tabList.find((t) => t.id === activeTab)?.label}
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Fill in the masterclass specifications, title, and description in the Masterclass Details tab, then click <strong>Create Masterclass &amp; Open Workspace</strong> to activate the curriculum builder, study file uploads, student rosters, and live class scheduler.
+                  Fill in the class specifications, title, and description in the Class Details tab, then click <strong>Create Individual Class &amp; Open Workspace</strong> to activate the curriculum builder, study file uploads, student rosters, and live class scheduler.
                 </p>
               </div>
               <Button
@@ -1386,7 +1386,7 @@ export function AdminCourseWorkspaceContent({
                 onClick={() => setActiveTab("overview")}
                 className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold"
               >
-                Go to Masterclass Details Form
+                Go to Class Details Form
               </Button>
             </div>
           )}
@@ -1767,7 +1767,7 @@ export function AdminCourseWorkspaceContent({
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Masterclass Materials & Document Repository</h2>
+                  <h2 className="text-lg font-black text-slate-900">Class Materials & Document Repository</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Attach handouts, class slides, formula booklets, practice solution sets, and mock papers.
                   </p>
@@ -2304,7 +2304,7 @@ export function AdminCourseWorkspaceContent({
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Student Reviews & Academic Feedback</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Reviews submitted by enrolled learners who have taken or are currently enrolled in this masterclass.
+                    Reviews submitted by enrolled learners who have taken or are currently enrolled in this class.
                   </p>
                 </div>
               </div>
@@ -2400,7 +2400,7 @@ export default function AdminEditCourseWorkspacePage({
       fallback={
         <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-slate-600">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-          <h2 className="text-base font-bold text-slate-800">Loading Admin Masterclass Workspace...</h2>
+          <h2 className="text-base font-bold text-slate-800">Loading Admin Individual Class Workspace...</h2>
           <p className="text-xs text-slate-400 mt-1">Fetching curriculum, materials, and student rosters...</p>
         </div>
       }

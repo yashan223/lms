@@ -19,7 +19,7 @@ export const PLATFORM_METRICS: PlatformMetric[] = [
     growth: "Rank #1 Academy",
   },
   {
-    label: "Curriculum Masterclasses",
+    label: "Curriculum Individual Classes",
     value: "3,800+",
     subtext: "Unit-by-Unit Topic Walkthroughs",
     growth: "2015-2026 Curriculum",
@@ -79,7 +79,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       "6 tokens (1 token = 1 hour learning credit)",
       "Book 1-on-1 private tutoring with Senior Tutors",
-      "Join live interactive syllabus masterclasses",
+      "Join live interactive syllabus individual classes",
       "Instant token crediting to student wallet",
       "Full flexibility: student decides when & how to spend",
       "Access to course materials & study notes",
@@ -98,7 +98,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       "16 tokens (1 token = 1 hour learning credit)",
       "Weekly 1-on-1 sessions with Tutors",
-      "Access all subject live seminar masterclasses",
+      "Access all subject live seminar individual classes",
       "Priority scheduling & reschedule flexibility",
       "Comprehensive worked past paper clinics",
       "Direct encrypted messaging with Subject Tutors",
@@ -130,7 +130,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "faq-1",
     category: "General",
     question: "How does the token and hours purchase system work?",
-    answer: "You purchase a bundle of tokens (6h, 16h, or 24h packs). Each token equals 1 hour of learning credit. As a student, you have complete freedom to decide how and when to spend your hours—whether on 1-on-1 private tutoring with tutors, live interactive masterclasses, or exam revision.",
+    answer: "You purchase a bundle of tokens (6h, 16h, or 24h packs). Each token equals 1 hour of learning credit. As a student, you have complete freedom to decide how and when to spend your hours—whether on 1-on-1 private tutoring with tutors, live interactive individual classes, or exam revision.",
   },
   {
     id: "faq-2",
@@ -160,6 +160,6 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "faq-6",
     category: "Academic",
     question: "What qualifications are covered on EduPulse?",
-    answer: "We specialize in London A/L (IAL AS & A2), London O/L (IGCSE), GCE Advanced Levels, and specialized subject curriculum masterclasses.",
+    answer: "We specialize in London A/L (IAL AS & A2), London O/L (IGCSE), GCE Advanced Levels, and specialized subject curriculum individual classes.",
   },
 ];

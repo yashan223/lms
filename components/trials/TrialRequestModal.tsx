@@ -276,7 +276,7 @@ export function TrialRequestModal({
               <p className="text-xs text-slate-500">
                 {step === "SETUP_AVAILABILITY"
                   ? "Required before booking consultations or classes"
-                  : "1-on-1 Online Consultation & Syllabus Masterclass"}
+                  : "1-on-1 Online Consultation & Syllabus Individual Class"}
               </p>
             </div>
           </div>
@@ -305,7 +305,7 @@ export function TrialRequestModal({
                     Step 1: Set Up Your Study Hours First
                   </h4>
                   <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                    Tutors schedule 1-on-1 masterclasses and trials around your routine. Choose when you are free to study to immediately unlock trial booking!
+                    Tutors schedule 1-on-1 individual classes and trials around your routine. Choose when you are free to study to immediately unlock trial booking!
                   </p>
                 </div>
               </div>
@@ -400,7 +400,7 @@ export function TrialRequestModal({
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Subject / Course:</span>
                 <span className="font-bold text-slate-900">
-                  {createdTrial.course?.title || selectedCourse?.title || "London A/L Masterclass"}
+                  {createdTrial.course?.title || selectedCourse?.title || "London A/L Individual Class"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -482,7 +482,7 @@ export function TrialRequestModal({
               </div>
               <div className="flex items-center justify-between gap-2 pt-0.5">
                 <div className="font-extrabold text-xs text-slate-900 leading-snug">
-                  {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Masterclass")}
+                  {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Individual Class")}
                 </div>
                 {selectedCourse?.subjectCode && (
                   <Badge variant="outline" className="text-[10px] font-bold bg-white text-blue-700 border-blue-200 shrink-0">

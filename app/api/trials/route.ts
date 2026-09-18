@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
       }
 
       let resolvedTutorId = tutorId || null;
-      let courseTitle = "London A/L Tutorial Masterclass";
+      let courseTitle = "London A/L Tutorial Individual Class";
       let courseSubjectCode = "";
       if (courseId) {
         const course = await prisma.course.findUnique({
@@ -366,11 +366,11 @@ export async function POST(request: NextRequest) {
 
       // If confirming, create or update the calendar event
       if (targetStatus === TrialStatus.CONFIRMED) {
-        const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Masterclass";
+        const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Individual Class";
         const courseCode = updatedTrial.course?.subjectCode || "";
         const eventTitle = `30-Min Free Trial: ${courseTitle} (${updatedTrial.studentName})`;
         const eventDescription = [
-          `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
+          `🎯 30-Minute 1-on-1 Online Free Trial Session with Tutor.`,
           `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
           `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
           `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
@@ -633,11 +633,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Masterclass";
+      const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updatedTrial.course?.subjectCode || "";
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
       const eventDescription = [
-        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
         `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,

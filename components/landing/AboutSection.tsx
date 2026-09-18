@@ -35,7 +35,7 @@ export function AboutSection() {
     {
       icon: School,
       title: "Blended Practical Labs",
-      description: "Full laboratory video walkthroughs with error analysis, experimental methods, and graph plotting masterclasses.",
+      description: "Full laboratory video walkthroughs with error analysis, experimental methods, and graph plotting individual classes.",
       badge: "Practical Mastery",
       badgeColor: "bg-emerald-100 text-emerald-800",
     },

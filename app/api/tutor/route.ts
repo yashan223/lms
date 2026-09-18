@@ -467,7 +467,7 @@ export async function POST(request: NextRequest) {
       let meetLink = getSafeMeetingLink(meetingLink);
 
       const fullDescription = [
-        description?.trim() || "Live curriculum masterclass with Senior Tutor.",
+        description?.trim() || "Live curriculum individual class with Tutor.",
         `\n\nGoogle Meet Classroom: ${meetLink}`,
       ]
         .join("")
@@ -710,11 +710,11 @@ export async function POST(request: NextRequest) {
       });
 
       // Create calendar event so student sees it on Timeline, Upcoming, and Calendar
-      const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Masterclass";
+      const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updatedTrial.course?.subjectCode || "";
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
       const eventDescription = [
-        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
         `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
@@ -882,12 +882,12 @@ export async function POST(request: NextRequest) {
         include: { course: true, tutor: true, student: true },
       });
 
-      const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Masterclass";
+      const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updatedTrial.course?.subjectCode || "";
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
       const link = updatedTrial.meetingLink || "https://meet.google.com/new";
       const eventDescription = [
-        `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
+        `🎯 30-Minute 1-on-1 Online Free Trial Session with Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,
         `Topic / Focus: ${updatedTrial.topic || "30-Min Free Trial & Syllabus Overview"}`,
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,

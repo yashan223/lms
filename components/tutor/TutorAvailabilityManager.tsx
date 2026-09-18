@@ -295,7 +295,7 @@ export function TutorAvailabilityManager({
             </Badge>
           </div>
           <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Configure your available teaching times for live seminars, masterclasses, and 1-on-1 free trial
+            Configure your available teaching times for live seminars, individual classes, and 1-on-1 free trial
             consultations. The LMS cross-references all your scheduled classes to ensure you are never double-booked.
           </p>
         </div>

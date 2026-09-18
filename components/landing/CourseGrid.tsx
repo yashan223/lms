@@ -93,10 +93,10 @@ export function CourseGrid() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#0c2461] tracking-tight mb-3">
-              London A/L & O/L Subject Masterclasses
+              London A/L & O/L Subject Individual Classes
             </h2>
             <p className="text-sm sm:text-base text-slate-600">
-              Unit-by-unit syllabus coverage, comprehensive tuition walkthroughs, and structured topic masterclasses.
+              Unit-by-unit syllabus coverage, comprehensive tuition walkthroughs, and structured topic individual classes.
             </p>
           </div>
 

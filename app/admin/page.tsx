@@ -106,9 +106,9 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   adjust_tokens: { label: "Adjust Token Balance", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
   enroll_user: { label: "Enroll Student in Course", icon: UserCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   unenroll_user: { label: "Unenroll Student", icon: Users, color: "text-orange-600 bg-orange-50 border-orange-200" },
-  create_course: { label: "Create Masterclass", icon: PlusCircle, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  update_course: { label: "Update Masterclass", icon: Edit3, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  delete_course: { label: "Delete Masterclass", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  create_course: { label: "Create Individual Class", icon: PlusCircle, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  update_course: { label: "Update Individual Class", icon: Edit3, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  delete_course: { label: "Delete Individual Class", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
   add_module: { label: "Add Syllabus Module", icon: FolderPlus, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
   delete_module: { label: "Delete Syllabus Module", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
   add_lesson: { label: "Add Lesson Video", icon: PlayCircle, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
@@ -122,7 +122,7 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   reject_class: { label: "Decline Live Class Proposal", icon: X, color: "text-red-600 bg-red-50 border-red-200" },
   approve_trial: { label: "Approve 1-on-1 Free Trial", icon: CalendarCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   reject_trial: { label: "Decline Free Trial Request", icon: X, color: "text-red-600 bg-red-50 border-red-200" },
-  approve_course: { label: "Publish Masterclass", icon: ShieldCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  approve_course: { label: "Publish Individual Class", icon: ShieldCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   reject_course: { label: "Return Course to Draft", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
   update_bundles: { label: "Update Pricing Packages", icon: Coins, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
   clear_all_data: { label: "Wipe LMS Platform Data", icon: Trash2, color: "text-rose-600 bg-rose-50 border-rose-200" },
@@ -1582,9 +1582,9 @@ export default function AdminDashboardPage() {
     { id: "approvals", label: "Tutor Approvals", icon: ShieldCheck },
     { id: "live_classes", label: "Live Classes & Meets", icon: Video },
     { id: "users", label: "User Management", icon: Users },
-    { id: "courses", label: "Masterclass Management", icon: BookOpen },
+    { id: "courses", label: "Class Management", icon: BookOpen },
     { id: "chats", label: "Chat Conversations", icon: MessageSquareLock },
-    { id: "finances", label: "Masterclass Purchases & Revenue", icon: DollarSign },
+    { id: "finances", label: "Class Purchases & Revenue", icon: DollarSign },
     { id: "pricing", label: "Pricing & Token Bundles", icon: Coins },
     { id: "audit_log", label: "Audit Log & History", icon: FileText },
   ];
@@ -1758,7 +1758,7 @@ export default function AdminDashboardPage() {
                   className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 text-blue-100" />
-                  <span>+ Create Masterclass</span>
+                  <span>+ Create Individual Class</span>
                 </Button>
               )}
 
@@ -1841,7 +1841,7 @@ export default function AdminDashboardPage() {
                     <span className="text-xs font-medium text-blue-600">Active Syllabi</span>
                     <BookOpen className="w-4 h-4 text-blue-500" />
                   </div>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{coursesList.length} Masterclasses</div>
+                  <div className="text-2xl font-semibold tracking-tight text-slate-800">{coursesList.length} Individual Classes</div>
                   <div className="text-[11px] text-blue-600 font-semibold">{coursesList.reduce((acc, c) => acc + (c.modules?.length || 0), 0)} Total Modules</div>
                 </div>
 
@@ -1933,7 +1933,7 @@ export default function AdminDashboardPage() {
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {upcomingCount} Sessions
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">Classes & Masterclasses</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Classes & Sessions</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -2520,7 +2520,7 @@ export default function AdminDashboardPage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-slate-500">Total Masterclasses</span>
+                  <span className="text-xs font-medium text-slate-500">Total Individual Classes</span>
                   <div className="text-2xl font-black tracking-tight text-slate-900">{coursesList.length} Units</div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -2540,7 +2540,7 @@ export default function AdminDashboardPage() {
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {tutorList.length} Tutors
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">Conducting Masterclasses</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Conducting Individual Classes</div>
                 </div>
               </div>
 
@@ -2555,7 +2555,7 @@ export default function AdminDashboardPage() {
                   }`}
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>Masterclasses Grid ({filteredCourses.length})</span>
+                  <span>Individual Classes Grid ({filteredCourses.length})</span>
                 </button>
 
                 <button
@@ -2578,7 +2578,7 @@ export default function AdminDashboardPage() {
                     <div className="relative w-full sm:w-80">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <Input
-                        placeholder="Search masterclass title, code, or category..."
+                        placeholder="Search class title, code, or category..."
                         value={courseSearch}
                         onChange={(e) => setCourseSearch(e.target.value)}
                         className="pl-9 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-400"
@@ -2591,7 +2591,7 @@ export default function AdminDashboardPage() {
                         className="w-full md:w-auto text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
                       >
                         <Plus className="w-4 h-4 text-blue-100" />
-                        <span>+ Create New Masterclass</span>
+                        <span>+ Create New Individual Class</span>
                       </Button>
                     </div>
                   </div>
@@ -2620,7 +2620,7 @@ export default function AdminDashboardPage() {
                             {course.subtitle || course.description}
                           </p>
 
-                          {/* Tutor Information on Masterclass Card */}
+                          {/* Tutor Information on Class Card */}
                           <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                             <Avatar className="w-6 h-6 border border-slate-200 shrink-0">
                               <AvatarImage src={course.tutor?.avatar} />
@@ -2657,14 +2657,14 @@ export default function AdminDashboardPage() {
                             className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 h-8 rounded-xl flex-1 cursor-pointer transition-colors shadow-2xs"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
-                            <span>Edit Masterclass & Content</span>
+                            <span>Edit Class & Content</span>
                           </Link>
 
                           <Link
                             href={`/courses/${course.slug}`}
                             target="_blank"
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
-                            title="Preview Public Masterclass Page"
+                            title="Preview Public Class Page"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
@@ -2672,7 +2672,7 @@ export default function AdminDashboardPage() {
                           <button
                             onClick={() => handleDeleteCourse(course)}
                             className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-                            title="Delete Masterclass"
+                            title="Delete Class"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -2703,7 +2703,7 @@ export default function AdminDashboardPage() {
                         className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 h-10 px-4 rounded-xl shadow-xs shadow-blue-500/20 inline-flex items-center justify-center cursor-pointer"
                       >
                         <Plus className="w-4 h-4 text-blue-100" />
-                        <span>+ Assign New Masterclass</span>
+                        <span>+ Assign New Individual Class</span>
                       </Link>
                     </div>
                   </div>
@@ -2770,7 +2770,7 @@ export default function AdminDashboardPage() {
                               <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-center">
                                 <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100">
                                   <div className="text-sm font-black text-blue-900">{tutorCourses.length}</div>
-                                  <div className="text-[10px] text-blue-700 font-medium">Masterclasses</div>
+                                  <div className="text-[10px] text-blue-700 font-medium">Classes</div>
                                 </div>
                                 <div className="p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
                                   <div className="text-sm font-black text-emerald-900">{tutorLiveClasses.length}</div>
@@ -2778,10 +2778,10 @@ export default function AdminDashboardPage() {
                                 </div>
                               </div>
 
-                              {/* Masterclasses List */}
+                              {/* Individual Classes List */}
                               <div className="space-y-1.5 pt-1">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                  Masterclasses Taught:
+                                  Individual Classes Taught:
                                 </span>
                                 {tutorCourses.length > 0 ? (
                                   <div className="flex flex-wrap gap-1">
@@ -2797,7 +2797,7 @@ export default function AdminDashboardPage() {
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-[11px] text-slate-400 italic">No masterclasses created yet.</p>
+                                  <p className="text-[11px] text-slate-400 italic">No classes created yet.</p>
                                 )}
                               </div>
                             </div>
@@ -2808,7 +2808,7 @@ export default function AdminDashboardPage() {
                                 className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 h-8 rounded-xl cursor-pointer transition-colors shadow-2xs"
                               >
                                 <Plus className="w-3.5 h-3.5" />
-                                <span>+ New Masterclass</span>
+                                <span>+ New Class</span>
                               </Link>
 
                               <button
@@ -3709,7 +3709,7 @@ export default function AdminDashboardPage() {
                       : [
                           `${plan.tokens} tokens (1 token = 1 hour learning credit)`,
                           "Book 1-on-1 private tutoring with Senior Tutors",
-                          "Join live interactive syllabus masterclasses",
+                          "Join live interactive syllabus individual classes",
                           "Instant token crediting to student wallet",
                           "Full flexibility: student decides when & how to spend",
                           "Access to course materials & study notes",
@@ -3989,7 +3989,7 @@ export default function AdminDashboardPage() {
                               </div>
                               <h4 className="font-bold text-sm text-slate-900">{cls.title}</h4>
                               <p className="text-xs text-slate-500">
-                                Course: <strong>{cls.course?.title || "London A/L Tutorial Masterclass"}</strong>
+                                Course: <strong>{cls.course?.title || "London A/L Tutorial Individual Class"}</strong>
                               </p>
                             </div>
                           </div>
@@ -4239,7 +4239,7 @@ export default function AdminDashboardPage() {
                             ) : (
                               <CheckCircle2 className="w-3.5 h-3.5" />
                             )}
-                            <span>Approve & Publish Masterclass</span>
+                            <span>Approve & Publish Class</span>
                           </Button>
                         </div>
                       </div>
@@ -6274,7 +6274,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-rose-800">
                         <li>All student accounts, tutors, and profiles</li>
-                        <li>All masterclass courses, modules, lessons & materials</li>
+                        <li>All individual class courses, modules, lessons & materials</li>
                         <li>All course enrollments, student progress & certificates</li>
                         <li>All live Google Meet events, schedules & bookings</li>
                         <li>All 1-on-1 trial consultation requests</li>

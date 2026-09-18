@@ -51,7 +51,7 @@ export function FaqSection() {
               Ready to excel in your London A/L & O/L studies?
             </h3>
             <p className="text-blue-100 text-xs sm:text-sm leading-relaxed">
-              Explore syllabus units, download study handbooks, and join live masterclasses led by senior tutors.
+              Explore syllabus units, download study handbooks, and join live individual classes led by senior tutors.
             </p>
 
             <div className="pt-4 flex flex-wrap items-center justify-center gap-3">

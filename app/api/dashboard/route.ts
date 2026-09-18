@@ -302,7 +302,7 @@ export async function GET(request: NextRequest) {
         );
 
         if (!alreadyInTimeline) {
-          const courseTitle = trial.course?.title || "London A/L Tutorial Masterclass";
+          const courseTitle = trial.course?.title || "London A/L Tutorial Individual Class";
           const courseCode = trial.course?.subjectCode || "";
           const eventTitle = `1-on-1 Trial: ${courseTitle} (${trial.studentName || user.name})`;
           const link = trial.meetingLink || "https://meet.google.com/new";

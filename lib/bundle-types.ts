@@ -30,7 +30,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     features: [
       "6 tokens (1 token = 1 hour learning credit)",
       "Book 1-on-1 private tutoring with Senior Tutors",
-      "Join live interactive syllabus masterclasses",
+      "Join live interactive syllabus individual classes",
       "Instant token crediting to student wallet",
       "Full flexibility: student decides when & how to spend",
       "Access to course materials & study notes",
@@ -52,7 +52,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     features: [
       "16 tokens (1 token = 1 hour learning credit)",
       "Weekly 1-on-1 sessions with Tutors",
-      "Access all subject live seminar masterclasses",
+      "Access all subject live seminar individual classes",
       "Priority scheduling & reschedule flexibility",
       "Comprehensive worked past paper clinics",
       "Direct encrypted messaging with Subject Tutors",

@@ -537,7 +537,7 @@ function RescheduleContent() {
                   <span>{trial.course?.subjectCode || "LONDON A/L"}</span>
                 </div>
                 <h3 className="font-extrabold text-sm text-slate-900 leading-snug">
-                  {trial.course?.title || "London A/L Masterclass"}
+                  {trial.course?.title || "London A/L Individual Class"}
                 </h3>
                 {trial.topic && (
                   <p className="text-xs text-slate-500 italic pt-1">
@@ -560,7 +560,7 @@ function RescheduleContent() {
                   >
                     {allTrials.map((tr) => (
                       <option key={tr.id} value={tr.id}>
-                        {tr.course?.title || "London A/L Masterclass"} (
+                        {tr.course?.title || "London A/L Individual Class"} (
                         {new Date(tr.preferredDate).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",

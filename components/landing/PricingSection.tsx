@@ -73,7 +73,7 @@ export function PricingSection({
             </span>
           </h2>
           <p className="text-sm sm:text-base text-slate-600 mb-4 max-w-2xl mx-auto">
-            Purchase token packs based on your study goals. <strong>1 Token = 1 Hour</strong> of learning credit. You decide how to spend your hours across 1-on-1 private tutoring, interactive masterclasses, and past paper clinics.
+            Purchase token packs based on your study goals. <strong>1 Token = 1 Hour</strong> of learning credit. You decide how to spend your hours across 1-on-1 private tutoring, interactive individual classes, and past paper clinics.
           </p>
         </div>
 
@@ -87,7 +87,7 @@ export function PricingSection({
               : [
                   `${plan.tokens} tokens (1 token = 1 hour learning credit)`,
                   "Book 1-on-1 private tutoring with Senior Tutors",
-                  "Join live interactive syllabus masterclasses",
+                  "Join live interactive syllabus individual classes",
                   "Instant token crediting to student wallet",
                   "Full flexibility: student decides when & how to spend",
                   "Access to course materials & study notes",

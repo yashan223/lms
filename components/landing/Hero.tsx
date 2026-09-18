@@ -86,7 +86,7 @@ export function Hero() {
                 PulseEDU Global
               </h1>
               <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-                Comprehensive curriculum coverage. Unit-by-unit topic masterclasses, downloadable study materials, and past paper video vaults.
+                Comprehensive curriculum coverage. Unit-by-unit topic individual classes, downloadable study materials, and past paper video vaults.
               </p>
             </div>
 

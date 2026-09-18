@@ -581,7 +581,7 @@ export async function POST(request: NextRequest) {
         data: {
           title,
           slug: generatedSlug,
-          subtitle: subtitle || "Official Academic Curriculum Masterclass.",
+          subtitle: subtitle || "Official Academic Curriculum Individual Class.",
           description: description || "Comprehensive lesson walkthroughs, unit proofs, and coursework solutions.",
           category: category || "School of Mathematics & Computing",
           subjectCode: subjectCode || "MATH-101",
@@ -599,7 +599,7 @@ export async function POST(request: NextRequest) {
                 lessons: {
                   create: [
                     { title: "Lesson 1: Syllabus Breakdown & Unit Overview", durationMin: 25, position: 1, isFreePreview: true },
-                    { title: "Lesson 2: Core Proofs & Method Masterclass", durationMin: 35, position: 2, isFreePreview: true },
+                    { title: "Lesson 2: Core Proofs & Methods", durationMin: 35, position: 2, isFreePreview: true },
                   ],
                 },
               },
@@ -975,7 +975,7 @@ export async function POST(request: NextRequest) {
         include: { course: true, tutor: true, student: true },
       });
 
-      const courseTitle = updated.course?.title || "London A/L Tutorial Masterclass";
+      const courseTitle = updated.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updated.course?.subjectCode || "";
       const eventTitle = `30-Min Free Trial: ${courseTitle} (${updated.studentName})`;
       const link = updated.meetingLink || "https://meet.google.com/new";

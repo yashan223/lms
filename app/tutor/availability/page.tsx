@@ -355,7 +355,7 @@ function TutorAvailabilityContent() {
                 Availability &amp; Consultation Timeslots
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-                Set and configure multiple available times for live classes, academy masterclasses, and 1-on-1 free trial consultations.
+                Set and configure multiple available times for live classes, academy individual classes, and 1-on-1 free trial consultations.
                 The system automatically checks your existing booked classes and trial sessions to ensure zero double-booking.
               </p>
             </div>

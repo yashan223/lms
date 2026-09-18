@@ -1101,7 +1101,7 @@ export default function CourseDetailPage({
         isOpen={showTrialModal}
         onClose={() => setShowTrialModal(false)}
         initialCourseId={course?.id}
-        initialTutorId={course?.instructorId}
+        initialTutorId={course?.instructorId || (course as any)?.tutorId || (course as any)?.instructor?.id}
         allCourses={course ? [course] : []}
       />
 

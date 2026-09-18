@@ -18,6 +18,7 @@ import {
   Moon,
   CalendarDays,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,13 @@ interface TrialRequestModalProps {
     title: string;
     slug?: string;
     subjectCode?: string | null;
+    tutorId?: string;
+    tutor?: {
+      id: string;
+      name: string;
+      headline?: string | null;
+      avatar?: string | null;
+    } | null;
     instructor?: {
       id: string;
       name: string;
@@ -73,6 +81,14 @@ export function TrialRequestModal({
   const [savingAvailability, setSavingAvailability] = useState(false);
   const [studentAvailabilities, setStudentAvailabilities] = useState<any[]>([]);
   const [availSuccessMsg, setAvailSuccessMsg] = useState<string | null>(null);
+
+  const [trialStats, setTrialStats] = useState<{
+    totalUsed: number;
+    maxAllowed: number;
+    remaining: number;
+    bookedTutorIds: string[];
+    isMaxReached: boolean;
+  } | null>(null);
 
   const [courseId, setCourseId] = useState(initialCourseId || "");
   const [preferredDate, setPreferredDate] = useState("");
@@ -160,6 +176,35 @@ export function TrialRequestModal({
           setCheckingAvailability(false);
           fetchTutorSlots();
         });
+
+      // Check student trial stats & booked tutors
+      const trialsQuery = currentUser?.id ? `?studentId=${currentUser.id}` : "";
+      fetch(`/api/trials${trialsQuery}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.trialStats) {
+            setTrialStats(d.trialStats);
+          } else if (Array.isArray(d.trials)) {
+            const active = d.trials.filter(
+              (t: any) => t.status !== "CANCELLED" && t.status !== "REJECTED"
+            );
+            const booked = Array.from(
+              new Set(
+                active
+                  .map((t: any) => t.tutorId || t.course?.tutorId || t.course?.tutor?.id || t.course?.instructor?.id)
+                  .filter(Boolean)
+              )
+            ) as string[];
+            setTrialStats({
+              totalUsed: active.length,
+              maxAllowed: 5,
+              remaining: Math.max(0, 5 - active.length),
+              bookedTutorIds: booked,
+              isMaxReached: active.length >= 5,
+            });
+          }
+        })
+        .catch(() => {});
     }
   }, [isOpen, initialCourseId, allCourses, courseId, initialTutorId, currentUser]);
 
@@ -205,9 +250,35 @@ export function TrialRequestModal({
   if (!isOpen) return null;
 
   const selectedCourse = allCourses.find((c) => c.id === courseId);
+  const currentTutorId =
+    initialTutorId ||
+    selectedCourse?.instructor?.id ||
+    (selectedCourse as any)?.tutorId ||
+    (selectedCourse as any)?.tutor?.id;
+  const currentTutorName =
+    selectedCourse?.instructor?.name ||
+    (selectedCourse as any)?.tutor?.name ||
+    "this tutor";
+
+  const isCurrentTutorBooked = Boolean(
+    currentTutorId && trialStats?.bookedTutorIds?.includes(currentTutorId)
+  );
+  const isMaxTrialsReached = Boolean(
+    trialStats?.isMaxReached || (trialStats && trialStats.totalUsed >= 5)
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isMaxTrialsReached) {
+      setError("You have reached your maximum limit of 5 free trial sessions across different tutors.");
+      return;
+    }
+
+    if (isCurrentTutorBooked) {
+      setError(`You have already requested a free trial session with ${currentTutorName}. Each student can book up to 5 trials, but only 1 trial per tutor.`);
+      return;
+    }
 
     if (!preferredDate) {
       setError("Please select a preferred date and time for your free trial session.");
@@ -224,7 +295,7 @@ export function TrialRequestModal({
         body: JSON.stringify({
           action: "request_trial",
           courseId: courseId || null,
-          tutorId: initialTutorId || selectedCourse?.instructor?.id || null,
+          tutorId: currentTutorId || null,
           studentId: currentUser?.id || null,
           studentName: currentUser?.name || null,
           studentEmail: currentUser?.email || null,
@@ -245,6 +316,18 @@ export function TrialRequestModal({
       }
 
       setCreatedTrial(data.trial);
+      setTrialStats((prev) => {
+        if (!prev) return null;
+        const newBooked = currentTutorId ? Array.from(new Set([...prev.bookedTutorIds, currentTutorId])) : prev.bookedTutorIds;
+        const newUsed = prev.totalUsed + 1;
+        return {
+          totalUsed: newUsed,
+          maxAllowed: 5,
+          remaining: Math.max(0, 5 - newUsed),
+          bookedTutorIds: newBooked,
+          isMaxReached: newUsed >= 5,
+        };
+      });
       if (onSuccess) {
         onSuccess(data.trial);
       }
@@ -269,14 +352,30 @@ export function TrialRequestModal({
                 <h3 className="font-bold text-base text-slate-900">
                   {step === "SETUP_AVAILABILITY" ? "Configure Your Study Hours" : "Request a 30-Min Free Trial"}
                 </h3>
-                <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border-emerald-200">
-                  {step === "SETUP_AVAILABILITY" ? "Step 1 of 2" : "100% Free"}
-                </Badge>
+                {step === "SETUP_AVAILABILITY" ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border-emerald-200">
+                    Step 1 of 2
+                  </Badge>
+                ) : isMaxTrialsReached ? (
+                  <Badge className="bg-red-100 text-red-800 text-[10px] font-extrabold border-red-200">
+                    5 of 5 Used
+                  </Badge>
+                ) : trialStats ? (
+                  <Badge className="bg-blue-100 text-blue-800 text-[10px] font-extrabold border-blue-200">
+                    Trial {trialStats.totalUsed + 1} of 5
+                  </Badge>
+                ) : (
+                  <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border-emerald-200">
+                    100% Free
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-slate-500">
                 {step === "SETUP_AVAILABILITY"
                   ? "Required before booking consultations or classes"
-                  : "1-on-1 Online Consultation & Syllabus Individual Class"}
+                  : isMaxTrialsReached
+                  ? "Maximum limit reached • 5 free trials per student"
+                  : "Up to 5 free trials across different tutors (1 per tutor)"}
               </p>
             </div>
           </div>
@@ -425,6 +524,18 @@ export function TrialRequestModal({
               </div>
             </div>
 
+            {trialStats && (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center justify-between">
+                <span className="font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  Trial {trialStats.totalUsed} of 5 Booked
+                </span>
+                <span className="text-[11px] text-emerald-800 font-bold">
+                  {trialStats.remaining} trial{trialStats.remaining === 1 ? "" : "s"} left with other tutors
+                </span>
+              </div>
+            )}
+
             <p className="text-[11px] text-slate-500 bg-blue-50/70 border border-blue-100 rounded-xl p-3 text-left">
               💡 <strong>Next Step:</strong> As soon as your tutor accepts or confirms the time, you will receive an in-app notification and the Google Meet room link will appear on your Academic Dashboard.
             </p>
@@ -474,25 +585,95 @@ export function TrialRequestModal({
               </div>
             )}
 
-            {/* Exact Selected Subject / Course Display */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-1">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                <span>Selected Subject / Course</span>
-              </div>
-              <div className="flex items-center justify-between gap-2 pt-0.5">
-                <div className="font-extrabold text-xs text-slate-900 leading-snug">
-                  {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Individual Class")}
+            {/* Trial Limit Notice Banners */}
+            {isMaxTrialsReached ? (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-red-800">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>Maximum 5 Free Trials Used</span>
                 </div>
-                {selectedCourse?.subjectCode && (
-                  <Badge variant="outline" className="text-[10px] font-bold bg-white text-blue-700 border-blue-200 shrink-0">
-                    {selectedCourse.subjectCode}
-                  </Badge>
+                <p className="text-[11px] text-red-700 leading-relaxed">
+                  You have already used all 5 of your free trial sessions across different tutors. To book more 1-on-1 classes, you can enroll or purchase session token packages.
+                </p>
+              </div>
+            ) : isCurrentTutorBooked ? (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-amber-800">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>1 Trial Per Tutor Limit</span>
+                </div>
+                <p className="text-[11px] text-amber-800/90 leading-relaxed">
+                  You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {allCourses.length > 1 ? "Please select a different course or tutor below." : "Please select another tutor from the course catalog."}
+                </p>
+              </div>
+            ) : trialStats && (
+              <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/70 flex items-center justify-between text-xs text-blue-900">
+                <span className="font-medium flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  Free Trial <strong>{trialStats.totalUsed + 1} of 5</strong>
+                </span>
+                <span className="text-[11px] text-blue-700 font-bold">
+                  {trialStats.remaining} remaining • 1 per tutor
+                </span>
+              </div>
+            )}
+
+            {/* Subject / Course Selection or Display */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Selected Subject / Course</span>
+                </span>
+                {allCourses.length > 1 && (
+                  <span className="text-[10px] text-blue-600 font-semibold">Change Subject</span>
                 )}
               </div>
-              {(selectedCourse?.instructor?.name || initialTutorId) && (
-                <div className="text-[11px] text-slate-500 pt-0.5">
-                  Tutor: <span className="font-semibold text-slate-700">{selectedCourse?.instructor?.name || "Senior Tutor"}</span>
+              {allCourses.length > 1 ? (
+                <select
+                  value={courseId}
+                  onChange={(e) => {
+                    const newCourseId = e.target.value;
+                    setCourseId(newCourseId);
+                    const newCourse = allCourses.find((c) => c.id === newCourseId);
+                    const newTutorId = newCourse?.instructor?.id || (newCourse as any)?.tutorId || (newCourse as any)?.tutor?.id;
+                    fetchTutorSlots(newTutorId, newCourseId);
+                  }}
+                  className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  {allCourses.map((c) => {
+                    const cTutorId = c.instructor?.id || (c as any)?.tutorId || (c as any)?.tutor?.id;
+                    const cTutorName = c.instructor?.name || (c as any)?.tutor?.name || "Tutor";
+                    const isBooked = cTutorId && trialStats?.bookedTutorIds?.includes(cTutorId);
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {c.title} — {cTutorName} {isBooked ? " (Trial Already Booked)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              ) : (
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <div className="font-extrabold text-xs text-slate-900 leading-snug">
+                    {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Individual Class")}
+                  </div>
+                  {selectedCourse?.subjectCode && (
+                    <Badge variant="outline" className="text-[10px] font-bold bg-white text-blue-700 border-blue-200 shrink-0">
+                      {selectedCourse.subjectCode}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              {currentTutorName && (
+                <div className="text-[11px] text-slate-500 pt-0.5 flex items-center justify-between">
+                  <span>
+                    Tutor: <span className="font-semibold text-slate-700">{currentTutorName}</span>
+                  </span>
+                  {isCurrentTutorBooked && (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
+                      Already Booked
+                    </Badge>
+                  )}
                 </div>
               )}
             </div>
@@ -590,14 +771,18 @@ export function TrialRequestModal({
               </Button>
               <Button
                 type="submit"
-                disabled={loading || !preferredDate}
-                className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 shadow-md shadow-blue-900/10 cursor-pointer"
+                disabled={loading || isMaxTrialsReached || isCurrentTutorBooked || !preferredDate}
+                className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 shadow-md shadow-blue-900/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Reserving Session...</span>
                   </>
+                ) : isMaxTrialsReached ? (
+                  <span>5 of 5 Free Trials Used</span>
+                ) : isCurrentTutorBooked ? (
+                  <span>Already Booked With Tutor</span>
                 ) : (
                   <>
                     <CalendarCheck className="w-3.5 h-3.5" />

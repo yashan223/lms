@@ -50,6 +50,7 @@ import {
   ArrowUpRight,
   ShoppingBag,
   CalendarClock,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -189,6 +190,7 @@ function DashboardContent() {
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
+  const [trialStats, setTrialStats] = useState<any | null>(null);
   const [showStudentAvailabilityModal, setShowStudentAvailabilityModal] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
@@ -354,6 +356,17 @@ function DashboardContent() {
           const bData = await bundlesRes.json();
           if (bData.bundles && Array.isArray(bData.bundles) && bData.bundles.length > 0) {
             setTokenBundles(bData.bundles);
+          }
+        }
+      } catch {}
+
+      // Fetch student trial stats
+      try {
+        const trialsRes = await fetch("/api/trials");
+        if (trialsRes.ok) {
+          const tData = await trialsRes.json();
+          if (tData.trialStats) {
+            setTrialStats(tData.trialStats);
           }
         }
       } catch {}
@@ -1085,6 +1098,31 @@ function DashboardContent() {
                 </span>
               </button>
             </div>
+
+            {user?.role === "STUDENT" && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarCheck className="w-4 h-4 text-indigo-600" />
+                    <span className="text-xs font-bold text-slate-800">1-on-1 Free Trials</span>
+                  </div>
+                  <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold">
+                    {trialStats ? `${trialStats.remaining} of 5 Left` : "5 Left"}
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-snug">
+                  Explore up to 5 free trial sessions across different tutors (1 trial per tutor).
+                </p>
+                <button
+                  onClick={() => setShowTrialModal(true)}
+                  disabled={trialStats && trialStats.totalUsed >= 5}
+                  className="w-full py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer disabled:cursor-not-allowed shadow-2xs"
+                >
+                  <CalendarCheck className="w-3.5 h-3.5" />
+                  <span>{trialStats && trialStats.totalUsed >= 5 ? "5 of 5 Trials Used" : "Request Free Trial"}</span>
+                </button>
+              </div>
+            )}
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">

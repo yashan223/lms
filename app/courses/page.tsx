@@ -21,6 +21,8 @@ import {
   Video,
   Lock,
   Coins,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
@@ -28,6 +30,7 @@ import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [tutors, setTutors] = useState<any[]>([]);
+  const [trialStats, setTrialStats] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"masterclasses" | "tutors">("masterclasses");
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -86,6 +89,16 @@ export default function CoursesPage() {
           setTutors(data.tutors);
         }
       }
+
+      // Fetch student trial stats
+      fetch("/api/trials")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.trialStats) {
+            setTrialStats(d.trialStats);
+          }
+        })
+        .catch(() => {});
     } catch (err) {
       console.error("Failed to load courses from API:", err);
     } finally {
@@ -98,7 +111,7 @@ export default function CoursesPage() {
   }, []);
 
   useRealtimeSync({
-    events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED"],
+    events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED", "TRIALS_CHANGED"],
     onSync: () => {
       loadCourses(false);
     },
@@ -410,6 +423,27 @@ export default function CoursesPage() {
           {/* VIEW 2: TUTORS CONDUCTING CLASSES */}
           {viewMode === "tutors" && (
             <>
+              {trialStats && (
+                <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-blue-50/90 border border-blue-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-blue-950">
+                        1-on-1 Free Trial Allowance: {trialStats.remaining} of 5 Left
+                      </div>
+                      <p className="text-[11px] text-blue-800/80">
+                        Each student can request up to 5 free trials across different tutors (limit 1 trial per tutor).
+                      </p>
+                    </div>
+                  </div>
+                  <Badge className="bg-[#0c2461] text-white font-bold text-[11px] px-3 py-1 rounded-lg shrink-0">
+                    {trialStats.totalUsed} of 5 Booked
+                  </Badge>
+                </div>
+              )}
+
               {filteredTutors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredTutors.map((tutor) => (
@@ -493,17 +527,32 @@ export default function CoursesPage() {
 
                       {/* Action CTAs */}
                       <div className="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                        <button
-                          onClick={() => {
-                            setSelectedTrialTutorId(tutor.id);
-                            setSelectedTrialCourseId(tutor.createdCourses?.[0]?.id);
-                            setShowTrialModal(true);
-                          }}
-                          className="flex-1 h-10 px-4 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <CalendarCheck className="w-3.5 h-3.5 text-amber-300" />
-                          <span>Book 1-on-1 Trial Class</span>
-                        </button>
+                        {trialStats?.bookedTutorIds?.includes(tutor.id) ? (
+                          <button
+                            onClick={() => {
+                              setSelectedTrialTutorId(tutor.id);
+                              setSelectedTrialCourseId(tutor.createdCourses?.[0]?.id);
+                              setShowTrialModal(true);
+                            }}
+                            className="flex-1 h-10 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            title="You have already requested a trial with this tutor"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Trial Booked</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedTrialTutorId(tutor.id);
+                              setSelectedTrialCourseId(tutor.createdCourses?.[0]?.id);
+                              setShowTrialModal(true);
+                            }}
+                            className="flex-1 h-10 px-4 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <CalendarCheck className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Book 1-on-1 Trial Class</span>
+                          </button>
+                        )}
 
                         <button
                           onClick={() => {
@@ -553,6 +602,9 @@ export default function CoursesPage() {
         initialCourseId={selectedTrialCourseId}
         initialTutorId={selectedTrialTutorId}
         allCourses={courses}
+        onSuccess={() => {
+          loadCourses(false);
+        }}
       />
 
       <CoursePurchaseModal

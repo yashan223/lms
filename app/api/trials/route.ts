@@ -64,6 +64,9 @@ export async function GET(request: NextRequest) {
 
     let whereClause: any = {};
 
+    const auth = await getAuthenticatedUser(request).catch(() => ({ user: null }));
+    const authenticatedUser = "user" in auth ? auth.user : null;
+
     if (tutorId) {
       whereClause.OR = [
         { tutorId: tutorId },
@@ -74,6 +77,18 @@ export async function GET(request: NextRequest) {
         { studentId: studentId },
         { studentEmail: emailCookie?.toLowerCase() },
       ];
+    } else if (authenticatedUser) {
+      if (authenticatedUser.role === Role.STUDENT) {
+        whereClause.OR = [
+          { studentId: authenticatedUser.id },
+          { studentEmail: authenticatedUser.email.toLowerCase() },
+        ];
+      } else if (authenticatedUser.role === Role.TUTOR || (authenticatedUser.role as any) === "INSTRUCTOR") {
+        whereClause.OR = [
+          { tutorId: authenticatedUser.id },
+          { course: { tutorId: authenticatedUser.id } },
+        ];
+      }
     } else if (emailCookie) {
       if (roleCookie === "TUTOR" || roleCookie === "INSTRUCTOR") {
         const user = await prisma.user.findUnique({
@@ -141,7 +156,42 @@ export async function GET(request: NextRequest) {
       course: t.course ? { ...t.course, instructor: (t.course as any).tutor } : null,
     }));
 
-    return NextResponse.json({ trials });
+    const isStudentQuery = Boolean(
+      studentId ||
+      (authenticatedUser && authenticatedUser.role === Role.STUDENT) ||
+      roleCookie === "STUDENT"
+    );
+
+    let trialStats: {
+      totalUsed: number;
+      maxAllowed: number;
+      remaining: number;
+      bookedTutorIds: string[];
+      isMaxReached: boolean;
+    } | null = null;
+
+    if (isStudentQuery) {
+      const activeTrials = rawTrials.filter(
+        (t) => t.status !== TrialStatus.CANCELLED && t.status !== TrialStatus.REJECTED
+      );
+      const bookedTutorIds = Array.from(
+        new Set(
+          activeTrials
+            .map((t) => t.tutorId || (t.course as any)?.tutorId || (t.course as any)?.tutor?.id)
+            .filter(Boolean) as string[]
+        )
+      );
+
+      trialStats = {
+        totalUsed: activeTrials.length,
+        maxAllowed: 5,
+        remaining: Math.max(0, 5 - activeTrials.length),
+        bookedTutorIds,
+        isMaxReached: activeTrials.length >= 5,
+      };
+    }
+
+    return NextResponse.json({ trials, trialStats });
   } catch (error) {
     console.error("Trials API GET error:", error);
     return NextResponse.json(
@@ -248,13 +298,101 @@ export async function POST(request: NextRequest) {
       if (courseId) {
         const course = await prisma.course.findUnique({
           where: { id: courseId },
-          select: { id: true, title: true, subjectCode: true, tutorId: true },
+          select: {
+            id: true,
+            title: true,
+            subjectCode: true,
+            tutorId: true,
+            tutor: { select: { id: true, name: true } },
+          },
         });
         if (course) {
           if (!resolvedTutorId) resolvedTutorId = course.tutorId;
           courseTitle = course.title;
           courseSubjectCode = course.subjectCode || "";
         }
+      }
+
+      if (!resolvedTutorId) {
+        return NextResponse.json(
+          { error: "Please select a tutor or course for your free trial session." },
+          { status: 400 }
+        );
+      }
+
+      if (resolvedStudentId && resolvedTutorId && resolvedStudentId === resolvedTutorId) {
+        return NextResponse.json(
+          { error: "You cannot book a trial session with yourself." },
+          { status: 400 }
+        );
+      }
+
+      // ----------------------------------------------------
+      // TRIAL LIMIT VALIDATIONS:
+      // 1) Student can request up to 5 trials in total
+      // 2) Not from the same tutor (1 trial per tutor)
+      // ----------------------------------------------------
+      const studentWhereClause = resolvedStudentId
+        ? {
+            OR: [
+              { studentId: resolvedStudentId },
+              { studentEmail: resolvedStudentEmail },
+            ],
+          }
+        : { studentEmail: resolvedStudentEmail };
+
+      const activeStatusFilter = {
+        in: [
+          TrialStatus.PENDING,
+          TrialStatus.PENDING_APPROVAL,
+          TrialStatus.CONFIRMED,
+          TrialStatus.COMPLETED,
+        ],
+      };
+
+      // Rule 1: Max 5 trials per student
+      const activeTrialsCount = await prisma.trialRequest.count({
+        where: {
+          ...studentWhereClause,
+          status: activeStatusFilter,
+        },
+      });
+
+      if (activeTrialsCount >= 5) {
+        return NextResponse.json(
+          {
+            error: "You have reached your maximum limit of 5 free trial sessions. Each student can request up to 5 free trials across different tutors. To continue learning, please purchase session bundles.",
+            code: "MAX_TRIALS_REACHED",
+            trialsCount: activeTrialsCount,
+            maxTrials: 5,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Rule 2: Cannot request from the same tutor twice
+      const existingTutorTrial = await prisma.trialRequest.findFirst({
+        where: {
+          ...studentWhereClause,
+          tutorId: resolvedTutorId,
+          status: activeStatusFilter,
+        },
+        include: {
+          tutor: { select: { name: true } },
+        },
+      });
+
+      if (existingTutorTrial) {
+        const tutorName = existingTutorTrial.tutor?.name || "this tutor";
+        return NextResponse.json(
+          {
+            error: `You have already requested a free trial session with ${tutorName}. Each student is limited to 1 trial per tutor (up to 5 total across different tutors).`,
+            code: "TUTOR_TRIAL_ALREADY_EXISTS",
+            tutorName,
+            tutorId: resolvedTutorId,
+          },
+          { status: 400 }
+        );
       }
 
       const meetingLink = getSafeMeetingLink(null);

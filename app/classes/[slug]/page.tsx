@@ -97,6 +97,7 @@ export default function CourseDetailPage({
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(initialCached?.modules?.[0]?.lessons?.[0] || null);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
@@ -148,6 +149,10 @@ export default function CourseDetailPage({
           }
 
           setCourse(formatted);
+
+          if (typeof data.isLoggedIn === "boolean") {
+            setIsLoggedIn(data.isLoggedIn);
+          }
 
           if (typeof data.isEnrolled === "boolean") {
             setIsEnrolled(data.isEnrolled);
@@ -403,58 +408,99 @@ export default function CourseDetailPage({
               </div>
 
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 text-slate-900 border border-slate-200 shadow-xl space-y-4">
-                <div className="flex items-baseline justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
-                      <Coins className="w-5 h-5" />
+                {isLoggedIn ? (
+                  <>
+                    <div className="flex items-baseline justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                          <Coins className="w-5 h-5" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-black text-slate-900">{course?.price || 10}</span>
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tokens</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">Full Specification</span>
                     </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-slate-900">{course?.price || 10}</span>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tokens</span>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">Full Specification</span>
-                </div>
 
-                {isEnrolled ? (
-                  <div className="space-y-2">
-                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-bold">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>You have active access to this class!</span>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab("materials")}
-                      className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-                    >
-                      <FolderOpen className="w-4 h-4" />
-                      <span>Access Study Materials</span>
-                    </button>
-                    <button
-                      onClick={() => setShowTrialModal(true)}
-                      className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Book 1-on-1 Trial (30 Mins)</span>
-                    </button>
-                  </div>
+                    {isEnrolled ? (
+                      <div className="space-y-2">
+                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-bold">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>You have active access to this class!</span>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab("materials")}
+                          className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                        >
+                          <FolderOpen className="w-4 h-4" />
+                          <span>Access Study Materials</span>
+                        </button>
+                        <button
+                          onClick={() => setShowTrialModal(true)}
+                          className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Book 1-on-1 Trial (30 Mins)</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Button
+                          onClick={() => setShowPurchaseModal(true)}
+                          className="w-full py-3.5 h-auto rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                        >
+                          <Lock className="w-4 h-4 text-amber-300" />
+                          <span>Enroll & Unlock All Materials ({course?.price || 10} Tokens)</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </Button>
+                        <button
+                          onClick={() => setShowTrialModal(true)}
+                          className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Request 30-Min Free Trial Session</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div className="space-y-2">
-                    <Button
-                      onClick={() => setShowPurchaseModal(true)}
-                      className="w-full py-3.5 h-auto rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-                    >
-                      <Lock className="w-4 h-4 text-amber-300" />
-                      <span>Enroll & Unlock All Materials ({course?.price || 10} Tokens)</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                    <button
-                      onClick={() => setShowTrialModal(true)}
-                      className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Request 30-Min Free Trial Session</span>
-                    </button>
-                  </div>
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Badge className="bg-amber-500/10 text-amber-700 border border-amber-500/20 text-xs font-bold px-2.5 py-1">
+                        Student Pricing Protected
+                      </Badge>
+                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">Full Specification</span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900">Sign in to view class tokens & pricing</div>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                          Token packs and class enrollment rates are reserved for verified student accounts.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Link
+                        href="/register"
+                        className="w-full py-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all text-center"
+                      >
+                        <span>Create Free Student Account</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                      <Link
+                        href="/login"
+                        className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center"
+                      >
+                        <span>Already have an account? Sign In</span>
+                      </Link>
+                    </div>
+                  </>
                 )}
 
                 <div className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">

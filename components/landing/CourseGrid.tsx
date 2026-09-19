@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Coins,
+  Lock,
 } from "lucide-react";
 
 export function CourseGrid() {
@@ -21,6 +22,7 @@ export function CourseGrid() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const categories = [
     "All",
@@ -34,7 +36,16 @@ export function CourseGrid() {
     async function loadCourses() {
       try {
         setLoading(true);
-        const res = await fetch("/api/courses");
+        const [res, dashRes] = await Promise.all([
+          fetch("/api/courses"),
+          fetch("/api/dashboard").catch(() => null),
+        ]);
+        if (dashRes && dashRes.ok) {
+          const dashData = await dashRes.json();
+          if (dashData.user) {
+            setIsLoggedIn(true);
+          }
+        }
         if (res.ok) {
           const data = await res.json();
           if (data.courses && data.courses.length > 0) {
@@ -222,19 +233,38 @@ export function CourseGrid() {
                 </div>
 
                 <div className="px-5 sm:px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
-                      <Coins className="w-4 h-4" />
+                  {isLoggedIn ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                        <Coins className="w-4 h-4" />
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-slate-900">
+                          {course.price}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Tokens
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-black text-slate-900">
-                        {course.price}
-                      </span>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        Tokens
-                      </span>
-                    </div>
-                  </div>
+                  ) : (
+                    <Link
+                      href="/register"
+                      className="group/lock flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-amber-500/10 border border-slate-200 group-hover/lock:border-amber-500/20 flex items-center justify-center text-slate-400 group-hover/lock:text-amber-600 transition-colors">
+                        <Lock className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-700 group-hover/lock:text-indigo-600">
+                          Sign in to view
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Student Pricing
+                        </span>
+                      </div>
+                    </Link>
+                  )}
 
                   <Link
                     href={`/classes/${course.slug}`}

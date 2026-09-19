@@ -68,9 +68,11 @@ export async function GET(
     }
 
     let isEnrolled = false;
+    let isLoggedIn = false;
     try {
       const auth = await getAuthenticatedUser(request);
       if (auth.user) {
+        isLoggedIn = true;
         isEnrolled = course.enrollments.some((e) => e.userId === auth.user.id);
       }
     } catch {
@@ -81,6 +83,7 @@ export async function GET(
       {
         course,
         isEnrolled,
+        isLoggedIn,
       },
       {
         headers: {

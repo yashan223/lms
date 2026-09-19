@@ -82,6 +82,7 @@ interface UserProfile {
   role: "STUDENT" | "TUTOR" | "INSTRUCTOR" | "ADMIN";
   headline: string | null;
   country: string | null;
+  academicLevel?: string | null;
   tokenWallet?: {
     balance: number;
     transactions: Array<{
@@ -2143,6 +2144,16 @@ function DashboardContent() {
               </div>
             )}
 
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Applied Tier:</span>
+                <span className="text-xs font-extrabold text-blue-700 bg-blue-100/60 px-2 py-0.5 rounded-md border border-blue-200">
+                  {user?.academicLevel === "OL" ? "🎓 London O/L (IGCSE) Student Rate" : "🎓 London A/L (IAL) Student Rate"}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400">Personalized Rate</span>
+            </div>
+
             <div className="space-y-3">
               {(tokenBundles.length > 0 ? tokenBundles : DEFAULT_BUNDLES).map((pack) => (
                 <div
@@ -2169,7 +2180,14 @@ function DashboardContent() {
 
                   <div className="text-right shrink-0">
                     <div className="text-lg font-black text-slate-900">
-                      {formatStudentPrice(pack.price, user?.country || detectedCountry, pack.lkrPrice)}
+                      {formatStudentPrice(
+                        pack.price,
+                        user?.country || detectedCountry,
+                        pack.lkrPrice,
+                        user?.academicLevel || "AL",
+                        pack.olPrice,
+                        pack.olLkrPrice
+                      )}
                     </div>
                     <Button
                       size="sm"

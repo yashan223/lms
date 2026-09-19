@@ -3,14 +3,26 @@ export interface TokenBundle {
   name: string;
   hours: number;
   tokens: number;
-  price: number;
-  lkrPrice: number;
+  price: number; // A/L USD Price
+  lkrPrice: number; // A/L LKR Price
+  olPrice?: number; // O/L USD Price
+  olLkrPrice?: number; // O/L LKR Price
   popular: boolean;
   badge: string;
   description: string;
   roleTarget?: string;
   ctaText?: string;
   features: string[];
+}
+
+export function getBundlePricingForLevel(
+  bundle: TokenBundle,
+  level?: "OL" | "AL" | string | null
+): { price: number; lkrPrice: number } {
+  const isOL = level === "OL" || level?.toUpperCase().includes("O/L") || level?.toUpperCase().includes("IGCSE");
+  const price = isOL && bundle.olPrice ? bundle.olPrice : bundle.price;
+  const lkrPrice = isOL && bundle.olLkrPrice ? bundle.olLkrPrice : bundle.lkrPrice;
+  return { price, lkrPrice };
 }
 
 export const DEFAULT_BUNDLES: TokenBundle[] = [
@@ -21,6 +33,8 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     tokens: 6,
     price: 24,
     lkrPrice: 7200,
+    olPrice: 18,
+    olLkrPrice: 5400,
     popular: false,
     badge: "Starter",
     description:
@@ -43,6 +57,8 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     tokens: 16,
     price: 58,
     lkrPrice: 17400,
+    olPrice: 44,
+    olLkrPrice: 13200,
     popular: true,
     badge: "Most Popular",
     description:
@@ -65,6 +81,8 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     tokens: 24,
     price: 84,
     lkrPrice: 25200,
+    olPrice: 64,
+    olLkrPrice: 19200,
     popular: false,
     badge: "Best Value",
     description:

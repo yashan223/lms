@@ -52,11 +52,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Payments.lk accepts LKR in cents: Rs. 7,200 is 720000 cents
-      const lkrPrice = bundle.lkrPrice || bundle.price * 300;
-      amountCents = Math.round(lkrPrice * 100);
-      description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours)`;
-      itemTitle = bundle.name;
+      // Check student academic level (O/L vs A/L) for tiered token pack pricing
+      const isOL =
+        (user as any).academicLevel === "OL" ||
+        user.headline?.includes("O/L") ||
+        user.headline?.includes("IGCSE");
+
+      const effectiveLkr =
+        isOL && bundle.olLkrPrice && bundle.olLkrPrice > 0
+          ? bundle.olLkrPrice
+          : isOL && bundle.olPrice && bundle.olPrice > 0
+          ? bundle.olPrice * 300
+          : bundle.lkrPrice || bundle.price * 300;
+
+      amountCents = Math.round(effectiveLkr * 100);
+      description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""})`;
+      itemTitle = `${bundle.name}${isOL ? " (O/L Tier)" : ""}`;
       tokens = bundle.tokens;
     } else if (itemType === "COURSE") {
       const course = await prisma.course.findFirst({

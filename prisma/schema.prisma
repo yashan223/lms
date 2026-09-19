@@ -64,6 +64,7 @@ model User {
   bio           String?
   phone         String?
   country       String?
+  academicLevel String?        @default("AL") // "OL" or "AL"
   emailVerified DateTime?      // Date & time student verified their email address
   publicKey     String?        // E2EE Public Key for client-side encryption
   createdAt     DateTime       @default(now())
@@ -133,6 +134,8 @@ model TokenBundle {
   tokens      Int
   price       Float
   lkrPrice    Float      @default(0)
+  olPrice     Float?
+  olLkrPrice  Float?     @default(0)
   popular     Boolean  @default(false)
   badge       String   @default("Standard")
   description String

@@ -41,6 +41,7 @@ export default function CoursesPage() {
   const [selectedTrialTutorId, setSelectedTrialTutorId] = useState<string | undefined>(undefined);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPurchaseCourse, setSelectedPurchaseCourse] = useState<any | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const categories = [
     "All",
@@ -55,7 +56,16 @@ export default function CoursesPage() {
       if (isInitial === true && courses.length === 0) {
         setLoading(true);
       }
-      const res = await fetch("/api/courses");
+      const [res, dashRes] = await Promise.all([
+        fetch("/api/courses"),
+        fetch("/api/dashboard").catch(() => null),
+      ]);
+      if (dashRes && dashRes.ok) {
+        const dashData = await dashRes.json();
+        if (dashData.user) {
+          setIsLoggedIn(true);
+        }
+      }
       if (res.ok) {
         const data = await res.json();
         if (data.courses && data.courses.length > 0) {
@@ -355,46 +365,78 @@ export default function CoursesPage() {
                       </div>
 
                       <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
-                            <Coins className="w-4 h-4" />
-                          </div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-slate-900">
-                              {course.price}
-                            </span>
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                              Tokens
-                            </span>
-                          </div>
-                        </div>
+                        {isLoggedIn ? (
+                          <>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                                <Coins className="w-4 h-4" />
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-slate-900">
+                                  {course.price}
+                                </span>
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                  Tokens
+                                </span>
+                              </div>
+                            </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => {
-                              setSelectedPurchaseCourse(course);
-                              setShowPurchaseModal(true);
-                            }}
-                            className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                            title="Enroll in individual class using tokens and unlock all study materials"
-                          >
-                            <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                            <span>Enroll ({course.price} Tokens)</span>
-                          </button>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                onClick={() => {
+                                  setSelectedPurchaseCourse(course);
+                                  setShowPurchaseModal(true);
+                                }}
+                                className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                                title="Enroll in individual class using tokens and unlock all study materials"
+                              >
+                                <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                                <span>Enroll ({course.price} Tokens)</span>
+                              </button>
 
-                          <button
-                            onClick={() => {
-                              setSelectedTrialCourseId(course.id);
-                              setSelectedTrialTutorId(course.instructor?.id);
-                              setShowTrialModal(true);
-                            }}
-                            className="h-9 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                            title="Book a 30-min free online trial session"
-                          >
-                            <CalendarCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                            <span>Free Trial</span>
-                          </button>
-                        </div>
+                              <button
+                                onClick={() => {
+                                  setSelectedTrialCourseId(course.id);
+                                  setSelectedTrialTutorId(course.instructor?.id);
+                                  setShowTrialModal(true);
+                                }}
+                                className="h-9 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                                title="Book a 30-min free online trial session"
+                              >
+                                <CalendarCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                <span>Free Trial</span>
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full flex items-center justify-between gap-2">
+                            <Link
+                              href="/register"
+                              className="group/lock flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
+                            >
+                              <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-amber-500/10 border border-slate-200 group-hover/lock:border-amber-500/20 flex items-center justify-center text-slate-400 group-hover/lock:text-amber-600 transition-colors">
+                                <Lock className="w-3.5 h-3.5" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-700 group-hover/lock:text-indigo-600">
+                                  Sign in to view
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  Student Pricing
+                                </span>
+                              </div>
+                            </Link>
+
+                            <Link
+                              href={`/classes/${course.slug}`}
+                              prefetch={true}
+                              className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all"
+                            >
+                              <span>View Syllabus</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

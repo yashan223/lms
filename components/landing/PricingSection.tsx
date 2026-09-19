@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { TokenBundle, DEFAULT_BUNDLES } from "@/lib/bundle-types";
-import { formatStudentPrice, isSriLankanStudent } from "@/lib/currency";
+import { formatStudentPrice, isSriLankanStudent, getStudentAcademicLevel } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ArrowRight, Award } from "lucide-react";
+import { CheckCircle2, ArrowRight, Award, Lock, Sparkles } from "lucide-react";
 
 interface PricingSectionProps {
   initialBundles?: TokenBundle[];
@@ -24,6 +24,8 @@ export function PricingSection({
   const [studentCountry, setStudentCountry] = useState<string | null>(
     initialCountry || (initialIsSriLanka ? "Sri Lanka" : null)
   );
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
 
   useEffect(() => {
     async function loadBundles() {
@@ -45,12 +47,22 @@ export function PricingSection({
           if (data.country) {
             setStudentCountry(data.country);
           }
+          if (data.isLoggedIn) {
+            setIsLoggedIn(true);
+          }
+          if (data.academicLevel) {
+            setStudentLevel(data.academicLevel);
+          }
         }
 
         if (dashboardRes && dashboardRes.ok) {
           const dashboardData = await dashboardRes.json();
-          if (dashboardData.user?.country) {
-            setStudentCountry(dashboardData.user.country);
+          if (dashboardData.user) {
+            setIsLoggedIn(true);
+            if (dashboardData.user.country) {
+              setStudentCountry(dashboardData.user.country);
+            }
+            setStudentLevel(getStudentAcademicLevel(dashboardData.user));
           }
         }
       } catch (err) {
@@ -134,14 +146,34 @@ export function PricingSection({
                     {plan.description}
                   </p>
 
-                  <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-slate-100">
-                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                      {formatStudentPrice(price, studentCountry, plan.lkrPrice)}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-500">
-                      / package (one-time purchase)
-                    </span>
-                  </div>
+                  {!isLoggedIn ? (
+                    <div className="mb-6 pb-6 border-b border-slate-100">
+                      <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-900 mb-2">
+                        <Lock className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="text-xs font-bold">Sign in to view student pricing</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Tailored pricing for London A/L &amp; O/L students unlocked after creating an account.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mb-6 pb-6 border-b border-slate-100">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-emerald-600" />
+                          <span>{studentLevel === "OL" ? "London O/L (IGCSE) Rate" : "London A/L (IAL) Rate"}</span>
+                        </Badge>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
+                          {formatStudentPrice(price, studentCountry, plan.lkrPrice, studentLevel, plan.olPrice, plan.olLkrPrice)}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-500">
+                          / package
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-3 mb-8">
                     <div className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -158,17 +190,34 @@ export function PricingSection({
                   </div>
                 </div>
 
-                <Link
-                  href={`/dashboard?buyBundle=${encodeURIComponent(plan.id)}`}
-                  className={`w-full text-sm font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-all ${
-                    plan.popular
-                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30"
-                      : "border border-blue-200 text-slate-800 hover:bg-blue-50 bg-white"
-                  }`}
-                >
-                  <span>{ctaText}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                {!isLoggedIn ? (
+                  <div className="space-y-2">
+                    <Link
+                      href="/register"
+                      className="w-full text-xs font-bold h-11 rounded-xl flex items-center justify-center gap-2 transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/25"
+                    >
+                      <span>Create Account to View Pricing</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                    <div className="text-center">
+                      <Link href="/login" className="text-[11px] text-slate-500 hover:text-blue-600 font-semibold underline">
+                        Already have an account? Sign In
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/dashboard?buyBundle=${encodeURIComponent(plan.id)}`}
+                    className={`w-full text-sm font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                      plan.popular
+                        ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30"
+                        : "border border-blue-200 text-slate-800 hover:bg-blue-50 bg-white"
+                    }`}
+                  >
+                    <span>{ctaText}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
               </div>
             );
           })}

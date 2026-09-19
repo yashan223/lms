@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBundles } from "@/lib/bundles";
 import { resolveGeoLocation } from "@/lib/geo";
+import { getAuthenticatedUser } from "@/lib/auth";
+import { getStudentAcademicLevel } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,6 +14,10 @@ export async function GET(req: NextRequest) {
 
     const bundles = await getBundles();
     const geo = await resolveGeoLocation(req.headers, mockCountry);
+    const auth = await getAuthenticatedUser(req);
+
+    const isLoggedIn = !!auth.user;
+    const academicLevel = auth.user ? getStudentAcademicLevel(auth.user) : "AL";
 
     return NextResponse.json({
       success: true,
@@ -21,6 +27,8 @@ export async function GET(req: NextRequest) {
       isSriLanka: geo.isSriLanka,
       currency: geo.currency,
       clientIp: geo.ip,
+      isLoggedIn,
+      academicLevel,
     });
   } catch (error: any) {
     console.error("GET /api/bundles error:", error);

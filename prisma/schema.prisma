@@ -173,7 +173,7 @@ model Course {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  @@map("courses")
+  @@map("classes")
 }
 
 model Module {
@@ -319,7 +319,7 @@ model CourseMaterial {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("course_materials")
+  @@map("class_materials")
 }
 
 model PasswordResetToken {

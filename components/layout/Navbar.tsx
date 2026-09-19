@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   LogOut,
   BookOpen,
-  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -109,25 +108,12 @@ export function Navbar() {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-7 text-xs font-bold tracking-widest uppercase">
+        <nav className="hidden lg:flex items-center gap-8 text-xs font-bold tracking-widest uppercase">
           <Link
             href="/"
             className="text-blue-700 hover:text-blue-800 transition-colors py-1 font-black"
           >
             Home
-          </Link>
-          <Link
-            href="/classes"
-            className="text-slate-600 hover:text-blue-700 transition-colors py-1"
-          >
-            INDIVIDUAL CLASSES
-          </Link>
-          <Link
-            href="/trials"
-            className="text-amber-600 hover:text-amber-700 transition-colors py-1 flex items-center gap-1 font-extrabold"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>FREE TRIAL</span>
           </Link>
           <Link
             href="/#about"
@@ -275,21 +261,6 @@ export function Navbar() {
               className="text-blue-700 hover:text-blue-800 py-1.5 px-2 rounded-lg hover:bg-blue-50/50"
             >
               Home
-            </Link>
-            <Link
-              href="/classes"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-slate-700 hover:text-blue-700 py-1.5 px-2 rounded-lg hover:bg-slate-50"
-            >
-              INDIVIDUAL CLASSES
-            </Link>
-            <Link
-              href="/trials"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-amber-600 font-bold hover:text-amber-700 py-1.5 px-2 rounded-lg hover:bg-amber-50/50 flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>REQUEST 30-MIN FREE TRIAL</span>
             </Link>
             <Link
               href="/#about"

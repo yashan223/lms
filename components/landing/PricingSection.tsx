@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TokenBundle, DEFAULT_BUNDLES } from "@/lib/bundle-types";
 import { formatStudentPrice, isSriLankanStudent, getStudentAcademicLevel } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ArrowRight, Award, Lock, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, Award, Lock } from "lucide-react";
 
 interface PricingSectionProps {
   initialBundles?: TokenBundle[];
@@ -170,12 +170,6 @@ export function PricingSection({
                     </div>
                   ) : (
                     <div className="mb-6 pb-6 border-b border-slate-100">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] font-bold flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-emerald-600" />
-                          <span>{studentLevel === "OL" ? "London O/L (IGCSE) Rate" : "London A/L (IAL) Rate"}</span>
-                        </Badge>
-                      </div>
                       <div className="flex items-baseline gap-1">
                         <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
                           {formatStudentPrice(price, studentCountry, plan.lkrPrice, studentLevel, plan.olPrice, plan.olLkrPrice)}

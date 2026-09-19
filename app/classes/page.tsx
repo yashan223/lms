@@ -280,7 +280,7 @@ export default function CoursesPage() {
                       className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
                     >
                       <div>
-                        <Link href={`/courses/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
+                        <Link href={`/classes/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
                           <img
                             src={course.thumbnail}
                             alt={course.title}
@@ -302,7 +302,7 @@ export default function CoursesPage() {
                         </Link>
 
                         <div className="p-5 space-y-3">
-                          <Link href={`/courses/${course.slug}`} prefetch={true} className="block">
+                          <Link href={`/classes/${course.slug}`} prefetch={true} className="block">
                             <h3 className="font-bold text-slate-900 text-base hover:text-blue-700 transition-colors leading-snug line-clamp-2 cursor-pointer">
                               {course.title}
                             </h3>
@@ -512,7 +512,7 @@ export default function CoursesPage() {
                                 {tutor.createdCourses.map((c: any) => (
                                   <Link
                                     key={c.id}
-                                    href={`/courses/${c.slug}`}
+                                    href={`/classes/${c.slug}`}
                                     className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-semibold border border-blue-100 flex items-center gap-1 transition-colors"
                                   >
                                     <span className="font-mono font-bold">{c.subjectCode || "MC"}</span>

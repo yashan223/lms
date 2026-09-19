@@ -302,7 +302,7 @@ export default function CourseDetailPage({
         <div className="text-center py-24 space-y-3">
           <h2 className="text-2xl font-bold text-slate-900">Individual Class Not Found</h2>
           <p className="text-xs text-slate-500">The requested class syllabus is not currently available.</p>
-          <Link href="/courses" className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs">
+          <Link href="/classes" className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs">
             Return to Classes Directory
           </Link>
         </div>
@@ -346,7 +346,7 @@ export default function CourseDetailPage({
             <div className="flex items-center gap-2 text-xs text-blue-300/80 mb-4 flex-wrap">
               <Link href="/" className="hover:text-white transition-colors">Home</Link>
               <span>/</span>
-              <Link href="/courses" className="hover:text-white transition-colors">Individual Classes</Link>
+              <Link href="/classes" className="hover:text-white transition-colors">Individual Classes</Link>
               <span>/</span>
               <span className="text-white font-medium truncate max-w-md">{course?.title}</span>
             </div>

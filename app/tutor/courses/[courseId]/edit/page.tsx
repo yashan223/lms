@@ -905,7 +905,7 @@ export function TutorCourseWorkspaceContent({
                 {/* Public Course Preview */}
                 {course && (
                   <Link
-                    href={`/courses/${course.slug}`}
+                    href={`/classes/${course.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 transition-colors"

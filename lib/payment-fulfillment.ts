@@ -163,10 +163,10 @@ export async function fulfillPayment(
           await tx.notification.create({
             data: {
               userId: payment.userId,
-              title: "🎉 Course Access Unlocked!",
+              title: "🎉 Individual Class Access Unlocked!",
               message: `Payment successful for "${course.title}". You now have full access to all curriculum modules and study handbooks.`,
               type: "INFO",
-              link: `/courses/${course.slug}`,
+              link: `/classes/${course.slug}`,
             },
           });
         }

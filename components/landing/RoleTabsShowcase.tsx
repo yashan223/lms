@@ -122,7 +122,7 @@ export function RoleTabsShowcase() {
 
                   <div className="pt-2 flex items-center gap-3">
                     <Link
-                      href="/courses"
+                      href="/classes"
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-all"
                     >
                       <span>Explore Individual Classes</span>
@@ -230,7 +230,7 @@ export function RoleTabsShowcase() {
 
                   <div className="pt-2 flex items-center gap-3">
                     <Link
-                      href="/courses"
+                      href="/classes"
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all"
                     >
                       <span>Explore Academic Curriculum</span>

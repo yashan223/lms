@@ -1902,7 +1902,7 @@ function TutorDashboardContent() {
 
                           <div className="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-2">
                             <Link
-                              href={`/courses/${c.slug}`}
+                              href={`/classes/${c.slug}`}
                               className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
                             >
                               <span>Open Syllabus</span>

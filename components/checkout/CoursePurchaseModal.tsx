@@ -125,7 +125,7 @@ export function CoursePurchaseModal({
       if (res.status === 401) {
         setErrorMessage("Please sign in or register to complete your individual class enrollment.");
         setTimeout(() => {
-          router.push(`/login?redirect=${encodeURIComponent(`/courses/${course.slug}`)}`);
+          router.push(`/login?redirect=${encodeURIComponent(`/classes/${course.slug}`)}`);
         }, 1200);
         return;
       }
@@ -354,7 +354,7 @@ export function CoursePurchaseModal({
                     </span>
                   </div>
                   <Link
-                    href={`/login?redirect=${encodeURIComponent(`/courses/${course.slug}`)}`}
+                    href={`/login?redirect=${encodeURIComponent(`/classes/${course.slug}`)}`}
                     className="px-3 py-1 rounded-lg bg-blue-600 text-white font-bold text-[11px] hover:bg-blue-700 shrink-0"
                   >
                     Sign In
@@ -425,7 +425,7 @@ export function CoursePurchaseModal({
 
               {!isLoggedIn ? (
                 <Link
-                  href={`/login?redirect=${encodeURIComponent(`/courses/${course.slug}`)}`}
+                  href={`/login?redirect=${encodeURIComponent(`/classes/${course.slug}`)}`}
                   className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-10 px-6 rounded-xl shadow-md flex items-center gap-2 transition-colors"
                 >
                   <span>Sign In to Enroll</span>

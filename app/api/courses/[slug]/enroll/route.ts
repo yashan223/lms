@@ -136,10 +136,10 @@ export async function POST(
       await tx.notification.create({
         data: {
           userId: user.id,
-          title: "🎉 Course Unlocked & Enrolled",
+          title: "🎉 Class Unlocked & Enrolled",
           message: `Your enrollment in "${course.title}" with ${coursePrice} Tokens was successful. All study materials and classes are now accessible.`,
           type: "INFO",
-          link: `/courses/${course.slug}`,
+          link: `/classes/${course.slug}`,
         },
       });
 

@@ -2661,7 +2661,7 @@ export default function AdminDashboardPage() {
                           </Link>
 
                           <Link
-                            href={`/courses/${course.slug}`}
+                            href={`/classes/${course.slug}`}
                             target="_blank"
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
                             title="Preview Public Class Page"
@@ -3439,10 +3439,10 @@ export default function AdminDashboardPage() {
                             <td className="py-3.5 px-4 text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1.5">
                                 <Link
-                                  href={`/courses/${tx.courseSlug}`}
+                                  href={`/classes/${tx.courseSlug}`}
                                   target="_blank"
                                   className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                  title="View Course Syllabus & Materials"
+                                  title="View Class Syllabus & Materials"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
                                 </Link>
@@ -3451,7 +3451,7 @@ export default function AdminDashboardPage() {
                                   onClick={() => {
                                     setConfirmModalData({
                                       isOpen: true,
-                                      title: `Revoke Course Access?`,
+                                      title: `Revoke Class Access?`,
                                       description: `Are you sure you want to remove ${tx.studentName} from "${tx.courseTitle}"? Their enrollment will be cancelled and material access will be locked.`,
                                       variant: "danger",
                                       onConfirm: async () => {

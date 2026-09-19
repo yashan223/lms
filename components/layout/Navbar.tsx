@@ -110,7 +110,7 @@ export function Navbar() {
 
         <nav className="hidden lg:flex items-center gap-8 text-xs font-bold tracking-widest uppercase">
           <Link
-            href="/courses"
+            href="/classes"
             className="text-blue-700 hover:text-blue-800 transition-colors py-1 font-black"
           >
             INDIVIDUAL CLASSES
@@ -256,7 +256,7 @@ export function Navbar() {
               </Link>
             )}
             <Link
-              href="/courses"
+              href="/classes"
               onClick={() => setMobileMenuOpen(false)}
               className="text-blue-700 hover:text-blue-800 py-1.5 px-2 rounded-lg hover:bg-blue-50/50"
             >

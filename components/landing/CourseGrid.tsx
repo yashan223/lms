@@ -112,7 +112,7 @@ export function CourseGrid() {
               />
             </div>
             <Link
-              href="/courses"
+              href="/classes"
               className="hidden sm:flex px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold whitespace-nowrap transition-colors items-center gap-1 shrink-0"
             >
               <span>Full Directory</span>
@@ -145,7 +145,7 @@ export function CourseGrid() {
                 className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
-                  <Link href={`/courses/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
+                  <Link href={`/classes/${course.slug}`} prefetch={true} className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img">
                     <img
                       src={course.thumbnail}
                       alt={course.title}
@@ -178,7 +178,7 @@ export function CourseGrid() {
                   </Link>
 
                   <div className="p-5 sm:p-6 space-y-3.5">
-                    <Link href={`/courses/${course.slug}`} prefetch={true}>
+                    <Link href={`/classes/${course.slug}`} prefetch={true}>
                       <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-700 transition-colors leading-snug line-clamp-2">
                         {course.title}
                       </h3>
@@ -237,7 +237,7 @@ export function CourseGrid() {
                   </div>
 
                   <Link
-                    href={`/courses/${course.slug}`}
+                    href={`/classes/${course.slug}`}
                     prefetch={true}
                     className="px-4 py-2 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
                   >

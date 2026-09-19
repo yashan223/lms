@@ -97,6 +97,30 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/courses",
+        destination: "/classes",
+        permanent: true,
+      },
+      {
+        source: "/courses/:slug*",
+        destination: "/classes/:slug*",
+        permanent: true,
+      },
+      {
+        source: "/Classes",
+        destination: "/classes",
+        permanent: true,
+      },
+      {
+        source: "/Classes/:slug*",
+        destination: "/classes/:slug*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

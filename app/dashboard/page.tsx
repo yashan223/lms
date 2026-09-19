@@ -1159,7 +1159,7 @@ function DashboardContent() {
                           myCourses.map((c, idx) => (
                             <Link
                               key={c.id || idx}
-                              href={c.slug ? `/courses/${c.slug}` : "/courses"}
+                              href={c.slug ? `/classes/${c.slug}` : "/classes"}
                               prefetch={true}
                               onMouseEnter={() => prefetchCourse(c.slug)}
                               className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
@@ -1173,7 +1173,7 @@ function DashboardContent() {
                           <div className="text-slate-400 italic py-0.5">No enrolled classes</div>
                         )}
                         <Link
-                          href="/courses"
+                          href="/classes"
                           className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
                         >
                           <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
@@ -1464,7 +1464,7 @@ function DashboardContent() {
 
                           {ev.course?.slug && (
                             <Link
-                              href={`/courses/${ev.course.slug}`}
+                              href={`/classes/${ev.course.slug}`}
                               prefetch={true}
                               onMouseEnter={() => prefetchCourse(ev.course.slug)}
                               className="h-8.5 px-3 rounded-xl bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-semibold text-xs border border-blue-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
@@ -1589,7 +1589,7 @@ function DashboardContent() {
                   </span>
                 </div>
                 <Link
-                  href="/courses"
+                  href="/classes"
                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200 transition-colors whitespace-nowrap"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
@@ -1631,7 +1631,7 @@ function DashboardContent() {
                         )}
 
                         <Link
-                          href={`/courses/${course.slug}`}
+                          href={`/classes/${course.slug}`}
                           className="h-8.5 px-3 sm:px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                         >
                           <span>Study Materials & Notes</span>
@@ -1645,7 +1645,7 @@ function DashboardContent() {
                 <div className="text-center py-8 px-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                   <p className="text-xs text-slate-500 font-medium mb-3">You are not enrolled in any classes yet.</p>
                   <Link
-                    href="/courses"
+                    href="/classes"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs"
                   >
                     <span>Explore Available Classes</span>

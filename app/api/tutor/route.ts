@@ -816,7 +816,7 @@ export async function POST(request: NextRequest) {
             title: "Trial Request Update",
             message: `Your trial request for "${existingTrial.course?.title || "London A/L"}" was declined. ${reason ? `Reason: ${reason}` : "Please request another session slot."}`,
             type: "INFO",
-            link: "/courses",
+            link: "/classes",
           },
         });
         broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: existingTrial.studentId });

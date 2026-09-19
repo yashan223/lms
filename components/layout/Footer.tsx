@@ -79,27 +79,27 @@ export function Footer() {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                  <Link href="/classes" className="hover:text-blue-600 transition-colors">
                     Pure Mathematics (P1–P4)
                   </Link>
                 </li>
                 <li>
-                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                  <Link href="/classes" className="hover:text-blue-600 transition-colors">
                     Mechanics & Physics (M1/PHY)
                   </Link>
                 </li>
                 <li>
-                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                  <Link href="/classes" className="hover:text-blue-600 transition-colors">
                     Chemistry & Biology
                   </Link>
                 </li>
                 <li>
-                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                  <Link href="/classes" className="hover:text-blue-600 transition-colors">
                     Economics & Business Studies
                   </Link>
                 </li>
                 <li>
-                  <Link href="/courses" className="hover:text-blue-600 transition-colors">
+                  <Link href="/classes" className="hover:text-blue-600 transition-colors">
                     Computer Science & ICT
                   </Link>
                 </li>

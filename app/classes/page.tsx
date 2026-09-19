@@ -26,11 +26,11 @@ import {
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
-import { DEFAULT_FACULTY_TUTORS, mergeFacultyTutors } from "@/lib/faculty-tutors";
+import { FacultyTutor, formatDbTutors } from "@/lib/faculty-tutors";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
-  const [tutors, setTutors] = useState<any[]>(DEFAULT_FACULTY_TUTORS);
+  const [tutors, setTutors] = useState<FacultyTutor[]>([]);
   const [trialStats, setTrialStats] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"masterclasses" | "tutors">("masterclasses");
   const [loading, setLoading] = useState(true);
@@ -70,34 +70,50 @@ export default function CoursesPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.courses && data.courses.length > 0) {
-          const formatted = data.courses.map((c: any) => ({
-            id: c.id,
-            title: c.title,
-            slug: c.slug,
-            subtitle: c.subtitle || c.description,
-            category: c.category,
-            level: c.level === "ADVANCED" ? "London A/L" : "London O/L",
-            subjectCode: c.subjectCode || "MATH-101",
-            thumbnail: c.thumbnail || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
-            price: c.price,
-            rating: 4.98,
-            reviewCount: 1240,
-            studentsEnrolled: c.enrollments?.length ? c.enrollments.length * 1420 + 200 : 5200,
-            durationHours: 58,
-            lessonsCount: c.modules?.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0) || 12,
-            instructor: {
-              id: c.instructor?.id,
-              name: c.instructor?.name || "Dr. Sarah Jenkins",
-              avatar: c.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-              roleTitle: c.instructor?.headline || "Senior Tutor",
-            },
-            skills: ["Calculus Proofs", "Vectors", "Method Marks", "Topic Mastery"],
-            tags: [c.category],
-          }));
+          const formatted = data.courses.map((c: any) => {
+            const totalMins = c.modules?.reduce(
+              (acc: number, m: any) =>
+                acc +
+                (m.lessons?.reduce((lAcc: number, l: any) => lAcc + (l.durationMin || 0), 0) || 0),
+              0
+            ) || 0;
+            const calcHours = Math.round(totalMins / 60) || 1;
+
+            return {
+              id: c.id,
+              title: c.title,
+              slug: c.slug,
+              subtitle: c.subtitle || c.description,
+              category: c.category,
+              level: c.level === "ADVANCED" ? "London A/L" : "London O/L",
+              subjectCode: c.subjectCode || "MATH-101",
+              thumbnail:
+                c.thumbnail ||
+                "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
+              price: c.price,
+              rating: 5.0,
+              reviewCount: c.enrollments?.length || 0,
+              studentsEnrolled: c.enrollments?.length || 0,
+              durationHours: calcHours,
+              lessonsCount:
+                c.modules?.reduce(
+                  (acc: number, m: any) => acc + (m.lessons?.length || 0),
+                  0
+                ) || 0,
+              instructor: {
+                id: c.instructor?.id,
+                name: c.instructor?.name || "Faculty Tutor",
+                avatar: c.instructor?.avatar || "",
+                roleTitle: c.instructor?.headline || "Academic Tutor",
+              },
+              skills: [],
+              tags: [c.category],
+            };
+          });
           setCourses(formatted);
         }
         if (data.tutors && Array.isArray(data.tutors)) {
-          setTutors(mergeFacultyTutors(data.tutors));
+          setTutors(formatDbTutors(data.tutors));
         }
       }
 

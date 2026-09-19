@@ -134,10 +134,10 @@ export default function CourseDetailPage({
           const formatted = {
             ...data.course,
             instructor: {
-              name: data.course.instructor?.name || "Dr. Sarah Jenkins",
-              avatar: data.course.instructor?.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-              roleTitle: data.course.instructor?.headline || "Senior Tutor in Mathematics",
-              bio: data.course.instructor?.bio || "Subject Lead with 18+ years teaching London A/L & O/L specification.",
+              name: data.course.instructor?.name || "Faculty Tutor",
+              avatar: data.course.instructor?.avatar || "",
+              roleTitle: data.course.instructor?.headline || "Academic Tutor",
+              bio: data.course.instructor?.bio || "",
             },
           };
 

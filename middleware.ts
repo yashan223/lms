@@ -15,18 +15,18 @@ interface SessionPayload {
   exp: number;
 }
 
-// Allowed CORS origins for pulseedu.online , subdomains, and local dev
+// Allowed CORS origins for pulseedu.online, subdomains, and local dev
 const ALLOWED_ORIGIN_REGEX =
-  /^(https?:\/\/(?:[a-z0-9-]+\.)*xoxod33p\.tech(:[0-9]+)?|http:\/\/localhost:[0-9]+|http:\/\/127\.0\.0\.1:[0-9]+)$/i;
+  /^(https?:\/\/(?:[a-z0-9-]+\.)*pulseedu\.online(:[0-9]+)?|https?:\/\/(?:[a-z0-9-]+\.)*xoxod33p\.tech(:[0-9]+)?|http:\/\/localhost:[0-9]+|http:\/\/127\.0\.0\.1:[0-9]+)$/i;
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
   const isAllowed =
     origin &&
     (ALLOWED_ORIGIN_REGEX.test(origin) ||
-      origin === "https://pulseedu.online " ||
-      origin === "http://pulseedu.online ");
+      origin === "https://pulseedu.online" ||
+      origin === "http://pulseedu.online");
 
-  const allowOrigin = isAllowed ? origin : "https://pulseedu.online ";
+  const allowOrigin = isAllowed ? origin : "https://pulseedu.online";
 
   return {
     "Access-Control-Allow-Origin": allowOrigin,

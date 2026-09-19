@@ -157,6 +157,7 @@ function DashboardContent() {
   const [tokenPurchasing, setTokenPurchasing] = useState(false);
   const [tokenFeedbackMsg, setTokenFeedbackMsg] = useState("");
   const [tokenBundles, setTokenBundles] = useState<TokenBundle[]>(DEFAULT_BUNDLES);
+  const [detectedCountry, setDetectedCountry] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -356,6 +357,9 @@ function DashboardContent() {
           const bData = await bundlesRes.json();
           if (bData.bundles && Array.isArray(bData.bundles) && bData.bundles.length > 0) {
             setTokenBundles(bData.bundles);
+          }
+          if (bData.country) {
+            setDetectedCountry(bData.country);
           }
         }
       } catch {}
@@ -2165,7 +2169,7 @@ function DashboardContent() {
 
                   <div className="text-right shrink-0">
                     <div className="text-lg font-black text-slate-900">
-                      {formatStudentPrice(pack.price, user?.country, pack.lkrPrice)}
+                      {formatStudentPrice(pack.price, user?.country || detectedCountry, pack.lkrPrice)}
                     </div>
                     <Button
                       size="sm"

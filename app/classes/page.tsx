@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
-import { FacultyTutor, formatDbTutors } from "@/lib/faculty-tutors";
+import { FacultyTutor, formatDbTutors, parseTutorBio } from "@/lib/faculty-tutors";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -570,7 +570,7 @@ export default function CoursesPage() {
                         {/* Tutor Bio */}
                         {tutor.bio && (
                           <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            {tutor.bio}
+                            {parseTutorBio(tutor.bio)}
                           </p>
                         )}
 

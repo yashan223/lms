@@ -65,6 +65,7 @@ import {
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
 import { formatStudentPrice } from "@/lib/currency";
+import { parseTutorBio } from "@/lib/utils";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -2762,7 +2763,7 @@ export default function AdminDashboardPage() {
 
                               {tutor.bio && (
                                 <p className="text-xs text-slate-500 line-clamp-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                  {tutor.bio}
+                                  {parseTutorBio(tutor.bio)}
                                 </p>
                               )}
 

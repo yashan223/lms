@@ -25,3 +25,30 @@ export function normalizeGoogleMeetLink(link?: string | null): string {
 export function getSafeMeetingLink(link?: string | null): string {
   return normalizeGoogleMeetLink(link);
 }
+
+export function parseTutorBio(bio: string | null | undefined): string {
+  if (!bio || typeof bio !== "string") return "";
+  const trimmed = bio.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed.about === "string" && parsed.about.trim()) {
+        return parsed.about.trim();
+      }
+      if (typeof parsed.bio === "string" && parsed.bio.trim()) {
+        return parsed.bio.trim();
+      }
+    } catch {
+      const match = trimmed.match(/"about"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (match && match[1]) {
+        try {
+          return JSON.parse(`"${match[1]}"`);
+        } catch {
+          return match[1];
+        }
+      }
+    }
+  }
+  return trimmed;
+}
+

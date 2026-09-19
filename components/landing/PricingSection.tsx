@@ -11,12 +11,14 @@ interface PricingSectionProps {
   initialBundles?: TokenBundle[];
   initialCountry?: string | null;
   initialIsSriLanka?: boolean;
+  initialIsLoggedIn?: boolean;
 }
 
 export function PricingSection({
   initialBundles,
   initialCountry,
   initialIsSriLanka,
+  initialIsLoggedIn,
 }: PricingSectionProps) {
   const [bundles, setBundles] = useState<TokenBundle[]>(
     initialBundles && initialBundles.length > 0 ? initialBundles : DEFAULT_BUNDLES
@@ -24,10 +26,18 @@ export function PricingSection({
   const [studentCountry, setStudentCountry] = useState<string | null>(
     initialCountry || (initialIsSriLanka ? "Sri Lanka" : null)
   );
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(initialIsLoggedIn ?? false);
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
 
   useEffect(() => {
+    if (typeof document !== "undefined") {
+      const matchRole = document.cookie.match(/edupulse_user_role=([^;]+)/);
+      const matchEmail = document.cookie.match(/edupulse_user_email=([^;]+)/);
+      const matchSession = document.cookie.match(/edupulse_session=([^;]+)/);
+      if (matchRole || matchEmail || matchSession) {
+        setIsLoggedIn(true);
+      }
+    }
     async function loadBundles() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -71,6 +81,11 @@ export function PricingSection({
     }
     loadBundles();
   }, []);
+
+  // Do not render pricing section for users who are not logged in
+  if (!isLoggedIn) {
+    return null;
+  }
 
   const displayPlans = bundles.length > 0 ? bundles : DEFAULT_BUNDLES;
 

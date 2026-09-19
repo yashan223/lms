@@ -23,6 +23,7 @@ import {
 import {
   FacultyTutor,
   formatDbTutors,
+  parseTutorBio,
 } from "@/lib/faculty-tutors";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 
@@ -176,10 +177,6 @@ export function CourseGrid() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold mb-3 shadow-2xs">
-              <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
-              <span>Verified London A/L & O/L Subject Faculty</span>
-            </div>
             <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#0c2461] tracking-tight mb-3">
               London A/L & O/L Subject Individual Classes & Tutors
             </h2>
@@ -350,7 +347,7 @@ export function CourseGrid() {
 
                       {/* Bio */}
                       <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        {tutor.bio}
+                        {parseTutorBio(tutor.bio)}
                       </p>
 
                       {/* Subjects & Specifications */}

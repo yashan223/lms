@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
+import { parseTutorBio } from "@/lib/utils";
 
 interface CourseMaterial {
   id: string;
@@ -998,7 +999,7 @@ export default function CourseDetailPage({
                   </div>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  {course?.instructor?.bio}
+                  {parseTutorBio(course?.instructor?.bio)}
                 </p>
               </div>
             </div>

@@ -1,3 +1,6 @@
+import { parseTutorBio } from "@/lib/utils";
+export { parseTutorBio };
+
 export interface TutorSubject {
   name: string;
   code: string;
@@ -78,7 +81,7 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
         dbTutor.avatar ||
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
       headline: dbTutor.headline || "Verified Academic Faculty Tutor",
-      bio: dbTutor.bio || "",
+      bio: parseTutorBio(dbTutor.bio),
       category:
         dbTutor.createdCourses?.[0]?.category ||
         "School of Science & O/L Academy",

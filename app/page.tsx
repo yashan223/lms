@@ -1,5 +1,5 @@
 import React from "react";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Hero } from "@/components/landing/Hero";
 import { AboutSection } from "@/components/landing/AboutSection";
@@ -10,11 +10,17 @@ import { FaqSection } from "@/components/landing/FaqSection";
 import { Footer } from "@/components/layout/Footer";
 import { getBundles } from "@/lib/bundles";
 import { resolveGeoLocation } from "@/lib/geo";
+import { SESSION_COOKIE_NAME } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const reqHeaders = await headers();
+  const cookieStore = await cookies();
+  const hasSession =
+    !!cookieStore.get(SESSION_COOKIE_NAME)?.value ||
+    !!cookieStore.get("edupulse_user_role")?.value;
+
   const [bundles, geo] = await Promise.all([
     getBundles(),
     resolveGeoLocation(reqHeaders),
@@ -37,6 +43,7 @@ export default async function HomePage() {
           initialBundles={bundles}
           initialCountry={geo.country}
           initialIsSriLanka={geo.isSriLanka}
+          initialIsLoggedIn={hasSession}
         />
 
         <FaqSection />

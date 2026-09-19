@@ -28,7 +28,7 @@ export function AboutSection() {
     {
       icon: Users,
       title: "Expert Online Tutors",
-      description: "Learn directly from active university and college educators who structure course content, author study materials, and guide students.",
+      description: "Learn directly from active university and college educators who structure individual class content, author study materials, and guide students.",
       badge: "Expert Tutors",
       badgeColor: "bg-purple-100 text-purple-800",
     },
@@ -77,7 +77,7 @@ export function AboutSection() {
                 className="px-6 py-3 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-md shadow-blue-950/20 flex items-center gap-2 transition-all"
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Browse Accredited Courses</span>
+                <span>Browse Individual Classes</span>
               </Link>
 
               <Link

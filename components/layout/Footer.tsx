@@ -111,7 +111,7 @@ export function Footer() {
                 Academic Newsletter
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Receive weekly student digests, new course releases, and educator resources.
+                Receive weekly student digests, new individual class releases, and educator resources.
               </p>
 
               <form onSubmit={handleSubscribe} className="space-y-2">

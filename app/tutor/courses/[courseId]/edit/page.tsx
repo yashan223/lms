@@ -440,9 +440,9 @@ export function TutorCourseWorkspaceContent({
       isOpen: true,
       title: `Delete "${course?.title}"?`,
       description:
-        "This will delete this course, modules, lessons, study materials, and student enrollments. This action cannot be undone.",
+        "This will delete this class, modules, lessons, study materials, and student enrollments. This action cannot be undone.",
       variant: "danger",
-      confirmText: "Delete Course",
+      confirmText: "Delete Class",
       onConfirm: async () => {
         try {
           await callTutorApi({ action: "delete_course", courseId });
@@ -628,7 +628,7 @@ export function TutorCourseWorkspaceContent({
     setConfirmModal({
       isOpen: true,
       title: `Delete "${material.title}"?`,
-      description: "This study material will be permanently removed from this course repository.",
+      description: "This study material will be permanently removed from this class repository.",
       variant: "danger",
       confirmText: "Delete Material",
       onConfirm: async () => {
@@ -676,7 +676,7 @@ export function TutorCourseWorkspaceContent({
     setConfirmModal({
       isOpen: true,
       title: `Unenroll ${studentName}?`,
-      description: `Remove ${studentName} from this course? They will lose access to course materials and lessons.`,
+      description: `Remove ${studentName} from this class? They will lose access to class materials and lessons.`,
       variant: "warning",
       confirmText: "Unenroll Student",
       onConfirm: async () => {
@@ -791,7 +791,7 @@ export function TutorCourseWorkspaceContent({
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-slate-600">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-        <h2 className="text-base font-bold text-slate-800">Loading Tutor Course Workspace...</h2>
+        <h2 className="text-base font-bold text-slate-800">Loading Tutor Class Workspace...</h2>
         <p className="text-xs text-slate-400 mt-1">Fetching syllabus, study materials, and student rosters...</p>
       </div>
     );
@@ -895,7 +895,7 @@ export function TutorCourseWorkspaceContent({
                   value={course?.status || "PUBLISHED"}
                   onChange={(e) => handleQuickStatusChange(e.target.value)}
                   className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusBadgeColor}`}
-                  title="Change course publishing state"
+                  title="Change class publishing state"
                 >
                   <option value="PUBLISHED">Published</option>
                   <option value="PENDING_REVIEW">Pending Review</option>
@@ -1210,7 +1210,7 @@ export function TutorCourseWorkspaceContent({
 
                 {/* Full Course Description */}
                 <div className="md:col-span-3 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Comprehensive Course Syllabus Description</label>
+                  <label className="text-xs font-bold text-slate-700">Comprehensive Class Syllabus Description</label>
                   <textarea
                     rows={6}
                     value={detailsForm.description}
@@ -1824,7 +1824,7 @@ export function TutorCourseWorkspaceContent({
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Enrolled Student Roster</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    View active course participants, learning progress, and student contact details.
+                    View active class participants, learning progress, and student contact details.
                   </p>
                 </div>
               </div>
@@ -1851,7 +1851,7 @@ export function TutorCourseWorkspaceContent({
                     <Users className="w-8 h-8 text-slate-300 mx-auto" />
                     <h4 className="font-bold text-xs text-slate-700">No Students Enrolled</h4>
                     <p className="text-[11px] text-slate-400">
-                      {studentSearch ? "No students matched your search query." : "Students who enroll in this course will appear here."}
+                      {studentSearch ? "No students matched your search query." : "Students who enroll in this class will appear here."}
                     </p>
                   </div>
                 ) : (

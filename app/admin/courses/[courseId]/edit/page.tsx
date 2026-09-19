@@ -669,7 +669,7 @@ export function AdminCourseWorkspaceContent({
       setMatDesc("");
       setMatFile(null);
       await loadData(true);
-      showToast("success", "Study material published to course.");
+      showToast("success", "Study material published to class.");
     } catch (err: any) {
       showToast("error", err.message || "Failed to publish material.");
     } finally {
@@ -681,7 +681,7 @@ export function AdminCourseWorkspaceContent({
     setConfirmModal({
       isOpen: true,
       title: `Delete "${material.title}"?`,
-      description: "This study material will be permanently removed from this course repository.",
+      description: "This study material will be permanently removed from this class repository.",
       variant: "danger",
       confirmText: "Delete Material",
       onConfirm: async () => {

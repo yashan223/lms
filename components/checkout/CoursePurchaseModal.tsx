@@ -123,7 +123,7 @@ export function CoursePurchaseModal({
       const data = await res.json();
 
       if (res.status === 401) {
-        setErrorMessage("Please sign in or register to complete your course enrollment.");
+        setErrorMessage("Please sign in or register to complete your individual class enrollment.");
         setTimeout(() => {
           router.push(`/login?redirect=${encodeURIComponent(`/courses/${course.slug}`)}`);
         }, 1200);
@@ -177,7 +177,7 @@ export function CoursePurchaseModal({
                 </span>
               </div>
               <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-0.5 leading-snug">
-                {purchaseSuccess ? "Enrollment Complete!" : `Course Enrollment (${price} Tokens)`}
+                {purchaseSuccess ? "Enrollment Complete!" : `Individual Class Enrollment (${price} Tokens)`}
               </h3>
             </div>
           </div>
@@ -228,7 +228,7 @@ export function CoursePurchaseModal({
                 </div>
                 <div className="flex items-center gap-2">
                   <Award className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Official course certificate</span>
+                  <span>Official individual class certificate</span>
                 </div>
               </div>
             </div>
@@ -238,7 +238,7 @@ export function CoursePurchaseModal({
                 onClick={handleFinish}
                 className="w-full bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-11 rounded-xl shadow-md cursor-pointer gap-2"
               >
-                <span>Access Course Materials & Lessons</span>
+                <span>Access Class Materials & Lessons</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -319,7 +319,7 @@ export function CoursePurchaseModal({
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-slate-600">
-                  <span>Course Enrollment Fee</span>
+                  <span>Individual Class Enrollment Fee</span>
                   <span className="font-bold text-amber-600">-{price} Tokens</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100 font-bold">
@@ -389,7 +389,7 @@ export function CoursePurchaseModal({
             {/* Price Breakdown Specification */}
             <div className="space-y-1.5 pt-1 text-slate-600 text-xs">
               <div className="flex items-center justify-between">
-                <span>Course Tuition Specification</span>
+                <span>Individual Class Tuition Specification</span>
                 <span className="font-semibold text-slate-900">{price} Tokens</span>
               </div>
               <div className="flex items-center justify-between">

@@ -572,7 +572,7 @@ function TutorProfileContent() {
                       <span>1. Profile Photo &amp; Visual Identity</span>
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Upload a high-resolution professional portrait. Students and parents will see this on course syllabi.
+                      Upload a high-resolution professional portrait. Students and parents will see this on individual class syllabi.
                     </p>
                   </div>
                 </div>
@@ -694,7 +694,7 @@ function TutorProfileContent() {
                     className="rounded-xl h-9 text-xs"
                   />
                   <p className="text-[10px] text-slate-400">
-                    This appears prominently underneath your name on all course pages, search results, and booking forms.
+                    This appears prominently underneath your name on all class pages, search results, and booking forms.
                   </p>
                 </div>
 
@@ -1141,7 +1141,7 @@ function TutorProfileContent() {
                     <span>Ready to publish your updated credentials?</span>
                   </h4>
                   <p className="text-xs text-blue-200">
-                    Saved changes immediately synchronize to your course pages, consultation booking desks, and student directories.
+                    Saved changes immediately synchronize to your class pages, consultation booking desks, and student directories.
                   </p>
                 </div>
 

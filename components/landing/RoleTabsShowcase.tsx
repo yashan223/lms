@@ -125,7 +125,7 @@ export function RoleTabsShowcase() {
                       href="/courses"
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-all"
                     >
-                      <span>Explore Student Courses</span>
+                      <span>Explore Individual Classes</span>
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
@@ -248,7 +248,7 @@ export function RoleTabsShowcase() {
                         </div>
                         <div>
                           <div className="text-xs font-bold text-slate-900">
-                            Course Studio: Climate Economics
+                            Class Studio: Climate Economics
                           </div>
                           <div className="text-[10px] text-slate-500">
                             Status: Published • 48 Lessons
@@ -315,7 +315,7 @@ export function RoleTabsShowcase() {
                   </h3>
 
                   <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                    Empower system administrators and institutional leaders with role-based access control (RBAC), multi-campus student records sync, course quality accreditation pipelines, and audit logs.
+                    Empower system administrators and institutional leaders with role-based access control (RBAC), multi-campus student records sync, class quality accreditation pipelines, and audit logs.
                   </p>
 
                   <div className="space-y-3">
@@ -325,7 +325,7 @@ export function RoleTabsShowcase() {
                         desc: "Granular permissions for professors, teaching assistants, and department chairs.",
                       },
                       {
-                        title: "Course QA & Academic Accreditation Queue",
+                        title: "Class QA & Academic Accreditation Queue",
                         desc: "Review syllabus standards, academic citations, and compliance before publishing.",
                       },
                       {

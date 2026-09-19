@@ -113,7 +113,7 @@ export function Navbar() {
             href="/courses"
             className="text-blue-700 hover:text-blue-800 transition-colors py-1 font-black"
           >
-            COURSES
+            INDIVIDUAL CLASSES
           </Link>
           <Link
             href="/#about"
@@ -260,7 +260,7 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="text-blue-700 hover:text-blue-800 py-1.5 px-2 rounded-lg hover:bg-blue-50/50"
             >
-              COURSES
+              INDIVIDUAL CLASSES
             </Link>
             <Link
               href="/#about"
@@ -320,7 +320,7 @@ export function Navbar() {
         onConfirm={handleSignOut}
         variant="danger"
         title="Sign Out of EduPulse?"
-        description="Are you sure you want to end your session? You will need to sign in again to access your active course materials, syllabus vaults, and study guides."
+        description="Are you sure you want to end your session? You will need to sign in again to access your active class materials, syllabus vaults, and study guides."
         confirmText="Sign Out"
         cancelText="Stay Signed In"
       />

@@ -1150,7 +1150,7 @@ function DashboardContent() {
                       ) : (
                         <ChevronRight className="w-3 h-3 text-slate-400" />
                       )}
-                      <span>My courses</span>
+                      <span>My classes</span>
                     </div>
 
                     {navCoursesOpen && (
@@ -1170,14 +1170,14 @@ function DashboardContent() {
                             </Link>
                           ))
                         ) : (
-                          <div className="text-slate-400 italic py-0.5">No enrolled courses</div>
+                          <div className="text-slate-400 italic py-0.5">No enrolled classes</div>
                         )}
                         <Link
                           href="/courses"
                           className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
                         >
                           <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
-                          <span>Browse all courses...</span>
+                          <span>Browse all individual classes...</span>
                         </Link>
                       </div>
                     )}
@@ -1329,13 +1329,13 @@ function DashboardContent() {
                   className="sm:col-span-3 h-8 rounded border border-slate-300 px-2 bg-white font-medium text-slate-700"
                 >
                   <option value="date">Sort by due date</option>
-                  <option value="course">Sort by course</option>
+                  <option value="course">Sort by class</option>
                 </select>
 
                 <div className="sm:col-span-6 relative">
                   <input
                     type="text"
-                    placeholder="Search activities, titles or courses..."
+                    placeholder="Search activities, titles or classes..."
                     value={timelineSearch}
                     onChange={(e) => setTimelineSearch(e.target.value)}
                     className="w-full h-8 rounded border border-slate-300 pl-8 pr-3 text-xs"
@@ -1582,7 +1582,7 @@ function DashboardContent() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <div className="flex items-center justify-between gap-3 min-w-0">
                   <h3 className="text-sm font-bold text-slate-900 truncate">
-                    Enrolled Course Overview
+                    Enrolled Classes Overview
                   </h3>
                   <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
                     {myCourses.length} {myCourses.length === 1 ? "Unit" : "Units"} Active
@@ -1593,7 +1593,7 @@ function DashboardContent() {
                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200 transition-colors whitespace-nowrap"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>Explore Courses</span>
+                  <span>Explore Classes</span>
                 </Link>
               </div>
 
@@ -1643,12 +1643,12 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="text-center py-8 px-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                  <p className="text-xs text-slate-500 font-medium mb-3">You are not enrolled in any courses yet.</p>
+                  <p className="text-xs text-slate-500 font-medium mb-3">You are not enrolled in any classes yet.</p>
                   <Link
                     href="/courses"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs"
                   >
-                    <span>Explore Available Courses</span>
+                    <span>Explore Available Classes</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -1885,13 +1885,13 @@ function DashboardContent() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Course Association</label>
+                <label className="font-bold text-slate-700 block mb-1">Class Association</label>
                 <select
                   value={newEventCourseId}
                   onChange={(e) => setNewEventCourseId(e.target.value)}
                   className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 >
-                  <option value="">General / Personal (No specific course)</option>
+                  <option value="">General / Personal (No specific class)</option>
                   {myCourses.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.title} {c.subjectCode ? `(${c.subjectCode})` : ""}

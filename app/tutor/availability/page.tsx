@@ -633,13 +633,13 @@ function TutorAvailabilityContent() {
                 {/* Course & Slot Type */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-700 block">Course Target</label>
+                    <label className="font-bold text-slate-700 block">Class Target</label>
                     <select
                       value={targetCourseId}
                       onChange={(e) => setTargetCourseId(e.target.value)}
                       className="w-full h-9 rounded-xl border border-slate-200 px-2.5 bg-white text-xs font-medium"
                     >
-                      <option value="ALL">All Courses (General)</option>
+                      <option value="ALL">All Classes (General)</option>
                       {courses.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.subjectCode ? `[${c.subjectCode}] ` : ""}{c.title}

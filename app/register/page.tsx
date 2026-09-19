@@ -149,7 +149,7 @@ export default function RegisterPage() {
                 Student Registration
               </h1>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Create your student account to access your courses and dashboard.
+                Create your student account to access your classes and dashboard.
               </p>
             </div>
 

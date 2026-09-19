@@ -586,8 +586,8 @@ function TutorDashboardContent() {
   const handleUnenrollStudent = (studentId: string, studentName: string, courseId: string, courseTitle: string) => {
     setConfirmModalData({
       isOpen: true,
-      title: "Remove Student from Course",
-      description: `Are you sure you want to remove ${studentName} from "${courseTitle}"? They will no longer have access to this course's syllabus and live classes.`,
+      title: "Remove Student from Class",
+      description: `Are you sure you want to remove ${studentName} from "${courseTitle}"? They will no longer have access to this individual class's syllabus and live classes.`,
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -1353,7 +1353,7 @@ function TutorDashboardContent() {
         {/* Mobile Horizontal Quick Tab Bar */}
         <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
-            { id: "courses", label: "Courses", icon: BookOpen, count: courses.length },
+            { id: "courses", label: "Individual Classes", icon: BookOpen, count: courses.length },
             { id: "classes", label: "Live Classes", icon: Video, count: events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length },
             { id: "history", label: "History", icon: History, count: completedSessions.length },
             { id: "students", label: "Students", icon: Users, count: students.length },
@@ -1412,7 +1412,7 @@ function TutorDashboardContent() {
                 >
                   <span className="flex items-center gap-2">
                     <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                    <span>My Courses & Syllabus</span>
+                    <span>My Classes & Syllabus</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
                     {courses.length}
@@ -1642,7 +1642,7 @@ function TutorDashboardContent() {
                 </div>
                 <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
                   <div className="font-bold text-slate-900 text-sm">{courses.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Courses</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Individual Classes</div>
                 </div>
                 <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
                   <div className="font-bold text-slate-900 text-sm">{events.length}</div>
@@ -1669,7 +1669,7 @@ function TutorDashboardContent() {
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>My Courses ({courses.length})</span>
+                <span>My Individual Classes ({courses.length})</span>
               </button>
 
               <button
@@ -1794,10 +1794,10 @@ function TutorDashboardContent() {
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
-                  <h3 className="text-xs font-medium text-slate-600 mb-3">Revenue by course</h3>
+                  <h3 className="text-xs font-medium text-slate-600 mb-3">Revenue by class</h3>
                   <div className="space-y-3">
                     {courses.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No courses assigned yet.</p>
+                      <p className="text-xs text-slate-400 italic">No classes assigned yet.</p>
                     ) : (
                       courses.map((c) => {
                         const price = Number(c.price) || 0;
@@ -1835,14 +1835,14 @@ function TutorDashboardContent() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
                       <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-                        Assigned Curriculum Courses
+                        Assigned Curriculum Classes
                       </h3>
                       <Link
                         href="/tutor/courses/new"
                         className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 inline-flex items-center px-3 shadow-xs transition-colors cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Add Course</span>
+                        <span>Add Class</span>
                       </Link>
                     </div>
 
@@ -1850,7 +1850,7 @@ function TutorDashboardContent() {
                       <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
-                        placeholder="Search courses..."
+                        placeholder="Search classes..."
                         value={courseSearch}
                         onChange={(e) => setCourseSearch(e.target.value)}
                         className="w-full pl-8 pr-3 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
@@ -1860,7 +1860,7 @@ function TutorDashboardContent() {
 
                   {filteredCourses.length === 0 ? (
                     <div className="text-center py-8 text-xs text-slate-400 italic">
-                      No courses match your search.
+                      No classes match your search.
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1914,7 +1914,7 @@ function TutorDashboardContent() {
                               className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md inline-flex items-center gap-1 hover:bg-blue-100 transition-colors"
                             >
                               <Edit3 className="w-3 h-3" />
-                              <span>Edit Course & Content</span>
+                              <span>Edit Class & Content</span>
                             </Link>
                             <button
                               onClick={() => {
@@ -2201,7 +2201,7 @@ function TutorDashboardContent() {
                           }`}
                         >
                           {f === "ALL" && `All Ended (${completedSessions.length})`}
-                          {f === "CLASSES" && `Courses (${completedSessions.filter((e) => Boolean(e.courseId)).length})`}
+                          {f === "CLASSES" && `Classes (${completedSessions.filter((e) => Boolean(e.courseId)).length})`}
                           {f === "STUDENTS" && `1-on-1 (${completedSessions.filter((e) => Boolean(e.userId)).length})`}
                         </button>
                       ))}
@@ -2366,7 +2366,7 @@ function TutorDashboardContent() {
                         onChange={(e) => setSelectedCourseFilter(e.target.value)}
                         className="py-1 px-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-700"
                       >
-                        <option value="ALL">All Courses</option>
+                        <option value="ALL">All Classes</option>
                         {courses.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.subjectCode || c.title}
@@ -4097,7 +4097,7 @@ function TutorDashboardContent() {
               </div>
 
               <div className="space-y-1.5">
-                <div className="font-bold text-slate-700">Enrolled Courses ({selectedStudentForModal.enrolledCourses.length}):</div>
+                <div className="font-bold text-slate-700">Enrolled Classes ({selectedStudentForModal.enrolledCourses.length}):</div>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {selectedStudentForModal.enrolledCourses.map((c, idx) => (
                     <div key={idx} className="p-2 rounded-lg bg-blue-50/60 border border-blue-100 flex items-center justify-between gap-2">

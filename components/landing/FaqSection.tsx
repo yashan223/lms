@@ -60,7 +60,7 @@ export function FaqSection() {
                 className="inline-flex items-center justify-center text-[#0c2461] font-bold gap-2 text-sm h-12 px-6 rounded-xl bg-white hover:bg-slate-100 shadow-md transition-all"
               >
                 <BookOpen className="w-4 h-4 text-[#0c2461]" />
-                <span>Explore Courses & Syllabus</span>
+                <span>Explore Individual Classes & Syllabus</span>
               </Link>
               <Link
                 href="/register"

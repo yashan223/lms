@@ -376,7 +376,7 @@ export default function CoursesPage() {
                               setShowPurchaseModal(true);
                             }}
                             className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                            title="Enroll in course using tokens and unlock all study materials"
+                            title="Enroll in individual class using tokens and unlock all study materials"
                           >
                             <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                             <span>Enroll ({course.price} Tokens)</span>

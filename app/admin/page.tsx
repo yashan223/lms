@@ -104,7 +104,7 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   grant_tokens: { label: "Grant Learning Credit", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
   give_credit: { label: "Grant Learning Credit", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
   adjust_tokens: { label: "Adjust Token Balance", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
-  enroll_user: { label: "Enroll Student in Course", icon: UserCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  enroll_user: { label: "Enroll Student in Individual Class", icon: UserCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   unenroll_user: { label: "Unenroll Student", icon: Users, color: "text-orange-600 bg-orange-50 border-orange-200" },
   create_course: { label: "Create Individual Class", icon: PlusCircle, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   update_course: { label: "Update Individual Class", icon: Edit3, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
@@ -114,7 +114,7 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   add_lesson: { label: "Add Lesson Video", icon: PlayCircle, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
   delete_lesson: { label: "Delete Lesson Video", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
   add_course_material: { label: "Upload Resource / Material", icon: Upload, color: "text-blue-600 bg-blue-50 border-blue-200" },
-  delete_course_material: { label: "Delete Course Material", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
+  delete_course_material: { label: "Delete Class Material", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
   schedule_class: { label: "Schedule Live Google Meet", icon: Video, color: "text-violet-600 bg-violet-50 border-violet-200" },
   start_class: { label: "Launch Live Class Room", icon: Radio, color: "text-red-600 bg-red-50 border-red-200" },
   end_class: { label: "Conclude Live Class", icon: CheckCircle2, color: "text-slate-600 bg-slate-50 border-slate-200" },
@@ -123,7 +123,7 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   approve_trial: { label: "Approve 1-on-1 Free Trial", icon: CalendarCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   reject_trial: { label: "Decline Free Trial Request", icon: X, color: "text-red-600 bg-red-50 border-red-200" },
   approve_course: { label: "Publish Individual Class", icon: ShieldCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  reject_course: { label: "Return Course to Draft", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
+  reject_course: { label: "Return Class to Draft", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
   update_bundles: { label: "Update Pricing Packages", icon: Coins, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
   clear_all_data: { label: "Wipe LMS Platform Data", icon: Trash2, color: "text-rose-600 bg-rose-50 border-rose-200" },
   system_test: { label: "System Health Audit Check", icon: ShieldCheck, color: "text-slate-600 bg-slate-50 border-slate-200" },
@@ -1130,7 +1130,7 @@ export default function AdminDashboardPage() {
   const handleDeleteCourse = (course: any) => {
     setConfirmModalData({
       isOpen: true,
-      title: `Delete Course: ${course.title}?`,
+      title: `Delete Class: ${course.title}?`,
       description: `This will delete the entire syllabus, including all modules, video lessons, and student enrollments.`,
       variant: "danger",
       onConfirm: async () => {
@@ -1876,7 +1876,7 @@ export default function AdminDashboardPage() {
                         <th className="py-3 px-4">User</th>
                         <th className="py-3 px-4">Role</th>
                         <th className="py-3 px-4">Academic Title</th>
-                        <th className="py-3 px-4">Enrolled Courses</th>
+                        <th className="py-3 px-4">Enrolled Classes</th>
                         <th className="py-3 px-4">Registered Date</th>
                       </tr>
                     </thead>
@@ -1893,7 +1893,7 @@ export default function AdminDashboardPage() {
                             </span>
                           </td>
                           <td className="py-3 px-4 text-slate-700">{u.headline || "Enrolled Student"}</td>
-                          <td className="py-3 px-4 font-semibold text-slate-800">{u.enrollments?.length || 0} Courses</td>
+                          <td className="py-3 px-4 font-semibold text-slate-800">{u.enrollments?.length || 0} Classes</td>
                           <td className="py-3 px-4 text-slate-400">{new Date(u.createdAt).toLocaleDateString("en-US")}</td>
                         </tr>
                       ))}
@@ -2397,7 +2397,7 @@ export default function AdminDashboardPage() {
                         <th className="py-3.5 px-4">System Role</th>
                         <th className="py-3.5 px-4">Credit / Rate</th>
                         <th className="py-3.5 px-4">Academic Title / Headline</th>
-                        <th className="py-3.5 px-4">Enrolled / Taught Courses</th>
+                        <th className="py-3.5 px-4">Enrolled / Taught Classes</th>
                         <th className="py-3.5 px-4">Registration Date</th>
                         <th className="py-3.5 px-4 text-right">Actions</th>
                       </tr>
@@ -2463,8 +2463,8 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3.5 px-4 font-semibold text-slate-800">
                             {u.role === "STUDENT"
-                              ? `${u.enrollments?.length || 0} Courses Enrolled`
-                              : `${u.createdCourses?.length || 0} Courses Assigned`}
+                              ? `${u.enrollments?.length || 0} Classes Enrolled`
+                              : `${u.createdCourses?.length || 0} Classes Assigned`}
                           </td>
                           <td className="py-3.5 px-4 text-slate-500">
                             {new Date(u.createdAt).toLocaleDateString("en-US")}
@@ -3250,7 +3250,7 @@ export default function AdminDashboardPage() {
                     {totalEnrollmentsCount} {totalEnrollmentsCount === 1 ? "Purchase" : "Purchases"}
                   </div>
                   <div className="text-[11px] text-blue-600 font-semibold">
-                    Across {coursesList.length} Published Courses
+                    Across {coursesList.length} Published Classes
                   </div>
                 </div>
 
@@ -3340,7 +3340,7 @@ export default function AdminDashboardPage() {
                       onChange={(e) => setPurchaseCourseFilter(e.target.value)}
                       className="w-full sm:w-auto h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-700 cursor-pointer"
                     >
-                      <option value="ALL">All Courses ({purchasesList.length} Purchases)</option>
+                      <option value="ALL">All Classes ({purchasesList.length} Purchases)</option>
                       {coursesList.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.title} ({c.enrollments?.length || 0} enrolled)
@@ -3892,7 +3892,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
                       <BookOpen className="w-4 h-4" />
-                      Courses & Syllabi
+                      Classes & Syllabi
                     </span>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
@@ -3942,7 +3942,7 @@ export default function AdminDashboardPage() {
                       : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  Courses ({pendingCoursesList.length})
+                  Classes ({pendingCoursesList.length})
                 </button>
               </div>
 
@@ -4188,7 +4188,7 @@ export default function AdminDashboardPage() {
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-800 uppercase tracking-wide">
-                                  ⏳ Course Review Required
+                                  ⏳ Class Review Required
                                 </span>
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
                                   {course.subjectCode || "LONDON-AL"}
@@ -4314,7 +4314,7 @@ export default function AdminDashboardPage() {
                     {(auditLogStats.courseCount + auditLogStats.classTrialCount).toLocaleString()}
                   </div>
                   <div className="text-[11px] text-emerald-600 font-semibold">
-                    Courses, sessions & trial approvals
+                    Classes, sessions & trial approvals
                   </div>
                 </div>
               </div>
@@ -4803,7 +4803,7 @@ export default function AdminDashboardPage() {
                       >
                         <div className="min-w-0">
                           <div className="font-bold text-slate-900 truncate">
-                            {matchedCourse?.title || "Enrolled Course"}
+                            {matchedCourse?.title || "Enrolled Class"}
                           </div>
                           {matchedCourse?.subjectCode && (
                             <span className="text-[10px] font-mono text-blue-600">
@@ -4826,7 +4826,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 text-xs italic text-center">
-                  This student is not currently enrolled in any courses.
+                  This student is not currently enrolled in any classes.
                 </div>
               )}
             </div>
@@ -4834,7 +4834,7 @@ export default function AdminDashboardPage() {
             {/* Add New Enrollment Form */}
             <form onSubmit={handleEnrollUserSubmit} className="space-y-3 pt-2 border-t border-slate-100 text-xs">
               <div>
-                <label className="font-bold block mb-1">Enroll in Additional Course</label>
+                <label className="font-bold block mb-1">Enroll in Additional Class</label>
                 <select
                   value={selectedCourseToEnroll}
                   onChange={(e) => setSelectedCourseToEnroll(e.target.value)}
@@ -4863,14 +4863,14 @@ export default function AdminDashboardPage() {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-base text-slate-900">Create New Course</h3>
+              <h3 className="font-bold text-base text-slate-900">Create New Individual Class</h3>
               <button onClick={() => setShowAddCourseModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleCreateCourse} className="space-y-3 text-xs">
               <div>
-                <label className="font-bold block mb-1">Course Title</label>
-                <Input required placeholder="Enter course title" value={courseFormTitle} onChange={(e) => setCourseFormTitle(e.target.value)} className="rounded-xl" />
+                <label className="font-bold block mb-1">Individual Class Title</label>
+                <Input required placeholder="Enter class title" value={courseFormTitle} onChange={(e) => setCourseFormTitle(e.target.value)} className="rounded-xl" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -4914,7 +4914,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="pt-2 flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowAddCourseModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
-                <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Create Course</Button>
+                <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Create Individual Class</Button>
               </div>
             </form>
           </div>
@@ -4925,13 +4925,13 @@ export default function AdminDashboardPage() {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-base text-slate-900">Edit Course Details</h3>
+              <h3 className="font-bold text-base text-slate-900">Edit Individual Class Details</h3>
               <button onClick={() => setShowEditCourseModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
             <form onSubmit={handleUpdateCourse} className="space-y-3 text-xs">
               <div>
-                <label className="font-bold block mb-1">Course Title</label>
+                <label className="font-bold block mb-1">Individual Class Title</label>
                 <Input required value={courseFormTitle} onChange={(e) => setCourseFormTitle(e.target.value)} className="rounded-xl" />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -5075,7 +5075,7 @@ export default function AdminDashboardPage() {
                     {selectedCourseForMaterials.subjectCode || "COURSE-FILE-HUB"}
                   </span>
                   <h3 className="font-bold text-base text-slate-900">
-                    Course Files & Study Materials
+                    Class Files & Study Materials
                   </h3>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -5098,7 +5098,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                   <Upload className="w-3.5 h-3.5 text-blue-600" />
-                  Upload Course Study Material
+                  Upload Class Study Material
                 </span>
                 <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                   Academy Resource Repository
@@ -5200,7 +5200,7 @@ export default function AdminDashboardPage() {
                   ) : (
                     <>
                       <Upload className="w-3.5 h-3.5" />
-                      <span>Publish to Course Files</span>
+                      <span>Publish to Class Files</span>
                     </>
                   )}
                 </Button>

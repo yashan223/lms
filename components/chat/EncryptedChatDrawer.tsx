@@ -222,7 +222,7 @@ export function EncryptedChatDrawer({
         await fetchConversations();
       } else {
         const data = await res.json().catch(() => ({}));
-        setErrorMessage(data.error || "Cannot initiate messaging. A requested 1-on-1 trial or enrolled course is required.");
+        setErrorMessage(data.error || "Cannot initiate messaging. A requested 1-on-1 trial or enrolled class is required.");
       }
     } catch (err) {
       console.error("Error starting conversation:", err);
@@ -266,7 +266,7 @@ export function EncryptedChatDrawer({
         fetchConversations();
       } else {
         const data = await res.json().catch(() => ({}));
-        setErrorMessage(data.error || "Failed to send message. A requested 1-on-1 trial or enrolled course is required.");
+        setErrorMessage(data.error || "Failed to send message. A requested 1-on-1 trial or enrolled class is required.");
       }
     } catch (err) {
       console.error("Error sending encrypted message:", err);
@@ -592,8 +592,8 @@ export function EncryptedChatDrawer({
                         <p className="font-bold text-slate-700">No active conversations</p>
                         <p className="text-[11px] text-slate-500 max-w-[260px] mx-auto leading-relaxed">
                           {currentUser?.role === "STUDENT"
-                            ? "Direct messaging is available for tutors of your enrolled courses or 1-on-1 trial requests."
-                            : "Direct messaging is available for students with an enrolled course or 1-on-1 trial request."}
+                            ? "Direct messaging is available for tutors of your enrolled classes or 1-on-1 trial requests."
+                            : "Direct messaging is available for students with an enrolled class or 1-on-1 trial request."}
                         </p>
                         <Button
                           size="sm"

@@ -300,10 +300,10 @@ export default function CourseDetailPage({
       <div className="min-h-screen flex flex-col justify-between bg-white">
         <Navbar />
         <div className="text-center py-24 space-y-3">
-          <h2 className="text-2xl font-bold text-slate-900">Course Not Found</h2>
-          <p className="text-xs text-slate-500">The requested course syllabus is not currently available.</p>
+          <h2 className="text-2xl font-bold text-slate-900">Individual Class Not Found</h2>
+          <p className="text-xs text-slate-500">The requested class syllabus is not currently available.</p>
           <Link href="/courses" className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs">
-            Return to Course Directory
+            Return to Classes Directory
           </Link>
         </div>
         <Footer />
@@ -346,7 +346,7 @@ export default function CourseDetailPage({
             <div className="flex items-center gap-2 text-xs text-blue-300/80 mb-4 flex-wrap">
               <Link href="/" className="hover:text-white transition-colors">Home</Link>
               <span>/</span>
-              <Link href="/courses" className="hover:text-white transition-colors">Courses</Link>
+              <Link href="/courses" className="hover:text-white transition-colors">Individual Classes</Link>
               <span>/</span>
               <span className="text-white font-medium truncate max-w-md">{course?.title}</span>
             </div>
@@ -420,7 +420,7 @@ export default function CourseDetailPage({
                   <div className="space-y-2">
                     <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-bold">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>You have active access to this course!</span>
+                      <span>You have active access to this class!</span>
                     </div>
                     <button
                       onClick={() => setActiveTab("materials")}
@@ -458,7 +458,7 @@ export default function CourseDetailPage({
                 )}
 
                 <div className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
-                  <div className="font-bold text-slate-800">Included in this course:</div>
+                  <div className="font-bold text-slate-800">Included in this class:</div>
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600" />
                     <span>Downloadable Unit Handbooks & Formula Books</span>
@@ -605,7 +605,7 @@ export default function CourseDetailPage({
                       Study Materials & Downloads are Locked
                     </h4>
                     <p className="text-[11px] text-amber-800 mt-0.5">
-                      Purchase this course to unlock complete download access to all {materialsList.length} verified handbooks, formula booklets, and worked solutions.
+                      Purchase this individual class to unlock complete download access to all {materialsList.length} verified handbooks, formula booklets, and worked solutions.
                     </p>
                   </div>
                 </div>
@@ -614,7 +614,7 @@ export default function CourseDetailPage({
                   className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 rounded-xl shadow-xs shrink-0 cursor-pointer gap-1.5"
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Enroll Course ({course?.price || 10} Tokens)</span>
+                  <span>Enroll in Class ({course?.price || 10} Tokens)</span>
                 </Button>
               </div>
             )}
@@ -768,7 +768,7 @@ export default function CourseDetailPage({
                               {selectedLesson.title}
                             </h3>
                             <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                              Purchase this course to unlock complete streaming access to all modules, derivations, and exam walkthroughs.
+                              Purchase this individual class to unlock complete streaming access to all modules, derivations, and exam walkthroughs.
                             </p>
                           </div>
                           <Button
@@ -776,7 +776,7 @@ export default function CourseDetailPage({
                             className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md cursor-pointer gap-2"
                           >
                             <Lock className="w-3.5 h-3.5 text-amber-300" />
-                            <span>Enroll Course to Unlock ({course?.price || 10} Tokens)</span>
+                            <span>Enroll in Class to Unlock ({course?.price || 10} Tokens)</span>
                           </Button>
                         </div>
                       )}
@@ -910,7 +910,7 @@ export default function CourseDetailPage({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xs space-y-6">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Course & Syllabus Overview</h2>
+                  <h2 className="text-lg font-bold text-slate-900">Class & Syllabus Overview</h2>
                   <p className="text-xs text-slate-600 leading-relaxed mt-2">
                     {course?.description}
                   </p>
@@ -968,7 +968,7 @@ export default function CourseDetailPage({
                 <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                   <Upload className="w-4 h-4" />
                 </div>
-                <h3 className="font-bold text-base text-slate-900">Upload Course Study Material</h3>
+                <h3 className="font-bold text-base text-slate-900">Upload Class Study Material</h3>
               </div>
               <button
                 onClick={() => setShowUploadModal(false)}

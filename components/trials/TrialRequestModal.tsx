@@ -497,7 +497,7 @@ export function TrialRequestModal({
 
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Subject / Course:</span>
+                <span className="text-slate-500">Subject / Individual Class:</span>
                 <span className="font-bold text-slate-900">
                   {createdTrial.course?.title || selectedCourse?.title || "London A/L Individual Class"}
                 </span>
@@ -545,7 +545,7 @@ export function TrialRequestModal({
                 onClick={onClose}
                 className="w-full bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl py-2.5 shadow-xs cursor-pointer"
               >
-                Got It, Return to Course
+                Got It, Return to Class
               </Button>
             </div>
           </div>
@@ -603,7 +603,7 @@ export function TrialRequestModal({
                   <span>1 Trial Per Tutor Limit</span>
                 </div>
                 <p className="text-[11px] text-amber-800/90 leading-relaxed">
-                  You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {allCourses.length > 1 ? "Please select a different course or tutor below." : "Please select another tutor from the course catalog."}
+                  You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {allCourses.length > 1 ? "Please select a different class or tutor below." : "Please select another tutor from the individual classes directory."}
                 </p>
               </div>
             ) : trialStats && (
@@ -618,12 +618,12 @@ export function TrialRequestModal({
               </div>
             )}
 
-            {/* Subject / Course Selection or Display */}
+            {/* Subject / Individual Class Selection or Display */}
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-1.5">
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Selected Subject / Course</span>
+                  <span>Selected Subject / Individual Class</span>
                 </span>
                 {allCourses.length > 1 && (
                   <span className="text-[10px] text-blue-600 font-semibold">Change Subject</span>

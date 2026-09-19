@@ -26,10 +26,11 @@ import {
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
+import { DEFAULT_FACULTY_TUTORS, mergeFacultyTutors } from "@/lib/faculty-tutors";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
-  const [tutors, setTutors] = useState<any[]>([]);
+  const [tutors, setTutors] = useState<any[]>(DEFAULT_FACULTY_TUTORS);
   const [trialStats, setTrialStats] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"masterclasses" | "tutors">("masterclasses");
   const [loading, setLoading] = useState(true);
@@ -96,7 +97,7 @@ export default function CoursesPage() {
           setCourses(formatted);
         }
         if (data.tutors && Array.isArray(data.tutors)) {
-          setTutors(data.tutors);
+          setTutors(mergeFacultyTutors(data.tutors));
         }
       }
 
@@ -152,6 +153,14 @@ export default function CoursesPage() {
         tutor.name?.toLowerCase().includes(q) ||
         tutor.headline?.toLowerCase().includes(q) ||
         tutor.bio?.toLowerCase().includes(q) ||
+        tutor.category?.toLowerCase().includes(q) ||
+        (tutor.subjects &&
+          tutor.subjects.some(
+            (s: any) =>
+              s.name?.toLowerCase().includes(q) ||
+              s.code?.toLowerCase().includes(q) ||
+              s.levelBadge?.toLowerCase().includes(q)
+          )) ||
         (tutor.createdCourses &&
           tutor.createdCourses.some(
             (c: any) =>
@@ -159,13 +168,22 @@ export default function CoursesPage() {
               c.subjectCode?.toLowerCase().includes(q) ||
               c.category?.toLowerCase().includes(q)
           ));
+
       const matchCat =
         selectedCategory === "All" ||
+        tutor.category === selectedCategory ||
         (tutor.createdCourses && tutor.createdCourses.some((c: any) => c.category === selectedCategory)) ||
         (tutor.headline && tutor.headline.toLowerCase().includes(selectedCategory.toLowerCase()));
-      return matchSearch && matchCat;
+
+      const matchLevel =
+        selectedLevel === "ALL" ||
+        tutor.level === "BOTH" ||
+        (selectedLevel === "AL" && (tutor.level === "AL" || tutor.subjects?.some((s: any) => s.level === "AL"))) ||
+        (selectedLevel === "OL" && (tutor.level === "OL" || tutor.subjects?.some((s: any) => s.level === "OL")));
+
+      return matchSearch && matchCat && matchLevel;
     });
-  }, [tutors, searchQuery, selectedCategory]);
+  }, [tutors, searchQuery, selectedCategory, selectedLevel]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900">
@@ -228,39 +246,47 @@ export default function CoursesPage() {
             </div>
           </div>
 
-          {/* Level Filter (Shown for Masterclasses) */}
-          {viewMode === "masterclasses" && (
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
-                {[
-                  { id: "ALL", label: "All Qualifications" },
-                  { id: "AL", label: "London A/L (IAL)" },
-                  { id: "OL", label: "London O/L (IGCSE)" },
-                ].map((lvl) => (
-                  <button
-                    key={lvl.id}
-                    onClick={() => setSelectedLevel(lvl.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      selectedLevel === lvl.id
-                        ? "bg-[#0c2461] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    {lvl.label}
-                  </button>
-                ))}
-              </div>
+          {/* Level Filter (Shown for both Masterclasses and Tutors) */}
+          <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
+              {[
+                { id: "ALL", label: "All Qualifications" },
+                { id: "AL", label: "London A/L (IAL)" },
+                { id: "OL", label: "London O/L (IGCSE)" },
+              ].map((lvl) => (
+                <button
+                  key={lvl.id}
+                  onClick={() => setSelectedLevel(lvl.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    selectedLevel === lvl.id
+                      ? "bg-[#0c2461] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {lvl.label}
+                </button>
+              ))}
+            </div>
 
+            {viewMode === "masterclasses" ? (
               <button
                 onClick={() => setViewMode("tutors")}
                 className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <span>Looking for Tutors Conducting Classes?</span>
+                <span>Looking for O/L & A/L Tutors?</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
-            </div>
-          )}
+            ) : (
+              <button
+                onClick={() => setViewMode("masterclasses")}
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Browse Individual Classes Syllabus</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
           {/* Academic Categories Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -544,6 +570,37 @@ export default function CoursesPage() {
                               {tutor.events?.length || 0} Live Sessions
                             </span>
                           </div>
+
+                          {/* Subjects & Specifications */}
+                          {tutor.subjects && tutor.subjects.length > 0 && (
+                            <div className="space-y-1.5 pt-1">
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                                London O/L & A/L Subjects Taught:
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {tutor.subjects.map((sub: any, sIdx: number) => (
+                                  <span
+                                    key={sIdx}
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
+                                      sub.level === "AL"
+                                        ? "bg-blue-50/80 text-blue-900 border-blue-200"
+                                        : "bg-emerald-50/80 text-emerald-900 border-emerald-200"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        sub.level === "AL" ? "bg-blue-600" : "bg-emerald-600"
+                                      }`}
+                                    />
+                                    <span className="font-mono text-[10px] font-bold opacity-80">
+                                      {sub.code}
+                                    </span>
+                                    <span>{sub.name}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {tutor.createdCourses && tutor.createdCourses.length > 0 && (
                             <div className="space-y-1.5 pt-1">

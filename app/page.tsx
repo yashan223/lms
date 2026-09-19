@@ -10,19 +10,19 @@ import { FaqSection } from "@/components/landing/FaqSection";
 import { Footer } from "@/components/layout/Footer";
 import { getBundles } from "@/lib/bundles";
 import { resolveGeoLocation } from "@/lib/geo";
-import { SESSION_COOKIE_NAME } from "@/lib/auth";
+import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const reqHeaders = await headers();
   const cookieStore = await cookies();
-  const hasSession =
-    !!cookieStore.get(SESSION_COOKIE_NAME)?.value ||
-    !!cookieStore.get("edupulse_user_role")?.value;
+  const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const sessionPayload = sessionToken ? verifySessionToken(sessionToken) : null;
+  const hasSession = !!sessionPayload;
 
   const [bundles, geo] = await Promise.all([
-    getBundles(),
+    hasSession ? getBundles() : Promise.resolve([]),
     resolveGeoLocation(reqHeaders),
   ]);
 
@@ -39,12 +39,14 @@ export default async function HomePage() {
 
         <BentoFeatures />
 
-        <PricingSection
-          initialBundles={bundles}
-          initialCountry={geo.country}
-          initialIsSriLanka={geo.isSriLanka}
-          initialIsLoggedIn={hasSession}
-        />
+        {hasSession && (
+          <PricingSection
+            initialBundles={bundles}
+            initialCountry={geo.country}
+            initialIsSriLanka={geo.isSriLanka}
+            initialIsLoggedIn={true}
+          />
+        )}
 
         <FaqSection />
       </main>

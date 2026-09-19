@@ -26,18 +26,10 @@ export function PricingSection({
   const [studentCountry, setStudentCountry] = useState<string | null>(
     initialCountry || (initialIsSriLanka ? "Sri Lanka" : null)
   );
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(initialIsLoggedIn ?? false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(Boolean(initialIsLoggedIn));
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
 
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      const matchRole = document.cookie.match(/edupulse_user_role=([^;]+)/);
-      const matchEmail = document.cookie.match(/edupulse_user_email=([^;]+)/);
-      const matchSession = document.cookie.match(/edupulse_session=([^;]+)/);
-      if (matchRole || matchEmail || matchSession) {
-        setIsLoggedIn(true);
-      }
-    }
     async function loadBundles() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -49,34 +41,39 @@ export function PricingSection({
           fetch("/api/dashboard").catch(() => null),
         ]);
 
-        if (bundlesRes.ok) {
-          const data = await bundlesRes.json();
-          if (data.bundles && Array.isArray(data.bundles) && data.bundles.length > 0) {
-            setBundles(data.bundles);
-          }
-          if (data.country) {
-            setStudentCountry(data.country);
-          }
-          if (data.isLoggedIn) {
-            setIsLoggedIn(true);
-          }
-          if (data.academicLevel) {
-            setStudentLevel(data.academicLevel);
-          }
-        }
+        let authenticated = false;
 
         if (dashboardRes && dashboardRes.ok) {
           const dashboardData = await dashboardRes.json();
           if (dashboardData.user) {
-            setIsLoggedIn(true);
+            authenticated = true;
             if (dashboardData.user.country) {
               setStudentCountry(dashboardData.user.country);
             }
             setStudentLevel(getStudentAcademicLevel(dashboardData.user));
           }
         }
+
+        if (bundlesRes.ok) {
+          const data = await bundlesRes.json();
+          if (data.isLoggedIn) {
+            authenticated = true;
+          }
+          if (data.bundles && Array.isArray(data.bundles) && data.bundles.length > 0) {
+            setBundles(data.bundles);
+          }
+          if (data.country) {
+            setStudentCountry(data.country);
+          }
+          if (data.academicLevel) {
+            setStudentLevel(data.academicLevel);
+          }
+        }
+
+        setIsLoggedIn(authenticated);
       } catch (err) {
         console.error("Failed to load dynamic bundles in PricingSection:", err);
+        setIsLoggedIn(false);
       }
     }
     loadBundles();

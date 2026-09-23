@@ -221,12 +221,12 @@ function VerifyEmailContent() {
           {/* SCENARIO 2: Verification Successful */}
           {verificationStatus === "success" && (
             <div className="text-center space-y-6 py-2">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm animate-bounce">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm animate-bounce">
                 <CheckCircle2 className="w-9 h-9" />
               </div>
 
               <div className="space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-[11px] font-bold">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/80 text-blue-800 text-[11px] font-bold">
                   <ShieldCheck className="w-3 h-3" />
                   <span>Account Verified</span>
                 </div>
@@ -257,7 +257,7 @@ function VerifyEmailContent() {
           {/* SCENARIO 3: Expired Token */}
           {verificationStatus === "expired" && (
             <div className="text-center space-y-6 py-2">
-              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
                 <Clock className="w-9 h-9" />
               </div>
 
@@ -271,8 +271,8 @@ function VerifyEmailContent() {
               </div>
 
               {resendSuccess && (
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 text-left">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2 text-left">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-600" />
                   <span>{resendSuccess}</span>
                 </div>
               )}
@@ -453,8 +453,8 @@ function VerifyEmailContent() {
 
               {/* Alert Feedback */}
               {resendSuccess && (
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-600" />
                   <span>{resendSuccess}</span>
                 </div>
               )}

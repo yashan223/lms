@@ -10,23 +10,23 @@ const badgeVariants = cva(
         default:
           "border-transparent bg-blue-600 text-white shadow-sm shadow-blue-500/20",
         secondary:
-          "border-transparent bg-blue-50 text-blue-700 font-medium",
+          "border-transparent bg-blue-50 text-blue-700 font-medium border border-blue-100",
         outline:
-          "border border-blue-200 text-blue-800 bg-white/80",
+          "border border-blue-200 text-blue-800 bg-white",
         sky:
-          "border-transparent bg-sky-100 text-sky-800",
+          "border-transparent bg-blue-50 text-blue-800 border border-blue-100",
         success:
-          "border-transparent bg-emerald-50 text-emerald-700 border border-emerald-200/50",
+          "bg-blue-50 text-blue-700 border border-blue-200",
         warning:
-          "border-transparent bg-amber-50 text-amber-700 border border-amber-200/50",
+          "bg-blue-50 text-blue-800 border border-blue-200",
         roleAdmin:
-          "bg-indigo-100 text-indigo-800 border border-indigo-200/60 font-medium",
+          "bg-[#0c2461] text-white border border-blue-900 font-bold",
         roleTutor:
-          "bg-blue-100 text-blue-800 border border-blue-200/60 font-medium",
+          "bg-blue-600 text-white border border-blue-500 font-bold",
         roleInstructor:
-          "bg-blue-100 text-blue-800 border border-blue-200/60 font-medium",
+          "bg-blue-600 text-white border border-blue-500 font-bold",
         roleStudent:
-          "bg-emerald-100 text-emerald-800 border border-emerald-200/60 font-medium",
+          "bg-blue-100 text-blue-800 border border-blue-200 font-bold",
       },
     },
     defaultVariants: {

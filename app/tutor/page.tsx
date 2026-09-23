@@ -1420,7 +1420,7 @@ function TutorDashboardContent() {
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Video className="w-3.5 h-3.5 text-purple-600" />
+                    <Video className="w-3.5 h-3.5 text-blue-600" />
                     <span>Live Classes</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
@@ -1437,7 +1437,7 @@ function TutorDashboardContent() {
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <History className="w-3.5 h-3.5 text-indigo-600" />
+                    <History className="w-3.5 h-3.5 text-blue-600" />
                     <span>Session History & Logs</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
@@ -1454,7 +1454,7 @@ function TutorDashboardContent() {
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5 text-emerald-600" />
+                    <Users className="w-3.5 h-3.5 text-blue-600" />
                     <span>Enrolled Students</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
@@ -1471,10 +1471,10 @@ function TutorDashboardContent() {
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <CalendarCheck className="w-3.5 h-3.5 text-amber-600" />
+                    <CalendarCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span>1-on-1 Trial Bookings</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold">
                     {trials.length}
                   </span>
                 </button>
@@ -1502,10 +1502,10 @@ function TutorDashboardContent() {
                   className="w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer text-slate-700 hover:bg-slate-50"
                 >
                   <span className="flex items-center gap-2">
-                    <UserCheck className="w-3.5 h-3.5 text-purple-600" />
+                    <UserCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span>Instructor Profile & Credentials</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-800 font-bold flex items-center gap-1">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold flex items-center gap-1">
                     <span>Studio Page</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </span>
@@ -1577,7 +1577,7 @@ function TutorDashboardContent() {
                       {hasEvents && (
                         <span
                           className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
-                            isToday ? "bg-amber-300 ring-1 ring-amber-400/50" : "bg-blue-600 ring-1 ring-blue-400/50"
+                            isToday ? "bg-white ring-1 ring-blue-300" : "bg-blue-600 ring-1 ring-blue-400/50"
                           }`}
                         />
                       )}
@@ -1741,7 +1741,7 @@ function TutorDashboardContent() {
                 onClick={() => router.push("/tutor/profile")}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               >
-                <UserCheck className="w-3.5 h-3.5 text-purple-600" />
+                <UserCheck className="w-3.5 h-3.5 text-blue-600" />
                 <span>Instructor Profile Studio</span>
                 <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
               </button>
@@ -1862,7 +1862,7 @@ function TutorDashboardContent() {
                               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
                                 {c.subjectCode || "LONDON A/L"}
                               </span>
-                              <span className="text-xs font-bold text-amber-600 font-mono flex items-center gap-1">
+                              <span className="text-xs font-bold text-blue-700 font-mono flex items-center gap-1">
                                 <Coins className="w-3 h-3" />
                                 {c.price} Tokens
                               </span>
@@ -1978,7 +1978,7 @@ function TutorDashboardContent() {
                               isLive
                                 ? "bg-red-50/50 border-red-200"
                                 : isPendingApproval
-                                ? "bg-amber-50/40 border-amber-200"
+                                ? "bg-blue-50/40 border-blue-200"
                                 : isRejected
                                 ? "bg-red-50/40 border-red-200"
                                 : "bg-white border-slate-200 hover:border-blue-200"
@@ -1990,7 +1990,7 @@ function TutorDashboardContent() {
                                   {ev.title}
                                 </span>
                                 {isPendingApproval && (
-                                  <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-bold text-[9px] flex items-center gap-1">
+                                  <Badge className="bg-blue-50 text-blue-800 border-blue-200 font-bold text-[9px] flex items-center gap-1">
                                     <Clock className="w-2.5 h-2.5" />
                                     <span>⏳ Pending Admin Approval</span>
                                   </Badge>
@@ -2012,7 +2012,7 @@ function TutorDashboardContent() {
                                   </Badge>
                                 )}
                                 {!isPendingApproval && !isRejected && !isLive && !isCompleted && (
-                                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-[9px]">
+                                  <Badge className="bg-blue-50 text-blue-800 border-blue-200 font-bold text-[9px]">
                                     ✓ Approved & Live
                                   </Badge>
                                 )}
@@ -2076,7 +2076,7 @@ function TutorDashboardContent() {
                                 </button>
                               ) : isPendingApproval ? (
                                 <>
-                                  <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 flex items-center gap-1">
+                                  <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 text-[11px] font-bold border border-blue-200 flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
                                     <span>Awaiting Review</span>
                                   </span>
@@ -2169,7 +2169,7 @@ function TutorDashboardContent() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div>
                       <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                        <History className="w-4 h-4 text-indigo-600" />
+                        <History className="w-4 h-4 text-blue-600" />
                         <span>Online Session History & Duration Logs</span>
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -2184,7 +2184,7 @@ function TutorDashboardContent() {
                           onClick={() => setHistoryFilter(f)}
                           className={`px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${
                             historyFilter === f
-                              ? "bg-white text-indigo-700 shadow-2xs"
+                              ? "bg-white text-blue-700 shadow-2xs"
                               : "text-slate-600 hover:text-slate-900"
                           }`}
                         >
@@ -2201,13 +2201,13 @@ function TutorDashboardContent() {
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Sessions Completed</span>
                       <span className="text-lg font-black text-slate-900">{completedSessions.length}</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-indigo-50/60 border border-indigo-100">
-                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">Logged Teaching Hours</span>
-                      <span className="text-lg font-black text-indigo-950">{completedTeachingHours} hrs</span>
+                    <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100">
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">Logged Teaching Hours</span>
+                      <span className="text-lg font-black text-blue-950">{completedTeachingHours} hrs</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100">
-                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Completed 1-on-1 Sessions</span>
-                      <span className="text-lg font-black text-emerald-950">{completedSessions.filter((e) => Boolean(e.userId)).length}</span>
+                    <div className="p-3 rounded-xl bg-blue-100/50 border border-blue-200">
+                      <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Completed 1-on-1 Sessions</span>
+                      <span className="text-lg font-black text-blue-950">{completedSessions.filter((e) => Boolean(e.userId)).length}</span>
                     </div>
                   </div>
 
@@ -2218,7 +2218,7 @@ function TutorDashboardContent() {
                       placeholder="Search session history by title, course, or topic..."
                       value={historySearch}
                       onChange={(e) => setHistorySearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                      className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
 
@@ -2235,7 +2235,7 @@ function TutorDashboardContent() {
                       {filteredHistory.map((ev) => (
                         <div
                           key={ev.id}
-                          className="p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-200 transition-all space-y-3 shadow-2xs"
+                          className="p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-200 transition-all space-y-3 shadow-2xs"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="space-y-1">
@@ -2243,7 +2243,7 @@ function TutorDashboardContent() {
                                 <span className="font-bold text-xs sm:text-sm text-slate-900">
                                   {ev.title}
                                 </span>
-                                <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                <Badge className="bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold">
                                   ✓ Completed
                                 </Badge>
                                 {ev.course?.subjectCode && (
@@ -2537,7 +2537,7 @@ function TutorDashboardContent() {
                               key={tr.id}
                               className={`rounded-2xl border transition-all p-5 sm:p-6 space-y-4 shadow-xs hover:shadow-sm ${
                                 isPending
-                                  ? "bg-amber-50/30 border-amber-200"
+                                  ? "bg-blue-50/30 border-blue-200"
                                   : isConfirmed
                                   ? "bg-white border-slate-200 hover:border-blue-300"
                                   : "bg-slate-50 border-slate-200 opacity-70"
@@ -2575,12 +2575,12 @@ function TutorDashboardContent() {
 
                                 <div className="shrink-0 self-start sm:self-center">
                                   {isPending && (
-                                    <Badge className="bg-amber-500 text-white font-bold text-xs px-3 py-1 animate-pulse">
+                                    <Badge className="bg-[#0c2461] text-white font-bold text-xs px-3 py-1 animate-pulse">
                                       ⏳ Action Needed: Set Date
                                     </Badge>
                                   )}
                                   {isConfirmed && (
-                                    <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1 flex items-center gap-1.5 shadow-2xs">
+                                    <Badge className="bg-blue-600 text-white font-bold text-xs px-3 py-1 flex items-center gap-1.5 shadow-2xs">
                                       <CheckCircle2 className="w-3.5 h-3.5" />
                                       <span>Confirmed &amp; Scheduled</span>
                                     </Badge>
@@ -2599,7 +2599,7 @@ function TutorDashboardContent() {
                                   isConfirmed
                                     ? "bg-blue-50/70 border-blue-200/80 text-blue-950"
                                     : isPending
-                                    ? "bg-amber-50/80 border-amber-200 text-amber-950"
+                                    ? "bg-blue-50/80 border-blue-200 text-blue-950"
                                     : "bg-slate-50 border-slate-200 text-slate-800"
                                 }`}
                               >
@@ -2609,7 +2609,7 @@ function TutorDashboardContent() {
                                       isConfirmed
                                         ? "bg-blue-100 text-blue-700"
                                         : isPending
-                                        ? "bg-amber-100 text-amber-800"
+                                        ? "bg-blue-100 text-blue-800"
                                         : "bg-slate-200 text-slate-700"
                                     }`}
                                   >
@@ -2618,7 +2618,7 @@ function TutorDashboardContent() {
                                   <div>
                                     <div
                                       className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                                        isConfirmed ? "text-blue-700" : isPending ? "text-amber-700" : "text-slate-500"
+                                        isConfirmed ? "text-blue-700" : isPending ? "text-blue-700" : "text-slate-500"
                                       }`}
                                     >
                                       {isPending ? "Student Requested Slot" : "Confirmed Consultation Slot"}
@@ -2701,7 +2701,7 @@ function TutorDashboardContent() {
                                         href={tr.meetingLink}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs"
+                                        className="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs"
                                       >
                                         <Video className="w-3.5 h-3.5" />
                                         <span>Google Meet</span>
@@ -2711,10 +2711,10 @@ function TutorDashboardContent() {
                                     <button
                                       type="button"
                                       onClick={() => router.push(`/trials/reschedule?trialId=${tr.id}`)}
-                                      className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                      className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-900 hover:border-blue-300 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                       title="Reschedule session on dedicated page"
                                     >
-                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                      <Clock className="w-3.5 h-3.5 text-blue-600" />
                                       <span>Reschedule</span>
                                     </button>
 
@@ -2793,14 +2793,14 @@ function TutorDashboardContent() {
 
             {centerTab === "profile" && (
               <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center shrink-0 shadow-sm">
                       <Palette className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-purple-950">Dedicated Profile Customization Studio Available</h4>
-                      <p className="text-xs text-purple-700">Open the full-width standalone studio with real-time public student preview card and live completeness checklist.</p>
+                      <h4 className="text-sm font-bold text-slate-900">Dedicated Profile Customization Studio Available</h4>
+                      <p className="text-xs text-blue-700">Open the full-width standalone studio with real-time public student preview card and live completeness checklist.</p>
                     </div>
                   </div>
                   <button
@@ -2843,7 +2843,7 @@ function TutorDashboardContent() {
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            <CheckCircle2 className="w-4 h-4 text-blue-200" />
                             <span>Save Profile Changes</span>
                           </>
                         )}
@@ -2855,13 +2855,13 @@ function TutorDashboardContent() {
                     <div
                       className={`p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in slide-in-from-top-2 duration-200 ${
                         profileStatusMsg.type === "success"
-                          ? "bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs"
+                          ? "bg-blue-50 text-blue-900 border border-blue-200 shadow-2xs"
                           : "bg-red-50 text-red-900 border border-red-200 shadow-2xs"
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         {profileStatusMsg.type === "success" ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                         ) : (
                           <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                         )}
@@ -3091,7 +3091,7 @@ function TutorDashboardContent() {
                             <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px]">
                               <span className="font-mono text-slate-500">Graduation: {deg.year}</span>
                               {deg.honors && (
-                                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold">
                                   {deg.honors}
                                 </span>
                               )}
@@ -3249,14 +3249,14 @@ function TutorDashboardContent() {
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div>
                         <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          <ShieldCheck className="w-4 h-4 text-blue-600" />
                           <span>Examiner Certifications & Teaching Accreditations</span>
                         </h3>
                         <p className="text-xs text-slate-500">
                           Credentials and assessment examiner appointments from Pearson, Cambridge, or international boards.
                         </p>
                       </div>
-                      <Badge className="bg-emerald-50 text-emerald-800 text-[11px] font-bold">
+                      <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-[11px] font-bold">
                         {profileCerts.length} Certified
                       </Badge>
                     </div>
@@ -3270,11 +3270,11 @@ function TutorDashboardContent() {
                         {profileCerts.map((cert) => (
                           <div
                             key={cert.id}
-                            className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3 shadow-2xs"
+                            className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/40 flex items-center justify-between gap-3 shadow-2xs"
                           >
                             <div className="space-y-0.5">
-                              <div className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
-                                <Award className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                <Award className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                                 <span>{cert.title}</span>
                               </div>
                               <div className="text-[11px] text-slate-600 flex items-center gap-2">
@@ -3296,9 +3296,9 @@ function TutorDashboardContent() {
                       </div>
                     )}
 
-                    <form onSubmit={handleAddCert} className="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100 space-y-3">
-                      <div className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
-                        <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                    <form onSubmit={handleAddCert} className="p-4 rounded-xl bg-blue-50/30 border border-blue-100 space-y-3">
+                      <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        <Plus className="w-3.5 h-3.5 text-blue-600" />
                         <span>Add Examiner Accreditation</span>
                       </div>
 
@@ -3339,7 +3339,7 @@ function TutorDashboardContent() {
                         <Button
                           type="submit"
                           size="sm"
-                          className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl px-4 gap-1.5 cursor-pointer mt-4"
+                          className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-4 gap-1.5 cursor-pointer mt-4"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Add Certification</span>
@@ -3421,7 +3421,7 @@ function TutorDashboardContent() {
                   <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950 via-[#0c2461] to-slate-900 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <h4 className="font-bold text-base text-white flex items-center gap-2">
-                        <BadgeCheck className="w-4 h-4 text-amber-400" />
+                        <BadgeCheck className="w-4 h-4 text-blue-300" />
                         <span>Ready to update your public credentials?</span>
                       </h4>
                       <p className="text-xs text-blue-200">
@@ -3443,7 +3443,7 @@ function TutorDashboardContent() {
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <CheckCircle2 className="w-4 h-4 text-blue-600" />
                             <span>Save Profile Changes</span>
                           </>
                         )}
@@ -3730,7 +3730,7 @@ function TutorDashboardContent() {
                         : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    <GraduationCap className="w-3.5 h-3.5 text-purple-600" />
+                    <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
                     <span>1-on-1 Student Mentoring</span>
                   </button>
                 </div>
@@ -3774,19 +3774,19 @@ function TutorDashboardContent() {
                   </select>
 
                   {newClassStudentId && (
-                    <div className="mt-2 p-2.5 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-1.5">
+                    <div className="mt-2 p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-purple-600" />
+                        <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-blue-600" />
                           <span>Student&apos;s Preferred Study Hours</span>
                         </span>
                         {selectedStudentAvailabilities.length > 0 && (
-                          <span className="text-[10px] text-purple-700 font-semibold">Click slot to auto-fill</span>
+                          <span className="text-[10px] text-blue-700 font-semibold">Click slot to auto-fill</span>
                         )}
                       </div>
 
                       {selectedStudentAvailabilities.length === 0 ? (
-                        <div className="text-[11px] text-purple-800/80 italic">
+                        <div className="text-[11px] text-blue-800/80 italic">
                           This student has not set custom study hours yet.
                         </div>
                       ) : (
@@ -3799,7 +3799,7 @@ function TutorDashboardContent() {
                                 key={idx}
                                 type="button"
                                 onClick={() => applyStudentSlotToClassDate(av)}
-                                className="px-2 py-1 rounded-lg bg-white hover:bg-purple-100 border border-purple-200 text-[10px] font-bold text-purple-900 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                className="px-2 py-1 rounded-lg bg-white hover:bg-blue-100 border border-blue-200 text-[10px] font-bold text-blue-900 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                 title="Click to auto-schedule on student's study day & time"
                               >
                                 <span>{dayName}: {av.startTime} – {av.endTime}</span>
@@ -3935,12 +3935,12 @@ function TutorDashboardContent() {
               <div
                 className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
                   rescheduleStatusMsg.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-blue-50 text-blue-800 border border-blue-200"
                     : "bg-red-50 text-red-800 border border-red-200"
                 }`}
               >
                 {rescheduleStatusMsg.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 ) : (
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 )}
@@ -4148,12 +4148,12 @@ function TutorDashboardContent() {
               <div
                 className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
                   confirmTrialStatusMsg.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-blue-50 text-blue-800 border border-blue-200"
                     : "bg-red-50 text-red-800 border border-red-200"
                 }`}
               >
                 {confirmTrialStatusMsg.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 ) : (
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 )}

@@ -172,8 +172,8 @@ export function CoursePurchaseModal({
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
-              <Coins className="w-6 h-6 text-amber-100 fill-amber-200/30" />
+            <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20 shrink-0">
+              <Coins className="w-6 h-6 text-white fill-blue-400/30" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -203,8 +203,8 @@ export function CoursePurchaseModal({
         {purchaseSuccess ? (
           /* Success Screen */
           <div className="py-6 text-center space-y-4 animate-in fade-in zoom-in-95">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+            <div className="w-16 h-16 rounded-3xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto shadow-sm">
+              <CheckCircle2 className="w-10 h-10 text-blue-600" />
             </div>
 
             <div className="space-y-1.5">
@@ -216,26 +216,26 @@ export function CoursePurchaseModal({
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-left space-y-2 text-xs">
-              <div className="font-bold text-emerald-950 flex items-center gap-1.5">
-                <Unlock className="w-4 h-4 text-emerald-600" />
+            <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-left space-y-2 text-xs">
+              <div className="font-bold text-blue-950 flex items-center gap-1.5">
+                <Unlock className="w-4 h-4 text-blue-600" />
                 <span>Everything Now Unlocked:</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Download all study materials</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <PlayCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <PlayCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Full syllabus video lessons</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Video className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Google Meet live classes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Award className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <Award className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Official individual class certificate</span>
                 </div>
               </div>
@@ -275,16 +275,16 @@ export function CoursePurchaseModal({
 
               <div className="text-right shrink-0">
                 <div className="flex items-center justify-end gap-1.5">
-                  <Coins className="w-5 h-5 text-amber-500 fill-amber-500/20" />
+                  <Coins className="w-5 h-5 text-blue-600 fill-blue-500/20" />
                   <span className="text-2xl font-black text-slate-900">{price}</span>
                   <span className="text-xs font-bold text-slate-500 uppercase">Tokens</span>
                 </div>
                 {isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0 ? (
-                  <div className="text-[10px] text-purple-700 font-extrabold uppercase tracking-wider bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 mt-0.5">
+                  <div className="text-[10px] text-blue-800 font-extrabold uppercase tracking-wider bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 mt-0.5">
                     London O/L Rate Applied
                   </div>
                 ) : (
-                  <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
+                  <div className="text-[10px] text-blue-700 font-bold uppercase tracking-wider">
                     Lifetime Access
                   </div>
                 )}
@@ -334,7 +334,7 @@ export function CoursePurchaseModal({
                 </div>
                 <div className="flex items-center justify-between text-slate-600">
                   <span>Individual Class Enrollment Fee</span>
-                  <span className="font-bold text-amber-600">-{price} Tokens</span>
+                  <span className="font-bold text-blue-600">-{price} Tokens</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100 font-bold">
                   <span className="text-slate-800">Remaining Balance After Enrollment</span>
@@ -344,7 +344,7 @@ export function CoursePurchaseModal({
                     <span
                       className={
                         hasSufficientTokens
-                          ? "text-emerald-700 font-black"
+                          ? "text-blue-700 font-black"
                           : "text-red-600 font-black"
                       }
                     >
@@ -375,10 +375,10 @@ export function CoursePurchaseModal({
                   </Link>
                 </div>
               ) : !hasSufficientTokens ? (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 flex items-center justify-between gap-2">
+                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-950 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span className="text-[11px] text-amber-900">
+                    <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span className="text-[11px] text-blue-900">
                       Insufficient tokens. You need <strong>{price - (tokenBalance ?? 0)} more tokens</strong>.
                     </span>
                   </div>
@@ -386,14 +386,14 @@ export function CoursePurchaseModal({
                     href="/dashboard"
                     className="px-3 py-1 rounded-lg bg-blue-600 text-white font-bold text-[11px] hover:bg-blue-700 shrink-0 flex items-center gap-1"
                   >
-                    <Coins className="w-3 h-3 fill-amber-300 text-amber-300" />
+                    <Coins className="w-3 h-3 fill-blue-200 text-blue-200" />
                     <span>Top Up</span>
                   </Link>
                 </div>
               ) : (
-                <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="text-[11px] text-emerald-900 font-medium">
+                <div className="p-2.5 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-950 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span className="text-[11px] text-blue-900 font-medium">
                     Sufficient token balance. Tokens will be deducted automatically from your wallet upon confirmation.
                   </span>
                 </div>
@@ -408,12 +408,12 @@ export function CoursePurchaseModal({
               </div>
               <div className="flex items-center justify-between">
                 <span>Platform & Registration Fee</span>
-                <span className="font-bold text-emerald-700">FREE (0 Tokens)</span>
+                <span className="font-bold text-blue-700">FREE (0 Tokens)</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-sm font-extrabold text-slate-900">
                 <span>Total Tokens Required</span>
                 <span className="text-[#0c2461] flex items-center gap-1 font-black">
-                  <Coins className="w-4 h-4 text-amber-500" />
+                  <Coins className="w-4 h-4 text-blue-600" />
                   {price} Tokens
                 </span>
               </div>
@@ -421,7 +421,7 @@ export function CoursePurchaseModal({
 
             {/* Security Guarantee */}
             <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 pt-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
               <span>Instant Digital Access • 30-Day Academic Guarantee • Zero Processing Fees</span>
             </div>
 
@@ -453,12 +453,12 @@ export function CoursePurchaseModal({
                 >
                   {processing ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Processing...</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="w-3.5 h-3.5 text-amber-300" />
+                      <Coins className="w-3.5 h-3.5 text-blue-200" />
                       <span>Spend {price} Tokens</span>
                     </>
                   )}
@@ -466,9 +466,9 @@ export function CoursePurchaseModal({
               ) : (
                 <Link
                   href="/dashboard"
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-colors"
+                  className="bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  <Coins className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                  <Coins className="w-3.5 h-3.5 fill-blue-200 text-blue-200" />
                   <span>Top Up Wallet</span>
                 </Link>
               )}

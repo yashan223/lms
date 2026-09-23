@@ -75,7 +75,7 @@ function ResetPasswordForm() {
 
   const strength = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
   const strengthLabel = ["", "Weak", "Good", "Strong"];
-  const strengthColor = ["", "bg-red-400", "bg-amber-400", "bg-emerald-500"];
+  const strengthColor = ["", "bg-blue-300", "bg-blue-500", "bg-[#0c2461]"];
 
   return (
     <div className="p-6 sm:p-8 space-y-6">
@@ -138,7 +138,7 @@ function ResetPasswordForm() {
                     <div className={`h-full rounded-full transition-all ${strengthColor[strength]}`}
                       style={{ width: `${(strength / 3) * 100}%` }} />
                   </div>
-                  <span className={`text-[10px] font-bold ${strength === 1 ? "text-red-500" : strength === 2 ? "text-amber-500" : "text-emerald-600"}`}>
+                  <span className="text-[10px] font-bold text-blue-700">
                     {strengthLabel[strength]}
                   </span>
                 </div>
@@ -176,10 +176,10 @@ function ResetPasswordForm() {
       )}
 
       {success && (
-        <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
-          <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-          <div className="text-sm font-bold text-emerald-900">Password Updated!</div>
-          <p className="text-xs text-emerald-700">Your password has been reset successfully. Redirecting you to sign in...</p>
+        <div className="p-5 rounded-2xl bg-blue-50 border border-blue-200 text-center space-y-3">
+          <CheckCircle2 className="w-10 h-10 text-blue-600 mx-auto" />
+          <div className="text-sm font-bold text-blue-900">Password Updated!</div>
+          <p className="text-xs text-blue-700">Your password has been reset successfully. Redirecting you to sign in...</p>
         </div>
       )}
     </div>

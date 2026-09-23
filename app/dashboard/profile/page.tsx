@@ -23,6 +23,7 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  Users,
   Save,
   Check,
   Coins,
@@ -52,6 +53,9 @@ export default function StudentProfilePage() {
   const [country, setCountry] = useState("United Kingdom");
   const [academicLevel, setAcademicLevel] = useState<"AL" | "OL">("AL");
   const [avatar, setAvatar] = useState<string>("");
+  const [guardianName, setGuardianName] = useState("");
+  const [guardianRelationship, setGuardianRelationship] = useState("Parent");
+  const [guardianPhone, setGuardianPhone] = useState("");
 
   // Password Update Form
   const [currentPassword, setCurrentPassword] = useState("");
@@ -84,6 +88,9 @@ export default function StudentProfilePage() {
         setCountry(data.student.country || "United Kingdom");
         setAcademicLevel(data.student.academicLevel === "OL" ? "OL" : "AL");
         setAvatar(data.student.avatar || "");
+        setGuardianName(data.student.guardianName || "");
+        setGuardianRelationship(data.student.guardianRelationship || "Parent");
+        setGuardianPhone(data.student.guardianPhone || "");
       }
     } catch (err: any) {
       console.error(err);
@@ -194,6 +201,9 @@ export default function StudentProfilePage() {
           country: country.trim(),
           academicLevel,
           avatar: avatar || null,
+          guardianName: guardianName.trim(),
+          guardianRelationship: guardianRelationship.trim(),
+          guardianPhone: guardianPhone.trim(),
         }),
       });
 
@@ -305,15 +315,15 @@ export default function StudentProfilePage() {
           <div
             className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs font-medium animate-in fade-in ${
               statusMsg.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-rose-50 border-rose-200 text-rose-800"
+                ? "bg-blue-50 border-blue-200 text-blue-800"
+                : "bg-red-50 border-red-200 text-red-800"
             }`}
           >
             <div className="flex items-center gap-2">
               {statusMsg.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
               ) : (
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               )}
               <span>{statusMsg.text}</span>
             </div>
@@ -339,7 +349,7 @@ export default function StudentProfilePage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
@@ -349,7 +359,7 @@ export default function StudentProfilePage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
               <Award className="w-5 h-5" />
             </div>
             <div>
@@ -359,12 +369,12 @@ export default function StudentProfilePage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="text-xs text-slate-500 font-semibold">Account Status</div>
-              <div className="text-xs font-bold text-emerald-700 flex items-center gap-1 mt-0.5">
+              <div className="text-xs font-bold text-blue-700 flex items-center gap-1 mt-0.5">
                 <Check className="w-3.5 h-3.5" />
                 {student?.emailVerified ? "Verified" : "Active"}
               </div>
@@ -429,7 +439,7 @@ export default function StudentProfilePage() {
                     variant="outline"
                     onClick={handleRemoveAvatar}
                     disabled={uploadingAvatar}
-                    className="border-slate-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 text-xs font-bold px-3.5 py-2 rounded-xl cursor-pointer flex items-center gap-1.5"
+                    className="border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 text-xs font-bold px-3.5 py-2 rounded-xl cursor-pointer flex items-center gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Remove Photo</span>
@@ -457,7 +467,7 @@ export default function StudentProfilePage() {
         <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500" />
+              <Sparkles className="w-5 h-5 text-blue-600" />
               <span>Academic Details &amp; Personal Info</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -550,11 +560,11 @@ export default function StudentProfilePage() {
                 <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>Registered Email Address</span>
                   {student?.emailVerified ? (
-                    <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-blue-600 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Verified
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-amber-600">Pending Verification</span>
+                    <span className="text-[10px] font-bold text-slate-500">Pending Verification</span>
                   )}
                 </label>
                 <div className="relative">
@@ -595,6 +605,66 @@ export default function StudentProfilePage() {
               </div>
             </div>
 
+            {/* Parent / Guardian Information */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-700">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900">
+                    Parent / Guardian Information
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Used for progress reporting, class schedules, and student coordination.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Parent / Guardian Name</label>
+                  <Input
+                    value={guardianName}
+                    onChange={(e) => setGuardianName(e.target.value)}
+                    placeholder="e.g. Tariq Al-Mansoor"
+                    className="rounded-xl border-slate-200 text-xs h-10 bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Relationship to Student</label>
+                  <select
+                    value={guardianRelationship}
+                    onChange={(e) => setGuardianRelationship(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
+                  >
+                    <option value="Father">Father</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Legal Guardian">Legal Guardian</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Parent / Guardian WhatsApp Number</label>
+                <div className="relative">
+                  <Input
+                    value={guardianPhone}
+                    onChange={(e) => setGuardianPhone(e.target.value)}
+                    placeholder="+94 77 123 4567 or +44 7911 123456"
+                    className="rounded-xl border-slate-200 text-xs h-10 bg-white pl-9"
+                  />
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                </div>
+                <p className="text-[10px] text-slate-500">
+                  Official progress notifications and attendance alerts are delivered via this WhatsApp number.
+                </p>
+              </div>
+            </div>
+
             {/* Academic Bio / Goals */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Academic Goals &amp; Exam Targets</label>
@@ -629,7 +699,7 @@ export default function StudentProfilePage() {
         <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-              <Lock className="w-5 h-5 text-indigo-600" />
+              <Lock className="w-5 h-5 text-blue-600" />
               <span>Security &amp; Password</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -641,14 +711,14 @@ export default function StudentProfilePage() {
             <div
               className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2 ${
                 passMsg.type === "success"
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                  : "bg-rose-50 border-rose-200 text-rose-800"
+                  ? "bg-blue-50 border-blue-200 text-blue-800"
+                  : "bg-red-50 border-red-200 text-red-800"
               }`}
             >
               {passMsg.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
               ) : (
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               )}
               <span>{passMsg.text}</span>
             </div>

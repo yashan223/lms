@@ -131,7 +131,7 @@ function SandboxCheckoutContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
         <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-md w-full text-center space-y-4 text-white">
-          <AlertCircle className="w-12 h-12 text-rose-400 mx-auto" />
+          <AlertCircle className="w-12 h-12 text-blue-400 mx-auto" />
           <h2 className="text-lg font-bold">Checkout Unavailable</h2>
           <p className="text-sm text-slate-400">{error}</p>
           <Link
@@ -167,8 +167,8 @@ function SandboxCheckoutContent() {
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-slate-400">
-            <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-emerald-400 font-medium">PCI-DSS Level 1 Encrypted</span>
+            <Lock className="w-3.5 h-3.5 text-sky-400" />
+            <span className="text-sky-400 font-medium">PCI-DSS Level 1 Encrypted</span>
           </div>
         </div>
       </header>
@@ -312,7 +312,7 @@ function SandboxCheckoutContent() {
                 </div>
 
                 {error && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-xl flex items-center gap-2">
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs rounded-xl flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{error}</span>
                   </div>
@@ -375,7 +375,7 @@ function SandboxCheckoutContent() {
                   type="button"
                   disabled={submitting}
                   onClick={handleAuthorize}
-                  className="w-full max-w-sm mx-auto py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 transition disabled:opacity-50"
+                  className="w-full max-w-sm mx-auto py-3 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2 transition disabled:opacity-50"
                 >
                   {submitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

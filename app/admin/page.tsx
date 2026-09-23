@@ -102,42 +102,42 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   update_user: { label: "Update User Account", icon: Edit3, color: "text-blue-600 bg-blue-50 border-blue-200" },
   delete_user: { label: "Delete User Account", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
   delete_candidate: { label: "Delete Candidate", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
-  grant_tokens: { label: "Grant Learning Credit", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
-  give_credit: { label: "Grant Learning Credit", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
-  adjust_tokens: { label: "Adjust Token Balance", icon: Coins, color: "text-amber-600 bg-amber-50 border-amber-200" },
-  enroll_user: { label: "Enroll Student in Individual Class", icon: UserCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  unenroll_user: { label: "Unenroll Student", icon: Users, color: "text-orange-600 bg-orange-50 border-orange-200" },
-  create_course: { label: "Create Individual Class", icon: PlusCircle, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  update_course: { label: "Update Individual Class", icon: Edit3, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  grant_tokens: { label: "Grant Learning Credit", icon: Coins, color: "text-blue-700 bg-blue-50 border-blue-200" },
+  give_credit: { label: "Grant Learning Credit", icon: Coins, color: "text-blue-700 bg-blue-50 border-blue-200" },
+  adjust_tokens: { label: "Adjust Token Balance", icon: Coins, color: "text-blue-700 bg-blue-50 border-blue-200" },
+  enroll_user: { label: "Enroll Student in Individual Class", icon: UserCheck, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  unenroll_user: { label: "Unenroll Student", icon: Users, color: "text-blue-700 bg-blue-50 border-blue-200" },
+  create_course: { label: "Create Individual Class", icon: PlusCircle, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  update_course: { label: "Update Individual Class", icon: Edit3, color: "text-blue-600 bg-blue-50 border-blue-200" },
   delete_course: { label: "Delete Individual Class", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
-  add_module: { label: "Add Syllabus Module", icon: FolderPlus, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+  add_module: { label: "Add Syllabus Module", icon: FolderPlus, color: "text-blue-600 bg-blue-50 border-blue-200" },
   delete_module: { label: "Delete Syllabus Module", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
-  add_lesson: { label: "Add Lesson Video", icon: PlayCircle, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+  add_lesson: { label: "Add Lesson Video", icon: PlayCircle, color: "text-blue-600 bg-blue-50 border-blue-200" },
   delete_lesson: { label: "Delete Lesson Video", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
   add_course_material: { label: "Upload Resource / Material", icon: Upload, color: "text-blue-600 bg-blue-50 border-blue-200" },
   delete_course_material: { label: "Delete Class Material", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
-  schedule_class: { label: "Schedule Live Google Meet", icon: Video, color: "text-violet-600 bg-violet-50 border-violet-200" },
+  schedule_class: { label: "Schedule Live Google Meet", icon: Video, color: "text-blue-700 bg-blue-50 border-blue-200" },
   start_class: { label: "Launch Live Class Room", icon: Radio, color: "text-red-600 bg-red-50 border-red-200" },
   end_class: { label: "Conclude Live Class", icon: CheckCircle2, color: "text-slate-600 bg-slate-50 border-slate-200" },
-  approve_class: { label: "Approve Live Class Proposal", icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  approve_class: { label: "Approve Live Class Proposal", icon: CheckCircle2, color: "text-blue-600 bg-blue-50 border-blue-200" },
   reject_class: { label: "Decline Live Class Proposal", icon: X, color: "text-red-600 bg-red-50 border-red-200" },
-  approve_trial: { label: "Approve 1-on-1 Free Trial", icon: CalendarCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  approve_trial: { label: "Approve 1-on-1 Free Trial", icon: CalendarCheck, color: "text-blue-600 bg-blue-50 border-blue-200" },
   reject_trial: { label: "Decline Free Trial Request", icon: X, color: "text-red-600 bg-red-50 border-red-200" },
-  approve_course: { label: "Publish Individual Class", icon: ShieldCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  reject_course: { label: "Return Class to Draft", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
-  update_bundles: { label: "Update Pricing Packages", icon: Coins, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
-  clear_all_data: { label: "Wipe LMS Platform Data", icon: Trash2, color: "text-rose-600 bg-rose-50 border-rose-200" },
+  approve_course: { label: "Publish Individual Class", icon: ShieldCheck, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  reject_course: { label: "Return Class to Draft", icon: AlertCircle, color: "text-blue-700 bg-blue-50 border-blue-200" },
+  update_bundles: { label: "Update Pricing Packages", icon: Coins, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  clear_all_data: { label: "Wipe LMS Platform Data", icon: Trash2, color: "text-blue-700 bg-blue-50 border-blue-200" },
   system_test: { label: "System Health Audit Check", icon: ShieldCheck, color: "text-slate-600 bg-slate-50 border-slate-200" },
 };
 
 const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: string; bg: string; text: string }> = {
-  ALL: { label: "All Operations", icon: Layers, badge: "bg-slate-900 text-white", bg: "bg-slate-50", text: "text-slate-900" },
+  ALL: { label: "All Operations", icon: Layers, badge: "bg-[#0c2461] text-white", bg: "bg-slate-50", text: "text-slate-900" },
   USER: { label: "Users & Accounts", icon: Users, badge: "bg-blue-100 text-blue-800 border border-blue-200", bg: "bg-blue-50", text: "text-blue-600" },
-  COURSE: { label: "Curriculum & Syllabi", icon: BookOpen, badge: "bg-emerald-100 text-emerald-800 border border-emerald-200", bg: "bg-emerald-50", text: "text-emerald-600" },
-  CLASS: { label: "Live Classes", icon: Video, badge: "bg-violet-100 text-violet-800 border border-violet-200", bg: "bg-violet-50", text: "text-violet-600" },
-  TRIAL: { label: "1-on-1 Trials", icon: CalendarCheck, badge: "bg-amber-100 text-amber-800 border border-amber-200", bg: "bg-amber-50", text: "text-amber-600" },
-  FINANCE: { label: "Tuition & Credit", icon: DollarSign, badge: "bg-green-100 text-green-800 border border-green-200", bg: "bg-green-50", text: "text-green-700" },
-  PRICING: { label: "Token Bundles", icon: Coins, badge: "bg-indigo-100 text-indigo-800 border border-indigo-200", bg: "bg-indigo-50", text: "text-indigo-600" },
+  COURSE: { label: "Curriculum & Syllabi", icon: BookOpen, badge: "bg-blue-100 text-blue-800 border border-blue-200", bg: "bg-blue-50", text: "text-blue-600" },
+  CLASS: { label: "Live Classes", icon: Video, badge: "bg-blue-100 text-blue-800 border border-blue-200", bg: "bg-blue-50", text: "text-blue-700" },
+  TRIAL: { label: "1-on-1 Trials", icon: CalendarCheck, badge: "bg-blue-100 text-blue-800 border border-blue-200", bg: "bg-blue-50", text: "text-blue-700" },
+  FINANCE: { label: "Tuition & Credit", icon: DollarSign, badge: "bg-blue-100 text-blue-800 border border-blue-200", bg: "bg-blue-50", text: "text-blue-800" },
+  PRICING: { label: "Token Bundles", icon: Coins, badge: "bg-blue-100 text-blue-800 border border-blue-200", bg: "bg-blue-50", text: "text-blue-600" },
   GENERAL: { label: "System General", icon: ShieldCheck, badge: "bg-slate-100 text-slate-800 border border-slate-200", bg: "bg-slate-50", text: "text-slate-600" },
 };
 
@@ -1746,10 +1746,10 @@ export default function AdminDashboardPage() {
                   variant="outline"
                   onClick={handleOpenClearDataModal}
                   disabled={loading || isClearingAllData}
-                  className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 hover:border-rose-300 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs transition-all"
+                  className="text-xs font-bold text-slate-600 hover:text-slate-700 hover:bg-slate-50 border-slate-200 hover:border-slate-300 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs transition-all"
                   title="Clear all LMS data except admin login"
                 >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <Trash2 className="w-3.5 h-3.5 text-slate-600" />
                   <span className="hidden sm:inline">Clear All Data</span>
                 </Button>
               )}
@@ -1850,17 +1850,17 @@ export default function AdminDashboardPage() {
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-emerald-600">Course Enrollments</span>
-                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-medium text-blue-600">Course Enrollments</span>
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
                   </div>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">{totalEnrollmentsCount} Enrollments</div>
-                  <div className="text-[11px] text-emerald-600 font-semibold">Verified Enrollment Records</div>
+                  <div className="text-[11px] text-blue-600 font-semibold">Verified Enrollment Records</div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-indigo-600">Gross Tuition Volume</span>
-                    <DollarSign className="w-4 h-4 text-indigo-600" />
+                    <span className="text-xs font-medium text-blue-700">Gross Tuition Volume</span>
+                    <DollarSign className="w-4 h-4 text-blue-700" />
                   </div>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">${totalCalculatedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
                   <div className="text-[11px] text-slate-500">Calculated from enrollments</div>
@@ -1941,8 +1941,8 @@ export default function AdminDashboardPage() {
 
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-600">Completed Sessions</span>
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <span className="text-xs font-bold text-blue-600">Completed Sessions</span>
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                   </div>
@@ -1954,8 +1954,8 @@ export default function AdminDashboardPage() {
 
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-indigo-600">Authorized Tutors</span>
-                    <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <span className="text-xs font-bold text-blue-700">Authorized Tutors</span>
+                    <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center">
                       <Users className="w-4 h-4" />
                     </div>
                   </div>
@@ -2141,7 +2141,7 @@ export default function AdminDashboardPage() {
                                 isLive
                                   ? "bg-red-100 text-red-700 animate-pulse"
                                   : isCompleted
-                                  ? "bg-emerald-100 text-emerald-700"
+                                  ? "bg-blue-100 text-blue-800"
                                   : "bg-blue-100 text-blue-700"
                               }`}
                             >
@@ -2160,8 +2160,8 @@ export default function AdminDashboardPage() {
                                   </Badge>
                                 )}
                                 {isCompleted && (
-                                  <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold flex items-center gap-1">
-                                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-700" />
+                                  <Badge className="bg-blue-50 text-blue-800 border border-blue-200 text-[9px] font-bold flex items-center gap-1">
+                                    <CheckCircle2 className="w-2.5 h-2.5 text-blue-600" />
                                     <span>Completed</span>
                                   </Badge>
                                 )}
@@ -2229,7 +2229,7 @@ export default function AdminDashboardPage() {
 
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ended:</span>
-                                  <span className={`font-mono text-[11px] font-semibold ${isLive ? "text-emerald-600 font-bold" : "text-slate-700"}`}>
+                                  <span className={`font-mono text-[11px] font-semibold ${isLive ? "text-blue-600 font-bold" : "text-slate-700"}`}>
                                     {ev.endedAt
                                       ? new Date(ev.endedAt).toLocaleString("en-US", {
                                           month: "short",
@@ -2325,14 +2325,14 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-amber-600">Student Credit Pool</span>
-                  <div className="text-2xl font-semibold tracking-tight text-amber-900 font-mono flex items-center gap-1.5">
-                    <Coins className="w-5 h-5 text-amber-500 shrink-0" />
+                  <span className="text-xs font-medium text-blue-600">Student Credit Pool</span>
+                  <div className="text-2xl font-semibold tracking-tight text-blue-950 font-mono flex items-center gap-1.5">
+                    <Coins className="w-5 h-5 text-blue-600 shrink-0" />
                     <span>{allUsersList.filter((u) => u.role === "STUDENT").reduce((acc, u) => acc + (u.tokenWallet?.balance || 0), 0)} Hrs</span>
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-indigo-600">Tutors & Admins</span>
+                  <span className="text-xs font-medium text-blue-700">Tutors & Admins</span>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">
                     {allUsersList.filter((u) => u.role !== "STUDENT").length} Staff
                   </div>
@@ -2363,7 +2363,7 @@ export default function AdminDashboardPage() {
                         onClick={() => setUserRoleFilter(rf.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
                           userRoleFilter === rf.id
-                            ? "bg-blue-500 text-white shadow-xs shadow-blue-500/20"
+                            ? "bg-[#0c2461] text-white shadow-xs shadow-blue-500/20"
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
@@ -2376,9 +2376,9 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center gap-2 w-full md:w-auto">
                   <Button
                     onClick={() => handleOpenGrantTokens()}
-                    className="w-full sm:w-auto text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-amber-600/20 cursor-pointer"
+                    className="w-full sm:w-auto text-xs font-bold bg-[#0c2461] hover:bg-[#103080] text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-950/20 cursor-pointer"
                   >
-                    <Coins className="w-4 h-4 text-amber-100" />
+                    <Coins className="w-4 h-4 text-blue-200" />
                     <span>+ Grant Free Credit</span>
                   </Button>
                   <Button
@@ -2443,16 +2443,16 @@ export default function AdminDashboardPage() {
                             {u.role === "STUDENT" ? (
                               <button
                                 onClick={() => handleOpenGrantTokens(u)}
-                                className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer group whitespace-nowrap shadow-2xs"
+                                className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 transition-colors cursor-pointer group whitespace-nowrap shadow-2xs"
                                 title="Click to Grant / Adjust Student Credit"
                               >
-                                <Coins className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+                                <Coins className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
                                 <span className="font-mono">{u.tokenWallet?.balance ?? 0} Hrs</span>
-                                <Plus className="w-3 h-3 text-amber-700 opacity-60 group-hover:opacity-100" />
+                                <Plus className="w-3 h-3 text-blue-700 opacity-60 group-hover:opacity-100" />
                               </button>
                             ) : u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR" ? (
                               <span
-                                className="inline-flex items-center gap-1 text-xs font-mono font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200"
+                                className="inline-flex items-center gap-1 text-xs font-mono font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"
                                 title="Tutor Hourly Rate (Set by Admin)"
                               >
                                 ${getUserHourlyRate(u)}/hr
@@ -2478,10 +2478,10 @@ export default function AdminDashboardPage() {
                                 <>
                                   <button
                                     onClick={() => handleOpenGrantTokens(u)}
-                                    className="h-7 px-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[11px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
+                                    className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
                                     title="Grant Free Credit / Hours"
                                   >
-                                    <Coins className="w-3 h-3 text-amber-600 shrink-0" />
+                                    <Coins className="w-3 h-3 text-blue-600 shrink-0" />
                                     <span>+ Credit</span>
                                   </button>
                                   <button
@@ -2527,7 +2527,7 @@ export default function AdminDashboardPage() {
                   <div className="text-2xl font-black tracking-tight text-slate-900">{coursesList.length} Units</div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-emerald-600">Published Status</span>
+                  <span className="text-xs font-medium text-blue-600">Published Status</span>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {coursesList.filter((c) => c.status === "PUBLISHED").length} Active
                   </div>
@@ -2539,7 +2539,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-                  <span className="text-xs font-medium text-indigo-600">Tutors Conducting Classes</span>
+                  <span className="text-xs font-medium text-blue-600">Tutors Conducting Classes</span>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {tutorList.length} Tutors
                   </div>
@@ -2569,7 +2569,7 @@ export default function AdminDashboardPage() {
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
-                  <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                  <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
                   <span>Tutors Conducting Classes ({tutorList.length})</span>
                 </button>
               </div>
@@ -2610,7 +2610,7 @@ export default function AdminDashboardPage() {
                             <Badge className="bg-blue-50 text-blue-700 border border-blue-200 font-mono text-[10px]">
                               {course.subjectCode || "MATH-101"}
                             </Badge>
-                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">
+                            <Badge className="bg-blue-100 text-blue-800 text-[10px]">
                               {course.status}
                             </Badge>
                           </div>
@@ -2647,7 +2647,7 @@ export default function AdminDashboardPage() {
                             <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> {course.modules?.length || 0} Modules</span>
                             <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-slate-400" /> {course.materials?.length || 0} Files</span>
                             <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-slate-400" /> {course.enrollments?.length || 0} Enrolled</span>
-                            <span className="font-bold text-amber-600 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
+                            <span className="font-bold text-blue-700 flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
                               <Coins className="w-3.5 h-3.5" />
                               {course.price} Tokens
                             </span>
@@ -2750,7 +2750,7 @@ export default function AdminDashboardPage() {
                                     <h4 className="font-bold text-slate-900 text-sm truncate">
                                       {tutor.name}
                                     </h4>
-                                    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold py-0.5">
+                                    <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-[9px] font-bold py-0.5">
                                       Tutor
                                     </Badge>
                                   </div>
@@ -2777,9 +2777,9 @@ export default function AdminDashboardPage() {
                                   <div className="text-sm font-black text-blue-900">{tutorCourses.length}</div>
                                   <div className="text-[10px] text-blue-700 font-medium">Classes</div>
                                 </div>
-                                <div className="p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
-                                  <div className="text-sm font-black text-emerald-900">{tutorLiveClasses.length}</div>
-                                  <div className="text-[10px] text-emerald-700 font-medium">Live Sessions</div>
+                                <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100">
+                                  <div className="text-sm font-black text-blue-900">{tutorLiveClasses.length}</div>
+                                  <div className="text-[10px] text-blue-700 font-medium">Live Sessions</div>
                                 </div>
                               </div>
 
@@ -2858,27 +2858,27 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Total Transmitted Messages</span>
-                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <FileText className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {adminChatStats.totalMessages} Messages
                   </div>
-                  <div className="text-[11px] text-indigo-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     Encrypted Ledger History
                   </div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-emerald-600">Institutional Governance</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <span className="text-xs font-medium text-blue-600">Institutional Governance</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mt-1">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                     <span>Live Decrypted Inspection</span>
                   </div>
                   <div className="text-[11px] text-slate-500">
@@ -3029,7 +3029,7 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
                       <div className="pt-2 flex items-center gap-1.5 text-[11px] text-slate-400 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                         <span>All E2EE messages are verified & decrypted for academic compliance</span>
                       </div>
                     </div>
@@ -3063,8 +3063,8 @@ export default function AdminDashboardPage() {
                               <span className="text-slate-400">&</span>
                               <span>{selectedConversation.participantB?.name}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold mt-0.5">
-                              <Lock className="w-3 h-3 text-emerald-600" />
+                            <div className="flex items-center gap-1 text-[10px] text-blue-700 font-semibold mt-0.5">
+                              <Lock className="w-3 h-3 text-blue-600" />
                               <span>E2EE Transcript Decrypted</span>
                               <span className="text-slate-300">•</span>
                               <span className="text-slate-500 font-normal">
@@ -3101,7 +3101,7 @@ export default function AdminDashboardPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleDeleteConversation(selectedConversation.id)}
-                            className="h-8 px-2.5 rounded-lg border-rose-200 text-rose-600 hover:bg-rose-50 text-xs cursor-pointer shadow-2xs"
+                            className="h-8 px-2.5 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-100 text-xs cursor-pointer shadow-2xs"
                             title="Delete entire thread"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -3212,7 +3212,7 @@ export default function AdminDashboardPage() {
                       {/* Footer compliance notice */}
                       <div className="p-3 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-1.5">
-                          <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                          <Lock className="w-3.5 h-3.5 text-blue-600" />
                           <span>Administrative Compliance Inspection • Messages are decrypted client-side for safety</span>
                         </div>
                         <span className="font-mono text-[10px] text-slate-400">Zero-Knowledge Relay</span>
@@ -3231,14 +3231,14 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Gross Course Revenue</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <DollarSign className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     ${totalCalculatedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <div className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>100% Cleared Student Tuition</span>
                   </div>
@@ -3262,7 +3262,7 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Active Paying Students</span>
-                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <Users className="w-4 h-4" />
                     </div>
                   </div>
@@ -3277,14 +3277,14 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Tutor Honorarium Pool</span>
-                    <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <Award className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     ${(totalCalculatedRevenue * 0.3).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[11px] text-purple-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     30% Pool for Certified Tutors
                   </div>
                 </div>
@@ -3428,8 +3428,8 @@ export default function AdminDashboardPage() {
                             </td>
 
                             <td className="py-3.5 px-4">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                <CheckCircle2 className="w-3 h-3 text-blue-600" />
                                 <span>PAID & UNLOCKED</span>
                               </span>
                             </td>
@@ -3532,7 +3532,7 @@ export default function AdminDashboardPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
                     <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                      <Coins className="w-4 h-4 text-amber-500" />
+                      <Coins className="w-4 h-4 text-blue-600" />
                       Token Bundle Packages
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -3542,9 +3542,9 @@ export default function AdminDashboardPage() {
                   <Button
                     size="sm"
                     onClick={() => handleOpenBundleEditor()}
-                    className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-amber-500/20 cursor-pointer shrink-0"
+                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-900/20 cursor-pointer shrink-0"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-amber-100" />
+                    <Edit3 className="w-3.5 h-3.5 text-blue-200" />
                     <span>Edit Bundles</span>
                   </Button>
                 </div>
@@ -3557,10 +3557,10 @@ export default function AdminDashboardPage() {
                   ]).map((bundle) => (
                     <div
                       key={bundle.id}
-                      className={`p-4 rounded-xl border space-y-2.5 relative ${bundle.popular ? "border-amber-300 bg-amber-50/30 ring-1 ring-amber-300/50" : "border-slate-200 bg-slate-50/50"}`}
+                      className={`p-4 rounded-xl border space-y-2.5 relative ${bundle.popular ? "border-blue-300 bg-blue-50/40 ring-1 ring-blue-300/50" : "border-slate-200 bg-slate-50/50"}`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${bundle.popular ? "bg-amber-500 text-white" : "bg-slate-200 text-slate-600"}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${bundle.popular ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-600"}`}>
                           {bundle.popular ? "⭐ " : ""}{bundle.badge}
                         </span>
                       </div>
@@ -3569,13 +3569,13 @@ export default function AdminDashboardPage() {
                         <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{bundle.description}</div>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
-                        <div className="flex items-center gap-1.5 text-amber-700 font-bold text-sm">
-                          <Coins className="w-3.5 h-3.5 text-amber-500" />
+                        <div className="flex items-center gap-1.5 text-blue-700 font-bold text-sm">
+                          <Coins className="w-3.5 h-3.5 text-blue-600" />
                           <span>{bundle.tokens} Hours</span>
                         </div>
                         <div className="text-right font-black text-slate-900 text-base">
                           <div>{formatStudentPrice(bundle.price, null)}</div>
-                          <div className="text-[10px] font-semibold text-emerald-700">
+                          <div className="text-[10px] font-semibold text-blue-600">
                             {formatStudentPrice(bundle.price, "Sri Lanka", bundle.lkrPrice)}
                           </div>
                         </div>
@@ -3613,14 +3613,14 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Featured / Most Popular</span>
-                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <Award className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-lg font-black tracking-tight text-slate-900 truncate">
                     {(bundlesList.length > 0 ? bundlesList : DEFAULT_BUNDLES).find((b) => b.popular)?.name || "16 Hours Standard"}
                   </div>
-                  <div className="text-[11px] text-amber-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     Highlighted with Featured Badge
                   </div>
                 </div>
@@ -3628,7 +3628,7 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Lowest Hourly Rate</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <DollarSign className="w-4 h-4" />
                     </div>
                   </div>
@@ -3640,7 +3640,7 @@ export default function AdminDashboardPage() {
                     ).toFixed(2)}
                     <span className="text-xs font-semibold text-slate-400">/hr</span>
                   </div>
-                  <div className="text-[11px] text-emerald-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     Best Value Student Rate
                   </div>
                 </div>
@@ -3648,14 +3648,14 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Instant Publishing</span>
-                    <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <Zap className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     Synchronized
                   </div>
-                  <div className="text-[11px] text-purple-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     Realtime DB & Client Sync
                   </div>
                 </div>
@@ -3669,7 +3669,7 @@ export default function AdminDashboardPage() {
                       <h3 className="font-black text-lg text-slate-900">
                         Public Landing Page & Student Pricing Cards
                       </h3>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                         Live Preview
                       </span>
                     </div>
@@ -3777,17 +3777,17 @@ export default function AdminDashboardPage() {
                                 <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                                   {formatStudentPrice(price, null, plan.lkrPrice, "AL")}
                                 </span>
-                                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                                   {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "AL")}
                                 </span>
                               </div>
                             </div>
 
                             {/* O/L Tier */}
-                            <div className="p-2.5 rounded-xl bg-purple-50/60 border border-purple-200/60">
+                            <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/60">
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-purple-800 flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-purple-600 inline-block" />
+                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
                                   London O/L Rate
                                 </span>
                                 <span className="text-[10px] font-mono font-bold text-slate-500">
@@ -3795,10 +3795,10 @@ export default function AdminDashboardPage() {
                                 </span>
                               </div>
                               <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-xl sm:text-2xl font-black text-purple-950 tracking-tight">
+                                <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                                   {formatStudentPrice(price, null, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
                                 </span>
-                                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                                   {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
                                 </span>
                               </div>
@@ -3882,13 +3882,13 @@ export default function AdminDashboardPage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               {/* Approvals Metric Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className={`p-5 rounded-2xl bg-white border shadow-2xs space-y-1 ${totalPendingApprovals > 0 ? "border-amber-300 ring-2 ring-amber-500/20" : "border-slate-200"}`}>
+                <div className={`p-5 rounded-2xl bg-white border shadow-2xs space-y-1 ${totalPendingApprovals > 0 ? "border-blue-300 ring-2 ring-blue-500/20" : "border-slate-200"}`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-amber-600 flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                       <Clock className="w-4 h-4" />
                       Total Awaiting Review
                     </span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {totalPendingApprovals} Pending
@@ -3911,7 +3911,7 @@ export default function AdminDashboardPage() {
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-indigo-600 flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                       <CalendarCheck className="w-4 h-4" />
                       Trial Consultations
                     </span>
@@ -3924,7 +3924,7 @@ export default function AdminDashboardPage() {
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                       <BookOpen className="w-4 h-4" />
                       Classes & Syllabi
                     </span>
@@ -3983,7 +3983,7 @@ export default function AdminDashboardPage() {
               {/* Approvals Content List */}
               {totalPendingApprovals === 0 ? (
                 <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 shadow-2xs">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
                     <ShieldCheck className="w-8 h-8" />
                   </div>
                   <div>
@@ -4003,16 +4003,16 @@ export default function AdminDashboardPage() {
                     return (
                       <div
                         key={cls.id}
-                        className="bg-white rounded-2xl border border-amber-200/90 p-5 shadow-2xs space-y-4 hover:border-amber-300 transition-all"
+                        className="bg-white rounded-2xl border border-blue-200/90 p-5 shadow-2xs space-y-4 hover:border-blue-300 transition-all"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5">
                           <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0">
                               <Video className="w-5 h-5" />
                             </div>
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-800 uppercase tracking-wide">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-800 uppercase tracking-wide">
                                   ⏳ Live Class Proposal
                                 </span>
                                 {cls.course?.subjectCode && (
@@ -4079,7 +4079,7 @@ export default function AdminDashboardPage() {
                             size="sm"
                             disabled={isProcessing}
                             onClick={() => handleOpenRejectModal("CLASS", cls.id, cls.title, tutorName)}
-                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer"
+                            className="text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-700 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" />
                             <span>Decline / Request Revision</span>
@@ -4089,7 +4089,7 @@ export default function AdminDashboardPage() {
                             size="sm"
                             disabled={isProcessing}
                             onClick={() => handleApproveClass(cls.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-8.5 px-4 gap-1.5 shadow-sm cursor-pointer"
+                            className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl h-8.5 px-4 gap-1.5 shadow-sm cursor-pointer"
                           >
                             {isProcessing ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -4212,16 +4212,16 @@ export default function AdminDashboardPage() {
                     return (
                       <div
                         key={course.id}
-                        className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-2xs space-y-4 hover:border-emerald-300 transition-all"
+                        className="bg-white rounded-2xl border border-blue-200 p-5 shadow-2xs space-y-4 hover:border-blue-300 transition-all"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5">
                           <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0">
                               <BookOpen className="w-5 h-5" />
                             </div>
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-800 uppercase tracking-wide">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-800 uppercase tracking-wide">
                                   ⏳ Class Review Required
                                 </span>
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
@@ -4234,7 +4234,7 @@ export default function AdminDashboardPage() {
                           </div>
 
                           <div className="text-right sm:shrink-0 text-xs">
-                            <span className="font-black text-sm text-emerald-600 block">{course.price || 10} Tokens</span>
+                            <span className="font-black text-sm text-blue-600 block">{course.price || 10} Tokens</span>
                             <span className="text-[10px] text-slate-400 font-medium">Standard Tuition</span>
                           </div>
                         </div>
@@ -4257,7 +4257,7 @@ export default function AdminDashboardPage() {
                             size="sm"
                             disabled={isProcessing}
                             onClick={() => handleOpenRejectModal("COURSE", course.id, course.title, tutorName)}
-                            className="text-amber-600 border-amber-200 hover:bg-amber-50 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer"
+                            className="text-slate-600 border-slate-200 hover:bg-slate-50 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer"
                           >
                             <span>Return to Draft</span>
                           </Button>
@@ -4266,7 +4266,7 @@ export default function AdminDashboardPage() {
                             size="sm"
                             disabled={isProcessing}
                             onClick={() => handleApproveCourse(course.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-8.5 px-4 gap-1.5 shadow-sm cursor-pointer"
+                            className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl h-8.5 px-4 gap-1.5 shadow-sm cursor-pointer"
                           >
                             {isProcessing ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -4310,14 +4310,14 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-500">Recent Activity (24h)</span>
-                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <Clock className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {auditLogStats.last24hCount.toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-amber-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     Administrative actions in past 24h
                   </div>
                 </div>
@@ -4325,14 +4325,14 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-500">User & Account Changes</span>
-                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <Users className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {auditLogStats.userCount.toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-indigo-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     Creations, updates, and enrollments
                   </div>
                 </div>
@@ -4340,14 +4340,14 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-500">Classes & Curriculum</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <BookOpen className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {(auditLogStats.courseCount + auditLogStats.classTrialCount).toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-emerald-600 font-semibold">
+                  <div className="text-[11px] text-blue-600 font-semibold">
                     Classes, sessions & trial approvals
                   </div>
                 </div>
@@ -5134,7 +5134,7 @@ export default function AdminDashboardPage() {
                   <Upload className="w-3.5 h-3.5 text-blue-600" />
                   Upload Class Study Material
                 </span>
-                <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                   Academy Resource Repository
                 </span>
               </div>
@@ -5143,12 +5143,12 @@ export default function AdminDashboardPage() {
                 <div
                   className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
                     materialStatusMsg.type === "success"
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      ? "bg-blue-50 text-blue-800 border border-blue-200"
                       : "bg-red-50 text-red-800 border border-red-200"
                   }`}
                 >
                   {materialStatusMsg.type === "success" ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                   ) : (
                     <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                   )}
@@ -5528,8 +5528,8 @@ export default function AdminDashboardPage() {
                 >
                   {copiedLogJson ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-700 font-bold">Copied!</span>
+                      <Check className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="text-blue-700 font-bold">Copied!</span>
                     </>
                   ) : (
                     <>
@@ -5593,12 +5593,12 @@ export default function AdminDashboardPage() {
               <div
                 className={`p-3.5 rounded-2xl text-xs flex items-center gap-2.5 animate-in fade-in ${
                   bundleSaveMsg.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-blue-50 text-blue-800 border border-blue-200"
                     : "bg-red-50 text-red-800 border border-red-200"
                 }`}
               >
                 {bundleSaveMsg.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 ) : (
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 )}
@@ -5806,15 +5806,15 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* O/L Pricing Section */}
-                        <div className="p-3.5 rounded-2xl bg-purple-50/50 border border-purple-200/80 space-y-3 sm:col-span-2">
+                        <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3 sm:col-span-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-purple-600 inline-block" />
-                              <h5 className="text-xs font-black text-purple-950 uppercase tracking-wider">
+                              <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
+                              <h5 className="text-xs font-black text-slate-900 uppercase tracking-wider">
                                 London O/L (IGCSE) Rates
                               </h5>
                             </div>
-                            <span className="text-[10px] font-bold text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-full">
                               Tailored O/L Student Tier
                             </span>
                           </div>
@@ -6080,7 +6080,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
                   <Coins className="w-5 h-5" />
                 </div>
                 <div>
@@ -6105,12 +6105,12 @@ export default function AdminDashboardPage() {
               <div
                 className={`p-3.5 rounded-2xl text-xs flex items-center gap-2.5 animate-in fade-in ${
                   grantFeedbackMsg.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-blue-50 text-blue-800 border border-blue-200"
                     : "bg-red-50 text-red-800 border border-red-200"
                 }`}
               >
                 {grantFeedbackMsg.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-600" />
                 ) : (
                   <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                 )}
@@ -6131,7 +6131,7 @@ export default function AdminDashboardPage() {
                     setSelectedStudentForTokens(found || null);
                   }}
                   required
-                  className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                  className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="" disabled>Choose a student...</option>
                   {allUsersList
@@ -6146,11 +6146,11 @@ export default function AdminDashboardPage() {
 
               {/* Selected Student Card */}
               {selectedStudentForTokens && (
-                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center justify-between gap-3">
+                <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Avatar className="w-9 h-9 ring-1 ring-amber-300 shrink-0">
+                    <Avatar className="w-9 h-9 ring-1 ring-blue-300 shrink-0">
                       <AvatarImage src={selectedStudentForTokens.avatar || undefined} />
-                      <AvatarFallback className="bg-amber-200 text-amber-900 font-bold text-xs">
+                      <AvatarFallback className="bg-blue-100 text-blue-900 font-bold text-xs">
                         {selectedStudentForTokens.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -6165,10 +6165,10 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+                    <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">
                       Current Wallet
                     </span>
-                    <span className="font-mono text-sm font-black text-amber-950">
+                    <span className="font-mono text-sm font-black text-blue-950">
                       {selectedStudentForTokens.tokenWallet?.balance ?? 0} Hours
                     </span>
                   </div>
@@ -6186,7 +6186,7 @@ export default function AdminDashboardPage() {
                     onClick={() => setGrantTokensMode("ADD")}
                     className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       grantTokensMode === "ADD"
-                        ? "bg-amber-600 text-white shadow-xs"
+                        ? "bg-[#0c2461] text-white shadow-xs"
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
@@ -6198,7 +6198,7 @@ export default function AdminDashboardPage() {
                     onClick={() => setGrantTokensMode("SET")}
                     className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       grantTokensMode === "SET"
-                        ? "bg-amber-600 text-white shadow-xs"
+                        ? "bg-[#0c2461] text-white shadow-xs"
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
@@ -6227,8 +6227,8 @@ export default function AdminDashboardPage() {
                       onClick={() => setGrantTokensAmount(preset.amount)}
                       className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         grantTokensAmount === preset.amount
-                          ? "bg-amber-600 text-white ring-2 ring-amber-400/40 shadow-xs"
-                          : "bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80"
+                          ? "bg-[#0c2461] text-white ring-2 ring-blue-400/40 shadow-xs"
+                          : "bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200/80"
                       }`}
                     >
                       {preset.label}
@@ -6297,8 +6297,8 @@ export default function AdminDashboardPage() {
                   <span className="text-slate-600 font-medium">Updated Wallet Balance:</span>
                   <div className="flex items-center gap-1.5 font-mono font-bold text-slate-900">
                     <span className="text-slate-400">{selectedStudentForTokens.tokenWallet?.balance ?? 0} Hrs</span>
-                    <span className="text-amber-600 font-bold">&rarr;</span>
-                    <span className="text-emerald-700 font-black text-sm">
+                    <span className="text-blue-600 font-bold">&rarr;</span>
+                    <span className="text-blue-700 font-black text-sm">
                       {grantTokensMode === "ADD"
                         ? (selectedStudentForTokens.tokenWallet?.balance ?? 0) + grantTokensAmount
                         : grantTokensAmount}{" "}
@@ -6322,7 +6322,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   size="sm"
                   disabled={isGrantingTokens || !selectedStudentForTokens || grantTokensAmount <= 0}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs shadow-amber-600/20 cursor-pointer gap-1.5 h-9 px-4"
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs rounded-xl shadow-xs shadow-blue-900/20 cursor-pointer gap-1.5 h-9 px-4"
                 >
                   {isGrantingTokens ? (
                     <>
@@ -6348,12 +6348,12 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
-                <Trash2 className="w-6 h-6 text-rose-600" />
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6 text-slate-700" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-800">
                     Irreversible Operation
                   </span>
                 </div>
@@ -6377,19 +6377,19 @@ export default function AdminDashboardPage() {
             {/* Modal Content */}
             <div className="p-5 sm:p-6 space-y-4">
               {clearDataSuccessMsg ? (
-                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
                   <span className="font-semibold">{clearDataSuccessMsg}</span>
                 </div>
               ) : (
                 <>
                   <div className="space-y-2.5 text-xs text-slate-600">
-                    <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200/80 space-y-1.5">
-                      <div className="font-bold text-rose-900 flex items-center gap-1.5">
-                        <AlertCircle className="w-4 h-4 text-rose-600" />
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-slate-600" />
                         <span>This will permanently delete:</span>
                       </div>
-                      <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-rose-800">
+                      <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-slate-700">
                         <li>All student accounts, tutors, and profiles</li>
                         <li>All individual class courses, modules, lessons & materials</li>
                         <li>All course enrollments, student progress & certificates</li>
@@ -6401,24 +6401,24 @@ export default function AdminDashboardPage() {
                       </ul>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/80 flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <div className="text-[11px] text-emerald-800 font-semibold leading-tight">
+                    <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200/80 flex items-center gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div className="text-[11px] text-blue-800 font-semibold leading-tight">
                         <strong>Administrator accounts are protected:</strong> Your admin email and password login will remain intact.
                       </div>
                     </div>
                   </div>
 
                   {clearDataErrorMsg && (
-                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-slate-600 shrink-0" />
                       <span>{clearDataErrorMsg}</span>
                     </div>
                   )}
 
                   <div className="space-y-1.5 pt-1">
                     <label className="text-xs font-bold text-slate-700 block">
-                      To confirm, type <span className="font-mono text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">CLEAR DATA</span> below:
+                      To confirm, type <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 font-bold">CLEAR DATA</span> below:
                     </label>
                     <Input
                       placeholder="CLEAR DATA"
@@ -6428,7 +6428,7 @@ export default function AdminDashboardPage() {
                         if (clearDataErrorMsg) setClearDataErrorMsg(null);
                       }}
                       disabled={isClearingAllData}
-                      className="h-10 text-xs font-mono border-slate-200 rounded-xl focus-visible:ring-rose-400"
+                      className="h-10 text-xs font-mono border-slate-200 rounded-xl focus-visible:ring-slate-400"
                     />
                   </div>
                 </>
@@ -6457,7 +6457,7 @@ export default function AdminDashboardPage() {
                   clearDataConfirmInput.trim().toUpperCase() !== "CLEAR DATA" ||
                   Boolean(clearDataSuccessMsg)
                 }
-                className="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white h-9 px-5 rounded-xl shadow-xs shadow-rose-600/20 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-bold bg-[#0c2461] hover:bg-[#103080] text-white h-9 px-5 rounded-xl shadow-xs shadow-blue-900/20 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
               >
                 {isClearingAllData ? (
                   <>

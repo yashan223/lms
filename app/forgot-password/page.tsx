@@ -63,13 +63,13 @@ export default function ForgotPasswordPage() {
             </div>
 
             {sent ? (
-              <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                <div className="text-sm font-bold text-emerald-900">Reset email sent!</div>
-                <p className="text-xs text-emerald-700 leading-relaxed">
+              <div className="p-5 rounded-2xl bg-blue-50 border border-blue-200 text-center space-y-3">
+                <CheckCircle2 className="w-10 h-10 text-blue-600 mx-auto" />
+                <div className="text-sm font-bold text-blue-900">Reset email sent!</div>
+                <p className="text-xs text-blue-700 leading-relaxed">
                   If <strong>{email}</strong> is registered, you'll receive a password reset link shortly. Check your inbox and spam folder.
                 </p>
-                <p className="text-[11px] text-emerald-600 font-medium">The link expires in 1 hour.</p>
+                <p className="text-[11px] text-blue-600 font-medium">The link expires in 1 hour.</p>
                 <Link href="/login" className="inline-block mt-2 text-xs font-bold text-blue-700 hover:underline">
                   ← Back to Sign In
                 </Link>

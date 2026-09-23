@@ -110,14 +110,14 @@ function LoginContent() {
               <div
                 className={`p-3.5 rounded-xl text-xs space-y-2 animate-in fade-in ${
                   unverifiedEmail
-                    ? "bg-amber-50 border border-amber-200 text-amber-900"
+                    ? "bg-blue-50 border border-blue-200 text-blue-900"
                     : "bg-red-50 border border-red-200 text-red-700"
                 }`}
               >
                 <div className="flex items-start gap-2.5">
                   <AlertCircle
                     className={`w-4 h-4 shrink-0 mt-0.5 ${
-                      unverifiedEmail ? "text-amber-600" : "text-red-600"
+                      unverifiedEmail ? "text-blue-600" : "text-red-600"
                     }`}
                   />
                   <div className="space-y-2 flex-1">
@@ -231,9 +231,9 @@ function LoginContent() {
                     setEmail("student@edupulse.uk");
                     setPassword("StudentPass123!");
                   }}
-                  className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                  className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
-                  <GraduationCap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <GraduationCap className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Student</span>
                 </button>
                 <button
@@ -242,7 +242,7 @@ function LoginContent() {
                     setEmail("tutor@edupulse.uk");
                     setPassword("TutorPass123!");
                   }}
-                  className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                  className="p-2 rounded-xl bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
                   <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Tutor</span>
@@ -253,9 +253,9 @@ function LoginContent() {
                     setEmail("admin@edupulse.uk");
                     setPassword("AdminPass123!");
                   }}
-                  className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                  className="p-2 rounded-xl bg-[#0c2461]/10 hover:bg-[#0c2461]/15 border border-blue-300 text-[#0c2461] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#0c2461] shrink-0" />
                   <span>Admin</span>
                 </button>
               </div>

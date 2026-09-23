@@ -343,11 +343,11 @@ export default function CourseDetailPage({
   const getCategoryBadge = (cat: string) => {
     switch (cat) {
       case "FORMULA_SHEET":
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]">Formula Sheet</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px]">Formula Sheet</Badge>;
       case "MOCK_PAPER":
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px]">Worked Solutions</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px]">Worked Solutions</Badge>;
       case "LAB_GUIDE":
-        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px]">Practical Lab Guide</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px]">Practical Lab Guide</Badge>;
       default:
         return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px]">Study Handbook</Badge>;
     }
@@ -381,7 +381,7 @@ export default function CourseDetailPage({
                     {course?.category || "Pure Mathematics"}
                   </Badge>
                   {isEnrolled && (
-                    <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs flex items-center gap-1">
+                    <Badge className="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs flex items-center gap-1">
                       <Check className="w-3 h-3" /> Enrolled Student
                     </Badge>
                   )}
@@ -402,7 +402,7 @@ export default function CourseDetailPage({
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-emerald-400" />
+                    <FileText className="w-4 h-4 text-blue-400" />
                     {materialsList.length} Study Handbooks & Formula Sheets
                   </span>
                 </div>
@@ -424,7 +424,7 @@ export default function CourseDetailPage({
                   <>
                     <div className="flex items-baseline justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 shadow-2xs">
                           <Coins className="w-5 h-5" />
                         </div>
                         <div className="flex items-baseline gap-1">
@@ -433,7 +433,7 @@ export default function CourseDetailPage({
                         </div>
                       </div>
                       {isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0 ? (
-                        <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                        <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
                           London O/L Rate
                         </span>
                       ) : (
@@ -445,8 +445,8 @@ export default function CourseDetailPage({
 
                     {isEnrolled ? (
                       <div className="space-y-2">
-                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-bold">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2 font-bold">
+                          <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                           <span>You have active access to this class!</span>
                         </div>
                         <button
@@ -458,9 +458,9 @@ export default function CourseDetailPage({
                         </button>
                         <button
                           onClick={() => setShowTrialModal(true)}
-                          className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                          className="w-full py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-blue-200 transition-all cursor-pointer shadow-2xs"
                         >
-                          <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
+                          <CalendarCheck className="w-3.5 h-3.5 text-blue-600" />
                           <span>Book 1-on-1 Trial (30 Mins)</span>
                         </button>
                       </div>
@@ -470,15 +470,15 @@ export default function CourseDetailPage({
                           onClick={() => setShowPurchaseModal(true)}
                           className="w-full py-3.5 h-auto rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
                         >
-                          <Lock className="w-4 h-4 text-amber-300" />
+                          <Lock className="w-4 h-4 text-blue-300" />
                           <span>Enroll & Unlock All Materials ({effectivePrice} Tokens)</span>
                           <ArrowRight className="w-4 h-4" />
                         </Button>
                         <button
                           onClick={() => setShowTrialModal(true)}
-                          className="w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                          className="w-full py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-blue-200 transition-all cursor-pointer shadow-2xs"
                         >
-                          <CalendarCheck className="w-3.5 h-3.5 text-indigo-600" />
+                          <CalendarCheck className="w-3.5 h-3.5 text-blue-600" />
                           <span>Request 30-Min Free Trial Session</span>
                         </button>
                       </div>
@@ -487,14 +487,14 @@ export default function CourseDetailPage({
                 ) : (
                   <>
                     <div className="flex items-center justify-between">
-                      <Badge className="bg-amber-500/10 text-amber-700 border border-amber-500/20 text-xs font-bold px-2.5 py-1">
+                      <Badge className="bg-blue-500/10 text-blue-700 border border-blue-500/20 text-xs font-bold px-2.5 py-1">
                         Student Pricing Protected
                       </Badge>
                       <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">Full Specification</span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+                    <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-700 shrink-0 mt-0.5">
                         <Lock className="w-4 h-4" />
                       </div>
                       <div>
@@ -661,16 +661,16 @@ export default function CourseDetailPage({
 
             {/* Locked Gate Banner for Unenrolled Students */}
             {!isEnrolled && !isStaff && (
-              <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-blue-50/90 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
                     <Lock className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs text-amber-950">
+                    <h4 className="font-bold text-xs text-blue-950">
                       Study Materials & Downloads are Locked
                     </h4>
-                    <p className="text-[11px] text-amber-800 mt-0.5">
+                    <p className="text-[11px] text-blue-800 mt-0.5">
                       Purchase this individual class to unlock complete download access to all {materialsList.length} verified handbooks, formula booklets, and worked solutions.
                     </p>
                   </div>
@@ -679,7 +679,7 @@ export default function CourseDetailPage({
                   onClick={() => setShowPurchaseModal(true)}
                   className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 rounded-xl shadow-xs shrink-0 cursor-pointer gap-1.5"
                 >
-                  <Lock className="w-3.5 h-3.5 text-amber-300" />
+                  <Lock className="w-3.5 h-3.5 text-blue-300" />
                   <span>Enroll in Class ({effectivePrice} Tokens)</span>
                 </Button>
               </div>
@@ -779,7 +779,7 @@ export default function CourseDetailPage({
                         ) : (
                           <Button
                             onClick={() => setShowPurchaseModal(true)}
-                            className="px-3.5 py-1.5 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                            className="px-3.5 py-1.5 h-8 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
                           >
                             <Lock className="w-3.5 h-3.5" />
                             <span>Unlock File</span>
@@ -823,11 +823,11 @@ export default function CourseDetailPage({
                         </div>
                       ) : (
                         <div className="w-full aspect-video rounded-2xl bg-[#0b1b3d] border border-blue-900/60 flex flex-col items-center justify-center text-white relative overflow-hidden p-6 text-center space-y-3 shadow-inner">
-                          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-400 flex items-center justify-center mx-auto shadow-lg">
+                          <div className="w-14 h-14 rounded-2xl bg-blue-500/20 border border-blue-400/40 text-blue-300 flex items-center justify-center mx-auto shadow-lg">
                             <Lock className="w-7 h-7" />
                           </div>
                           <div className="space-y-1">
-                            <div className="text-xs text-amber-400 font-bold uppercase tracking-wider">
+                            <div className="text-xs text-blue-300 font-bold uppercase tracking-wider">
                               Full Syllabus Class • Enrolled Students Only
                             </div>
                             <h3 className="text-base sm:text-lg font-bold text-white max-w-md">
@@ -841,7 +841,7 @@ export default function CourseDetailPage({
                             onClick={() => setShowPurchaseModal(true)}
                             className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md cursor-pointer gap-2"
                           >
-                            <Lock className="w-3.5 h-3.5 text-amber-300" />
+                            <Lock className="w-3.5 h-3.5 text-blue-300" />
                             <span>Enroll in Class to Unlock ({effectivePrice} Tokens)</span>
                           </Button>
                         </div>
@@ -859,7 +859,7 @@ export default function CourseDetailPage({
                             onClick={() => toggleLessonCompletion(selectedLesson.id)}
                             className={`rounded-xl text-xs font-bold gap-1.5 transition-all ${
                               completedLessonIds.includes(selectedLesson.id)
-                                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                ? "bg-blue-600 hover:bg-blue-700 text-white"
                                 : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                             }`}
                           >
@@ -943,7 +943,7 @@ export default function CourseDetailPage({
                                       <div
                                         className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
                                           isDone
-                                            ? "bg-emerald-600 text-white"
+                                            ? "bg-blue-600 text-white"
                                             : isSelected
                                             ? "bg-blue-600 text-white"
                                             : "bg-slate-100 text-slate-600"
@@ -990,15 +990,15 @@ export default function CourseDetailPage({
                       <span>Pearson Edexcel & Cambridge Aligned</span>
                     </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-blue-600" />
                       <span>Verified Curriculum Specification Handbooks</span>
                     </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-amber-600" />
+                      <Award className="w-4 h-4 text-blue-600" />
                       <span>Accredited Academic Certificate</span>
                     </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
-                      <Users className="w-4 h-4 text-indigo-600" />
+                      <Users className="w-4 h-4 text-blue-600" />
                       <span>Live Tutor Q&A Access</span>
                     </div>
                   </div>
@@ -1048,12 +1048,12 @@ export default function CourseDetailPage({
               <div
                 className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
                   uploadStatusMsg.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-blue-50 text-blue-800 border border-blue-200"
                     : "bg-red-50 text-red-800 border border-red-200"
                 }`}
               >
                 {uploadStatusMsg.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-600" />
                 ) : (
                   <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                 )}

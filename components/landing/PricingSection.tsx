@@ -121,13 +121,13 @@ export function PricingSection({
               onClick={() => setStudentLevel("OL")}
               className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 studentLevel === "OL"
-                  ? "bg-white text-purple-700 shadow-sm"
+                  ? "bg-white text-blue-800 shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <span>📘 London O/L (IGCSE)</span>
               {studentLevel === "OL" && (
-                <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Tailored</span>
+                <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Tailored</span>
               )}
             </button>
           </div>
@@ -214,7 +214,7 @@ export function PricingSection({
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                             studentLevel === "OL"
-                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              ? "bg-blue-100 text-blue-800 border-blue-200"
                               : "bg-blue-50 text-blue-700 border-blue-200"
                           }`}
                         >

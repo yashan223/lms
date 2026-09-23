@@ -215,7 +215,7 @@ export function CourseGrid() {
                   : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <GraduationCap className="w-4 h-4 text-amber-400" />
+              <GraduationCap className="w-4 h-4 text-blue-300" />
               <span>O/L & A/L Tutors with Subjects</span>
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
@@ -309,7 +309,7 @@ export function CourseGrid() {
                             </AvatarFallback>
                           </Avatar>
                           <div
-                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white"
+                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-white"
                             title="Verified Active Tutor"
                           >
                             <ShieldCheck className="w-3 h-3" />
@@ -321,7 +321,7 @@ export function CourseGrid() {
                             <h3 className="font-extrabold text-slate-900 text-base leading-snug">
                               {tutor.name}
                             </h3>
-                            <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold py-0.5 px-2 rounded-md">
+                            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold py-0.5 px-2 rounded-md">
                               Verified
                             </Badge>
                           </div>
@@ -368,12 +368,12 @@ export function CourseGrid() {
                               className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
                                 sub.level === "AL"
                                   ? "bg-blue-50/80 text-blue-900 border-blue-200 hover:bg-blue-100/80"
-                                  : "bg-emerald-50/80 text-emerald-900 border-emerald-200 hover:bg-emerald-100/80"
+                                  : "bg-blue-100/70 text-blue-950 border-blue-200 hover:bg-blue-100"
                               }`}
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${
-                                  sub.level === "AL" ? "bg-blue-600" : "bg-emerald-600"
+                                  sub.level === "AL" ? "bg-blue-600" : "bg-[#0c2461]"
                                 }`}
                               />
                               <span className="font-mono text-[10px] font-bold opacity-80">
@@ -396,7 +396,7 @@ export function CourseGrid() {
                         className="flex-1 h-10 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                         title="Book a 30-min free online trial session"
                       >
-                        <CalendarCheck className="w-3.5 h-3.5 text-amber-300" />
+                        <CalendarCheck className="w-3.5 h-3.5 text-blue-200" />
                         <span>Free 1-on-1 Trial</span>
                       </button>
 
@@ -533,7 +533,7 @@ export function CourseGrid() {
                     <div className="px-5 sm:px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
                       {isLoggedIn ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shadow-2xs">
                             <Coins className="w-4 h-4" />
                           </div>
                           <div className="flex items-baseline gap-1">
@@ -550,11 +550,11 @@ export function CourseGrid() {
                           href="/register"
                           className="group/lock flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
                         >
-                          <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-amber-500/10 border border-slate-200 group-hover/lock:border-amber-500/20 flex items-center justify-center text-slate-400 group-hover/lock:text-amber-600 transition-colors">
+                          <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-blue-50 border border-slate-200 group-hover/lock:border-blue-200 flex items-center justify-center text-slate-400 group-hover/lock:text-blue-600 transition-colors">
                             <Lock className="w-3.5 h-3.5" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-700 group-hover/lock:text-indigo-600">
+                            <span className="text-xs font-bold text-slate-700 group-hover/lock:text-blue-600">
                               Sign in to view
                             </span>
                             <span className="text-[10px] text-slate-400">

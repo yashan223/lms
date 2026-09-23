@@ -35,6 +35,9 @@ export async function GET(request: NextRequest) {
         phone: true,
         country: true,
         academicLevel: true,
+        guardianName: true,
+        guardianRelationship: true,
+        guardianPhone: true,
         emailVerified: true,
         createdAt: true,
         tokenWallet: {
@@ -179,7 +182,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Default action: Update profile info
-    const { name, headline, bio, phone, country, academicLevel, avatar } = body;
+    const { name, headline, bio, phone, country, academicLevel, avatar, guardianName, guardianRelationship, guardianPhone } = body;
 
     if (name !== undefined) {
       if (typeof name !== "string" || name.trim().length < 2 || name.trim().length > 100) {
@@ -199,6 +202,9 @@ export async function PUT(request: NextRequest) {
     if (academicLevel !== undefined) {
       updateData.academicLevel = academicLevel === "OL" ? "OL" : "AL";
     }
+    if (guardianName !== undefined) updateData.guardianName = guardianName?.trim() || null;
+    if (guardianRelationship !== undefined) updateData.guardianRelationship = guardianRelationship?.trim() || null;
+    if (guardianPhone !== undefined) updateData.guardianPhone = guardianPhone?.trim() || null;
 
     if (avatar !== undefined) {
       if (avatar === null || avatar === "") {
@@ -227,6 +233,9 @@ export async function PUT(request: NextRequest) {
         phone: true,
         country: true,
         academicLevel: true,
+        guardianName: true,
+        guardianRelationship: true,
+        guardianPhone: true,
         emailVerified: true,
         createdAt: true,
       },

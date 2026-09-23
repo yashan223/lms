@@ -1,5 +1,4 @@
 const { createServer } = require("http");
-const { parse } = require("url");
 const next = require("next");
 const { WebSocketServer, WebSocket } = require("ws");
 const { loadEnvConfig } = require("@next/env");
@@ -21,8 +20,7 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
     try {
-      const parsedUrl = parse(req.url, true);
-      await handle(req, res, parsedUrl);
+      await handle(req, res);
     } catch (err) {
       console.error("[server] Request handling error:", req.url, err);
       if (!res.headersSent) {
@@ -163,7 +161,8 @@ app.prepare().then(() => {
   // Handle WebSocket HTTP upgrades on /ws and /api/ws
   server.on("upgrade", (req, socket, head) => {
     try {
-      const { pathname } = parse(req.url || "", true);
+      const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
+      const pathname = url.pathname;
       if (pathname === "/ws" || pathname === "/api/ws") {
         wss.handleUpgrade(req, socket, head, (ws) => {
           wss.emit("connection", ws, req);

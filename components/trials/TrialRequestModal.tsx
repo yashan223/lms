@@ -344,7 +344,7 @@ export function TrialRequestModal({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+            <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center shadow-md shadow-blue-500/20">
               <CalendarCheck className="w-5 h-5" />
             </div>
             <div>
@@ -353,7 +353,7 @@ export function TrialRequestModal({
                   {step === "SETUP_AVAILABILITY" ? "Configure Your Study Hours" : "Request a 30-Min Free Trial"}
                 </h3>
                 {step === "SETUP_AVAILABILITY" ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border-emerald-200">
+                  <Badge className="bg-blue-100 text-blue-800 text-[10px] font-extrabold border-blue-200">
                     Step 1 of 2
                   </Badge>
                 ) : isMaxTrialsReached ? (
@@ -365,7 +365,7 @@ export function TrialRequestModal({
                     Trial {trialStats.totalUsed + 1} of 5
                   </Badge>
                 ) : (
-                  <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border-emerald-200">
+                  <Badge className="bg-blue-100 text-blue-800 text-[10px] font-extrabold border-blue-200">
                     100% Free
                   </Badge>
                 )}
@@ -394,16 +394,16 @@ export function TrialRequestModal({
           </div>
         ) : step === "SETUP_AVAILABILITY" ? (
           <div className="space-y-3.5 animate-in fade-in duration-200 text-xs">
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-200/90">
+            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200">
               <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <div className="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                   <CalendarClock className="w-4 h-4" />
                 </div>
                 <div className="space-y-0.5">
-                  <h4 className="font-bold text-xs text-amber-950">
+                  <h4 className="font-bold text-xs text-blue-950">
                     Step 1: Set Up Your Study Hours First
                   </h4>
-                  <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                  <p className="text-[11px] text-blue-900/80 leading-relaxed">
                     Tutors schedule 1-on-1 individual classes and trials around your routine. Choose when you are free to study to immediately unlock trial booking!
                   </p>
                 </div>
@@ -445,9 +445,9 @@ export function TrialRequestModal({
               </div>
 
               {/* Preset 2: Weekend Intensives */}
-              <div className="p-3 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all flex items-center justify-between gap-3 bg-white shadow-xs">
+              <div className="p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-3 bg-white shadow-xs">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                     <Sun className="w-4 h-4" />
                   </div>
                   <div>
@@ -460,7 +460,7 @@ export function TrialRequestModal({
                   size="sm"
                   disabled={savingAvailability}
                   onClick={() => handleApplyPreset("WEEKEND_STUDY")}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg px-3.5 py-1.5 cursor-pointer shrink-0"
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-lg px-3.5 py-1.5 cursor-pointer shrink-0"
                 >
                   {savingAvailability ? <Loader2 className="w-3 h-3 animate-spin" /> : "Use Schedule"}
                 </Button>
@@ -482,7 +482,7 @@ export function TrialRequestModal({
           </div>
         ) : createdTrial ? (
           <div className="space-y-4 py-2 text-center animate-in fade-in duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto shadow-sm">
               <Clock className="w-8 h-8" />
             </div>
 
@@ -504,8 +504,8 @@ export function TrialRequestModal({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Requested Time:</span>
-                <span className="font-bold text-amber-800 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <span className="font-bold text-blue-800 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-blue-600" />
                   {new Date(createdTrial.preferredDate).toLocaleString("en-US", {
                     weekday: "short",
                     day: "numeric",
@@ -518,19 +518,19 @@ export function TrialRequestModal({
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                 <span className="text-slate-500">Status:</span>
-                <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[11px] font-bold">
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[11px] font-bold">
                   ⏳ Pending Tutor Confirmation
                 </Badge>
               </div>
             </div>
 
             {trialStats && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
                 <span className="font-semibold flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                   Trial {trialStats.totalUsed} of 5 Booked
                 </span>
-                <span className="text-[11px] text-emerald-800 font-bold">
+                <span className="text-[11px] text-blue-800 font-bold">
                   {trialStats.remaining} trial{trialStats.remaining === 1 ? "" : "s"} left with other tutors
                 </span>
               </div>
@@ -552,8 +552,8 @@ export function TrialRequestModal({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
             {availSuccessMsg && (
-              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>{availSuccessMsg}</span>
               </div>
             )}
@@ -561,11 +561,11 @@ export function TrialRequestModal({
             {/* Availability Status Badge */}
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
                 <span className="text-xs font-bold text-slate-700">
                   Your Study Availability is Set
                 </span>
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
                   {studentAvailabilities.length} active window{studentAvailabilities.length > 1 ? "s" : ""}
                 </Badge>
               </div>
@@ -597,12 +597,12 @@ export function TrialRequestModal({
                 </p>
               </div>
             ) : isCurrentTutorBooked ? (
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-amber-800">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-xs space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-blue-800">
+                  <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>1 Trial Per Tutor Limit</span>
                 </div>
-                <p className="text-[11px] text-amber-800/90 leading-relaxed">
+                <p className="text-[11px] text-blue-800/90 leading-relaxed">
                   You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {allCourses.length > 1 ? "Please select a different class or tutor below." : "Please select another tutor from the individual classes directory."}
                 </p>
               </div>
@@ -670,7 +670,7 @@ export function TrialRequestModal({
                     Tutor: <span className="font-semibold text-slate-700">{currentTutorName}</span>
                   </span>
                   {isCurrentTutorBooked && (
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
                       Already Booked
                     </Badge>
                   )}
@@ -702,13 +702,13 @@ export function TrialRequestModal({
                         }}
                         className={`px-2 py-1 rounded-lg border text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
                           s.matchesStudent
-                            ? "bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900 shadow-xs ring-1 ring-amber-300/60"
-                            : "bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800"
+                            ? "bg-blue-100 hover:bg-blue-200/80 border-blue-300 text-blue-900 shadow-xs ring-1 ring-blue-300/60"
+                            : "bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800"
                         }`}
                       >
-                        <Clock className={`w-2.5 h-2.5 ${s.matchesStudent ? "text-amber-600" : "text-emerald-600"}`} />
+                        <Clock className={`w-2.5 h-2.5 ${s.matchesStudent ? "text-blue-700" : "text-blue-600"}`} />
                         <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
-                        {s.matchesStudent && <span className="text-[9px] text-amber-800 font-extrabold">🌟 Mutual Match</span>}
+                        {s.matchesStudent && <span className="text-[9px] text-blue-800 font-extrabold">🌟 Mutual Match</span>}
                       </button>
                     ))}
                   </div>

@@ -928,12 +928,12 @@ export function AdminCourseWorkspaceContent({
   const currentStatus = isNewCourse ? detailsForm.status : (course?.status || "PUBLISHED");
   const statusBadgeColor =
     currentStatus === "PUBLISHED"
-      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      ? "bg-blue-50 text-blue-700 border-blue-200"
       : currentStatus === "PENDING_REVIEW"
-      ? "bg-amber-50 text-amber-700 border-amber-200"
+      ? "bg-blue-50 text-blue-800 border-blue-200"
       : currentStatus === "DRAFT"
       ? "bg-slate-100 text-slate-700 border-slate-200"
-      : "bg-rose-50 text-rose-700 border-rose-200";
+      : "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-900 pb-16">
@@ -1006,7 +1006,7 @@ export function AdminCourseWorkspaceContent({
                 {/* Delete Individual Class Button */}
                 <button
                   onClick={handleDeleteCourse}
-                  className="h-9 w-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer"
+                  className="h-9 w-9 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
                   title="Delete this class permanently"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -1024,15 +1024,15 @@ export function AdminCourseWorkspaceContent({
           <div
             className={`rounded-2xl border px-4 py-3 text-xs font-semibold flex items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 ${
               bannerMsg.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-rose-50 border-rose-200 text-rose-800"
+                ? "bg-blue-50 border-blue-200 text-blue-800"
+                : "bg-red-50 border-red-200 text-red-800"
             }`}
           >
             <div className="flex items-center gap-2 min-w-0">
               {bannerMsg.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
               ) : (
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               )}
               <span className="truncate">{bannerMsg.text}</span>
             </div>
@@ -1051,7 +1051,7 @@ export function AdminCourseWorkspaceContent({
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
               <span className="text-[11px] font-bold text-slate-500">Enrolled Students</span>
-              <Users className="w-4 h-4 text-blue-500" />
+              <Users className="w-4 h-4 text-blue-600" />
             </div>
             <div className="text-2xl font-black text-slate-900">{course?.enrollments?.length || 0}</div>
             <div className="text-[10px] text-slate-400">Active learners</div>
@@ -1060,7 +1060,7 @@ export function AdminCourseWorkspaceContent({
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
               <span className="text-[11px] font-bold text-slate-500">Modules</span>
-              <Layers3 className="w-4 h-4 text-indigo-500" />
+              <Layers3 className="w-4 h-4 text-blue-600" />
             </div>
             <div className="text-2xl font-black text-slate-900">{course?.modules?.length || (isNewCourse ? 1 : 0)}</div>
             <div className="text-[10px] text-slate-400">Curriculum units</div>
@@ -1069,7 +1069,7 @@ export function AdminCourseWorkspaceContent({
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
               <span className="text-[11px] font-bold text-slate-500">Total Lessons</span>
-              <GraduationCap className="w-4 h-4 text-violet-500" />
+              <GraduationCap className="w-4 h-4 text-blue-600" />
             </div>
             <div className="text-2xl font-black text-slate-900">{isNewCourse ? 2 : totalLessons}</div>
             <div className="text-[10px] text-slate-400">
@@ -1080,7 +1080,7 @@ export function AdminCourseWorkspaceContent({
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
               <span className="text-[11px] font-bold text-slate-500">Study Files</span>
-              <FileText className="w-4 h-4 text-emerald-500" />
+              <FileText className="w-4 h-4 text-blue-600" />
             </div>
             <div className="text-2xl font-black text-slate-900">{course?.materials?.length || 0}</div>
             <div className="text-[10px] text-slate-400">Handouts & slides</div>
@@ -1089,9 +1089,9 @@ export function AdminCourseWorkspaceContent({
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
               <span className="text-[11px] font-bold text-slate-500">Tuition Rate</span>
-              <Coins className="w-4 h-4 text-amber-500" />
+              <Coins className="w-4 h-4 text-blue-600" />
             </div>
-            <div className="text-2xl font-black text-amber-600">{detailsForm.price || course?.price || 10}</div>
+            <div className="text-2xl font-black text-blue-900">{detailsForm.price || course?.price || 10}</div>
             <div className="text-[10px] text-slate-400">Tokens / enrollment</div>
           </div>
 
@@ -1214,7 +1214,7 @@ export function AdminCourseWorkspaceContent({
                     <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded">London A/L</span>
                   </label>
                   <div className="relative">
-                    <Coins className="w-4 h-4 text-amber-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Coins className="w-4 h-4 text-blue-600 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
                       type="number"
                       required
@@ -1232,10 +1232,10 @@ export function AdminCourseWorkspaceContent({
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>O/L Student Tokens</span>
-                    <span className="text-[10px] text-purple-600 font-bold bg-purple-50 px-1.5 py-0.2 rounded">London O/L (Optional)</span>
+                    <span className="text-[10px] text-blue-700 font-bold bg-blue-50 px-1.5 py-0.2 rounded">London O/L (Optional)</span>
                   </label>
                   <div className="relative">
-                    <Coins className="w-4 h-4 text-purple-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Coins className="w-4 h-4 text-blue-600 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
                       type="number"
                       min="0"
@@ -1305,7 +1305,7 @@ export function AdminCourseWorkspaceContent({
                     />
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                        <Star className="w-3.5 h-3.5 text-blue-500 fill-blue-400" />
                         Featured Class
                       </span>
                       <span className="text-[10px] text-slate-500 block">Promote on student dashboard showcase</span>
@@ -1360,7 +1360,7 @@ export function AdminCourseWorkspaceContent({
                           <button
                             type="button"
                             onClick={() => setDetailsForm((prev) => ({ ...prev, thumbnail: "" }))}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             Remove
@@ -1526,7 +1526,7 @@ export function AdminCourseWorkspaceContent({
 
                             <button
                               onClick={() => handleDeleteModule(mod)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                               title="Delete Module"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1538,7 +1538,7 @@ export function AdminCourseWorkspaceContent({
                         {editingModule?.id === mod.id && (
                           <form
                             onSubmit={handleUpdateModule}
-                            className="p-3 bg-amber-50/60 border-b border-amber-200 flex items-center gap-2"
+                            className="p-3 bg-blue-50/60 border-b border-blue-200 flex items-center gap-2"
                           >
                             <Input
                               required
@@ -1659,7 +1659,7 @@ export function AdminCourseWorkspaceContent({
                                         {lesson.durationMin} mins
                                       </span>
                                       {lesson.isFreePreview && (
-                                        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px] px-1.5 py-0">
+                                        <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[9px] px-1.5 py-0">
                                           Free Preview
                                         </Badge>
                                       )}
@@ -1697,7 +1697,7 @@ export function AdminCourseWorkspaceContent({
                                   </button>
                                   <button
                                     onClick={() => handleDeleteLesson(lesson)}
-                                    className="p-1 text-slate-400 hover:text-rose-600 rounded-md cursor-pointer"
+                                    className="p-1 text-slate-400 hover:text-slate-600 rounded-md cursor-pointer"
                                     title="Delete Lesson"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -1817,7 +1817,7 @@ export function AdminCourseWorkspaceContent({
                     <Upload className="w-4 h-4 text-blue-600" />
                     Upload & Publish Resource
                   </span>
-                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  <span className="text-[10px] text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
                     Accessible to Enrolled Students
                   </span>
                 </div>
@@ -1969,7 +1969,7 @@ export function AdminCourseWorkspaceContent({
                           </a>
                           <button
                             onClick={() => handleDeleteMaterial(mat)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                             title="Delete Material"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -2093,7 +2093,7 @@ export function AdminCourseWorkspaceContent({
                             <span className="text-[11px] text-slate-400 font-medium">
                               Enrolled {dateStr}
                             </span>
-                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
+                            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">
                               <Check className="w-3 h-3 mr-1" />
                               Active
                             </Badge>
@@ -2101,7 +2101,7 @@ export function AdminCourseWorkspaceContent({
                               variant="outline"
                               size="sm"
                               onClick={() => handleUnenrollStudent(enrollment)}
-                              className="h-8 text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl gap-1"
+                              className="h-8 text-xs font-bold text-slate-600 border-slate-200 hover:bg-slate-100 rounded-xl gap-1"
                             >
                               <UserMinus className="w-3.5 h-3.5" />
                               <span>Unenroll</span>
@@ -2134,7 +2134,7 @@ export function AdminCourseWorkspaceContent({
                 className="p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4"
               >
                 <div className="font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Video className="w-4 h-4 text-violet-600" />
+                  <Video className="w-4 h-4 text-blue-600" />
                   Schedule Live Google Meet Class
                 </div>
 
@@ -2190,7 +2190,7 @@ export function AdminCourseWorkspaceContent({
                   <Button
                     type="submit"
                     disabled={isSchedulingClass}
-                    className="bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 cursor-pointer shadow-xs"
+                    className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 cursor-pointer shadow-xs"
                   >
                     {isSchedulingClass ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
                     <span>{isSchedulingClass ? "Scheduling Session..." : "Schedule Live Class"}</span>
@@ -2230,7 +2230,7 @@ export function AdminCourseWorkspaceContent({
                           key={eventItem.id}
                           className={`p-4 rounded-2xl border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                             isLive
-                              ? "bg-rose-50/50 border-rose-200"
+                              ? "bg-blue-50/50 border-blue-200"
                               : isCompleted
                               ? "bg-slate-50/50 border-slate-200"
                               : "bg-white border-slate-200"
@@ -2241,10 +2241,10 @@ export function AdminCourseWorkspaceContent({
                               <Badge
                                 className={`text-[10px] ${
                                   isLive
-                                    ? "bg-rose-600 text-white animate-pulse"
+                                    ? "bg-blue-600 text-white animate-pulse"
                                     : isCompleted
                                     ? "bg-slate-100 text-slate-600"
-                                    : "bg-violet-100 text-violet-800"
+                                    : "bg-blue-100 text-blue-800"
                                 }`}
                               >
                                 {isLive ? "LIVE NOW" : eventItem.status}
@@ -2268,7 +2268,7 @@ export function AdminCourseWorkspaceContent({
                                   href={eventItem.meetingLink || "https://meet.google.com"}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm"
+                                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm"
                                 >
                                   <Radio className="w-3.5 h-3.5" />
                                   <span>Enter Class Room</span>
@@ -2291,7 +2291,7 @@ export function AdminCourseWorkspaceContent({
                                   size="sm"
                                   disabled={startingClassId === eventItem.id}
                                   onClick={() => handleStartClass(eventItem)}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl gap-1.5"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl gap-1.5"
                                 >
                                   {startingClassId === eventItem.id ? (
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2315,7 +2315,7 @@ export function AdminCourseWorkspaceContent({
 
                             <button
                               onClick={() => handleDeleteClass(eventItem)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                               title="Delete Session"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -2344,8 +2344,8 @@ export function AdminCourseWorkspaceContent({
 
               {course.reviews && course.reviews.length > 0 ? (
                 <div className="space-y-4">
-                  <div className="p-5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center gap-4">
-                    <div className="text-3xl font-black text-amber-800">
+                  <div className="p-5 rounded-2xl bg-blue-50/60 border border-blue-200/80 flex items-center gap-4">
+                    <div className="text-3xl font-black text-blue-900">
                       {(
                         course.reviews.reduce((s, r) => s + r.rating, 0) / course.reviews.length
                       ).toFixed(1)}
@@ -2353,7 +2353,7 @@ export function AdminCourseWorkspaceContent({
                     <div>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((st) => (
-                          <Star key={st} className="w-4 h-4 text-amber-500 fill-amber-500" />
+                          <Star key={st} className="w-4 h-4 text-blue-500 fill-blue-500" />
                         ))}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5">
@@ -2379,7 +2379,7 @@ export function AdminCourseWorkspaceContent({
                           </div>
                           <div className="flex items-center gap-1">
                             {[...Array(rev.rating)].map((_, i) => (
-                              <Star key={i} className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                              <Star key={i} className="w-3.5 h-3.5 text-blue-500 fill-blue-500" />
                             ))}
                           </div>
                         </div>

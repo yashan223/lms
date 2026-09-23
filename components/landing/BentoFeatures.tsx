@@ -44,7 +44,7 @@ export function BentoFeatures() {
 
           <div className="rounded-3xl bg-white border border-blue-100 p-8 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6">
                 <LineChart className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">
@@ -55,14 +55,14 @@ export function BentoFeatures() {
               </p>
             </div>
 
-            <div className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 inline-block">
+            <div className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 inline-block">
               Departmental Competency Matrix
             </div>
           </div>
 
           <div className="rounded-3xl bg-white border border-blue-100 p-8 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6">
                 <Award className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">
@@ -73,7 +73,7 @@ export function BentoFeatures() {
               </p>
             </div>
 
-            <div className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 inline-block">
+            <div className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 inline-block">
               1-Click Credential Verification
             </div>
           </div>

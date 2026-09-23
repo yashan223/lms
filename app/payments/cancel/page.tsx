@@ -12,11 +12,11 @@ function PaymentCancelContent() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200/80 p-8 sm:p-10 text-center">
-        <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-6 ring-8 ring-amber-50/60">
+        <div className="w-16 h-16 bg-slate-100 text-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-6 ring-8 ring-slate-100/60">
           <XCircle className="w-8 h-8" />
         </div>
 
-        <span className="text-xs font-bold text-amber-600 tracking-wider uppercase bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+        <span className="text-xs font-bold text-slate-700 tracking-wider uppercase bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
           Payment Incomplete
         </span>
 

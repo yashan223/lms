@@ -30,14 +30,14 @@ export function AboutSection() {
       title: "Expert Online Tutors",
       description: "Learn directly from active university and college educators who structure individual class content, author study materials, and guide students.",
       badge: "Expert Tutors",
-      badgeColor: "bg-purple-100 text-purple-800",
+      badgeColor: "bg-blue-100 text-blue-800",
     },
     {
       icon: School,
       title: "Blended Practical Labs",
       description: "Full laboratory video walkthroughs with error analysis, experimental methods, and graph plotting individual classes.",
       badge: "Practical Mastery",
-      badgeColor: "bg-emerald-100 text-emerald-800",
+      badgeColor: "bg-blue-100 text-blue-800",
     },
   ];
 
@@ -65,7 +65,7 @@ export function AboutSection() {
             <div className="space-y-2.5 pt-2">
               {highlights.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                   <span>{item}</span>
                 </div>
               ))}

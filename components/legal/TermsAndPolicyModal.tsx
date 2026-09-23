@@ -53,7 +53,7 @@ export function TermsAndPolicyModal({
             <div
               className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
                 activeTab === "refund"
-                  ? "bg-amber-100 text-amber-700 border border-amber-200"
+                  ? "bg-blue-50 text-blue-800 border border-blue-200"
                   : "bg-blue-100 text-blue-700 border border-blue-200"
               }`}
             >
@@ -104,8 +104,8 @@ export function TermsAndPolicyModal({
             onClick={() => setActiveTab("refund")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "refund"
-                ? "bg-amber-600 text-white shadow-xs"
-                : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
+                ? "bg-[#0c2461] text-white shadow-xs"
+                : "bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200"
             }`}
           >
             <Ban className="w-3.5 h-3.5" />
@@ -197,13 +197,13 @@ export function TermsAndPolicyModal({
 
           {activeTab === "refund" && (
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-amber-900">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-blue-900">
                     Important Notice: Strictly All Sales Are Final
                   </h4>
-                  <p className="text-[11px] leading-relaxed text-amber-900/90">
+                  <p className="text-[11px] leading-relaxed text-blue-900/90">
                     PulseEDU Global maintains a strict <strong>NO-REFUND POLICY</strong> on all
                     digital token package purchases, course enrollments, individual class purchases,
                     and subscription payments. Please review this policy carefully before registering.
@@ -213,7 +213,7 @@ export function TermsAndPolicyModal({
 
               <div className="space-y-2">
                 <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <Ban className="w-3.5 h-3.5 text-rose-600" />
+                  <Ban className="w-3.5 h-3.5 text-blue-600" />
                   1. Immediate Digital Delivery & Resource Allocation
                 </h3>
                 <p>
@@ -227,7 +227,7 @@ export function TermsAndPolicyModal({
 
               <div className="space-y-2">
                 <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <Ban className="w-3.5 h-3.5 text-rose-600" />
+                  <Ban className="w-3.5 h-3.5 text-blue-600" />
                   2. Free 30-Minute Trial Sessions Before Financial Commitment
                 </h3>
                 <p>
@@ -241,7 +241,7 @@ export function TermsAndPolicyModal({
 
               <div className="space-y-2">
                 <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <Ban className="w-3.5 h-3.5 text-rose-600" />
+                  <Ban className="w-3.5 h-3.5 text-blue-600" />
                   3. Token Balances Non-Redeemable for Cash
                 </h3>
                 <p>
@@ -255,7 +255,7 @@ export function TermsAndPolicyModal({
 
               <div className="space-y-2">
                 <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <Ban className="w-3.5 h-3.5 text-rose-600" />
+                  <Ban className="w-3.5 h-3.5 text-blue-600" />
                   4. Chargebacks and Payment Disputes
                 </h3>
                 <p>

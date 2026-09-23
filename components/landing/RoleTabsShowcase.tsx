@@ -48,7 +48,7 @@ export function RoleTabsShowcase() {
             <TabsList className="bg-white border border-blue-200/80 p-1.5 shadow-sm rounded-2xl">
               <TabsTrigger
                 value="STUDENT"
-                className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-bold"
+                className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold"
               >
                 <GraduationCap className="w-4 h-4" />
                 <span>Student Hub</span>
@@ -56,7 +56,7 @@ export function RoleTabsShowcase() {
 
               <TabsTrigger
                 value="TUTOR"
-                className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold"
+                className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-[#0c2461] data-[state=active]:text-white font-bold"
               >
                 <BookOpen className="w-4 h-4" />
                 <span>Tutor Studio</span>
@@ -64,7 +64,7 @@ export function RoleTabsShowcase() {
 
               <TabsTrigger
                 value="ADMIN"
-                className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-bold"
+                className="gap-2 px-5 py-2.5 rounded-xl data-[state=active]:bg-blue-700 data-[state=active]:text-white font-bold"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>System Admin Console</span>
@@ -105,7 +105,7 @@ export function RoleTabsShowcase() {
                       },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
                           <CheckCircle2 className="w-4 h-4" />
                         </div>
                         <div>
@@ -123,7 +123,7 @@ export function RoleTabsShowcase() {
                   <div className="pt-2 flex items-center gap-3">
                     <Link
                       href="/classes"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-all"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all"
                     >
                       <span>Explore Individual Classes</span>
                       <ArrowRight className="w-4 h-4" />
@@ -140,7 +140,7 @@ export function RoleTabsShowcase() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                    <div className="absolute w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <div className="absolute w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                       <Play className="w-6 h-6 fill-white ml-0.5" />
                     </div>
 
@@ -157,7 +157,7 @@ export function RoleTabsShowcase() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-white rounded-xl border border-slate-200">
                       <div className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
-                        <BookOpen className="w-4 h-4 text-emerald-600" />
+                        <BookOpen className="w-4 h-4 text-blue-600" />
                         Academic Notes
                       </div>
                       <p className="text-[11px] text-slate-500">
@@ -167,7 +167,7 @@ export function RoleTabsShowcase() {
 
                     <div className="p-3 bg-white rounded-xl border border-slate-200">
                       <div className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-amber-500" />
+                        <Award className="w-4 h-4 text-blue-600" />
                         Skill Milestone
                       </div>
                       <p className="text-[11px] text-slate-500">
@@ -284,12 +284,12 @@ export function RoleTabsShowcase() {
                         Monthly Honorarium
                       </div>
                       <div className="text-lg font-black text-slate-900">$14,850</div>
-                      <p className="text-[10px] text-emerald-600 font-semibold">+22% this term</p>
+                      <p className="text-[10px] text-blue-600 font-semibold">+22% this term</p>
                     </div>
 
                     <div className="p-3 bg-white rounded-xl border border-slate-200">
                       <div className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-indigo-600" />
+                        <Users className="w-4 h-4 text-blue-600" />
                         Active Students
                       </div>
                       <div className="text-lg font-black text-slate-900">38,400+</div>
@@ -334,7 +334,7 @@ export function RoleTabsShowcase() {
                       },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
                           <CheckCircle2 className="w-4 h-4" />
                         </div>
                         <div>
@@ -352,7 +352,7 @@ export function RoleTabsShowcase() {
                   <div className="pt-2 flex items-center gap-3">
                     <Link
                       href="/register"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-md shadow-blue-900/25 transition-all"
                     >
                       <span>Join as Institutional Partner</span>
                       <ArrowRight className="w-4 h-4" />
@@ -364,7 +364,7 @@ export function RoleTabsShowcase() {
                   <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
                           ADM
                         </div>
                         <div>
@@ -380,12 +380,12 @@ export function RoleTabsShowcase() {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-indigo-50/50 border border-indigo-100 text-xs">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50/50 border border-blue-100 text-xs">
                         <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                          <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                          <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                           Platform Administrator
                         </span>
-                        <span className="text-indigo-700 font-mono text-[11px]">admin@edupulse.uk</span>
+                        <span className="text-blue-700 font-mono text-[11px]">admin@edupulse.uk</span>
                       </div>
 
                       <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
@@ -393,7 +393,7 @@ export function RoleTabsShowcase() {
                           <School className="w-3.5 h-3.5 text-blue-600" />
                           Institutional Accreditation
                         </span>
-                        <span className="text-emerald-600 font-semibold text-[11px]">Verified Active</span>
+                        <span className="text-blue-600 font-semibold text-[11px]">Verified Active</span>
                       </div>
                     </div>
                   </div>
@@ -401,7 +401,7 @@ export function RoleTabsShowcase() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-white rounded-xl border border-slate-200">
                       <div className="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-indigo-600" />
+                        <Users className="w-4 h-4 text-blue-600" />
                         Active Tutors
                       </div>
                       <div className="text-lg font-black text-slate-900">185 Active</div>
@@ -414,7 +414,7 @@ export function RoleTabsShowcase() {
                         System Reliability
                       </div>
                       <div className="text-lg font-black text-slate-900">99.99%</div>
-                      <p className="text-[10px] text-emerald-600 font-semibold">Zero incidents</p>
+                      <p className="text-[10px] text-blue-600 font-semibold">Zero incidents</p>
                     </div>
                   </div>
                 </div>

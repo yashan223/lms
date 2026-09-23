@@ -51,10 +51,10 @@ export function TokenPill({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-900 border border-blue-200/80 shadow-2xs ${className}`}
     >
-      <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-700 flex items-center justify-center text-[10px]">
-        <Coins className="w-2.5 h-2.5 text-amber-700 fill-amber-500/30" />
+      <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-700 flex items-center justify-center text-[10px]">
+        <Coins className="w-2.5 h-2.5 text-blue-700 fill-blue-500/30" />
       </span>
       <span>
         {amount} {label}

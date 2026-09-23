@@ -22,7 +22,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, phone, qualification, examBoard, targetSeries, country, agreedToTerms } = await request.json();
+    const {
+      name,
+      email,
+      password,
+      phone,
+      qualification,
+      examBoard,
+      targetSeries,
+      country,
+      agreedToTerms,
+      guardianName,
+      guardianRelationship,
+      guardianPhone,
+    } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -89,6 +102,9 @@ export async function POST(request: Request) {
         passwordHash: hashedPassword,
         phone: phone ? phone.trim() : null,
         country: country ? country.trim() : null,
+        guardianName: guardianName ? guardianName.trim() : null,
+        guardianRelationship: guardianRelationship ? guardianRelationship.trim() : null,
+        guardianPhone: guardianPhone ? guardianPhone.trim() : null,
         role: Role.STUDENT,
         academicLevel: qualification?.includes("O/L") || qualification?.includes("IGCSE") ? "OL" : "AL",
         emailVerified: null, // Student must verify via email!

@@ -296,8 +296,8 @@ export function EncryptedChatDrawer({
           title={isOpen ? "Close Messages" : "Messages"}
           className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform active:scale-95 cursor-pointer relative group ${
             isOpen
-              ? "bg-slate-900 text-white rotate-90 scale-100 hover:bg-slate-800"
-              : "bg-gradient-to-tr from-[#0c2461] via-blue-600 to-indigo-600 text-white hover:scale-105 ring-4 ring-blue-500/20"
+              ? "bg-[#0c2461] text-white rotate-90 scale-100 hover:bg-[#103080]"
+              : "bg-[#0c2461] hover:bg-[#103080] text-white hover:scale-105 ring-4 ring-blue-500/20"
           }`}
         >
           {isOpen ? (
@@ -307,7 +307,7 @@ export function EncryptedChatDrawer({
           )}
 
           {!isOpen && totalUnreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center ring-2 ring-white shadow-md animate-pulse">
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white rounded-full text-[10px] font-black flex items-center justify-center ring-2 ring-white shadow-md animate-pulse">
               {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
             </span>
           )}
@@ -373,15 +373,15 @@ export function EncryptedChatDrawer({
 
           <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
             {errorMessage && (
-              <div className="mx-3 mt-2.5 p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-2 shrink-0 shadow-2xs animate-in fade-in">
+              <div className="mx-3 mt-2.5 p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start justify-between gap-2 shrink-0 shadow-2xs animate-in fade-in">
                 <div className="flex items-start gap-1.5 min-w-0">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-blue-600 mt-0.5" />
                   <span className="leading-tight text-[11px] font-medium">{errorMessage}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setErrorMessage(null)}
-                  className="p-0.5 text-rose-400 hover:text-rose-700 rounded cursor-pointer shrink-0"
+                  className="p-0.5 text-blue-400 hover:text-blue-700 rounded cursor-pointer shrink-0"
                 >
                   <X className="w-3 h-3" />
                 </button>

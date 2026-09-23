@@ -398,7 +398,7 @@ function RescheduleContent() {
     return (
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-xs space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center mx-auto">
             <Calendar className="w-6 h-6" />
           </div>
           <h3 className="font-bold text-base text-slate-900">No Active Trial Requests Found</h3>
@@ -437,7 +437,7 @@ function RescheduleContent() {
                 <h1 className="font-extrabold text-base sm:text-lg text-slate-900">
                   Reschedule Free Trial Consultation
                 </h1>
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-extrabold">
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-extrabold">
                   Dedicated Reschedule Desk
                 </Badge>
               </div>
@@ -464,12 +464,12 @@ function RescheduleContent() {
           <div
             className={`p-4 rounded-2xl border text-xs flex items-start gap-3 animate-in slide-in-from-top-2 duration-200 ${
               statusMsg.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                ? "bg-blue-50 border-blue-200 text-blue-900"
                 : "bg-red-50 border-red-200 text-red-900"
             }`}
           >
             {statusMsg.type === "success" ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             )}
@@ -483,19 +483,19 @@ function RescheduleContent() {
         )}
 
         {studentStudySlots.length === 0 && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+          <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
                 <CalendarClock className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-xs text-amber-950 flex items-center gap-1.5">
+                <h4 className="font-bold text-xs text-blue-950 flex items-center gap-1.5">
                   Study Availability Required
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300">
                     Step Required
                   </span>
                 </h4>
-                <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                <p className="text-[11px] text-blue-900/90 leading-relaxed">
                   Please configure your study availability so tutors can coordinate your session times without schedule clashes.
                 </p>
               </div>
@@ -503,7 +503,7 @@ function RescheduleContent() {
             <Button
               type="button"
               onClick={() => setShowAvailabilityModal(true)}
-              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl px-4 py-2 shrink-0 cursor-pointer shadow-sm"
+              className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-4 py-2 shrink-0 cursor-pointer shadow-sm"
             >
               <Zap className="w-3.5 h-3.5" />
               Set Study Availability
@@ -523,8 +523,8 @@ function RescheduleContent() {
                 <Badge
                   className={`text-[10px] font-bold ${
                     trial.status === "CONFIRMED"
-                      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                      : "bg-amber-100 text-amber-800 border-amber-200"
+                      ? "bg-blue-100 text-blue-800 border-blue-200"
+                      : "bg-slate-100 text-slate-800 border-slate-200"
                   }`}
                 >
                   {trial.status}
@@ -575,12 +575,12 @@ function RescheduleContent() {
               )}
 
               {/* Current Scheduled Time Highlight */}
-              <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-1">
-                <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-1">
+                <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">
                   Current Scheduled Time
                 </span>
-                <div className="font-extrabold text-xs text-amber-950 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                <div className="font-extrabold text-xs text-blue-950 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>
                     {new Date(trial.preferredDate).toLocaleDateString("en-US", {
                       weekday: "short",
@@ -596,7 +596,7 @@ function RescheduleContent() {
                     })}
                   </span>
                 </div>
-                <div className="text-[10px] text-amber-700">30-Minute 1-on-1 Free Trial</div>
+                <div className="text-[10px] text-blue-700">30-Minute 1-on-1 Free Trial</div>
               </div>
 
               {/* Student Details */}
@@ -621,12 +621,12 @@ function RescheduleContent() {
 
                 {/* Student's Configured Study Hours */}
                 {studentStudySlots.length > 0 && (
-                  <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-1 mt-2">
-                    <div className="text-[10px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-purple-600" />
+                  <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-1 mt-2">
+                    <div className="text-[10px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-blue-600" />
                       <span>Student&apos;s Preferred Study Hours</span>
                     </div>
-                    <div className="space-y-0.5 text-[11px] text-purple-950">
+                    <div className="space-y-0.5 text-[11px] text-blue-950">
                       {studentStudySlots.map((av: any, idx: number) => {
                         const daysMap: Record<number, string> = {
                           0: "Sunday",
@@ -644,7 +644,7 @@ function RescheduleContent() {
                         return (
                           <div key={idx} className="flex items-center justify-between font-semibold">
                             <span>{dayLabel}:</span>
-                            <span className="font-mono text-purple-800">{av.startTime} – {av.endTime}</span>
+                            <span className="font-mono text-blue-800">{av.startTime} – {av.endTime}</span>
                           </div>
                         );
                       })}
@@ -745,7 +745,7 @@ function RescheduleContent() {
                               isSelected
                                 ? "bg-white/20 text-white"
                                 : day.hasAvailableSlots
-                                ? "bg-emerald-50 text-emerald-700 font-extrabold"
+                                ? "bg-blue-50 text-blue-700 font-extrabold"
                                 : "bg-slate-200/60 text-slate-500"
                             }`}
                           >
@@ -826,15 +826,15 @@ function RescheduleContent() {
                             onClick={() => handleSelectSlot(slot)}
                             className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                               isSelected
-                                ? "bg-emerald-600 border-emerald-700 text-white shadow-md shadow-emerald-700/20 ring-2 ring-emerald-400"
-                                : "bg-white border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 text-slate-800"
+                                ? "bg-blue-600 border-blue-700 text-white shadow-md shadow-blue-700/20 ring-2 ring-blue-400"
+                                : "bg-white border-slate-200 hover:border-blue-500 hover:bg-blue-50/30 text-slate-800"
                             }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-extrabold text-xs flex items-center gap-1">
                                 <Clock
                                   className={`w-3 h-3 ${
-                                    isSelected ? "text-white" : "text-emerald-600"
+                                    isSelected ? "text-white" : "text-blue-600"
                                   }`}
                                 />
                                 {slot.timeDisplay}
@@ -844,12 +844,12 @@ function RescheduleContent() {
                                   <span
                                     className={`text-[8px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
                                       isSelected
-                                        ? "bg-amber-300 text-amber-950"
-                                        : "bg-amber-100 text-amber-900 border border-amber-300"
+                                        ? "bg-blue-300 text-blue-950"
+                                        : "bg-blue-100 text-blue-900 border border-blue-300"
                                     }`}
                                     title="Matches student's preferred study hours!"
                                   >
-                                    <Zap className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />
+                                    <Zap className="w-2.5 h-2.5 text-blue-600 fill-blue-500" />
                                     Mutual Match
                                   </span>
                                 )}
@@ -857,7 +857,7 @@ function RescheduleContent() {
                                   className={`text-[9px] font-bold px-1.5 py-0 ${
                                     isSelected
                                       ? "bg-white/20 text-white"
-                                      : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                      : "bg-blue-100 text-blue-800 border-blue-200"
                                   }`}
                                 >
                                   Available
@@ -866,7 +866,7 @@ function RescheduleContent() {
                             </div>
                             <span
                               className={`text-[10px] truncate ${
-                                isSelected ? "text-emerald-100" : "text-slate-500"
+                                isSelected ? "text-blue-100" : "text-slate-500"
                               }`}
                             >
                               {slot.windowTitle || "30-Min 1-on-1 Consultation"}
@@ -882,7 +882,7 @@ function RescheduleContent() {
                 <div className="pt-4 border-t border-slate-100 space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <CalendarClock className="w-3.5 h-3.5 text-indigo-600" />
+                      <CalendarClock className="w-3.5 h-3.5 text-blue-600" />
                       <span>Custom Date &amp; Time Selection</span>
                     </label>
                     <span className="text-[10px] text-slate-400">
@@ -923,8 +923,8 @@ function RescheduleContent() {
                       </div>
                     </div>
                   ) : selectedSlotTime || customDateTime ? (
-                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                       <span className="text-[11px] font-semibold">
                         ✅ Selected slot is conflict-free and verified against all scheduled classes!
                       </span>

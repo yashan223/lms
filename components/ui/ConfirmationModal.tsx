@@ -59,11 +59,11 @@ export function ConfirmationModal({
     },
     warning: {
       icon: AlertTriangle,
-      iconColor: "text-amber-600",
-      iconBg: "bg-amber-50 border-amber-200",
-      btnClass: "bg-amber-600 hover:bg-amber-700 text-white",
+      iconColor: "text-blue-700",
+      iconBg: "bg-blue-50 border-blue-200",
+      btnClass: "bg-blue-700 hover:bg-blue-800 text-white",
       badgeText: "Confirmation Required",
-      badgeClass: "bg-amber-100 text-amber-800",
+      badgeClass: "bg-blue-50 text-blue-800 border border-blue-200",
     },
     info: {
       icon: Info,
@@ -75,11 +75,11 @@ export function ConfirmationModal({
     },
     success: {
       icon: CheckCircle2,
-      iconColor: "text-emerald-600",
-      iconBg: "bg-emerald-50 border-emerald-200",
-      btnClass: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      iconColor: "text-blue-600",
+      iconBg: "bg-blue-50 border-blue-200",
+      btnClass: "bg-[#0c2461] hover:bg-[#103080] text-white",
       badgeText: "Verified Action",
-      badgeClass: "bg-emerald-100 text-emerald-800",
+      badgeClass: "bg-blue-100 text-blue-800 border border-blue-200",
     },
   };
 

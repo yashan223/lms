@@ -238,7 +238,7 @@ export default function CoursesPage() {
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                <GraduationCap className="w-4 h-4 text-amber-400" />
+                <GraduationCap className="w-4 h-4 text-blue-300" />
                 <span>Tutors Conducting Classes</span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
                   viewMode === "tutors" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
@@ -424,7 +424,7 @@ export default function CoursesPage() {
                               return (
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                                    <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shadow-2xs">
                                       <Coins className="w-4 h-4" />
                                     </div>
                                     <div className="flex items-baseline gap-1">
@@ -437,11 +437,11 @@ export default function CoursesPage() {
                                     </div>
                                   </div>
                                   {isOL && course.olPrice !== null && course.olPrice !== undefined && Number(course.olPrice) > 0 ? (
-                                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                                    <span className="text-[10px] font-bold text-blue-800 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-full">
                                       O/L Rate
                                     </span>
                                   ) : (
-                                    <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                                    <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
                                       Instant Access
                                     </span>
                                   )}
@@ -458,7 +458,7 @@ export default function CoursesPage() {
                                 className="h-9 px-3 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                 title="Enroll in individual class using tokens and unlock all study materials"
                               >
-                                <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                                <Lock className="w-3.5 h-3.5 text-blue-200 shrink-0" />
                                 <span>Enroll</span>
                               </button>
 
@@ -468,10 +468,10 @@ export default function CoursesPage() {
                                   setSelectedTrialTutorId(course.instructor?.id);
                                   setShowTrialModal(true);
                                 }}
-                                className="h-9 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                className="h-9 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 shadow-2xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                 title="Book a 30-min free online trial session"
                               >
-                                <CalendarCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                <CalendarCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                                 <span>Free Trial</span>
                               </button>
                             </div>
@@ -482,11 +482,11 @@ export default function CoursesPage() {
                               href={`/login?redirect=${encodeURIComponent(`/classes/${course.slug}`)}`}
                               className="group/lock flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
                             >
-                              <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-amber-500/10 border border-slate-200 group-hover/lock:border-amber-500/20 flex items-center justify-center text-slate-400 group-hover/lock:text-amber-600 transition-colors">
+                              <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-blue-50 border border-slate-200 group-hover/lock:border-blue-200 flex items-center justify-center text-slate-400 group-hover/lock:text-blue-600 transition-colors">
                                 <Lock className="w-3.5 h-3.5" />
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-xs font-bold text-slate-700 group-hover/lock:text-indigo-600">
+                                <span className="text-xs font-bold text-slate-700 group-hover/lock:text-blue-600">
                                   Sign in to view
                                 </span>
                                 <span className="text-[10px] text-slate-400">
@@ -534,7 +534,7 @@ export default function CoursesPage() {
           {viewMode === "tutors" && (
             <>
               {trialStats && (
-                <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-blue-50/90 border border-blue-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+                <div className="mb-6 p-4 rounded-2xl bg-blue-50/90 border border-blue-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                       <Sparkles className="w-4 h-4" />
@@ -576,7 +576,7 @@ export default function CoursesPage() {
                               <h3 className="font-bold text-slate-900 text-base leading-snug">
                                 {tutor.name}
                               </h3>
-                              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold py-0.5">
+                              <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold py-0.5">
                                 Verified Tutor
                               </Badge>
                             </div>
@@ -610,7 +610,7 @@ export default function CoursesPage() {
                               {tutor.createdCourses?.length || 0} Individual Classes
                             </span>
                             <span className="flex items-center gap-1.5">
-                              <Video className="w-3.5 h-3.5 text-emerald-600" />
+                              <Video className="w-3.5 h-3.5 text-blue-600" />
                               {tutor.events?.length || 0} Live Sessions
                             </span>
                           </div>
@@ -628,12 +628,12 @@ export default function CoursesPage() {
                                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
                                       sub.level === "AL"
                                         ? "bg-blue-50/80 text-blue-900 border-blue-200"
-                                        : "bg-emerald-50/80 text-emerald-900 border-emerald-200"
+                                        : "bg-blue-100/70 text-blue-950 border-blue-200"
                                     }`}
                                   >
                                     <span
                                       className={`w-1.5 h-1.5 rounded-full ${
-                                        sub.level === "AL" ? "bg-blue-600" : "bg-emerald-600"
+                                        sub.level === "AL" ? "bg-blue-600" : "bg-[#0c2461]"
                                       }`}
                                     />
                                     <span className="font-mono text-[10px] font-bold opacity-80">
@@ -680,7 +680,7 @@ export default function CoursesPage() {
                             className="flex-1 h-10 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                             title="You have already requested a trial with this tutor"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
                             <span>Trial Booked</span>
                           </button>
                         ) : (
@@ -692,7 +692,7 @@ export default function CoursesPage() {
                             }}
                             className="flex-1 h-10 px-4 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                           >
-                            <CalendarCheck className="w-3.5 h-3.5 text-amber-300" />
+                            <CalendarCheck className="w-3.5 h-3.5 text-blue-200" />
                             <span>Book 1-on-1 Trial Class</span>
                           </button>
                         )}

@@ -129,31 +129,31 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
     switch (type) {
       case "CLASS_LIVE":
         return (
-          <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20">
             <Video className="w-4 h-4 animate-pulse" />
           </div>
         );
       case "CHAT_MESSAGE":
         return (
-          <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 border border-blue-200">
             <MessageSquareLock className="w-4 h-4" />
           </div>
         );
       case "CLASS_SCHEDULED":
         return (
-          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 border border-blue-200">
             <Calendar className="w-4 h-4" />
           </div>
         );
       case "MATERIAL_ADDED":
         return (
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-800 flex items-center justify-center shrink-0 border border-blue-200">
             <FileText className="w-4 h-4" />
           </div>
         );
       default:
         return (
-          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 border border-blue-200">
             <Bell className="w-4 h-4" />
           </div>
         );
@@ -181,7 +181,7 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-black animate-pulse">
+          <span className="absolute top-1 right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-black animate-pulse">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

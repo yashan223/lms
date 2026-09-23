@@ -133,7 +133,7 @@ export function Footer() {
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
                 {subscribed && (
-                  <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <p className="text-[11px] text-blue-700 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Thank you for subscribing!
                   </p>

@@ -51,13 +51,13 @@ function PaymentSuccessContent() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50/40 flex items-center justify-center p-4">
       <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl border border-blue-100 p-8 sm:p-10 text-center relative overflow-hidden">
         {/* Top Celebration Glow */}
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-60 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-60 bg-blue-400/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-emerald-50/60">
+        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-blue-50/60">
           <CheckCircle2 className="w-8 h-8" />
         </div>
 
-        <span className="text-xs font-bold text-emerald-600 tracking-wider uppercase bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+        <span className="text-xs font-bold text-blue-600 tracking-wider uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
           Payment Confirmed
         </span>
 
@@ -85,7 +85,7 @@ function PaymentSuccessContent() {
                 <span className="font-medium flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-blue-600" /> Hours Credited
                 </span>
-                <span className="font-bold text-emerald-600 font-mono">
+                <span className="font-bold text-blue-700 font-mono">
                   +{paymentInfo.tokens} Tokens
                 </span>
               </div>

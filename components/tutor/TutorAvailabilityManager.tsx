@@ -337,7 +337,7 @@ export function TutorAvailabilityManager({
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
             <CalendarCheck className="w-5 h-5" />
           </div>
           <div>
@@ -347,7 +347,7 @@ export function TutorAvailabilityManager({
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
             <Video className="w-5 h-5" />
           </div>
           <div>
@@ -378,13 +378,13 @@ export function TutorAvailabilityManager({
         <div
           className={`p-4 rounded-xl border text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
             statusMsg.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+              ? "bg-blue-50 border-blue-200 text-blue-900"
               : "bg-red-50 border-red-200 text-red-900"
           }`}
         >
           <div className="flex items-center gap-2">
             {statusMsg.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
             ) : (
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             )}
@@ -407,7 +407,7 @@ export function TutorAvailabilityManager({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-emerald-600" />
+                  <Clock className="w-4 h-4 text-blue-600" />
                   <span>Configured Available Timeslots</span>
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -491,7 +491,7 @@ export function TutorAvailabilityManager({
                         <Badge
                           className={`text-[9px] font-bold px-1.5 py-0 ${
                             av.isActive
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              ? "bg-blue-100 text-blue-800 border-blue-200"
                               : "bg-slate-200 text-slate-600"
                           }`}
                         >
@@ -513,14 +513,14 @@ export function TutorAvailabilityManager({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                  <CalendarCheck className="w-4 h-4 text-purple-600" />
+                  <CalendarCheck className="w-4 h-4 text-blue-600" />
                   <span>Classes &amp; Trials Scheduled</span>
                 </h3>
                 <p className="text-xs text-slate-500">
                   Live sessions automatically locked to prevent double-booking
                 </p>
               </div>
-              <Badge className="bg-purple-50 text-purple-800 border-purple-200 text-xs font-bold">
+              <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-xs font-bold">
                 {events.length} Classes • {trials.length} Trials
               </Badge>
             </div>
@@ -553,7 +553,7 @@ export function TutorAvailabilityManager({
                       </div>
 
                       <div className="shrink-0 flex items-center gap-2">
-                        <Badge className="bg-red-50 text-red-800 border-red-200 text-[10px] font-bold">
+                        <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-[10px] font-bold">
                           Conflict Locked
                         </Badge>
                       </div>
@@ -566,12 +566,12 @@ export function TutorAvailabilityManager({
                   return (
                     <div
                       key={tr.id}
-                      className="p-3 rounded-xl border border-amber-200/90 bg-amber-50/40 hover:bg-white flex items-center justify-between gap-3 text-xs"
+                      className="p-3 rounded-xl border border-blue-200/90 bg-blue-50/40 hover:bg-white flex items-center justify-between gap-3 text-xs"
                     >
                       <div className="min-w-0 space-y-0.5">
-                        <div className="font-bold text-amber-950 truncate flex items-center gap-1.5">
+                        <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
                           <span>1-on-1 Trial: {tr.studentName}</span>
-                          <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[9px] font-bold">
+                          <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-[9px] font-bold">
                             {tr.status}
                           </Badge>
                         </div>
@@ -589,9 +589,9 @@ export function TutorAvailabilityManager({
                         <button
                           type="button"
                           onClick={() => router.push(`/trials/reschedule?trialId=${tr.id}`)}
-                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-blue-50 text-blue-800 border border-blue-200 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
                         >
-                          <Clock className="w-3 h-3 text-amber-600" />
+                          <Clock className="w-3 h-3 text-blue-600" />
                           <span>Reschedule</span>
                         </button>
                       </div>

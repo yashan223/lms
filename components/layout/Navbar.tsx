@@ -73,7 +73,7 @@ export function Navbar() {
           label: "System Admin",
           shortRole: "Admin",
           badgeVariant: "roleAdmin" as const,
-          avatarGradient: "from-indigo-600 via-purple-600 to-pink-600",
+          avatarGradient: "from-blue-700 via-blue-800 to-[#0c2461]",
           icon: ShieldCheck,
         };
       case "TUTOR":
@@ -82,7 +82,7 @@ export function Navbar() {
           label: "Tutor",
           shortRole: "Tutor",
           badgeVariant: "roleTutor" as const,
-          avatarGradient: "from-blue-600 via-indigo-600 to-blue-700",
+          avatarGradient: "from-blue-600 via-sky-600 to-blue-700",
           icon: BookOpen,
         };
       case "STUDENT":
@@ -91,7 +91,7 @@ export function Navbar() {
           label: "Student",
           shortRole: "Student",
           badgeVariant: "roleStudent" as const,
-          avatarGradient: "from-emerald-500 via-teal-600 to-cyan-700",
+          avatarGradient: "from-blue-500 via-blue-600 to-sky-700",
           icon: GraduationCap,
         };
     }
@@ -138,9 +138,9 @@ export function Navbar() {
                 <Link
                   href="/admin"
                   title="Admin Command Console"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50/80 hover:bg-purple-100 hover:border-purple-300 text-purple-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
                 >
-                  <ShieldCheck className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
+                  <ShieldCheck className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
                   <span>Admin Console</span>
                 </Link>
               ) : userRole === "TUTOR" || userRole === "INSTRUCTOR" ? (
@@ -222,7 +222,7 @@ export function Navbar() {
             <Link
               href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : "/dashboard"}
               onClick={() => setMobileMenuOpen(false)}
-              className="p-3 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 border border-slate-200/80 flex items-center gap-3 hover:border-blue-300 transition-colors"
+              className="p-3 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/30 to-blue-50/20 border border-slate-200/80 flex items-center gap-3 hover:border-blue-300 transition-colors"
             >
               <div
                 className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${roleConfig.avatarGradient} text-white flex items-center justify-center text-sm font-black shadow-xs ring-2 ring-white shrink-0`}
@@ -250,7 +250,7 @@ export function Navbar() {
               <Link
                 href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : "/dashboard"}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-purple-700 hover:text-purple-800 py-1.5 px-2 rounded-lg hover:bg-purple-50/50 font-black"
+                className="text-blue-700 hover:text-blue-800 py-1.5 px-2 rounded-lg hover:bg-blue-50/50 font-black"
               >
                 {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "TUTOR STUDIO" : "MY DASHBOARD"}
               </Link>

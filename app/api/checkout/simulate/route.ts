@@ -32,6 +32,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    if (process.env.NODE_ENV === "production" && process.env.ENABLE_SANDBOX_SIMULATOR !== "true") {
+      if (auth.user.role !== "ADMIN") {
+        return NextResponse.json(
+          { error: "Sandbox checkout simulator is restricted to administrators in production." },
+          { status: 403 }
+        );
+      }
+    }
+
     const host = request.headers.get("host") || "localhost:3000";
     const protocol = request.headers.get("x-forwarded-proto") || "http";
     const webhookUrl = `${protocol}://${host}/api/webhooks/payments-lk`;

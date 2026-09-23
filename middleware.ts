@@ -87,6 +87,19 @@ async function verifySessionTokenEdge(token: string): Promise<SessionPayload | n
   }
 }
 
+function applySecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("X-Frame-Options", "SAMEORIGIN");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  res.headers.set("X-XSS-Protection", "1; mode=block");
+  res.headers.set(
+    "Permissions-Policy",
+    "camera=(self 'https://meet.google.com'), microphone=(self 'https://meet.google.com'), geolocation=(), payment=(self)"
+  );
+  return res;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const origin = request.headers.get("origin");
@@ -96,18 +109,41 @@ export async function middleware(request: NextRequest) {
     const corsHeaders = getCorsHeaders(origin);
 
     if (request.method === "OPTIONS") {
-      return new NextResponse(null, {
+      const optRes = new NextResponse(null, {
         status: 204,
         headers: corsHeaders,
       });
+      return applySecurityHeaders(optRes);
     }
 
-    // For other API requests, process downstream and attach CORS headers
+    // CSRF Guard: For state-modifying requests, verify origin matches allowed domains
+    const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
+    const isWebhook = pathname.startsWith("/api/webhooks/");
+    if (isMutation && origin && !isWebhook) {
+      const isAllowedOrigin =
+        ALLOWED_ORIGIN_REGEX.test(origin) ||
+        origin === "https://pulseedu.online" ||
+        origin === "http://pulseedu.online";
+
+      if (!isAllowedOrigin) {
+        return new NextResponse(
+          JSON.stringify({ error: "Forbidden: Cross-origin request rejected by security policy." }),
+          {
+            status: 403,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+    }
+
+    // For other API requests, process downstream and attach CORS + Security headers
     const response = NextResponse.next();
     Object.entries(corsHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
-    return response;
+    return applySecurityHeaders(response);
   }
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -170,7 +206,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return applySecurityHeaders(NextResponse.next());
 }
 
 export const config = {

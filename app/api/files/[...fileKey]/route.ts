@@ -57,8 +57,8 @@ export async function GET(
         return new NextResponse("Unauthorized to access private file", { status: 401 });
       }
 
-      // Enforce ownership: only owner, Admin, or Tutor can access private files
-      if (auth.user.role !== Role.ADMIN && auth.user.role !== Role.TUTOR) {
+      // Enforce ownership: only file owner, assigned Tutor, or Admin can access private files
+      if (auth.user.role !== Role.ADMIN) {
         const storedFile = await prisma.privateFile.findFirst({
           where: {
             OR: [
@@ -68,7 +68,7 @@ export async function GET(
           },
         });
 
-        if (storedFile && storedFile.userId !== auth.user.id) {
+        if (!storedFile || (storedFile.userId !== auth.user.id && auth.user.role !== Role.TUTOR)) {
           return new NextResponse("Forbidden: Access denied to private file", { status: 403 });
         }
       }

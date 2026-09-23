@@ -31,6 +31,22 @@ export async function POST(request: Request) {
       );
     }
 
+    if (typeof name !== "string" || name.trim().length < 2 || name.trim().length > 100) {
+      return NextResponse.json(
+        { error: "Full name must be between 2 and 100 characters" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!EMAIL_REGEX.test(normalizedEmail) || normalizedEmail.length > 254) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address" },
+        { status: 400 }
+      );
+    }
+
     if (!agreedToTerms) {
       return NextResponse.json(
         { error: "You must accept the Terms & Conditions and No-Refund Policy to register" },
@@ -45,7 +61,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    if (password.length > 128) {
+      return NextResponse.json(
+        { error: "Password cannot exceed 128 characters" },
+        { status: 400 }
+      );
+    }
 
     const existing = await prisma.user.findUnique({
       where: { email: normalizedEmail },

@@ -76,13 +76,17 @@ export function checkRateLimit(
  * Extracts a client IP from Next.js request headers
  */
 export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
+  const cfConnectingIp = request.headers.get("cf-connecting-ip");
+  if (cfConnectingIp) {
+    return cfConnectingIp.trim();
   }
   const realIp = request.headers.get("x-real-ip");
   if (realIp) {
     return realIp.trim();
+  }
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
   }
   return "127.0.0.1";
 }

@@ -128,7 +128,17 @@ export async function GET(request: NextRequest) {
     try {
       courses = await prisma.course.findMany({
         include: {
-          tutor: true,
+          tutor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              avatar: true,
+              headline: true,
+              bio: true,
+            },
+          },
           modules: {
             include: { lessons: true },
             orderBy: { position: "asc" },
@@ -137,7 +147,18 @@ export async function GET(request: NextRequest) {
             orderBy: { createdAt: "desc" },
           },
           enrollments: {
-            include: { user: true },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  role: true,
+                  avatar: true,
+                  headline: true,
+                },
+              },
+            },
             orderBy: { enrolledAt: "desc" },
           },
           events: {
@@ -225,7 +246,17 @@ export async function GET(request: NextRequest) {
       pendingCourses = await prisma.course.findMany({
         where: { status: CourseStatus.PENDING_REVIEW },
         include: {
-          tutor: true,
+          tutor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              avatar: true,
+              headline: true,
+              bio: true,
+            },
+          },
         },
         orderBy: { updatedAt: "desc" },
       });
@@ -234,9 +265,10 @@ export async function GET(request: NextRequest) {
       pendingCourses = [];
     }
 
-    const candidates = allUsers.filter((u) => u.role === Role.STUDENT);
-    const tutors = allUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
-    const admins = allUsers.filter((u) => u.role === Role.ADMIN);
+    const sanitizedUsers = allUsers.map(({ passwordHash, ...safeUser }) => safeUser);
+    const candidates = sanitizedUsers.filter((u) => u.role === Role.STUDENT);
+    const tutors = sanitizedUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
+    const admins = sanitizedUsers.filter((u) => u.role === Role.ADMIN);
 
     const adminName =
       auth.user.name ||
@@ -256,7 +288,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       adminProfile,
-      allUsers,
+      allUsers: sanitizedUsers,
       candidates,
       tutors,
       faculty: tutors,
@@ -378,9 +410,10 @@ export async function POST(request: NextRequest) {
         broadcastLMSEvent("ENROLLMENTS_CHANGED");
         broadcastLMSEvent("COURSES_CHANGED");
       }
+      const { passwordHash: _ph, ...safeNewUser } = newUser;
       return NextResponse.json({
         success: true,
-        user: newUser,
+        user: safeNewUser,
         requiresVerification: assignedRole === Role.TUTOR,
         message: assignedRole === Role.TUTOR
           ? verificationEmailSent
@@ -422,8 +455,8 @@ export async function POST(request: NextRequest) {
         headline,
         bio: finalBio,
       };
-      if (password) {
-        updateData.passwordHash = password;
+      if (password && password.trim()) {
+        updateData.passwordHash = hashPassword(password.trim());
       }
 
       const updatedUser = await prisma.user.update({
@@ -431,8 +464,9 @@ export async function POST(request: NextRequest) {
         data: updateData,
       });
 
+      const { passwordHash: _uph, ...safeUpdatedUser } = updatedUser;
       broadcastLMSEvent("USERS_CHANGED");
-      return NextResponse.json({ success: true, user: updatedUser });
+      return NextResponse.json({ success: true, user: safeUpdatedUser });
     }
 
     if (action === "delete_user" || action === "delete_candidate") {

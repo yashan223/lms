@@ -10,13 +10,34 @@ export async function GET() {
       where: {
         role: { in: ["TUTOR", "INSTRUCTOR"] },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        headline: true,
+        bio: true,
+        country: true,
         createdCourses: {
           where: { status: "PUBLISHED" },
+          select: {
+            id: true,
+            title: true,
+            category: true,
+            level: true,
+            subjectCode: true,
+            enrollments: { select: { id: true } },
+          },
         },
         events: {
           where: {
             status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] },
+          },
+          select: {
+            id: true,
+            title: true,
+            status: true,
           },
         },
       },

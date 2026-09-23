@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { Role } from "@prisma/client";
 
 async function findCourseBySlugOrId(rawSlug: string) {
   if (!rawSlug) return null;
@@ -102,6 +103,11 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const auth = await getAuthenticatedUser(request, [Role.TUTOR, Role.ADMIN]);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+    }
+
     const { slug } = await params;
     const body = await request.json();
     const { action } = body;
@@ -109,6 +115,10 @@ export async function POST(
     const course = await findCourseBySlugOrId(slug);
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
+
+    if (auth.user.role !== Role.ADMIN && course.tutorId !== auth.user.id) {
+      return NextResponse.json({ error: "Forbidden: You do not own this course" }, { status: 403 });
     }
 
     if (action === "add_material") {

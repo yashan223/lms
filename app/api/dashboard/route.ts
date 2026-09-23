@@ -5,7 +5,7 @@ import { broadcastLMSEvent } from "@/lib/events";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { fulfillPayment } from "@/lib/payment-fulfillment";
 import { getPaymentsLkCheckout, isPaymentsLkConfigured } from "@/lib/payments-lk";
-import { EventType, EventStatus, TrialStatus } from "@prisma/client";
+import { EventType, EventStatus, TrialStatus, Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,26 +13,12 @@ export const revalidate = 0;
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
-    const searchParams = request.nextUrl.searchParams;
-    const roleParam = searchParams.get("role");
-    const emailCookie = request.cookies.get("edupulse_user_email")?.value;
-    const roleCookie = request.cookies.get("edupulse_user_role")?.value;
-
-    let targetWhere: any = {};
-    if (auth.user) {
-      targetWhere = { id: auth.user.id };
-    } else if (emailCookie) {
-      targetWhere = { email: emailCookie.toLowerCase() };
-    } else if (roleParam) {
-      targetWhere = { role: roleParam };
-    } else if (roleCookie) {
-      targetWhere = { role: roleCookie };
-    } else {
-      targetWhere = { role: "STUDENT" };
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
     }
 
-    let user = await prisma.user.findFirst({
-      where: targetWhere,
+    let user = await prisma.user.findUnique({
+      where: { id: auth.user.id },
       include: {
         tokenWallet: {
           include: {
@@ -360,8 +346,10 @@ export async function GET(request: NextRequest) {
       timelineEvents.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     }
 
+    const { passwordHash: _ph, ...safeUser } = (user as any) || {};
+
     return NextResponse.json({
-      user,
+      user: safeUser,
       allCourses,
       onlineUsers,
       timelineEvents,
@@ -374,12 +362,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await getAuthenticatedUser(request);
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+    }
+
     const body = await request.json();
     const { action } = body;
 
     if (action === "create_event") {
-      const roleCookie = request.cookies.get("edupulse_user_role")?.value;
-      if (roleCookie === "STUDENT") {
+      if (auth.user.role === Role.STUDENT) {
         return NextResponse.json(
           { error: "Students cannot create calendar events. Academic events and classes are scheduled by tutors and administrators." },
           { status: 403 }
@@ -448,6 +440,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
       }
 
+      const existing = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: { course: true },
+      });
+
+      if (!existing) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
+
+      if (
+        auth.user.role !== Role.ADMIN &&
+        existing.userId !== auth.user.id &&
+        existing.course?.tutorId !== auth.user.id
+      ) {
+        return NextResponse.json({ error: "Forbidden: You cannot delete this event" }, { status: 403 });
+      }
+
       await prisma.event.delete({
         where: { id: eventId },
       });
@@ -457,12 +466,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "add_private_file") {
-      const auth = await getAuthenticatedUser(request);
-      const { fileName, fileSize, fileType, fileUrl, userId } = body;
-      const targetUserId = auth.user ? auth.user.id : userId;
+      const { fileName, fileSize, fileType, fileUrl } = body;
+      const targetUserId = auth.user.id;
 
-      if (!targetUserId) {
-        return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+      if (!fileName) {
+        return NextResponse.json({ error: "File name is required" }, { status: 400 });
       }
 
       const newFile = await prisma.privateFile.create({
@@ -479,22 +487,26 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "delete_private_file") {
-      const auth = await getAuthenticatedUser(request);
       const { fileId } = body;
+      if (!fileId) {
+        return NextResponse.json({ error: "File ID is required" }, { status: 400 });
+      }
 
       const existing = await prisma.privateFile.findUnique({ where: { id: fileId } });
-      if (existing) {
-        if (auth.user && auth.user.role !== "ADMIN" && existing.userId !== auth.user.id) {
-          return NextResponse.json({ error: "Forbidden: You cannot delete another user's file" }, { status: 403 });
-        }
-
-        if (existing.fileUrl && existing.fileUrl.startsWith("/api/files/")) {
-          const fileKey = existing.fileUrl.replace("/api/files/", "");
-          await deleteStorageFile(fileKey);
-        }
-        await prisma.privateFile.delete({ where: { id: fileId } });
-        broadcastLMSEvent("MATERIALS_CHANGED");
+      if (!existing) {
+        return NextResponse.json({ error: "File not found" }, { status: 404 });
       }
+
+      if (auth.user.role !== Role.ADMIN && existing.userId !== auth.user.id) {
+        return NextResponse.json({ error: "Forbidden: You cannot delete another user's file" }, { status: 403 });
+      }
+
+      if (existing.fileUrl && existing.fileUrl.startsWith("/api/files/")) {
+        const fileKey = existing.fileUrl.replace("/api/files/", "");
+        await deleteStorageFile(fileKey).catch(() => {});
+      }
+      await prisma.privateFile.delete({ where: { id: fileId } });
+      broadcastLMSEvent("MATERIALS_CHANGED");
       return NextResponse.json({ success: true });
     }
 

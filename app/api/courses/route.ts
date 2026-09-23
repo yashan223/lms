@@ -7,7 +7,17 @@ export async function GET() {
       prisma.course.findMany({
         where: { status: "PUBLISHED" },
         include: {
-          tutor: true,
+          tutor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              avatar: true,
+              headline: true,
+              bio: true,
+            },
+          },
           modules: {
             include: {
               lessons: true,
@@ -22,7 +32,14 @@ export async function GET() {
         where: {
           role: { in: ["TUTOR", "INSTRUCTOR"] },
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          avatar: true,
+          headline: true,
+          bio: true,
           createdCourses: {
             where: { status: "PUBLISHED" },
           },

@@ -245,6 +245,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resolvedStudentEmail) || resolvedStudentEmail.length > 254) {
+        return NextResponse.json(
+          { error: "Please enter a valid student email address." },
+          { status: 400 }
+        );
+      }
+
+      if (resolvedStudentName.length > 100) {
+        return NextResponse.json(
+          { error: "Student name exceeds maximum permitted length." },
+          { status: 400 }
+        );
+      }
+
       // Resolve student user if ID was not directly provided
       if (!resolvedStudentId && resolvedStudentEmail) {
         const studentUser = await prisma.user.findUnique({

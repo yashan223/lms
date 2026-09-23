@@ -208,7 +208,9 @@ export default function AdminDashboardPage() {
   const [formUserRole, setFormUserRole] = useState("STUDENT");
   const [formUserHeadline, setFormUserHeadline] = useState("");
   const [formUserBio, setFormUserBio] = useState("");
-  const [formUserHourlyRate, setFormUserHourlyRate] = useState("65");
+  const [formUserHourlyRate, setFormUserHourlyRate] = useState("5000");
+  const [formUserHourlyRateAL, setFormUserHourlyRateAL] = useState("5000");
+  const [formUserHourlyRateOL, setFormUserHourlyRateOL] = useState("3500");
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
   // Grant Free Credit Modal State
@@ -673,14 +675,21 @@ export default function AdminDashboardPage() {
     }, 0);
   }, [coursesList]);
 
-  const getUserHourlyRate = (user: any): string => {
-    if (!user?.bio) return "65";
+  const getUserRates = (user: any): { alRate: string; olRate: string } => {
+    if (!user?.bio) return { alRate: "5000", olRate: "3500" };
     try {
       const parsed = typeof user.bio === "string" && user.bio.trim().startsWith("{") ? JSON.parse(user.bio) : null;
-      return parsed?.hourlyRate ? String(parsed.hourlyRate) : "65";
+      const base = parsed?.hourlyRate ? String(parsed.hourlyRate) : "5000";
+      const al = parsed?.hourlyRateAL ? String(parsed.hourlyRateAL) : base;
+      const ol = parsed?.hourlyRateOL ? String(parsed.hourlyRateOL) : (Number(base) > 0 ? String(Math.round(Number(base) * 0.75)) : "3500");
+      return { alRate: al, olRate: ol };
     } catch {
-      return "65";
+      return { alRate: "5000", olRate: "3500" };
     }
+  };
+
+  const getUserHourlyRate = (user: any): string => {
+    return getUserRates(user).alRate;
   };
 
   const handleOpenAddUser = () => {
@@ -691,7 +700,9 @@ export default function AdminDashboardPage() {
     setFormUserRole("STUDENT");
     setFormUserHeadline("");
     setFormUserBio("");
-    setFormUserHourlyRate("65");
+    setFormUserHourlyRate("5000");
+    setFormUserHourlyRateAL("5000");
+    setFormUserHourlyRateOL("3500");
     setShowAddUserModal(true);
   };
 
@@ -710,7 +721,9 @@ export default function AdminDashboardPage() {
           role: formUserRole,
           headline: formUserHeadline,
           bio: formUserBio,
-          hourlyRate: formUserHourlyRate,
+          hourlyRate: formUserHourlyRateAL,
+          hourlyRateAL: formUserHourlyRateAL,
+          hourlyRateOL: formUserHourlyRateOL,
         }),
       });
 
@@ -734,7 +747,10 @@ export default function AdminDashboardPage() {
     setFormUserRole(user.role);
     setFormUserHeadline(user.headline || "");
     setFormUserBio(user.bio || "");
-    setFormUserHourlyRate(getUserHourlyRate(user));
+    const rates = getUserRates(user);
+    setFormUserHourlyRate(rates.alRate);
+    setFormUserHourlyRateAL(rates.alRate);
+    setFormUserHourlyRateOL(rates.olRate);
     setShowEditUserModal(true);
   };
 
@@ -754,7 +770,9 @@ export default function AdminDashboardPage() {
           role: formUserRole,
           headline: formUserHeadline,
           bio: formUserBio,
-          hourlyRate: formUserHourlyRate,
+          hourlyRate: formUserHourlyRateAL,
+          hourlyRateAL: formUserHourlyRateAL,
+          hourlyRateOL: formUserHourlyRateOL,
         }),
       });
 
@@ -2451,12 +2469,22 @@ export default function AdminDashboardPage() {
                                 <Plus className="w-3 h-3 text-blue-700 opacity-60 group-hover:opacity-100" />
                               </button>
                             ) : u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR" ? (
-                              <span
-                                className="inline-flex items-center gap-1 text-xs font-mono font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"
-                                title="Tutor Hourly Rate (Set by Admin)"
-                              >
-                                ${getUserHourlyRate(u)}/hr
-                              </span>
+                              <div className="flex flex-col gap-1 text-[11px] font-mono whitespace-nowrap">
+                                <span
+                                  className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200"
+                                  title="London A/L Hourly Rate"
+                                >
+                                  <span className="font-sans text-[10px] text-blue-900 font-extrabold uppercase">A/L:</span>
+                                  LKR {Number(getUserRates(u).alRate).toLocaleString()}/hr
+                                </span>
+                                <span
+                                  className="inline-flex items-center gap-1 font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200"
+                                  title="London O/L Hourly Rate"
+                                >
+                                  <span className="font-sans text-[10px] text-slate-600 font-extrabold uppercase">O/L:</span>
+                                  LKR {Number(getUserRates(u).olRate).toLocaleString()}/hr
+                                </span>
+                              </div>
                             ) : (
                               <span className="text-slate-400 text-xs font-mono">—</span>
                             )}
@@ -4719,21 +4747,43 @@ export default function AdminDashboardPage() {
                 <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
-                <div>
-                  <label className="font-bold block mb-1">Hourly Rate ($ / hr)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="65"
-                      value={formUserHourlyRate}
-                      onChange={(e) => setFormUserHourlyRate(e.target.value)}
-                      className="rounded-xl pl-7 focus-visible:ring-blue-400 font-mono"
-                    />
+                <div className="space-y-3 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 text-xs block">Official Hourly Rates (LKR / hr)</label>
+                    <span className="text-[10px] text-blue-700 font-bold bg-blue-100 px-2 py-0.5 rounded-md">Admin Only</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Tutors cannot modify their own hourly rate. Set and managed exclusively by academy admin.
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London A/L Rate (LKR)</label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="5000"
+                          value={formUserHourlyRateAL}
+                          onChange={(e) => setFormUserHourlyRateAL(e.target.value)}
+                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London O/L Rate (LKR)</label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="3500"
+                          value={formUserHourlyRateOL}
+                          onChange={(e) => setFormUserHourlyRateOL(e.target.value)}
+                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Tutors conducting both A/L and O/L classes will be credited according to the respective syllabus level.
                   </p>
                 </div>
               )}
@@ -4782,21 +4832,43 @@ export default function AdminDashboardPage() {
                 <Input value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
-                <div>
-                  <label className="font-bold block mb-1">Hourly Rate ($ / hr)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="65"
-                      value={formUserHourlyRate}
-                      onChange={(e) => setFormUserHourlyRate(e.target.value)}
-                      className="rounded-xl pl-7 focus-visible:ring-blue-400 font-mono"
-                    />
+                <div className="space-y-3 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 text-xs block">Official Hourly Rates (LKR / hr)</label>
+                    <span className="text-[10px] text-blue-700 font-bold bg-blue-100 px-2 py-0.5 rounded-md">Admin Only</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Tutors cannot modify their own hourly rate. Set and managed exclusively by academy admin.
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London A/L Rate (LKR)</label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="5000"
+                          value={formUserHourlyRateAL}
+                          onChange={(e) => setFormUserHourlyRateAL(e.target.value)}
+                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London O/L Rate (LKR)</label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="3500"
+                          value={formUserHourlyRateOL}
+                          onChange={(e) => setFormUserHourlyRateOL(e.target.value)}
+                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Tutors conducting both A/L and O/L classes will be credited according to the respective syllabus level.
                   </p>
                 </div>
               )}

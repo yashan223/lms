@@ -425,11 +425,15 @@ export async function POST(request: NextRequest) {
         select: { bio: true },
       });
 
-      let existingHourlyRate = "65";
+      let existingHourlyRate = "5000";
+      let existingHourlyRateAL = "5000";
+      let existingHourlyRateOL = "3500";
       if (existingTutor?.bio) {
         try {
           const parsedExisting = JSON.parse(existingTutor.bio);
           if (parsedExisting.hourlyRate) existingHourlyRate = String(parsedExisting.hourlyRate);
+          existingHourlyRateAL = String(parsedExisting.hourlyRateAL || existingHourlyRate || "5000");
+          existingHourlyRateOL = String(parsedExisting.hourlyRateOL || "3500");
         } catch {}
       }
 
@@ -439,6 +443,8 @@ export async function POST(request: NextRequest) {
         try {
           const parsedBio = JSON.parse(finalBio);
           parsedBio.hourlyRate = existingHourlyRate;
+          parsedBio.hourlyRateAL = existingHourlyRateAL;
+          parsedBio.hourlyRateOL = existingHourlyRateOL;
           finalBio = JSON.stringify(parsedBio);
         } catch {}
       }

@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
     // ──────────────────────────────────────────────────────────────────────
 
     if (action === "create_user" || action === "create_candidate") {
-      const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate } = body;
+      const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate, hourlyRateAL, hourlyRateOL } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
       if (!email || typeof email !== "string" || !email.trim()) {
@@ -356,10 +356,16 @@ export async function POST(request: NextRequest) {
       if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
         try {
           const parsed = initialBio.trim().startsWith("{") ? JSON.parse(initialBio) : { about: initialBio };
-          parsed.hourlyRate = String(hourlyRate || "65").trim();
+          const resolvedAL = String(hourlyRateAL || hourlyRate || "5000").trim();
+          const resolvedOL = String(hourlyRateOL || "3500").trim();
+          parsed.hourlyRate = resolvedAL;
+          parsed.hourlyRateAL = resolvedAL;
+          parsed.hourlyRateOL = resolvedOL;
           initialBio = JSON.stringify(parsed);
         } catch {
-          initialBio = JSON.stringify({ about: initialBio, hourlyRate: String(hourlyRate || "65").trim() });
+          const resolvedAL = String(hourlyRateAL || hourlyRate || "5000").trim();
+          const resolvedOL = String(hourlyRateOL || "3500").trim();
+          initialBio = JSON.stringify({ about: initialBio, hourlyRate: resolvedAL, hourlyRateAL: resolvedAL, hourlyRateOL: resolvedOL });
         }
       }
 
@@ -424,10 +430,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_user") {
-      const { userId, name, email, phone, role, headline, bio, password, hourlyRate } = body;
+      const { userId, name, email, phone, role, headline, bio, password, hourlyRate, hourlyRateAL, hourlyRateOL } = body;
 
       let finalBio = bio;
-      if (hourlyRate !== undefined) {
+      if (hourlyRate !== undefined || hourlyRateAL !== undefined || hourlyRateOL !== undefined) {
         let parsedBio: any = {};
         try {
           if (finalBio && typeof finalBio === "string" && finalBio.trim().startsWith("{")) {
@@ -443,7 +449,11 @@ export async function POST(request: NextRequest) {
         } catch {
           parsedBio = { about: finalBio || "" };
         }
-        parsedBio.hourlyRate = String(hourlyRate).trim() || "65";
+        const resolvedAL = String(hourlyRateAL || hourlyRate || parsedBio.hourlyRateAL || parsedBio.hourlyRate || "5000").trim();
+        const resolvedOL = String(hourlyRateOL || parsedBio.hourlyRateOL || "3500").trim();
+        parsedBio.hourlyRate = resolvedAL;
+        parsedBio.hourlyRateAL = resolvedAL;
+        parsedBio.hourlyRateOL = resolvedOL;
         finalBio = JSON.stringify(parsedBio);
       }
 

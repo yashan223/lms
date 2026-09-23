@@ -32,6 +32,7 @@ import {
   RefreshCw,
   BadgeCheck,
   Lock,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +72,9 @@ function TutorProfileContent() {
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [certifications, setCertifications] = useState<AcademicCertification[]>([]);
   const [experienceYears, setExperienceYears] = useState("10+ Years");
-  const [hourlyRate, setHourlyRate] = useState("65");
+  const [hourlyRate, setHourlyRate] = useState("5000");
+  const [hourlyRateAL, setHourlyRateAL] = useState("5000");
+  const [hourlyRateOL, setHourlyRateOL] = useState("3500");
   const [officeHours, setOfficeHours] = useState("Mon - Fri: 4:00 PM - 8:00 PM GMT");
   const [linkedin, setLinkedin] = useState("https://linkedin.com");
   const [researchGate, setResearchGate] = useState("https://researchgate.net");
@@ -149,7 +152,9 @@ function TutorProfileContent() {
           },
         ];
         let parsedExp = "10+ Years";
-        let parsedRate = "65";
+        let parsedRate = "5000";
+        let parsedRateAL = "5000";
+        let parsedRateOL = "3500";
         let parsedHours = "Mon - Fri: 4:00 PM - 8:00 PM GMT";
         let parsedLinkedin = "https://linkedin.com";
         let parsedResearchGate = "https://researchgate.net";
@@ -171,6 +176,8 @@ function TutorProfileContent() {
               }
               if (parsed.experienceYears) parsedExp = parsed.experienceYears;
               if (parsed.hourlyRate) parsedRate = parsed.hourlyRate;
+              parsedRateAL = parsed.hourlyRateAL ? String(parsed.hourlyRateAL) : parsedRate;
+              parsedRateOL = parsed.hourlyRateOL ? String(parsed.hourlyRateOL) : "3500";
               if (parsed.officeHours) parsedHours = parsed.officeHours;
               if (parsed.linkedin) parsedLinkedin = parsed.linkedin;
               if (parsed.researchGate) parsedResearchGate = parsed.researchGate;
@@ -189,6 +196,8 @@ function TutorProfileContent() {
         setCertifications(parsedCerts);
         setExperienceYears(parsedExp);
         setHourlyRate(parsedRate);
+        setHourlyRateAL(parsedRateAL);
+        setHourlyRateOL(parsedRateOL);
         setOfficeHours(parsedHours);
         setLinkedin(parsedLinkedin);
         setResearchGate(parsedResearchGate);
@@ -305,6 +314,8 @@ function TutorProfileContent() {
         certifications,
         experienceYears,
         hourlyRate,
+        hourlyRateAL,
+        hourlyRateOL,
         officeHours,
         linkedin,
         researchGate,
@@ -721,6 +732,49 @@ function TutorProfileContent() {
                       placeholder="e.g. Mon - Fri: 4:00 PM - 8:00 PM GMT"
                       className="rounded-xl h-9 text-xs"
                     />
+                  </div>
+                </div>
+
+                {/* Official Tutor Hourly Rates (A/L & O/L) */}
+                <div className="pt-2">
+                  <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Coins className="w-4 h-4 text-blue-700" />
+                        <span className="font-bold text-xs text-slate-900">Official Tutor Hourly Rates (LKR)</span>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-900 border-blue-200 text-[10px] font-bold">
+                        Set by Administration
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
+                        <div className="text-[10px] uppercase tracking-wider font-extrabold text-blue-900">
+                          London A/L Hourly Rate
+                        </div>
+                        <div className="text-base font-black text-slate-900 font-mono">
+                          LKR {Number(hourlyRateAL || hourlyRate || 5000).toLocaleString()}{" "}
+                          <span className="text-xs font-normal text-slate-500 font-sans">/ hr</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Applies to IAL AS/A2 masterclasses, past paper clinics, and 1-on-1 sessions.
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
+                        <div className="text-[10px] uppercase tracking-wider font-extrabold text-slate-700">
+                          London O/L (IGCSE) Hourly Rate
+                        </div>
+                        <div className="text-base font-black text-slate-900 font-mono">
+                          LKR {Number(hourlyRateOL || 3500).toLocaleString()}{" "}
+                          <span className="text-xs font-normal text-slate-500 font-sans">/ hr</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Applies to IGCSE foundation classes, topical drills, and mock review sessions.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

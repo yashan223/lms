@@ -415,7 +415,9 @@ function TutorDashboardContent() {
     },
   ]);
   const [profileExp, setProfileExp] = useState("10+ Years");
-  const [profileRate, setProfileRate] = useState("65");
+  const [profileRate, setProfileRate] = useState("5000");
+  const [profileRateAL, setProfileRateAL] = useState("5000");
+  const [profileRateOL, setProfileRateOL] = useState("3500");
   const [profileHours, setProfileHours] = useState("Mon - Fri: 4:00 PM - 8:00 PM GMT");
   const [profileLinkedin, setProfileLinkedin] = useState("https://linkedin.com");
   const [profileResearchGate, setProfileResearchGate] = useState("https://researchgate.net");
@@ -515,7 +517,9 @@ function TutorDashboardContent() {
           },
         ];
         let parsedExp = "10+ Years";
-        let parsedRate = "65";
+        let parsedRate = "5000";
+        let parsedRateAL = "5000";
+        let parsedRateOL = "3500";
         let parsedHours = "Mon - Fri: 4:00 PM - 8:00 PM GMT";
         let parsedLinkedin = "https://linkedin.com";
         let parsedResearchGate = "https://researchgate.net";
@@ -537,6 +541,8 @@ function TutorDashboardContent() {
               }
               if (parsed.experienceYears) parsedExp = parsed.experienceYears;
               if (parsed.hourlyRate) parsedRate = parsed.hourlyRate;
+              parsedRateAL = parsed.hourlyRateAL ? String(parsed.hourlyRateAL) : parsedRate;
+              parsedRateOL = parsed.hourlyRateOL ? String(parsed.hourlyRateOL) : "3500";
               if (parsed.officeHours) parsedHours = parsed.officeHours;
               if (parsed.linkedin) parsedLinkedin = parsed.linkedin;
               if (parsed.researchGate) parsedResearchGate = parsed.researchGate;
@@ -555,6 +561,8 @@ function TutorDashboardContent() {
         setProfileCerts(parsedCerts);
         setProfileExp(parsedExp);
         setProfileRate(parsedRate);
+        setProfileRateAL(parsedRateAL);
+        setProfileRateOL(parsedRateOL);
         setProfileHours(parsedHours);
         setProfileLinkedin(parsedLinkedin);
         setProfileResearchGate(parsedResearchGate);
@@ -1042,6 +1050,8 @@ function TutorDashboardContent() {
         certifications: profileCerts,
         experienceYears: profileExp,
         hourlyRate: profileRate,
+        hourlyRateAL: profileRateAL,
+        hourlyRateOL: profileRateOL,
         officeHours: profileHours,
         linkedin: profileLinkedin,
         researchGate: profileResearchGate,

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,10 +16,13 @@ import {
   AlertCircle,
   CheckCircle2,
   UserCheck,
+  Loader2,
 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,11 +59,13 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.redirectTo) {
-        router.push(data.redirectTo);
-      } else {
-        router.push("/dashboard");
-      }
+      // Safe redirect check
+      const safeRedirect =
+        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+          ? redirectParam
+          : data.redirectTo || "/dashboard";
+
+      router.push(safeRedirect);
     } catch (err) {
       console.error("Login error:", err);
       setErrorMsg("Unable to connect to the authentication server.");
@@ -81,7 +86,7 @@ export default function LoginPage() {
           </Link>
 
           <Link
-            href="/register"
+            href={`/register${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ""}`}
             className="text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
           >
             New Student? Register here
@@ -263,5 +268,19 @@ export default function LoginPage() {
         PulseEDU Global
       </footer>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

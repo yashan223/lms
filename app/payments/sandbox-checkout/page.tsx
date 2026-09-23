@@ -145,7 +145,12 @@ function SandboxCheckoutContent() {
     );
   }
 
-  const amountLkr = paymentData ? (paymentData.amountCents / 100).toLocaleString("en-LK") : "0.00";
+  const isUsd = paymentData?.currency === "USD";
+  const formattedPrice = paymentData
+    ? isUsd
+      ? `$${(paymentData.amountCents / 100).toFixed(2)} USD`
+      : `Rs. ${(paymentData.amountCents / 100).toLocaleString("en-LK")}`
+    : "0.00";
   const selectedCard = TEST_CARDS[selectedCardIdx];
 
   return (
@@ -187,7 +192,7 @@ function SandboxCheckoutContent() {
             <div className="text-left sm:text-right">
               <span className="text-xs text-slate-400">Total to Authorise</span>
               <div className="text-3xl font-black text-white tracking-tight">
-                Rs. {amountLkr}
+                {formattedPrice}
               </div>
             </div>
           </div>
@@ -331,8 +336,8 @@ function SandboxCheckoutContent() {
                         <Lock className="w-4 h-4" />
                         <span>
                           {expiryOption === "APPROVED"
-                            ? `Authorize Payment (Rs. ${amountLkr})`
-                            : `Simulate Decline (Rs. ${amountLkr})`}
+                            ? `Authorize Payment (${formattedPrice})`
+                            : `Simulate Decline (${formattedPrice})`}
                         </span>
                       </>
                     )}
@@ -377,7 +382,7 @@ function SandboxCheckoutContent() {
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Simulate LankaQR Payment (Rs. {amountLkr})</span>
+                      <span>Simulate LankaQR Payment ({formattedPrice})</span>
                     </>
                   )}
                 </button>

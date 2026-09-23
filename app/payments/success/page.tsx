@@ -93,7 +93,9 @@ function PaymentSuccessContent() {
             <div className="flex justify-between text-slate-600">
               <span className="font-medium">Amount Paid</span>
               <span className="font-bold text-slate-900">
-                Rs. {(paymentInfo.amountCents / 100).toLocaleString("en-LK")}
+                {paymentInfo.currency === "USD"
+                  ? `$${(paymentInfo.amountCents / 100).toFixed(2)} USD`
+                  : `Rs. ${(paymentInfo.amountCents / 100).toLocaleString("en-LK")}`}
               </span>
             </div>
             <div className="flex justify-between text-slate-400 font-mono text-[11px] pt-1 border-t border-slate-200">

@@ -488,14 +488,14 @@ export default function CourseDetailPage({
 
                     <div className="space-y-2">
                       <Link
-                        href="/register"
+                        href={`/register?redirect=${encodeURIComponent(`/classes/${slug}`)}`}
                         className="w-full py-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all text-center"
                       >
                         <span>Create Free Student Account</span>
                         <ArrowRight className="w-4 h-4" />
                       </Link>
                       <Link
-                        href="/login"
+                        href={`/login?redirect=${encodeURIComponent(`/classes/${slug}`)}`}
                         className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center"
                       >
                         <span>Already have an account? Sign In</span>

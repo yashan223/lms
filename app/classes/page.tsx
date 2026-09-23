@@ -453,7 +453,7 @@ export default function CoursesPage() {
                         ) : (
                           <div className="w-full flex items-center justify-between gap-2">
                             <Link
-                              href="/register"
+                              href={`/login?redirect=${encodeURIComponent(`/classes/${course.slug}`)}`}
                               className="group/lock flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
                             >
                               <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-amber-500/10 border border-slate-200 group-hover/lock:border-amber-500/20 flex items-center justify-center text-slate-400 group-hover/lock:text-amber-600 transition-colors">

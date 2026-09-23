@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 import { CountrySelector } from "@/components/ui/CountrySelector";
 import { PhoneInputWithCountry } from "@/components/ui/PhoneInputWithCountry";
@@ -23,8 +24,10 @@ import { Country } from "@/lib/countries";
 import { TermsAndPolicyModal } from "@/components/legal/TermsAndPolicyModal";
 import { Scale, Ban } from "lucide-react";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -79,8 +82,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters in length.");
+    if (password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters in length.");
       return;
     }
 
@@ -123,7 +126,16 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push(data.redirectTo || "/dashboard");
+      let targetRedirect = data.redirectTo || "/dashboard";
+      if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
+        if (targetRedirect.includes("?")) {
+          targetRedirect += `&redirect=${encodeURIComponent(redirectParam)}`;
+        } else {
+          targetRedirect += `?redirect=${encodeURIComponent(redirectParam)}`;
+        }
+      }
+
+      router.push(targetRedirect);
     } catch (err) {
       console.error("Register error:", err);
       setErrorMsg("Unable to connect to student registration server.");
@@ -145,7 +157,7 @@ export default function RegisterPage() {
           </Link>
 
           <Link
-            href="/login"
+            href={`/login${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ""}`}
             className="text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
           >
             Existing Member? Log In
@@ -263,7 +275,7 @@ export default function RegisterPage() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       required
-                      placeholder="Min 6 characters"
+                      placeholder="Min 8 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-9 pr-9 h-11 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-600"
@@ -360,7 +372,10 @@ export default function RegisterPage() {
 
             <div className="text-center pt-2 border-t border-slate-100 text-xs text-slate-500">
               Already have an academic account?{" "}
-              <Link href="/login" className="font-bold text-blue-600 hover:text-blue-800">
+              <Link
+                href={`/login${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ""}`}
+                className="font-bold text-blue-600 hover:text-blue-800"
+              >
                 Sign in here
               </Link>
             </div>
@@ -401,5 +416,19 @@ export default function RegisterPage() {
         onAccept={() => setAgreedToTerms(true)}
       />
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        </div>
+      }
+    >
+      <RegisterContent />
+    </Suspense>
   );
 }

@@ -24,6 +24,7 @@ function VerifyEmailContent() {
 
   const tokenParam = searchParams.get("token");
   const emailParam = searchParams.get("email") || "";
+  const redirectParam = searchParams.get("redirect");
 
   const [token] = useState<string | null>(tokenParam);
   const [email, setEmail] = useState<string>(emailParam);
@@ -36,7 +37,11 @@ function VerifyEmailContent() {
   >(tokenParam ? "verifying" : "idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
-  const [redirectPath, setRedirectPath] = useState("/dashboard");
+  const [redirectPath, setRedirectPath] = useState(
+    redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+      ? redirectParam
+      : "/dashboard"
+  );
 
   // Resend states
   const [resendLoading, setResendLoading] = useState<boolean>(false);
@@ -69,7 +74,12 @@ function VerifyEmailContent() {
         if (res.ok && data.success) {
           setVerificationStatus("success");
           setStatusMessage(data.message || "Your academic email has been verified successfully!");
-          setRedirectPath(data.redirectTo || (data.user?.role === "TUTOR" ? "/tutor" : "/dashboard"));
+          const defaultTarget = data.redirectTo || (data.user?.role === "TUTOR" ? "/tutor" : "/dashboard");
+          const safeTarget =
+            redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+              ? redirectParam
+              : defaultTarget;
+          setRedirectPath(safeTarget);
         } else if (data.expired) {
           setVerificationStatus("expired");
           setStatusMessage(

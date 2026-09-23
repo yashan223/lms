@@ -145,14 +145,14 @@ export function Footer() {
           <div className="mt-12 pt-8 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <p>© {new Date().getFullYear()} EduPulse LMS Inc. All rights reserved.</p>
             <div className="flex items-center gap-6">
-              <Link href="#privacy" className="hover:text-blue-600 transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="#terms" className="hover:text-blue-600 transition-colors">
+              <Link href="/terms" className="hover:text-blue-600 transition-colors">
                 Academic Integrity & Terms
               </Link>
-              <Link href="#security" className="hover:text-blue-600 transition-colors">
-                Accreditation & Security
+              <Link href="/terms#refund-policy" className="hover:text-blue-600 transition-colors font-medium">
+                No-Refund Policy
+              </Link>
+              <Link href="/classes" className="hover:text-blue-600 transition-colors">
+                Accredited Curriculum
               </Link>
             </div>
           </div>

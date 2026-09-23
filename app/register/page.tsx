@@ -20,6 +20,8 @@ import {
 import { CountrySelector } from "@/components/ui/CountrySelector";
 import { PhoneInputWithCountry } from "@/components/ui/PhoneInputWithCountry";
 import { Country } from "@/lib/countries";
+import { TermsAndPolicyModal } from "@/components/legal/TermsAndPolicyModal";
+import { Scale, Ban } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -33,6 +35,10 @@ export default function RegisterPage() {
   const [qualification, setQualification] = useState("London A/L (IAL)");
   const [country, setCountry] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsModalTab, setTermsModalTab] = useState<"terms" | "refund">("terms");
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -78,6 +84,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!agreedToTerms) {
+      setErrorMsg("You must read and agree to the Terms & Conditions and No-Refund Policy to register.");
+      return;
+    }
+
     setShowConfirmModal(true);
   };
 
@@ -100,6 +111,7 @@ export default function RegisterPage() {
           password,
           qualification,
           country,
+          agreedToTerms: true,
         }),
       });
 
@@ -284,6 +296,49 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              {/* Terms & Conditions and No-Refund Policy Checkbox */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms-checkbox"
+                    required
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-[#0c2461]"
+                  />
+                  <label htmlFor="terms-checkbox" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
+                    I have read, understood, and explicitly agree to the{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setTermsModalTab("terms");
+                        setShowTermsModal(true);
+                      }}
+                      className="font-bold text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-0.5 cursor-pointer"
+                    >
+                      Terms & Conditions
+                    </button>{" "}
+                    and the strict{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setTermsModalTab("refund");
+                        setShowTermsModal(true);
+                      }}
+                      className="font-bold text-amber-700 hover:text-amber-800 underline inline-flex items-center gap-0.5 cursor-pointer"
+                    >
+                      No-Refund Policy
+                    </button>
+                    . I understand that all digital course enrollments, individual classes, and token packages are final and non-refundable.
+                  </label>
+                </div>
+              </div>
+
               <Button
                 type="submit"
                 disabled={loading}
@@ -314,7 +369,17 @@ export default function RegisterPage() {
       </main>
 
       <footer className="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
-        PulseEDU Global
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>PulseEDU Global</span>
+          <div className="flex items-center gap-4 text-slate-400">
+            <Link href="/terms" className="hover:text-blue-600 transition-colors">
+              Terms & Conditions
+            </Link>
+            <Link href="/terms#refund-policy" className="hover:text-blue-600 transition-colors">
+              No-Refund Policy
+            </Link>
+          </div>
+        </div>
       </footer>
 
       <ConfirmationModal
@@ -326,7 +391,14 @@ export default function RegisterPage() {
         confirmText="Confirm & Enter LMS"
         cancelText="Review Details"
         variant="success"
-        requireConsentText="I confirm that all student details are accurate and agree to the academic honor code."
+        requireConsentText="I confirm that all student details are accurate and explicitly agree to the Academic Honor Code, Terms & Conditions, and No-Refund Policy."
+      />
+
+      <TermsAndPolicyModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        initialTab={termsModalTab}
+        onAccept={() => setAgreedToTerms(true)}
       />
     </div>
   );

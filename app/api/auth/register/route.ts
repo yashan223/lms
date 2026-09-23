@@ -22,11 +22,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, phone, qualification, examBoard, targetSeries, country } = await request.json();
+    const { name, email, password, phone, qualification, examBoard, targetSeries, country, agreedToTerms } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, email, and password are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!agreedToTerms) {
+      return NextResponse.json(
+        { error: "You must accept the Terms & Conditions and No-Refund Policy to register" },
         { status: 400 }
       );
     }
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
         academicLevel: qualification?.includes("O/L") || qualification?.includes("IGCSE") ? "OL" : "AL",
         emailVerified: null, // Student must verify via email!
         headline: `${qualification || "London A/L"} Student${country ? ` • ${country}` : ""} (${targetSeries || "Spring / Summer 2026"})`,
-        bio: `Enrolled student ${country ? `from ${country} ` : ""}studying ${examBoard || "London A/L & O/L"} curriculum.`,
+        bio: `Enrolled student ${country ? `from ${country} ` : ""}studying ${examBoard || "London A/L & O/L"} curriculum. Agreed to Terms & Conditions and No-Refund Policy.`,
         avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
         tokenWallet: {
           create: {

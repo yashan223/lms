@@ -43,7 +43,6 @@ import {
   Radio,
   Coins,
   Zap,
-  CreditCard,
   History,
   Receipt,
   ArrowDownLeft,
@@ -2204,16 +2203,6 @@ function DashboardContent() {
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div className="bg-slate-50 rounded-2xl p-3 text-[11px] text-slate-500 border border-slate-200/80 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-sky-600 shrink-0" />
-                <span>
-                  <strong>Payments.lk</strong> · 3D Secure · Visa, Mastercard, Amex & LankaQR
-                </span>
-              </div>
-              <span className="font-mono font-bold text-slate-700">Current: {tokenBalance} Hrs</span>
             </div>
           </div>
         </div>

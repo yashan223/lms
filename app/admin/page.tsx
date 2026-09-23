@@ -2762,9 +2762,11 @@ export default function AdminDashboardPage() {
                               </div>
 
                               {tutor.bio && (
-                                <p className="text-xs text-slate-500 line-clamp-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                  {parseTutorBio(tutor.bio)}
-                                </p>
+                                <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                  <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">
+                                    {parseTutorBio(tutor.bio)}
+                                  </p>
+                                </div>
                               )}
 
                               {/* Stats Bar */}

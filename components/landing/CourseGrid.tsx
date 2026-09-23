@@ -346,9 +346,11 @@ export function CourseGrid() {
                       </div>
 
                       {/* Bio */}
-                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        {parseTutorBio(tutor.bio)}
-                      </p>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                          {parseTutorBio(tutor.bio)}
+                        </p>
+                      </div>
 
                       {/* Subjects & Specifications */}
                       <div className="space-y-2 pt-2 border-t border-slate-100">

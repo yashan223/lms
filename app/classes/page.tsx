@@ -569,9 +569,11 @@ export default function CoursesPage() {
 
                         {/* Tutor Bio */}
                         {tutor.bio && (
-                          <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            {parseTutorBio(tutor.bio)}
-                          </p>
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                              {parseTutorBio(tutor.bio)}
+                            </p>
+                          </div>
                         )}
 
                         {/* Masterclasses & Classes Conducted */}

@@ -537,7 +537,6 @@ export default function StudentProfilePage() {
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Tariq Al-Mansoor"
                   className="rounded-xl border-slate-200 text-xs h-10 bg-white"
                   required
                 />
@@ -627,7 +626,6 @@ export default function StudentProfilePage() {
                   <Input
                     value={guardianName}
                     onChange={(e) => setGuardianName(e.target.value)}
-                    placeholder="e.g. Tariq Al-Mansoor"
                     className="rounded-xl border-slate-200 text-xs h-10 bg-white"
                   />
                 </div>

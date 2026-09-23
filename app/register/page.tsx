@@ -332,7 +332,6 @@ function RegisterContent() {
                       <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <Input
                         required
-                        placeholder="e.g. Tariq Al-Mansoor"
                         value={guardianName}
                         onChange={(e) => setGuardianName(e.target.value)}
                         className="pl-9 h-11 text-xs border-slate-200 bg-white rounded-xl focus-visible:ring-blue-600"

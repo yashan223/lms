@@ -54,7 +54,7 @@ export default function StudentProfilePage() {
   const [academicLevel, setAcademicLevel] = useState<"AL" | "OL">("AL");
   const [avatar, setAvatar] = useState<string>("");
   const [guardianName, setGuardianName] = useState("");
-  const [guardianRelationship, setGuardianRelationship] = useState("Parent");
+  const [guardianRelationship, setGuardianRelationship] = useState("Father");
   const [guardianPhone, setGuardianPhone] = useState("");
 
   // Password Update Form
@@ -89,7 +89,7 @@ export default function StudentProfilePage() {
         setAcademicLevel(data.student.academicLevel === "OL" ? "OL" : "AL");
         setAvatar(data.student.avatar || "");
         setGuardianName(data.student.guardianName || "");
-        setGuardianRelationship(data.student.guardianRelationship || "Parent");
+        setGuardianRelationship(data.student.guardianRelationship || "Father");
         setGuardianPhone(data.student.guardianPhone || "");
       }
     } catch (err: any) {
@@ -640,7 +640,6 @@ export default function StudentProfilePage() {
                     <option value="Father">Father</option>
                     <option value="Mother">Mother</option>
                     <option value="Legal Guardian">Legal Guardian</option>
-                    <option value="Parent">Parent</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>

@@ -42,7 +42,7 @@ function RegisterContent() {
 
   // Parent / Guardian Details
   const [guardianName, setGuardianName] = useState("");
-  const [guardianRelationship, setGuardianRelationship] = useState("Parent");
+  const [guardianRelationship, setGuardianRelationship] = useState("Father");
   const [guardianPhone, setGuardianPhone] = useState("");
   const [guardianCountryCode, setGuardianCountryCode] = useState("");
 
@@ -351,7 +351,6 @@ function RegisterContent() {
                       <option value="Father">Father</option>
                       <option value="Mother">Mother</option>
                       <option value="Legal Guardian">Legal Guardian</option>
-                      <option value="Parent">Parent</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>

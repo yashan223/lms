@@ -59,7 +59,6 @@ export function extractCountryFromHeaders(headers: Headers | Record<string, stri
 
   // Direct country headers provided by CDNs & reverse proxies
   const headerKeys = [
-    "x-vercel-ip-country",
     "cf-ipcountry",
     "x-country-code",
     "cloudfront-viewer-country",

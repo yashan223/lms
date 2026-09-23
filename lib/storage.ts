@@ -190,32 +190,7 @@ export async function saveUploadedFile(
   const folder = isPrivate ? "private" : "public";
   const contentType = mimeType || EXTENSION_TO_MIME[detectedExt] || "application/octet-stream";
 
-  // Optional: If user explicitly configured BLOB_READ_WRITE_TOKEN, allow Vercel Blob
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    try {
-      const { put } = await import("@vercel/blob");
-      const blobPathname = `${folder}/${storedFileName}`;
-      const blob = await put(blobPathname, fileBuffer, {
-        access: "public",
-        contentType,
-      });
-
-      return {
-        fileKey: blob.url,
-        fileName: cleanOriginalName,
-        originalName: originalFileName,
-        fileSize: formatBytes(fileBuffer.length),
-        fileSizeBytes: fileBuffer.length,
-        fileType: contentType,
-        fileUrl: blob.url,
-        isPrivate,
-      };
-    } catch (blobErr) {
-      console.warn("[storage] Vercel Blob upload failed, saving to VPS local storage:", blobErr);
-    }
-  }
-
-  // Primary VPS local filesystem storage
+  // VPS local filesystem storage
   await ensureStorageDirectories();
 
   const targetDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, folder);
@@ -241,22 +216,6 @@ export async function saveUploadedFile(
 
 export async function deleteStorageFile(fileKey: string): Promise<boolean> {
   if (!fileKey || typeof fileKey !== "string") return false;
-
-  // Handle remote Vercel Blob URL deletion if applicable
-  if (
-    fileKey.startsWith("http://") ||
-    fileKey.startsWith("https://") ||
-    fileKey.includes("blob.vercel-storage.com")
-  ) {
-    try {
-      const { del } = await import("@vercel/blob");
-      await del(fileKey);
-      return true;
-    } catch (err) {
-      console.error(`[storage] Error deleting Vercel Blob file (${fileKey}):`, err);
-      return false;
-    }
-  }
 
   // VPS local disk storage deletion
   const safePath = resolveSafeStoragePath(fileKey);

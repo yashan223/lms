@@ -488,7 +488,7 @@ model StudentAvailability {
   @@map("student_availabilities")
 }
 // ========================================================
-// REALTIME EVENT LOG (Vercel-compatible cross-process SSE)
+// REALTIME EVENT LOG (Cross-process SSE)
 // ========================================================
 model SystemEvent {
   id        String   @id @default(cuid())

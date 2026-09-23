@@ -77,9 +77,7 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
     return {
       id: dbTutor.id,
       name: dbTutor.name || "Faculty Tutor",
-      avatar:
-        dbTutor.avatar ||
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      avatar: dbTutor.avatar || "",
       headline: dbTutor.headline || "Verified Academic Faculty Tutor",
       bio: parseTutorBio(dbTutor.bio),
       category:

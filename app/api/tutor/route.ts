@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { deleteStorageFile } from "@/lib/storage";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -154,7 +155,7 @@ export async function GET(request: NextRequest) {
         headline: tutor.headline || "Senior Tutor",
         bio: tutor.bio || "Subject Lead with specialized expertise in London A/L & O/L specifications.",
         phone: tutor.phone || "",
-        avatar: tutor.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+        avatar: tutor.avatar || null,
         role: tutor.role,
         createdAt: tutor.createdAt,
       },
@@ -327,7 +328,7 @@ export async function POST(request: NextRequest) {
           durationMin: parseInt(durationMin) || 30,
           position: count + 1,
           isFreePreview: Boolean(isFreePreview),
-          videoUrl: videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          videoUrl: videoUrl ? videoUrl.trim() : null,
         },
       });
       broadcastLMSEvent("COURSES_CHANGED");
@@ -385,6 +386,20 @@ export async function POST(request: NextRequest) {
 
     if (action === "delete_course_material") {
       const { materialId } = body;
+      const existing = await prisma.courseMaterial.findUnique({
+        where: { id: materialId },
+        include: { course: true },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Material not found" }, { status: 404 });
+      }
+      if (tutor.role !== Role.ADMIN && existing.course?.tutorId !== tutor.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+      if (existing.fileUrl.startsWith("/api/files/")) {
+        const fileKey = existing.fileUrl.replace("/api/files/", "");
+        await deleteStorageFile(fileKey).catch(() => {});
+      }
       await prisma.courseMaterial.delete({ where: { id: materialId } });
       broadcastLMSEvent("MATERIALS_CHANGED");
       broadcastLMSEvent("COURSES_CHANGED");
@@ -594,7 +609,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (action === "delete_class") {
+    if (action === "delete_class" || action === "delete_event") {
       const { eventId } = body;
 
       if (!eventId) {
@@ -962,6 +977,25 @@ export async function POST(request: NextRequest) {
         message: "1-on-1 consultation rescheduled successfully.",
         trial: updatedTrial,
       });
+    }
+
+    if (action === "delete_trial") {
+      const { trialId } = body;
+      if (!trialId) {
+        return NextResponse.json({ error: "Trial ID is required." }, { status: 400 });
+      }
+      const existingTrial = await prisma.trialRequest.findUnique({
+        where: { id: trialId },
+      });
+      if (!existingTrial) {
+        return NextResponse.json({ error: "Trial not found." }, { status: 404 });
+      }
+      if (tutor.role !== Role.ADMIN && existingTrial.tutorId !== tutor.id) {
+        return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+      }
+      await prisma.trialRequest.delete({ where: { id: trialId } });
+      broadcastLMSEvent("TRIALS_CHANGED");
+      return NextResponse.json({ success: true, message: "Trial request deleted." });
     }
 
     if (action === "unenroll_student") {

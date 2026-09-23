@@ -2906,15 +2906,18 @@ function TutorDashboardContent() {
 
                     <div className="flex flex-col sm:flex-row items-center gap-6">
                       <div className="relative group shrink-0">
-                        <div className="w-28 h-28 rounded-2xl bg-slate-900 overflow-hidden border-2 border-slate-200 shadow-lg ring-4 ring-blue-500/10">
-                          <img
-                            src={
-                              profileAvatar ||
-                              "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80"
-                            }
-                            alt="Profile Avatar"
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="w-28 h-28 rounded-2xl bg-blue-950 text-white overflow-hidden border-2 border-slate-200 shadow-lg ring-4 ring-blue-500/10 flex items-center justify-center">
+                          {profileAvatar ? (
+                            <img
+                              src={profileAvatar}
+                              alt="Profile Avatar"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-3xl font-extrabold text-white">
+                              {(profileName || tutorName || "T").charAt(0).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -3506,16 +3509,18 @@ function TutorDashboardContent() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-950 text-white overflow-hidden border border-slate-200 shrink-0">
-                  <img
-                    src={
-                      profileAvatar ||
-                      tutor?.avatar ||
-                      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-                    }
-                    alt={tutorName}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-12 h-12 rounded-xl bg-blue-950 text-white overflow-hidden border border-slate-200 shrink-0 flex items-center justify-center">
+                  {(profileAvatar || tutor?.avatar) ? (
+                    <img
+                      src={profileAvatar || tutor?.avatar}
+                      alt={tutorName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-base font-bold text-white">
+                      {(profileName || tutorName || "T").charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <h4 className="font-bold text-xs text-slate-900 truncate">{profileName || tutorName}</h4>

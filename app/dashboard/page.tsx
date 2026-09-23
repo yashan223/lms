@@ -869,7 +869,7 @@ function DashboardContent() {
       name: user?.name || "Student",
       title: user?.headline || "London A/L Student",
       badge: "Student",
-      avatar: user?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+      avatar: user?.avatar || "",
     };
   };
 

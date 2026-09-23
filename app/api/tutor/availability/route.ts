@@ -506,7 +506,7 @@ export async function POST(request: NextRequest) {
       await prisma.tutorAvailability.deleteMany({
         where: {
           id,
-          tutorId: tutor.id,
+          ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}),
         },
       });
 

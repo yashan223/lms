@@ -73,7 +73,7 @@ export async function POST(request: Request) {
         emailVerified: null, // Student must verify via email!
         headline: `${qualification || "London A/L"} Student${country ? ` • ${country}` : ""} (${targetSeries || "Spring / Summer 2026"})`,
         bio: `Enrolled student ${country ? `from ${country} ` : ""}studying ${examBoard || "London A/L & O/L"} curriculum. Agreed to Terms & Conditions and No-Refund Policy.`,
-        avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+        avatar: null,
         tokenWallet: {
           create: {
             balance: 0,

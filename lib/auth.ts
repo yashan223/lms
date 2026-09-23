@@ -351,7 +351,7 @@ export async function syncDefaultAdminFromEnv(force = false): Promise<void> {
         emailVerified: new Date(),
         headline: "System Administrator",
         bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        avatar: null,
       },
     });
   } catch (error) {

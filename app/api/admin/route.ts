@@ -341,11 +341,7 @@ export async function POST(request: NextRequest) {
           phone: phone ? phone.trim() : null,
           headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Tutor" : "London A/L Student"),
           bio: initialBio,
-          avatar: assignedRole === Role.ADMIN
-            ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-            : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR"
-            ? "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-            : "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+          avatar: null,
         },
       });
 
@@ -684,7 +680,7 @@ export async function POST(request: NextRequest) {
           durationMin: parseInt(durationMin) || 30,
           position: count + 1,
           isFreePreview: Boolean(isFreePreview),
-          videoUrl: videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          videoUrl: videoUrl ? videoUrl.trim() : null,
         },
       });
       broadcastLMSEvent("COURSES_CHANGED");
@@ -747,7 +743,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, mock: newMock });
     }
 
-    if (action === "delete_assessment" || action === "delete_event") {
+    if (action === "delete_assessment" || action === "delete_event" || action === "delete_class") {
       const { eventId } = body;
       await prisma.event.delete({ where: { id: eventId } });
       broadcastLMSEvent("EVENTS_CHANGED");
@@ -1084,6 +1080,16 @@ export async function POST(request: NextRequest) {
 
       broadcastLMSEvent("TRIALS_CHANGED");
       return NextResponse.json({ success: true, message: "Trial request declined.", trial: updated });
+    }
+
+    if (action === "delete_trial") {
+      const { trialId } = body;
+      if (!trialId) {
+        return NextResponse.json({ error: "Trial ID is required." }, { status: 400 });
+      }
+      await prisma.trialRequest.delete({ where: { id: trialId } });
+      broadcastLMSEvent("TRIALS_CHANGED");
+      return NextResponse.json({ success: true, message: "Trial request deleted." });
     }
 
     if (action === "approve_course") {

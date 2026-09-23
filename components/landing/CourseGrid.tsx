@@ -86,9 +86,7 @@ export function CourseGrid() {
                 category: c.category,
                 level: c.level === "ADVANCED" ? "London A/L" : "London O/L",
                 subjectCode: c.subjectCode || "MATH-101",
-                thumbnail:
-                  c.thumbnail ||
-                  "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
+                thumbnail: c.thumbnail || null,
                 price: c.price,
                 rating: 5.0,
                 reviewCount: c.enrollments?.length || 0,
@@ -448,14 +446,21 @@ export function CourseGrid() {
                       <Link
                         href={`/classes/${course.slug}`}
                         prefetch={true}
-                        className="block relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer group/img"
+                        className="block relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-[#0c2461] to-[#1e3799] cursor-pointer group/img"
                       >
-                        <img
-                          src={course.thumbnail}
-                          alt={course.title}
-                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+                        {course.thumbnail ? (
+                          <img
+                            src={course.thumbnail}
+                            alt={course.title}
+                            className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center group-hover/img:scale-105 transition-transform duration-300">
+                            <BookOpen className="w-10 h-10 text-white/30 mb-1.5" />
+                            <span className="text-white/70 font-semibold text-xs uppercase tracking-wider">{course.category}</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
 
                         <div className="absolute top-3 left-3 flex items-center gap-1.5">
                           <Badge

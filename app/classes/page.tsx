@@ -411,34 +411,39 @@ export default function CoursesPage() {
                         </div>
                       </div>
 
-                      <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                      <div className="px-5 pb-5 pt-3 border-t border-slate-100 space-y-3">
                         {isLoggedIn ? (
                           <>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
-                                <Coins className="w-4 h-4" />
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                                  <Coins className="w-4 h-4" />
+                                </div>
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-2xl font-black text-slate-900">
+                                    {course.price}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    Tokens
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black text-slate-900">
-                                  {course.price}
-                                </span>
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                  Tokens
-                                </span>
-                              </div>
+                              <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                                Instant Access
+                              </span>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="grid grid-cols-2 gap-2">
                               <button
                                 onClick={() => {
                                   setSelectedPurchaseCourse(course);
                                   setShowPurchaseModal(true);
                                 }}
-                                className="h-9 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                                className="h-9 px-3 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                 title="Enroll in individual class using tokens and unlock all study materials"
                               >
                                 <Lock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                                <span>Enroll ({course.price} Tokens)</span>
+                                <span>Enroll</span>
                               </button>
 
                               <button
@@ -447,7 +452,7 @@ export default function CoursesPage() {
                                   setSelectedTrialTutorId(course.instructor?.id);
                                   setShowTrialModal(true);
                                 }}
-                                className="h-9 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                                className="h-9 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                 title="Book a 30-min free online trial session"
                               >
                                 <CalendarCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />

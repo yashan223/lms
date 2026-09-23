@@ -492,11 +492,8 @@ function TutorProfileContent() {
                     {headline || "Lead Tutor in London A/L Pure Mathematics"}
                   </p>
                   <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-500 flex-wrap">
-                    <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                      ${hourlyRate || "65"}/hr
-                    </span>
-                    <span className="bg-slate-100 px-1.5 py-0.5 rounded font-medium">
-                      {experienceYears || "10+ Years"}
+                    <span className="bg-slate-100 px-2 py-0.5 rounded font-medium">
+                      {experienceYears || "10+ Years Experience"}
                     </span>
                   </div>
                 </div>
@@ -712,31 +709,6 @@ function TutorProfileContent() {
                       placeholder="e.g. 12+ Years Lead Tutor"
                       className="rounded-xl h-9 text-xs"
                     />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="font-bold text-xs text-slate-700 block">
-                        Hourly Rate ($ / hr)
-                      </label>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                        <Lock className="w-2.5 h-2.5" />
-                        Set by Admin
-                      </span>
-                    </div>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                      <Input
-                        value={hourlyRate}
-                        disabled
-                        readOnly
-                        placeholder="65"
-                        className="rounded-xl h-9 text-xs pl-7 bg-slate-100/90 text-slate-700 font-semibold cursor-not-allowed border-dashed"
-                      />
-                    </div>
-                    <p className="text-[10px] text-slate-400">
-                      Tutor hourly rates are managed by academy administration.
-                    </p>
                   </div>
 
                   <div className="space-y-1.5">

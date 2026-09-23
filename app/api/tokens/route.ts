@@ -36,11 +36,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const academicLevel = (auth.user as any).academicLevel === "OL" || auth.user.headline?.includes("O/L") || auth.user.headline?.includes("IGCSE") ? "OL" : "AL";
+
     return NextResponse.json({
       success: true,
       balance: wallet.balance,
       transactions: wallet.transactions,
       packages: await getBundles(),
+      academicLevel,
     });
   } catch (error: any) {
     console.error("Token API GET error:", error);

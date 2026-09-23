@@ -67,7 +67,15 @@ export async function POST(
       });
     }
 
-    const coursePrice = Number(course.price) || 0;
+    const isOL =
+      (user as any).academicLevel === "OL" ||
+      user.headline?.includes("O/L") ||
+      user.headline?.includes("IGCSE");
+
+    const coursePrice =
+      isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) > 0
+        ? Number((course as any).olPrice)
+        : Number(course.price) || 0;
 
     // Check student token wallet
     let wallet = await prisma.tokenWallet.findUnique({

@@ -99,8 +99,15 @@ export default function CourseDetailPage({
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+
+  const isOL = studentLevel === "OL";
+  const effectivePrice =
+    isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0
+      ? Number(course.olPrice)
+      : Number(course?.price) || 10;
 
   const [isStaff, setIsStaff] = useState(false);
   useEffect(() => {
@@ -153,6 +160,10 @@ export default function CourseDetailPage({
 
           if (typeof data.isLoggedIn === "boolean") {
             setIsLoggedIn(data.isLoggedIn);
+          }
+
+          if (data.academicLevel) {
+            setStudentLevel(data.academicLevel);
           }
 
           if (typeof data.isEnrolled === "boolean") {
@@ -411,17 +422,25 @@ export default function CourseDetailPage({
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 text-slate-900 border border-slate-200 shadow-xl space-y-4">
                 {isLoggedIn ? (
                   <>
-                    <div className="flex items-baseline justify-between">
+                    <div className="flex items-baseline justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
                           <Coins className="w-5 h-5" />
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-black text-slate-900">{course?.price || 10}</span>
+                          <span className="text-3xl font-black text-slate-900">{effectivePrice}</span>
                           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tokens</span>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">Full Specification</span>
+                      {isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0 ? (
+                        <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                          London O/L Rate
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                          London A/L Rate
+                        </span>
+                      )}
                     </div>
 
                     {isEnrolled ? (
@@ -452,7 +471,7 @@ export default function CourseDetailPage({
                           className="w-full py-3.5 h-auto rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
                         >
                           <Lock className="w-4 h-4 text-amber-300" />
-                          <span>Enroll & Unlock All Materials ({course?.price || 10} Tokens)</span>
+                          <span>Enroll & Unlock All Materials ({effectivePrice} Tokens)</span>
                           <ArrowRight className="w-4 h-4" />
                         </Button>
                         <button
@@ -661,7 +680,7 @@ export default function CourseDetailPage({
                   className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 rounded-xl shadow-xs shrink-0 cursor-pointer gap-1.5"
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Enroll in Class ({course?.price || 10} Tokens)</span>
+                  <span>Enroll in Class ({effectivePrice} Tokens)</span>
                 </Button>
               </div>
             )}
@@ -823,7 +842,7 @@ export default function CourseDetailPage({
                             className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md cursor-pointer gap-2"
                           >
                             <Lock className="w-3.5 h-3.5 text-amber-300" />
-                            <span>Enroll in Class to Unlock ({course?.price || 10} Tokens)</span>
+                            <span>Enroll in Class to Unlock ({effectivePrice} Tokens)</span>
                           </Button>
                         </div>
                       )}

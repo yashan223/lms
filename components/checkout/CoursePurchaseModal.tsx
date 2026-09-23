@@ -29,6 +29,7 @@ interface CoursePurchaseModalProps {
     title: string;
     slug: string;
     price: number;
+    olPrice?: number | null;
     subjectCode?: string;
     level?: string;
     tutor?: {
@@ -57,12 +58,16 @@ export function CoursePurchaseModal({
 
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
   const [loadingWallet, setLoadingWallet] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const price = Number(course?.price) || 3;
+  const isOL = studentLevel === "OL";
+  const price = isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0
+    ? Number(course.olPrice)
+    : Number(course?.price) || 3;
 
   // Fetch student's real-time token wallet when modal opens
   useEffect(() => {
@@ -82,6 +87,9 @@ export function CoursePurchaseModal({
           const data = await res.json();
           setIsLoggedIn(true);
           setTokenBalance(Number(data.balance) || 0);
+          if (data.academicLevel) {
+            setStudentLevel(data.academicLevel);
+          }
         } else {
           setIsLoggedIn(true);
           setTokenBalance(0);
@@ -271,9 +279,15 @@ export function CoursePurchaseModal({
                   <span className="text-2xl font-black text-slate-900">{price}</span>
                   <span className="text-xs font-bold text-slate-500 uppercase">Tokens</span>
                 </div>
-                <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
-                  Lifetime Access
-                </div>
+                {isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0 ? (
+                  <div className="text-[10px] text-purple-700 font-extrabold uppercase tracking-wider bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 mt-0.5">
+                    London O/L Rate Applied
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
+                    Lifetime Access
+                  </div>
+                )}
               </div>
             </div>
 

@@ -96,9 +96,41 @@ export function PricingSection({
               Zero Hidden Constraints
             </span>
           </h2>
-          <p className="text-sm sm:text-base text-slate-600 mb-4 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-slate-600 mb-6 max-w-2xl mx-auto">
             Purchase token packs based on your study goals. <strong>1 Token = 1 Hour</strong> of learning credit. You decide how to spend your hours across 1-on-1 private tutoring, interactive individual classes, and past paper clinics.
           </p>
+
+          {/* Academic Track Switcher */}
+          <div className="inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner max-w-md mx-auto">
+            <button
+              type="button"
+              onClick={() => setStudentLevel("AL")}
+              className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                studentLevel === "AL"
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <span>🎓 London A/L (IAL)</span>
+              {studentLevel === "AL" && (
+                <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Selected</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStudentLevel("OL")}
+              className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                studentLevel === "OL"
+                  ? "bg-white text-purple-700 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <span>📘 London O/L (IGCSE)</span>
+              {studentLevel === "OL" && (
+                <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Tailored</span>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
@@ -176,6 +208,17 @@ export function PricingSection({
                         </span>
                         <span className="text-xs font-semibold text-slate-500">
                           / package
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                            studentLevel === "OL"
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}
+                        >
+                          {studentLevel === "OL" ? "📘 London O/L (IGCSE) Rate" : "🎓 London A/L (IAL) Rate"}
                         </span>
                       </div>
                     </div>

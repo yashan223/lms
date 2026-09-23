@@ -100,11 +100,21 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const isOL =
+        (user as any).academicLevel === "OL" ||
+        user.headline?.includes("O/L") ||
+        user.headline?.includes("IGCSE");
+
+      const effectiveCourseTokens =
+        isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) > 0
+          ? Number((course as any).olPrice)
+          : Number(course.price) || 10;
+
       // Convert course token price to LKR (1 Token = ~Rs. 1,200)
-      const courseLkrPrice = Math.max(1, (course.price || 10) * 1200);
+      const courseLkrPrice = Math.max(1, effectiveCourseTokens * 1200);
       amountCents = Math.round(courseLkrPrice * 100);
-      description = `PulseEDU Enrollment: ${course.title}`;
-      itemTitle = course.title;
+      description = `PulseEDU Enrollment: ${course.title}${isOL ? " (O/L Tier)" : ""}`;
+      itemTitle = `${course.title}${isOL ? " (O/L Tier)" : ""}`;
     } else {
       return NextResponse.json(
         { error: `Unsupported itemType: ${itemType}` },

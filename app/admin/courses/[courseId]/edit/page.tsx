@@ -125,6 +125,7 @@ type Course = {
   category?: string | null;
   subjectCode?: string | null;
   price: number;
+  olPrice?: number | null;
   level: string;
   status: string;
   featured?: boolean;
@@ -225,6 +226,7 @@ export function AdminCourseWorkspaceContent({
     subjectCode: "",
     category: CATEGORIES[0],
     price: "10",
+    olPrice: "",
     level: "ADVANCED",
     status: "PUBLISHED",
     tutorId: "",
@@ -344,6 +346,7 @@ export function AdminCourseWorkspaceContent({
         subjectCode: found.subjectCode || "",
         category: found.category || CATEGORIES[0],
         price: String(found.price ?? 10),
+        olPrice: found.olPrice !== null && found.olPrice !== undefined ? String(found.olPrice) : "",
         level: found.level || "ADVANCED",
         status: found.status || "PUBLISHED",
         tutorId: found.tutorId || "",
@@ -398,6 +401,7 @@ export function AdminCourseWorkspaceContent({
           subjectCode: detailsForm.subjectCode.trim() || undefined,
           category: detailsForm.category,
           price: detailsForm.price,
+          olPrice: detailsForm.olPrice.trim() || null,
           level: detailsForm.level,
           status: detailsForm.status,
           tutorId: detailsForm.tutorId || null,
@@ -423,6 +427,7 @@ export function AdminCourseWorkspaceContent({
         subjectCode: detailsForm.subjectCode.trim(),
         category: detailsForm.category,
         price: detailsForm.price,
+        olPrice: detailsForm.olPrice.trim() || null,
         level: detailsForm.level,
         status: detailsForm.status,
         tutorId: detailsForm.tutorId || null,
@@ -1202,10 +1207,11 @@ export function AdminCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Enrollment Price */}
+                {/* Enrollment Price - A/L */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Required Tuition Tokens <span className="text-red-500">*</span>
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>A/L Student Tokens <span className="text-red-500">*</span></span>
+                    <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded">London A/L</span>
                   </label>
                   <div className="relative">
                     <Coins className="w-4 h-4 text-amber-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1217,6 +1223,27 @@ export function AdminCourseWorkspaceContent({
                       value={detailsForm.price}
                       onChange={(e) => setDetailsForm({ ...detailsForm, price: e.target.value })}
                       className="pl-9 h-10 text-xs rounded-xl font-bold"
+                      placeholder="10"
+                    />
+                  </div>
+                </div>
+
+                {/* Enrollment Price - O/L */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>O/L Student Tokens</span>
+                    <span className="text-[10px] text-purple-600 font-bold bg-purple-50 px-1.5 py-0.2 rounded">London O/L (Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Coins className="w-4 h-4 text-purple-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={detailsForm.olPrice}
+                      onChange={(e) => setDetailsForm({ ...detailsForm, olPrice: e.target.value })}
+                      className="pl-9 h-10 text-xs rounded-xl font-bold"
+                      placeholder="Falls back to A/L rate"
                     />
                   </div>
                 </div>

@@ -931,6 +931,8 @@ export default function AdminDashboardPage() {
       tokens: newHours,
       price: 99,
       lkrPrice: 29700,
+      olPrice: 79,
+      olLkrPrice: 23700,
       popular: false,
       badge: "Extended",
       description: `${newHours} hours of comprehensive tutoring tokens for extensive revision and dedicated exam prep.`,
@@ -3759,19 +3761,48 @@ export default function AdminDashboardPage() {
                             {plan.description}
                           </p>
 
-                          <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-slate-100">
-                            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                              {formatStudentPrice(price, null)}
-                            </span>
-                            <span className="text-xs font-semibold text-emerald-700">
-                              {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice)}
-                            </span>
-                            <span className="text-xs font-semibold text-slate-500">
-                              / package
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-400 ml-auto bg-slate-100 px-2 py-0.5 rounded-md">
-                              ${(price / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
-                            </span>
+                          <div className="space-y-2 mb-5 pb-5 border-b border-slate-100">
+                            {/* A/L Tier */}
+                            <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/60">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+                                  London A/L Rate
+                                </span>
+                                <span className="text-[10px] font-mono font-bold text-slate-500">
+                                  ${(price / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
+                                </span>
+                              </div>
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                  {formatStudentPrice(price, null, plan.lkrPrice, "AL")}
+                                </span>
+                                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "AL")}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* O/L Tier */}
+                            <div className="p-2.5 rounded-xl bg-purple-50/60 border border-purple-200/60">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-purple-800 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-purple-600 inline-block" />
+                                  London O/L Rate
+                                </span>
+                                <span className="text-[10px] font-mono font-bold text-slate-500">
+                                  ${((plan.olPrice && plan.olPrice > 0 ? plan.olPrice : price) / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
+                                </span>
+                              </div>
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="text-xl sm:text-2xl font-black text-purple-950 tracking-tight">
+                                  {formatStudentPrice(price, null, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
+                                </span>
+                                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
 
                           <div className="space-y-2.5 mb-6">
@@ -5708,50 +5739,133 @@ export default function AdminDashboardPage() {
                           />
                         </div>
 
-                        <div>
-                          <label className="font-bold text-slate-700 text-xs block mb-1">Price (USD) <span className="text-red-500">*</span></label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                            <Input
-                              required
-                              type="number"
-                              min="1"
-                              step="0.01"
-                              value={curBundle.price}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                const updated = [...editingBundles];
-                                updated[selectedBundleIndex] = { ...curBundle, price: val };
-                                setEditingBundles(updated);
-                              }}
-                              className="pl-7 h-9 text-xs rounded-xl font-mono"
-                              placeholder="58"
-                            />
+                        {/* A/L Pricing Section */}
+                        <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3 sm:col-span-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
+                              <h5 className="text-xs font-black text-blue-950 uppercase tracking-wider">
+                                London A/L (IAL) Rates
+                              </h5>
+                            </div>
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-full">
+                              Standard Candidate Tier
+                            </span>
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                            ≈ ${curBundle.hours > 0 ? (curBundle.price / curBundle.hours).toFixed(2) : "0.00"}/hr
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-700 text-xs block mb-1">
+                                A/L Price (USD) <span className="text-red-500">*</span>
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                                <Input
+                                  required
+                                  type="number"
+                                  min="1"
+                                  step="0.01"
+                                  value={curBundle.price}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    const updated = [...editingBundles];
+                                    updated[selectedBundleIndex] = { ...curBundle, price: val };
+                                    setEditingBundles(updated);
+                                  }}
+                                  className="pl-7 h-9 text-xs rounded-xl font-mono bg-white"
+                                  placeholder="58"
+                                />
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                                ≈ ${curBundle.hours > 0 ? (curBundle.price / curBundle.hours).toFixed(2) : "0.00"}/hr
+                              </div>
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-700 text-xs block mb-1">
+                                A/L Price (LKR) <span className="text-red-500">*</span>
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">LKR</span>
+                                <Input
+                                  required
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={curBundle.lkrPrice}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    const updated = [...editingBundles];
+                                    updated[selectedBundleIndex] = { ...curBundle, lkrPrice: val };
+                                    setEditingBundles(updated);
+                                  }}
+                                  className="pl-12 h-9 text-xs rounded-xl font-mono bg-white"
+                                  placeholder="17400"
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
 
-                        <div>
-                          <label className="font-bold text-slate-700 text-xs block mb-1">Price (LKR) <span className="text-red-500">*</span></label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">LKR</span>
-                            <Input
-                              required
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={curBundle.lkrPrice}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                const updated = [...editingBundles];
-                                updated[selectedBundleIndex] = { ...curBundle, lkrPrice: val };
-                                setEditingBundles(updated);
-                              }}
-                              className="pl-12 h-9 text-xs rounded-xl font-mono"
-                              placeholder="17400"
-                            />
+                        {/* O/L Pricing Section */}
+                        <div className="p-3.5 rounded-2xl bg-purple-50/50 border border-purple-200/80 space-y-3 sm:col-span-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-purple-600 inline-block" />
+                              <h5 className="text-xs font-black text-purple-950 uppercase tracking-wider">
+                                London O/L (IGCSE) Rates
+                              </h5>
+                            </div>
+                            <span className="text-[10px] font-bold text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded-full">
+                              Tailored O/L Student Tier
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-700 text-xs block mb-1">
+                                O/L Price (USD) <span className="text-slate-400 font-normal">(optional, falls back to A/L)</span>
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={curBundle.olPrice ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
+                                    const updated = [...editingBundles];
+                                    updated[selectedBundleIndex] = { ...curBundle, olPrice: val };
+                                    setEditingBundles(updated);
+                                  }}
+                                  className="pl-7 h-9 text-xs rounded-xl font-mono bg-white"
+                                  placeholder="44"
+                                />
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                                ≈ ${(curBundle.olPrice ? curBundle.olPrice / curBundle.hours : curBundle.price / curBundle.hours).toFixed(2)}/hr
+                              </div>
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-700 text-xs block mb-1">
+                                O/L Price (LKR) <span className="text-slate-400 font-normal">(optional, falls back to A/L)</span>
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">LKR</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={curBundle.olLkrPrice ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                    const updated = [...editingBundles];
+                                    updated[selectedBundleIndex] = { ...curBundle, olLkrPrice: val };
+                                    setEditingBundles(updated);
+                                  }}
+                                  className="pl-12 h-9 text-xs rounded-xl font-mono bg-white"
+                                  placeholder="13200"
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
 

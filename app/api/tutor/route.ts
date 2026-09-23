@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     if (action === "create_course" || action === "update_course") {
-      const { courseId, title, slug, subtitle, description, category, subjectCode, price, level, thumbnail, status } = body;
+      const { courseId, title, slug, subtitle, description, category, subjectCode, price, olPrice, level, thumbnail, status } = body;
       if (!title?.trim() || !description?.trim() || !category?.trim()) {
         return NextResponse.json(
           { error: "Course title, description, and category are required." },
@@ -198,6 +198,7 @@ export async function POST(request: NextRequest) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
       const tokenPrice = Number(price);
+      const olTokenPrice = olPrice !== undefined && olPrice !== null && olPrice !== "" && !isNaN(Number(olPrice)) ? Number(olPrice) : null;
 
       if (action === "update_course") {
         const existing = await prisma.course.findFirst({
@@ -218,6 +219,7 @@ export async function POST(request: NextRequest) {
             subjectCode: subjectCode?.trim() || null,
             thumbnail: thumbnail !== undefined ? (thumbnail?.trim() || null) : existing.thumbnail,
             price: Number.isFinite(tokenPrice) ? tokenPrice : existing.price,
+            olPrice: olPrice !== undefined ? olTokenPrice : (existing as any).olPrice,
             level: (level as CourseLevel) || existing.level,
             status: status ? (status as CourseStatus) : existing.status,
           },
@@ -241,6 +243,7 @@ export async function POST(request: NextRequest) {
           subjectCode: subjectCode?.trim() || null,
           thumbnail: thumbnail?.trim() || null,
           price: Number.isFinite(tokenPrice) ? tokenPrice : 0,
+          olPrice: olTokenPrice,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: CourseStatus.PENDING_REVIEW,
           tutorId: tutor.id,

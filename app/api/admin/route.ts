@@ -596,7 +596,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create_course") {
-      const { title, slug, subtitle, description, category, subjectCode, price, tokens, tutorId, instructorId, level, status, thumbnail, featured } = body;
+      const { title, slug, subtitle, description, category, subjectCode, price, olPrice, tokens, tutorId, instructorId, level, status, thumbnail, featured } = body;
 
       let finalTutorId = tutorId || instructorId;
       if (!finalTutorId) {
@@ -606,6 +606,7 @@ export async function POST(request: NextRequest) {
 
       const generatedSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + `-${Date.now()}`;
       const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 10.0);
+      const olTokenValue = olPrice !== undefined && olPrice !== null && olPrice !== "" && !isNaN(parseFloat(olPrice)) ? parseFloat(olPrice) : null;
 
       const newCourse = await prisma.course.create({
         data: {
@@ -616,6 +617,7 @@ export async function POST(request: NextRequest) {
           category: category || "School of Mathematics & Computing",
           subjectCode: subjectCode || "MATH-101",
           price: isNaN(tokenValue) ? 10.0 : tokenValue,
+          olPrice: olTokenValue,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,
           tutorId: finalTutorId,
@@ -642,8 +644,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_course") {
-      const { courseId, title, subtitle, description, category, subjectCode, price, tokens, level, status, tutorId, instructorId, thumbnail, featured } = body;
+      const { courseId, title, subtitle, description, category, subjectCode, price, olPrice, tokens, level, status, tutorId, instructorId, thumbnail, featured } = body;
       const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 10.0);
+      const olTokenValue = olPrice !== undefined ? (olPrice !== null && olPrice !== "" && !isNaN(parseFloat(olPrice)) ? parseFloat(olPrice) : null) : undefined;
       const updatedCourse = await prisma.course.update({
         where: { id: courseId },
         data: {
@@ -655,6 +658,7 @@ export async function POST(request: NextRequest) {
           thumbnail: thumbnail !== undefined ? thumbnail : undefined,
           featured: featured !== undefined ? Boolean(featured) : undefined,
           price: isNaN(tokenValue) ? 10.0 : tokenValue,
+          olPrice: olTokenValue,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,
           tutorId: tutorId || instructorId || undefined,
@@ -1185,6 +1189,12 @@ export async function POST(request: NextRequest) {
         const tokens = parseInt(b.tokens, 10) || hours;
         const price = parseFloat(b.price) || 0;
         const lkrPrice = parseFloat(b.lkrPrice) || 0;
+        const olPrice = b.olPrice !== undefined && b.olPrice !== null && b.olPrice !== "" && !isNaN(parseFloat(b.olPrice))
+          ? parseFloat(b.olPrice)
+          : undefined;
+        const olLkrPrice = b.olLkrPrice !== undefined && b.olLkrPrice !== null && b.olLkrPrice !== "" && !isNaN(parseFloat(b.olLkrPrice))
+          ? parseFloat(b.olLkrPrice)
+          : 0;
         const popular = Boolean(b.popular);
         const badge = String(b.badge || (popular ? "Most Popular" : "Standard")).trim();
         const description = String(b.description || "").trim();
@@ -1201,6 +1211,8 @@ export async function POST(request: NextRequest) {
           tokens,
           price,
           lkrPrice,
+          olPrice,
+          olLkrPrice,
           popular,
           badge,
           description,

@@ -70,11 +70,13 @@ export async function GET(
 
     let isEnrolled = false;
     let isLoggedIn = false;
+    let academicLevel = "AL";
     try {
       const auth = await getAuthenticatedUser(request);
       if (auth.user) {
         isLoggedIn = true;
         isEnrolled = course.enrollments.some((e) => e.userId === auth.user.id);
+        academicLevel = (auth.user as any).academicLevel === "OL" || auth.user.headline?.includes("O/L") || auth.user.headline?.includes("IGCSE") ? "OL" : "AL";
       }
     } catch {
       // Unauthenticated visitor
@@ -85,6 +87,7 @@ export async function GET(
         course,
         isEnrolled,
         isLoggedIn,
+        academicLevel,
       },
       {
         headers: {

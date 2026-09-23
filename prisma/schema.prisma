@@ -156,6 +156,7 @@ model Course {
   description   String
   thumbnail     String?
   price         Float          @default(0.0)
+  olPrice       Float?
   level         CourseLevel    @default(ADVANCED)
   category      String
   subjectCode   String?

@@ -2169,11 +2169,20 @@ function DashboardContent() {
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Applied Tier:</span>
-                <span className="text-xs font-extrabold text-blue-700 bg-blue-100/60 px-2 py-0.5 rounded-md border border-blue-200">
-                  {user?.academicLevel === "OL" ? "🎓 London O/L (IGCSE) Student Rate" : "🎓 London A/L (IAL) Student Rate"}
+                <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md border ${
+                  user?.academicLevel === "OL"
+                    ? "text-purple-700 bg-purple-100/70 border-purple-200"
+                    : "text-blue-700 bg-blue-100/70 border-blue-200"
+                }`}>
+                  {user?.academicLevel === "OL" ? "📘 London O/L (IGCSE) Student Rate" : "🎓 London A/L (IAL) Student Rate"}
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400">Personalized Rate</span>
+              <Link
+                href="/dashboard/profile"
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold underline"
+              >
+                Change Track
+              </Link>
             </div>
 
             <div className="space-y-3">

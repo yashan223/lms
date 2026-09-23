@@ -43,6 +43,7 @@ export default function CoursesPage() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPurchaseCourse, setSelectedPurchaseCourse] = useState<any | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
 
   const categories = [
     "All",
@@ -65,6 +66,8 @@ export default function CoursesPage() {
         const dashData = await dashRes.json();
         if (dashData.user) {
           setIsLoggedIn(true);
+          const lvl = dashData.user.academicLevel === "OL" || dashData.user.headline?.includes("O/L") || dashData.user.headline?.includes("IGCSE") ? "OL" : "AL";
+          setStudentLevel(lvl);
         }
       }
       if (res.ok) {
@@ -89,6 +92,7 @@ export default function CoursesPage() {
               subjectCode: c.subjectCode || "MATH-101",
               thumbnail: c.thumbnail || null,
               price: c.price,
+              olPrice: c.olPrice !== null && c.olPrice !== undefined ? Number(c.olPrice) : null,
               rating: 5.0,
               reviewCount: c.enrollments?.length || 0,
               studentsEnrolled: c.enrollments?.length || 0,
@@ -414,24 +418,36 @@ export default function CoursesPage() {
                       <div className="px-5 pb-5 pt-3 border-t border-slate-100 space-y-3">
                         {isLoggedIn ? (
                           <>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
-                                  <Coins className="w-4 h-4" />
+                            {(() => {
+                              const isOL = studentLevel === "OL";
+                              const effectivePrice = isOL && course.olPrice !== null && course.olPrice !== undefined && Number(course.olPrice) > 0 ? Number(course.olPrice) : course.price;
+                              return (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                                      <Coins className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex items-baseline gap-1">
+                                      <span className="text-2xl font-black text-slate-900">
+                                        {effectivePrice}
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        Tokens
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {isOL && course.olPrice !== null && course.olPrice !== undefined && Number(course.olPrice) > 0 ? (
+                                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                                      O/L Rate
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                                      Instant Access
+                                    </span>
+                                  )}
                                 </div>
-                                <div className="flex items-baseline gap-1">
-                                  <span className="text-2xl font-black text-slate-900">
-                                    {course.price}
-                                  </span>
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                    Tokens
-                                  </span>
-                                </div>
-                              </div>
-                              <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
-                                Instant Access
-                              </span>
-                            </div>
+                              );
+                            })()}
 
                             <div className="grid grid-cols-2 gap-2">
                               <button

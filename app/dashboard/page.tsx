@@ -14,6 +14,7 @@ import {
   Home,
   FileText,
   Users,
+  User,
   Calendar,
   Plus,
   ArrowRight,
@@ -978,14 +979,31 @@ function DashboardContent() {
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
-            <div className="flex items-center gap-2 pl-1">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wide hidden md:block">
-                {currentProfile.name}
-              </span>
-              <div className="w-8 h-8 rounded-full bg-[#0c2461] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                {currentProfile.name.charAt(0)}
+            <Link
+              href="/dashboard/profile"
+              title="View & Edit Profile"
+              className="flex items-center gap-2 pl-1 group p-1 -m-1 rounded-xl hover:bg-slate-100 transition-colors"
+            >
+              <div className="text-right hidden md:block">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wide group-hover:text-blue-700 transition-colors block leading-tight">
+                  {currentProfile.name}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                  Profile & Settings
+                </span>
               </div>
-            </div>
+              <div className="w-8 h-8 rounded-full bg-[#0c2461] text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden ring-2 ring-transparent group-hover:ring-blue-500 transition-all shrink-0">
+                {currentProfile.avatar ? (
+                  <img
+                    src={currentProfile.avatar}
+                    alt={currentProfile.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  currentProfile.name.charAt(0)
+                )}
+              </div>
+            </Link>
 
             <button
               onClick={handleLogout}
@@ -1142,6 +1160,11 @@ function DashboardContent() {
                   <Link href="/" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
                     <Home className="w-3.5 h-3.5 text-slate-400" />
                     <span>Site home</span>
+                  </Link>
+
+                  <Link href="/dashboard/profile" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
+                    <User className="w-3.5 h-3.5 text-slate-400" />
+                    <span>My Profile & Settings</span>
                   </Link>
 
                   <div>

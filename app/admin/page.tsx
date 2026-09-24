@@ -43,6 +43,7 @@ import {
   LogOut,
   UserCheck,
   KeyRound,
+  Play,
   PlayCircle,
   FolderPlus,
   Phone,
@@ -1426,6 +1427,26 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
+
+  const handleSyncMeeting = async (eventId: string) => {
+    try {
+      setSyncingEventId(eventId);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      });
+      if (res.ok) {
+        await fetchAdminData();
+      }
+    } catch (err) {
+      console.error("Error syncing meeting:", err);
+    } finally {
+      setSyncingEventId(null);
+    }
+  };
+
   const handleDeleteLiveClass = (event: any) => {
     setConfirmModalData({
       isOpen: true,
@@ -2480,6 +2501,19 @@ export default function AdminDashboardPage() {
                                     {formatSessionDuration(ev.startedAt, ev.endedAt)}
                                   </span>
                                 </div>
+
+                                {ev.actualStartTime && ev.actualEndTime && (
+                                  <>
+                                    <span className="text-slate-200 hidden sm:inline">•</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meet Verified:</span>
+                                      <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                        {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -2513,13 +2547,39 @@ export default function AdminDashboardPage() {
                                 </Button>
                               </>
                             ) : (
-                              <button
-                                onClick={() => handleDeleteLiveClass(ev)}
-                                className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                title="Cancel / Delete Class"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <div className="flex items-center gap-2">
+                                {ev.recordingUrl && (
+                                  <a
+                                    href={ev.recordingUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                                  >
+                                    <Play className="w-3.5 h-3.5 fill-current" />
+                                    <span>Recording</span>
+                                  </a>
+                                )}
+                                {isCompleted && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSyncMeeting(ev.id)}
+                                    disabled={syncingEventId === ev.id}
+                                    className="text-xs font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl h-8 flex items-center gap-1"
+                                    title="Fetch verified times and Google Drive recording"
+                                  >
+                                    <RefreshCw className={`w-3.5 h-3.5 ${syncingEventId === ev.id ? "animate-spin text-blue-600" : "text-slate-500"}`} />
+                                    <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
+                                  </Button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteLiveClass(ev)}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                  title="Cancel / Delete Class"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>

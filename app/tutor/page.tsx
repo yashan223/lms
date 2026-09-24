@@ -40,6 +40,7 @@ import {
   Tag,
   MessageSquareLock,
   Radio,
+  Play,
   PlayCircle,
   UserCheck,
   Mail,
@@ -151,6 +152,13 @@ interface ScheduledClassEvent {
   type: string;
   status?: "SCHEDULED" | "LIVE" | "COMPLETED" | "CANCELLED" | string;
   meetingLink?: string | null;
+  meetingSpaceId?: string | null;
+  conferenceRecordId?: string | null;
+  recordingUrl?: string | null;
+  recordingStatus?: string | null;
+  actualStartTime?: string | Date | null;
+  actualEndTime?: string | Date | null;
+  attendanceCount?: number | null;
   startedAt?: string | Date | null;
   endedAt?: string | Date | null;
   courseId?: string | null;
@@ -928,6 +936,26 @@ function TutorDashboardContent() {
       console.error("Failed to end class:", error);
     } finally {
       setEndingClassId(null);
+    }
+  };
+
+  const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
+
+  const handleSyncMeeting = async (eventId: string) => {
+    try {
+      setSyncingEventId(eventId);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      });
+      if (res.ok) {
+        await fetchTutorData();
+      }
+    } catch (error) {
+      console.error("Failed to sync meeting:", error);
+    } finally {
+      setSyncingEventId(null);
     }
   };
 
@@ -2054,6 +2082,13 @@ function TutorDashboardContent() {
                                     {ev.meetingLink}
                                   </a>
                                 )}
+                                {ev.actualStartTime && ev.actualEndTime && (
+                                  <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-emerald-600" />
+                                    Google Meet: {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
+                                  </span>
+                                )}
                               </div>
                             </div>
 
@@ -2077,13 +2112,35 @@ function TutorDashboardContent() {
                                   </button>
                                 </>
                               ) : isCompleted ? (
-                                <button
-                                  onClick={() => handleDeleteClass(ev.id)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                                  title="Delete Ended Session"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="flex items-center gap-1.5">
+                                  {ev.recordingUrl && (
+                                    <a
+                                      href={ev.recordingUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
+                                    >
+                                      <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                                      <span>Watch Recording</span>
+                                    </a>
+                                  )}
+                                  <button
+                                    onClick={() => handleSyncMeeting(ev.id)}
+                                    disabled={syncingEventId === ev.id}
+                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                    title="Sync verified timing & recording from Google Meet"
+                                  >
+                                    <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
+                                    <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteClass(ev.id)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                    title="Delete Ended Session"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               ) : isPendingApproval ? (
                                 <>
                                   <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 text-[11px] font-bold border border-blue-200 flex items-center gap-1">
@@ -2277,18 +2334,40 @@ function TutorDashboardContent() {
                               </div>
                             </div>
 
-                            {ev.meetingLink && (
-                              <a
-                                href={getSafeMeetingLink(ev.meetingLink)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+                            <div className="flex items-center gap-1.5 self-start sm:self-auto shrink-0 flex-wrap">
+                              {ev.recordingUrl && (
+                                <a
+                                  href={ev.recordingUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs"
+                                >
+                                  <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                                  <span>Watch Recording</span>
+                                </a>
+                              )}
+                              <button
+                                onClick={() => handleSyncMeeting(ev.id)}
+                                disabled={syncingEventId === ev.id}
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                title="Sync timing & recording from Google Meet"
                               >
-                                <Video className="w-3 h-3 text-slate-500" />
-                                <span className="truncate max-w-[140px]">{ev.meetingLink.replace(/^https?:\/\//, "")}</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
-                              </a>
-                            )}
+                                <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
+                                <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
+                              </button>
+                              {ev.meetingLink && (
+                                <a
+                                  href={getSafeMeetingLink(ev.meetingLink)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5"
+                                >
+                                  <Video className="w-3 h-3 text-slate-500" />
+                                  <span className="truncate max-w-[140px]">{ev.meetingLink.replace(/^https?:\/\//, "")}</span>
+                                  <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
+                                </a>
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-600">
@@ -2330,6 +2409,19 @@ function TutorDashboardContent() {
                                 {formatSessionDuration(ev.startedAt, ev.endedAt)}
                               </span>
                             </div>
+
+                            {ev.actualStartTime && ev.actualEndTime && (
+                              <>
+                                <span className="text-slate-200 hidden sm:inline">•</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meet Verified:</span>
+                                  <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                    {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
+                                  </span>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}

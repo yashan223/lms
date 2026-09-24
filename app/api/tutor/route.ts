@@ -4,6 +4,7 @@ import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
+import { createGoogleMeetingSpace, syncClassMeetingSession } from "@/lib/google-meet";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -488,7 +489,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      let meetLink = getSafeMeetingLink(meetingLink);
+      let meetLink = meetingLink?.trim();
+      let spaceName: string | null = null;
+      if (!meetLink || meetLink === "https://meet.google.com/new" || meetLink === "meet.google.com/new") {
+        const space = await createGoogleMeetingSpace({ title: title.trim() });
+        meetLink = space.meetingUri;
+        spaceName = space.spaceName;
+      } else {
+        meetLink = getSafeMeetingLink(meetLink);
+      }
 
       const fullDescription = [
         description?.trim() || "Live curriculum individual class with Tutor.",
@@ -502,6 +511,7 @@ export async function POST(request: NextRequest) {
           title: title.trim(),
           description: fullDescription,
           meetingLink: meetLink,
+          meetingSpaceId: spaceName,
           dueDate: new Date(scheduledDate),
           status: EventStatus.SCHEDULED,
           approvalStatus: "APPROVED",
@@ -595,26 +605,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "end_class") {
-      const { eventId } = body;
+      const { eventId, recordingUrl, manualStartTime, manualEndTime } = body;
       if (!eventId) {
         return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
       }
 
-      const updated = await prisma.event.update({
-        where: { id: eventId },
-        data: {
-          status: "COMPLETED",
-          endedAt: new Date(),
-        },
-        include: { course: true, user: true },
+      const syncResult = await syncClassMeetingSession(eventId, {
+        manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
+        manualEndTime: manualEndTime ? new Date(manualEndTime) : new Date(),
+        manualRecordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
       });
-
-      broadcastLMSEvent("EVENTS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        message: "Class session ended successfully.",
-        event: updated,
+        message: syncResult.message || "Class session ended successfully.",
+        event: syncResult.event,
       });
     }
 

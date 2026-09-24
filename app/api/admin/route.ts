@@ -18,6 +18,7 @@ import {
   resetDefaultSubjects as resetDefaultSchools,
 } from "@/lib/subjects";
 import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
+import { createGoogleMeetingSpace, syncClassMeetingSession } from "@/lib/google-meet";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -797,20 +798,31 @@ export async function POST(request: NextRequest) {
 
     if (action === "schedule_class" || action === "create_class") {
       const { title, description, dueDate, courseId, meetingLink } = body;
+      let meetLink = meetingLink?.trim();
+      let spaceName: string | null = null;
+      if (!meetLink || meetLink === "https://meet.google.com/new" || meetLink === "meet.google.com/new") {
+        const space = await createGoogleMeetingSpace({ title: title || "Scheduled Live Class" });
+        meetLink = space.meetingUri;
+        spaceName = space.spaceName;
+      } else {
+        meetLink = getSafeMeetingLink(meetLink);
+      }
+
       const newEvent = await prisma.event.create({
         data: {
           title: title || "Scheduled Live Class",
           description: description || null,
           type: "LIVE_SEMINAR",
           status: "SCHEDULED",
-          meetingLink: meetingLink || "https://meet.google.com/new",
+          meetingLink: meetLink,
+          meetingSpaceId: spaceName,
           dueDate: new Date(dueDate || Date.now() + 24 * 60 * 60 * 1000),
           courseId: courseId || null,
           approvalStatus: "APPROVED",
         },
       });
       broadcastLMSEvent("EVENTS_CHANGED");
-      return NextResponse.json({ success: true, event: newEvent });
+      return NextResponse.json({ success: true, event: newEvent, meetingLink: meetLink });
     }
 
     if (action === "create_mock_paper" || action === "create_assessment") {
@@ -904,27 +916,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "end_class") {
-      const { eventId } = body;
-      const updated = await prisma.event.update({
-        where: { id: eventId },
-        data: {
-          status: "COMPLETED",
-          endedAt: new Date(),
-        },
-        include: {
-          course: {
-            include: { tutor: true },
-          },
-          user: true,
-        },
-      });
+      const { eventId, recordingUrl, manualStartTime, manualEndTime } = body;
+      if (!eventId) {
+        return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
+      }
 
-      broadcastLMSEvent("EVENTS_CHANGED");
+      const syncResult = await syncClassMeetingSession(eventId, {
+        manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
+        manualEndTime: manualEndTime ? new Date(manualEndTime) : new Date(),
+        manualRecordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
+      });
 
       return NextResponse.json({
         success: true,
-        message: "Live class session marked as completed.",
-        event: updated,
+        message: syncResult.message || "Live class session marked as completed.",
+        event: syncResult.event,
       });
     }
 

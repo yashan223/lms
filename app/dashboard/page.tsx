@@ -51,6 +51,7 @@ import {
   ShoppingBag,
   CalendarClock,
   Sparkles,
+  Play,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -1424,6 +1425,12 @@ function DashboardContent() {
                                   {ev.course.title}
                                 </span>
                               )}
+                              {ev.actualStartTime && ev.actualEndTime && (
+                                <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-emerald-600" />
+                                  Verified: {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1440,9 +1447,26 @@ function DashboardContent() {
                               <span>Join Live Meet</span>
                             </a>
                           ) : (ev.status === "COMPLETED" || ev.endedAt) ? (
-                            <span className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
-                              <span>Ended</span>
-                            </span>
+                            ev.recordingUrl ? (
+                              <a
+                                href={ev.recordingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                                <span>Watch Recording</span>
+                              </a>
+                            ) : ev.recordingStatus === "PROCESSING" ? (
+                              <span className="h-8.5 px-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
+                                <Clock className="w-3.5 h-3.5 text-purple-600 animate-spin shrink-0" />
+                                <span>Recording Processing...</span>
+                              </span>
+                            ) : (
+                              <span className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
+                                <span>Ended</span>
+                              </span>
+                            )
                           ) : userRole === "STUDENT" ? (
                             <span
                               className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap cursor-default select-none"
@@ -1463,14 +1487,16 @@ function DashboardContent() {
                             </a>
                           ) : null}
 
-                          <button
-                            onClick={() => openStudentReschedule(ev)}
-                            className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
-                            title="Reschedule Session"
-                          >
-                            <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            <span>Reschedule</span>
-                          </button>
+                          {ev.status !== "COMPLETED" && !ev.endedAt && (
+                            <button
+                              onClick={() => openStudentReschedule(ev)}
+                              className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                              title="Reschedule Session"
+                            >
+                              <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                              <span>Reschedule</span>
+                            </button>
+                          )}
 
                           <a
                             href={buildGoogleCalendarUrl({

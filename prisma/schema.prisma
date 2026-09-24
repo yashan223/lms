@@ -243,23 +243,30 @@ model UserProgress {
 }
 
 model Event {
-  id              String      @id @default(cuid())
-  title           String
-  description     String?
-  type            EventType   @default(LIVE_SEMINAR)
-  status          EventStatus @default(SCHEDULED)
-  meetingLink     String?
-  startedAt       DateTime?
-  endedAt         DateTime?
-  dueDate         DateTime
-  courseId        String?
-  course          Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  userId          String?
-  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  requestedBy     String?
-  approvalStatus  String?     @default("APPROVED")
-  rejectionReason String?
-  createdAt       DateTime    @default(now())
+  id                 String      @id @default(cuid())
+  title              String
+  description        String?
+  type               EventType   @default(LIVE_SEMINAR)
+  status             EventStatus @default(SCHEDULED)
+  meetingLink        String?
+  meetingSpaceId     String?     // Google Meet space resource e.g. "spaces/ABC123"
+  conferenceRecordId String?     // Google Meet conference record e.g. "conferenceRecords/XYZ456"
+  recordingUrl       String?     // Google Drive video recording URL
+  recordingStatus    String?     // "AVAILABLE", "PROCESSING", "NONE"
+  actualStartTime    DateTime?   // Verified start time reported by Google Meet API
+  actualEndTime      DateTime?   // Verified end time reported by Google Meet API
+  attendanceCount    Int?        @default(0) // Participant count from Google Meet
+  startedAt          DateTime?
+  endedAt            DateTime?
+  dueDate            DateTime
+  courseId           String?
+  course             Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId             String?
+  user               User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestedBy        String?
+  approvalStatus     String?     @default("APPROVED")
+  rejectionReason    String?
+  createdAt          DateTime    @default(now())
 
   @@map("events")
 }
@@ -377,13 +384,19 @@ model TrialRequest {
   preferredDate   DateTime
   topic           String?
   timezone        String?      @default("Asia/Colombo") // Region/Timezone used when booked
-  status          TrialStatus  @default(PENDING)
-  meetingLink     String?
-  notes           String?
-  approvalStatus  String?      @default("APPROVED")
-  rejectionReason String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  status             TrialStatus  @default(PENDING)
+  meetingLink        String?
+  meetingSpaceId     String?      // Google Meet space resource e.g. "spaces/ABC123"
+  conferenceRecordId String?      // Google Meet conference record e.g. "conferenceRecords/XYZ456"
+  recordingUrl       String?      // Google Drive video recording URL
+  recordingStatus    String?      // "AVAILABLE", "PROCESSING", "NONE"
+  actualStartTime    DateTime?    // Verified start time reported by Google Meet API
+  actualEndTime      DateTime?    // Verified end time reported by Google Meet API
+  notes              String?
+  approvalStatus     String?      @default("APPROVED")
+  rejectionReason    String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
   @@map("trial_requests")
 }

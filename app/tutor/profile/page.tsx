@@ -13,7 +13,7 @@ import {
   AlertCircle,
   Loader2,
   GraduationCap,
-  School,
+  Building2,
   BookOpen,
   ShieldCheck,
   Award,
@@ -822,7 +822,7 @@ function TutorProfileContent() {
                             </button>
                           </div>
                           <p className="text-xs text-slate-600 flex items-center gap-1.5">
-                            <School className="w-3 h-3 text-slate-400 shrink-0" />
+                            <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
                             <span>{deg.institution}</span>
                           </p>
                         </div>

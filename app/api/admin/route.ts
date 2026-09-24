@@ -9,6 +9,14 @@ import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import { getBundles, saveBundles, DEFAULT_BUNDLES } from "@/lib/bundles";
+import {
+  getSubjects as getSchools,
+  createSubject as createSchool,
+  updateSubject as updateSchool,
+  deleteSubject as deleteSchool,
+  reorderSubjects as reorderSchools,
+  resetDefaultSubjects as resetDefaultSchools,
+} from "@/lib/subjects";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +33,10 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
   add_lesson: "COURSE", delete_lesson: "COURSE",
   add_course_material: "COURSE", delete_course_material: "COURSE",
   approve_course: "COURSE", reject_course: "COURSE",
+  create_school: "COURSE", update_school: "COURSE", delete_school: "COURSE",
+  reorder_schools: "COURSE", reset_schools: "COURSE",
+  create_subject: "COURSE", update_subject: "COURSE", delete_subject: "COURSE",
+  reorder_subjects: "COURSE", reset_subjects: "COURSE",
   start_class: "CLASS", end_class: "CLASS",
   approve_class: "CLASS", reject_class: "CLASS",
   delete_assessment: "CLASS", delete_event: "CLASS", create_mock_paper: "CLASS",
@@ -301,6 +313,8 @@ export async function GET(request: NextRequest) {
       pendingCourses,
       totalPendingApprovals,
       bundles: await getBundles(),
+      schools: await getSchools(false),
+      subjects: await getSchools(false),
     });
   } catch (error: any) {
     console.error("Admin API GET error:", error);
@@ -624,7 +638,7 @@ export async function POST(request: NextRequest) {
           slug: generatedSlug,
           subtitle: subtitle || "Official Academic Curriculum Individual Class.",
           description: description || "Comprehensive lesson walkthroughs, unit proofs, and coursework solutions.",
-          category: category || "School of Mathematics & Computing",
+          category: category || "Mathematics & Computing",
           subjectCode: subjectCode || "MATH-101",
           price: isNaN(tokenValue) ? 10.0 : tokenValue,
           olPrice: olTokenValue,
@@ -1239,6 +1253,165 @@ export async function POST(request: NextRequest) {
         message: "Token bundle packages updated successfully!",
         bundles: cleanBundles,
       });
+    }
+
+    // ── Academic Subjects Actions ─────────────────────────────────────────────
+    if (
+      action === "create_subject" ||
+      action === "add_subject" ||
+      action === "create_school" ||
+      action === "add_school"
+    ) {
+      const { name, description, position, isActive } = body;
+      try {
+        const school = await createSchool({ name, description, position, isActive });
+        await writeAuditLog({
+          adminId: auth.user.id,
+          adminEmail: auth.user.email,
+          action: "create_subject",
+          targetId: school.id,
+          targetLabel: school.name,
+          details: { name: school.name, description: school.description },
+          ipAddress,
+        });
+        broadcastLMSEvent("COURSES_CHANGED", { action: "create_subject", subject: school });
+        const allSubjects = await getSchools(false);
+        return NextResponse.json({
+          success: true,
+          message: `Academic subject "${school.name}" created successfully.`,
+          subject: school,
+          school,
+          subjects: allSubjects,
+          schools: allSubjects,
+        });
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: err.message || "Failed to create academic subject" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (action === "update_subject" || action === "update_school") {
+      const { id, name, description, position, isActive } = body;
+      if (!id) {
+        return NextResponse.json({ error: "Subject ID is required." }, { status: 400 });
+      }
+      try {
+        const res = await updateSchool(id, { name, description, position, isActive });
+        await writeAuditLog({
+          adminId: auth.user.id,
+          adminEmail: auth.user.email,
+          action: "update_subject",
+          targetId: id,
+          targetLabel: res.school.name,
+          details: { name: res.school.name, coursesMigrated: res.coursesMigrated },
+          ipAddress,
+        });
+        broadcastLMSEvent("COURSES_CHANGED", { action: "update_subject", subject: res.school });
+        const allSubjects = await getSchools(false);
+        return NextResponse.json({
+          success: true,
+          message: `Academic subject "${res.school.name}" updated successfully.${
+            res.coursesMigrated > 0 ? ` (${res.coursesMigrated} assigned classes migrated)` : ""
+          }`,
+          ...res,
+          subject: res.school,
+          subjects: allSubjects,
+          schools: allSubjects,
+        });
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: err.message || "Failed to update academic subject" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (action === "delete_subject" || action === "delete_school") {
+      const { id, reassignToCategory } = body;
+      if (!id) {
+        return NextResponse.json({ error: "Subject ID is required." }, { status: 400 });
+      }
+      try {
+        const res = await deleteSchool(id, reassignToCategory);
+        await writeAuditLog({
+          adminId: auth.user.id,
+          adminEmail: auth.user.email,
+          action: "delete_subject",
+          targetId: id,
+          details: { reassignToCategory, affectedCourses: res.affectedCourses },
+          ipAddress,
+        });
+        broadcastLMSEvent("COURSES_CHANGED", { action: "delete_subject", deletedId: id });
+        const allSubjects = await getSchools(false);
+        return NextResponse.json({
+          success: true,
+          message: "Academic subject removed successfully.",
+          ...res,
+          subjects: allSubjects,
+          schools: allSubjects,
+        });
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: err.message || "Failed to delete academic subject" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (action === "reorder_subjects" || action === "reorder_schools") {
+      const { orderedIds } = body;
+      if (!Array.isArray(orderedIds)) {
+        return NextResponse.json({ error: "orderedIds array is required." }, { status: 400 });
+      }
+      try {
+        await reorderSchools(orderedIds);
+        await writeAuditLog({
+          adminId: auth.user.id,
+          adminEmail: auth.user.email,
+          action: "reorder_subjects",
+          details: { orderedIds },
+          ipAddress,
+        });
+        broadcastLMSEvent("COURSES_CHANGED", { action: "reorder_subjects" });
+        const allSubjects = await getSchools(false);
+        return NextResponse.json({
+          success: true,
+          message: "Subjects reordered successfully.",
+          subjects: allSubjects,
+          schools: allSubjects,
+        });
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: err.message || "Failed to reorder subjects" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (action === "reset_subjects" || action === "reset_schools") {
+      try {
+        const schools = await resetDefaultSchools();
+        await writeAuditLog({
+          adminId: auth.user.id,
+          adminEmail: auth.user.email,
+          action: "reset_subjects",
+          ipAddress,
+        });
+        broadcastLMSEvent("COURSES_CHANGED", { action: "reset_subjects" });
+        return NextResponse.json({
+          success: true,
+          message: "Academic subjects reset to defaults.",
+          subjects: schools,
+          schools,
+        });
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: err.message || "Failed to reset subjects" },
+          { status: 400 }
+        );
+      }
     }
 
     if (action === "clear_all_data") {

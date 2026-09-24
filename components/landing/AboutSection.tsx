@@ -13,7 +13,6 @@ import {
   Users,
   ShieldCheck,
   ArrowRight,
-  School,
 } from "lucide-react";
 
 export function AboutSection() {
@@ -33,7 +32,7 @@ export function AboutSection() {
       badgeColor: "bg-blue-100 text-blue-800",
     },
     {
-      icon: School,
+      icon: GraduationCap,
       title: "Blended Practical Labs",
       description: "Full laboratory video walkthroughs with error analysis, experimental methods, and graph plotting individual classes.",
       badge: "Practical Mastery",

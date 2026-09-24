@@ -17,7 +17,6 @@ import {
   Users,
   Settings,
   ArrowRight,
-  School,
 } from "lucide-react";
 
 export function RoleTabsShowcase() {
@@ -390,7 +389,7 @@ export function RoleTabsShowcase() {
 
                       <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
                         <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                          <School className="w-3.5 h-3.5 text-blue-600" />
+                          <Award className="w-3.5 h-3.5 text-blue-600" />
                           Institutional Accreditation
                         </span>
                         <span className="text-blue-600 font-semibold text-[11px]">Verified Active</span>

@@ -45,23 +45,31 @@ export default function CoursesPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
 
-  const categories = [
-    "All",
-    "School of Mathematics & Computing",
-    "School of Computing & Engineering",
-    "School of Science & O/L Academy",
-    "School of Economics & Commerce",
-  ];
+  const [subjectsList, setSubjectsList] = useState<string[]>([
+    "Mathematics & Computing",
+    "Physics & Engineering",
+    "Chemistry & Biology",
+    "Economics & Business Studies",
+  ]);
+
+  const categories = useMemo(() => ["All", ...subjectsList], [subjectsList]);
 
   const loadCourses = async (isInitial?: any) => {
     try {
       if (isInitial === true && courses.length === 0) {
         setLoading(true);
       }
-      const [res, dashRes] = await Promise.all([
+      const [res, dashRes, subjectsRes] = await Promise.all([
         fetch("/api/courses"),
         fetch("/api/dashboard").catch(() => null),
+        fetch("/api/subjects").catch(() => null),
       ]);
+      if (subjectsRes && subjectsRes.ok) {
+        const sData = await subjectsRes.json();
+        if (sData.names && Array.isArray(sData.names) && sData.names.length > 0) {
+          setSubjectsList(sData.names);
+        }
+      }
       if (dashRes && dashRes.ok) {
         const dashData = await dashRes.json();
         if (dashData.user) {

@@ -82,7 +82,7 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
       bio: parseTutorBio(dbTutor.bio),
       category:
         dbTutor.createdCourses?.[0]?.category ||
-        "School of Science & O/L Academy",
+        "Chemistry & Biology",
       level: levelVal,
       levelLabel: levelLabel,
       rating: 5.0,

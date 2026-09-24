@@ -144,10 +144,10 @@ type Course = {
 type Tab = "overview" | "curriculum" | "materials" | "students" | "live_classes" | "reviews";
 
 const CATEGORIES = [
-  "School of Mathematics & Computing",
-  "School of Computing & Engineering",
-  "School of Science & O/L Academy",
-  "School of Economics & Commerce",
+  "Mathematics & Computing",
+  "Physics & Engineering",
+  "Chemistry & Biology",
+  "Economics & Business Studies",
   "General Sciences & Foundations",
 ];
 
@@ -197,6 +197,18 @@ export function TutorCourseWorkspaceContent({
   const [loading, setLoading] = useState(true);
   const [savingDetails, setSavingDetails] = useState(false);
   const [bannerMsg, setBannerMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [categoriesList, setCategoriesList] = useState<string[]>(CATEGORIES);
+
+  useEffect(() => {
+    fetch("/api/subjects")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.names && Array.isArray(data.names) && data.names.length > 0) {
+          setCategoriesList(data.names);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Course Details Form state
   const [detailsForm, setDetailsForm] = useState({
@@ -1053,7 +1065,7 @@ export function TutorCourseWorkspaceContent({
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Individual Class Identification & Core Details</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Configure curriculum title, academic school, tuition tokens, cover image, and syllabus breakdown.
+                    Configure curriculum title, academic subject, tuition tokens, cover image, and syllabus breakdown.
                   </p>
                 </div>
                 <Button
@@ -1097,13 +1109,13 @@ export function TutorCourseWorkspaceContent({
 
                 {/* Academic Category */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Academic School / Category</label>
+                  <label className="text-xs font-bold text-slate-700">Academic Subject / Category</label>
                   <select
                     value={detailsForm.category}
                     onChange={(e) => setDetailsForm({ ...detailsForm, category: e.target.value })}
                     className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    {CATEGORIES.map((c) => (
+                    {categoriesList.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>

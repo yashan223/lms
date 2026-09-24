@@ -26,6 +26,7 @@ import {
   parseTutorBio,
 } from "@/lib/faculty-tutors";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 export function CourseGrid() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -41,22 +42,29 @@ export function CourseGrid() {
   const [selectedTrialTutorId, setSelectedTrialTutorId] = useState<string | undefined>(undefined);
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
 
-  const categories = [
-    "All",
-    "School of Mathematics & Computing",
-    "School of Computing & Engineering",
-    "School of Science & O/L Academy",
-    "School of Economics & Commerce",
-  ];
+  const [subjectsList, setSubjectsList] = useState<string[]>([
+    "Mathematics & Computing",
+    "Physics & Engineering",
+    "Chemistry & Biology",
+    "Economics & Business Studies",
+  ]);
 
-  useEffect(() => {
-    async function loadCourses() {
-      try {
-        setLoading(true);
-        const [res, dashRes] = await Promise.all([
-          fetch("/api/courses"),
-          fetch("/api/dashboard").catch(() => null),
-        ]);
+  const categories = useMemo(() => ["All", ...subjectsList], [subjectsList]);
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      const [res, dashRes, subjectsRes] = await Promise.all([
+        fetch("/api/courses"),
+        fetch("/api/dashboard").catch(() => null),
+        fetch("/api/subjects").catch(() => null),
+      ]);
+      if (subjectsRes && subjectsRes.ok) {
+        const sData = await subjectsRes.json();
+        if (sData.names && Array.isArray(sData.names) && sData.names.length > 0) {
+          setSubjectsList(sData.names);
+        }
+      }
         if (dashRes && dashRes.ok) {
           const dashData = await dashRes.json();
           if (dashData.user) {
@@ -113,11 +121,20 @@ export function CourseGrid() {
       } catch (err) {
         console.error("Failed to load courses from DB:", err);
       } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadCourses();
   }, []);
+
+  useRealtimeSync({
+    events: ["COURSES_CHANGED"],
+    onSync: () => {
+      loadCourses();
+    },
+  });
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -271,7 +288,7 @@ export function CourseGrid() {
           </div>
         </div>
 
-        {/* School / Category Filter Pills */}
+        {/* Subject / Category Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-8 scrollbar-none">
           {categories.map((cat) => (
             <button

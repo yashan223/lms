@@ -61,8 +61,12 @@ import {
   MessageSquare,
   MessageSquareLock,
   Lock,
+  Building2,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
+import { AcademicSchool, DEFAULT_SCHOOLS } from "@/lib/subjects";
 import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
 import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
@@ -144,7 +148,7 @@ const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: s
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "users" | "courses" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
+    "overview" | "live_classes" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -231,6 +235,20 @@ export default function AdminDashboardPage() {
   const [isSavingBundles, setIsSavingBundles] = useState(false);
   const [bundleSaveMsg, setBundleSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Academic Schools State
+  const [schoolsList, setSchoolsList] = useState<AcademicSchool[]>([]);
+  const [showAddSchoolModal, setShowAddSchoolModal] = useState(false);
+  const [showEditSchoolModal, setShowEditSchoolModal] = useState(false);
+  const [showDeleteSchoolModal, setShowDeleteSchoolModal] = useState(false);
+  const [selectedSchoolForEdit, setSelectedSchoolForEdit] = useState<AcademicSchool | null>(null);
+  const [selectedSchoolForDelete, setSelectedSchoolForDelete] = useState<AcademicSchool | null>(null);
+  const [schoolFormName, setSchoolFormName] = useState("");
+  const [schoolFormDesc, setSchoolFormDesc] = useState("");
+  const [schoolFormActive, setSchoolFormActive] = useState(true);
+  const [deleteReassignTarget, setDeleteReassignTarget] = useState("");
+  const [isSavingSchool, setIsSavingSchool] = useState(false);
+  const [schoolActionMsg, setSchoolActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const [adminCourseViewMode, setAdminCourseViewMode] = useState<"masterclasses" | "tutors">("masterclasses");
   const [courseSearch, setCourseSearch] = useState("");
   const [courseCatFilter, setCourseCatFilter] = useState("ALL");
@@ -242,7 +260,7 @@ export default function AdminDashboardPage() {
 
   const [courseFormTitle, setCourseFormTitle] = useState("");
   const [courseFormCode, setCourseFormCode] = useState("");
-  const [courseFormCategory, setCourseFormCategory] = useState("School of Mathematics & Computing");
+  const [courseFormCategory, setCourseFormCategory] = useState("Mathematics & Computing");
   const [courseFormPrice, setCourseFormPrice] = useState("10");
   const [courseFormLevel, setCourseFormLevel] = useState("ADVANCED");
   const [courseFormStatus, setCourseFormStatus] = useState("PUBLISHED");
@@ -582,6 +600,10 @@ export default function AdminDashboardPage() {
         setTotalPendingApprovals(data.totalPendingApprovals || 0);
         if (data.bundles && data.bundles.length > 0) {
           setBundlesList(data.bundles);
+        }
+        const incomingSubjects = data.subjects || data.schools;
+        if (incomingSubjects && Array.isArray(incomingSubjects)) {
+          setSchoolsList(incomingSubjects);
         }
         if (data.adminProfile) {
           if (data.adminProfile.name) {
@@ -1516,6 +1538,173 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // ── Academic Subjects Handlers ────────────────────────────────────────────
+  const handleOpenAddSchool = () => {
+    setSchoolFormName("");
+    setSchoolFormDesc("");
+    setSchoolFormActive(true);
+    setSchoolActionMsg(null);
+    setShowAddSchoolModal(true);
+  };
+
+  const handleOpenEditSchool = (school: AcademicSchool) => {
+    setSelectedSchoolForEdit(school);
+    setSchoolFormName(school.name);
+    setSchoolFormDesc(school.description || "");
+    setSchoolFormActive(school.isActive);
+    setSchoolActionMsg(null);
+    setShowEditSchoolModal(true);
+  };
+
+  const handleOpenDeleteSchool = (school: AcademicSchool) => {
+    setSelectedSchoolForDelete(school);
+    const otherSchools = schoolsList.filter((s) => s.id !== school.id);
+    setDeleteReassignTarget(otherSchools[0]?.name || "");
+    setSchoolActionMsg(null);
+    setShowDeleteSchoolModal(true);
+  };
+
+  const handleCreateSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schoolFormName.trim()) return;
+    try {
+      setIsSavingSchool(true);
+      setSchoolActionMsg(null);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_subject",
+          name: schoolFormName.trim(),
+          description: schoolFormDesc.trim(),
+          isActive: schoolFormActive,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSchoolsList(data.subjects || data.schools || []);
+        setSchoolActionMsg({ type: "success", text: data.message || "Subject created successfully." });
+        setTimeout(() => {
+          setShowAddSchoolModal(false);
+          setSchoolActionMsg(null);
+        }, 1200);
+      } else {
+        setSchoolActionMsg({ type: "error", text: data.error || "Failed to create subject." });
+      }
+    } catch (err: any) {
+      setSchoolActionMsg({ type: "error", text: err.message || "Network error." });
+    } finally {
+      setIsSavingSchool(false);
+    }
+  };
+
+  const handleUpdateSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSchoolForEdit || !schoolFormName.trim()) return;
+    try {
+      setIsSavingSchool(true);
+      setSchoolActionMsg(null);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_subject",
+          id: selectedSchoolForEdit.id,
+          name: schoolFormName.trim(),
+          description: schoolFormDesc.trim(),
+          isActive: schoolFormActive,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSchoolsList(data.subjects || data.schools || []);
+        if (data.coursesMigrated > 0) {
+          fetchAdminData(false);
+        }
+        setSchoolActionMsg({ type: "success", text: data.message || "Subject updated successfully." });
+        setTimeout(() => {
+          setShowEditSchoolModal(false);
+          setSchoolActionMsg(null);
+        }, 1200);
+      } else {
+        setSchoolActionMsg({ type: "error", text: data.error || "Failed to update subject." });
+      }
+    } catch (err: any) {
+      setSchoolActionMsg({ type: "error", text: err.message || "Network error." });
+    } finally {
+      setIsSavingSchool(false);
+    }
+  };
+
+  const handleDeleteSchool = async () => {
+    if (!selectedSchoolForDelete) return;
+    try {
+      setIsSavingSchool(true);
+      setSchoolActionMsg(null);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete_subject",
+          id: selectedSchoolForDelete.id,
+          reassignToCategory: (selectedSchoolForDelete.classCount || 0) > 0 ? deleteReassignTarget : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSchoolsList(data.subjects || data.schools || []);
+        fetchAdminData(false);
+        setShowDeleteSchoolModal(false);
+      } else {
+        setSchoolActionMsg({ type: "error", text: data.error || "Failed to delete subject." });
+      }
+    } catch (err: any) {
+      setSchoolActionMsg({ type: "error", text: err.message || "Network error." });
+    } finally {
+      setIsSavingSchool(false);
+    }
+  };
+
+  const handleMoveSchool = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= schoolsList.length) return;
+    const newList = [...schoolsList];
+    const temp = newList[index];
+    newList[index] = newList[targetIndex];
+    newList[targetIndex] = temp;
+    setSchoolsList(newList);
+
+    try {
+      await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "reorder_subjects",
+          orderedIds: newList.map((s) => s.id),
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist subject reorder:", err);
+    }
+  };
+
+  const handleResetSchools = async () => {
+    if (!confirm("Are you sure you want to reset academic subjects to the default list?")) return;
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset_subjects" }),
+      });
+      const data = await res.json();
+      if (res.ok && (data.subjects || data.schools)) {
+        setSchoolsList(data.subjects || data.schools);
+      }
+    } catch (err) {
+      console.error("Failed to reset subjects:", err);
+    }
+  };
+
   const purchasesList = useMemo(() => {
     const allPurchases: any[] = [];
     coursesList.forEach((c) => {
@@ -1604,6 +1793,7 @@ export default function AdminDashboardPage() {
     { id: "live_classes", label: "Live Classes & Meets", icon: Video },
     { id: "users", label: "User Management", icon: Users },
     { id: "courses", label: "Class Management", icon: BookOpen },
+    { id: "subjects", label: "Academic Subjects", icon: GraduationCap },
     { id: "chats", label: "Chat Conversations", icon: MessageSquareLock },
     { id: "finances", label: "Class Purchases & Revenue", icon: DollarSign },
     { id: "pricing", label: "Pricing & Token Bundles", icon: Coins },
@@ -1641,7 +1831,7 @@ export default function AdminDashboardPage() {
 
           {navMenuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = activeTab === item.id || (item.id === "subjects" && activeTab === "schools");
             return (
               <button
                 key={item.id}
@@ -1725,6 +1915,8 @@ export default function AdminDashboardPage() {
                     ? "User Management"
                     : activeTab === "courses"
                     ? "Course Management"
+                    : activeTab === "subjects" || activeTab === "schools"
+                    ? "Academic Subjects & Categories"
                     : activeTab === "chats"
                     ? "Chat Monitoring & Direct Conversations"
                     : activeTab === "finances"
@@ -1780,6 +1972,17 @@ export default function AdminDashboardPage() {
                 >
                   <Plus className="w-3.5 h-3.5 text-blue-100" />
                   <span>+ Create Individual Class</span>
+                </Button>
+              )}
+
+              {(activeTab === "subjects" || activeTab === "schools") && (
+                <Button
+                  size="sm"
+                  onClick={handleOpenAddSchool}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-600/20 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 text-white" />
+                  <span>+ Add New Subject</span>
                 </Button>
               )}
 
@@ -2616,13 +2819,36 @@ export default function AdminDashboardPage() {
                       />
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                      <select
+                        value={courseCatFilter}
+                        onChange={(e) => setCourseCatFilter(e.target.value)}
+                        className="h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      >
+                        <option value="ALL">All Academic Subjects</option>
+                        {schoolsList.map((s) => (
+                          <option key={s.id} value={s.name}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <Button
+                        variant="outline"
+                        onClick={() => setActiveTab("subjects")}
+                        className="text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 gap-1.5 h-10 rounded-xl cursor-pointer"
+                        title="Manage Academic Subjects & Category Pills"
+                      >
+                        <GraduationCap className="w-4 h-4 text-blue-600" />
+                        <span className="hidden sm:inline">Subjects ({schoolsList.length})</span>
+                      </Button>
+
                       <Button
                         onClick={handleOpenAddCourse}
-                        className="w-full md:w-auto text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
+                        className="text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
                       >
                         <Plus className="w-4 h-4 text-blue-100" />
-                        <span>+ Create New Individual Class</span>
+                        <span>+ Create Individual Class</span>
                       </Button>
                     </div>
                   </div>
@@ -2861,6 +3087,209 @@ export default function AdminDashboardPage() {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {(activeTab === "subjects" || activeTab === "schools") && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Top Subjects KPI Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Total Academic Subjects</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {schoolsList.length} Subjects
+                  </div>
+                  <div className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Configured in LMS Academy</span>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Live on Public Filters</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Eye className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {schoolsList.filter((s) => s.isActive).length} Public
+                  </div>
+                  <div className="text-[11px] text-blue-600 font-semibold">
+                    Visible on Homepage & Classes Pills
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Assigned Classes</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {schoolsList.reduce((acc, s) => acc + (s.classCount || 0), 0)} Units
+                  </div>
+                  <div className="text-[11px] text-blue-600 font-semibold">
+                    Total classes across all subjects
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Instant Publishing</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    Synchronized
+                  </div>
+                  <div className="text-[11px] text-blue-600 font-semibold">
+                    Realtime DB & Homepage Sync
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Subjects Management Panel */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-lg text-slate-900">
+                        Academic Subjects & Category Filter Pills
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        Live Filter Tabs
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                      These subjects are displayed as category pill buttons on the public homepage and classes page. You can add new subjects, rename existing ones, reorder them, or adjust their visibility.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetSchools}
+                      className="rounded-xl text-xs font-semibold border-slate-200 text-slate-600 hover:text-slate-900 cursor-pointer"
+                    >
+                      Reset Defaults
+                    </Button>
+                    <Button
+                      onClick={handleOpenAddSchool}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm shadow-blue-600/20 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add New Subject</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Subjects List */}
+                <div className="space-y-3">
+                  {schoolsList.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                      <GraduationCap className="w-8 h-8 mx-auto text-slate-300" />
+                      <p className="text-xs font-semibold text-slate-600">No subjects configured yet</p>
+                      <Button onClick={handleOpenAddSchool} size="sm" className="rounded-xl text-xs cursor-pointer">
+                        + Add Your First Subject
+                      </Button>
+                    </div>
+                  ) : (
+                    schoolsList.map((school, index) => (
+                      <div
+                        key={school.id}
+                        className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-200 transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                      >
+                        <div className="flex items-start sm:items-center gap-3 min-w-0">
+                          {/* Reorder Arrows */}
+                          <div className="flex flex-col gap-0.5 shrink-0 pt-0.5 sm:pt-0">
+                            <button
+                              onClick={() => handleMoveSchool(index, "up")}
+                              disabled={index === 0}
+                              className={`p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ${
+                                index === 0 ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+                              }`}
+                              title="Move Up"
+                              aria-label="Move Up"
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleMoveSchool(index, "down")}
+                              disabled={index === schoolsList.length - 1}
+                              className={`p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ${
+                                index === schoolsList.length - 1 ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+                              }`}
+                              title="Move Down"
+                              aria-label="Move Down"
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
+                            #{index + 1}
+                          </div>
+
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-extrabold text-sm text-slate-900 leading-snug">
+                                {school.name}
+                              </h4>
+                              {school.isActive ? (
+                                <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold">
+                                  Live on Homepage
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-slate-100 text-slate-500 border-slate-200 text-[10px] font-bold">
+                                  Hidden
+                                </Badge>
+                              )}
+                              <Badge className="bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-semibold">
+                                {school.classCount || 0} {school.classCount === 1 ? "Class" : "Classes"}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-slate-500 line-clamp-1">
+                              {school.description || "No description provided."}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEditSchool(school)}
+                            className="rounded-xl text-xs font-semibold h-8.5 px-3 border-slate-200 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                            <span>Edit</span>
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenDeleteSchool(school)}
+                            className="rounded-xl text-xs font-semibold h-8.5 px-3 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1 text-red-500" />
+                            <span>Delete</span>
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -4989,12 +5418,13 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <div>
-                <label className="font-bold block mb-1">Academic Category</label>
+                <label className="font-bold block mb-1">Academic Subject / Category</label>
                 <select value={courseFormCategory} onChange={(e) => setCourseFormCategory(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                  <option value="School of Mathematics & Computing">School of Mathematics & Computing</option>
-                  <option value="School of Computing & Engineering">School of Computing & Engineering</option>
-                  <option value="School of Science & O/L Academy">School of Science & O/L Academy</option>
-                  <option value="School of Economics & Commerce">School of Economics & Commerce</option>
+                  {schoolsList.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -5051,12 +5481,13 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <div>
-                <label className="font-bold block mb-1">Academic Category</label>
+                <label className="font-bold block mb-1">Academic Subject / Category</label>
                 <select value={courseFormCategory} onChange={(e) => setCourseFormCategory(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                  <option value="School of Mathematics & Computing">School of Mathematics & Computing</option>
-                  <option value="School of Computing & Engineering">School of Computing & Engineering</option>
-                  <option value="School of Science & O/L Academy">School of Science & O/L Academy</option>
-                  <option value="School of Economics & Commerce">School of Economics & Commerce</option>
+                  {schoolsList.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -5630,6 +6061,312 @@ export default function AdminDashboardPage() {
                 className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl px-5 h-9 cursor-pointer"
               >
                 Close Inspector
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Subject Modal */}
+      {showAddSchoolModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">Add Academic Subject</h3>
+                  <p className="text-[11px] text-slate-500">Creates a new academic subject and homepage filter pill</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddSchoolModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {schoolActionMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  schoolActionMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-red-50 text-red-700 border border-red-200"
+                }`}
+              >
+                {schoolActionMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                )}
+                <span>{schoolActionMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateSchool} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold block mb-1 text-slate-700">
+                  Subject Name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  required
+                  placeholder="e.g. Pure Mathematics & Mechanics"
+                  value={schoolFormName}
+                  onChange={(e) => setSchoolFormName(e.target.value)}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold block mb-1 text-slate-700">
+                  Academic Focus & Description
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Pure Mathematics, Mechanics, Statistics & Computer Science"
+                  value={schoolFormDesc}
+                  onChange={(e) => setSchoolFormDesc(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                  <div className="font-bold text-slate-900">Live on Public Homepage</div>
+                  <div className="text-[11px] text-slate-500">
+                    Display as a category pill in the filter bar
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={schoolFormActive}
+                  onChange={(e) => setSchoolFormActive(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddSchoolModal(false)}
+                  className="rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingSchool}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer font-bold gap-1.5"
+                >
+                  {isSavingSchool ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  <span>Create Subject</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Subject Modal */}
+      {showEditSchoolModal && selectedSchoolForEdit && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">Edit Academic Subject</h3>
+                  <p className="text-[11px] text-slate-500">Update subject details and homepage visibility</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditSchoolModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {schoolActionMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  schoolActionMsg.type === "success"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-red-50 text-red-700 border border-red-200"
+                }`}
+              >
+                {schoolActionMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                )}
+                <span>{schoolActionMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateSchool} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold block mb-1 text-slate-700">
+                  Subject Name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  required
+                  value={schoolFormName}
+                  onChange={(e) => setSchoolFormName(e.target.value)}
+                  className="rounded-xl border-slate-200"
+                />
+                {schoolFormName.trim() !== selectedSchoolForEdit.name && (selectedSchoolForEdit.classCount || 0) > 0 && (
+                  <p className="text-[11px] text-blue-600 mt-1.5 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Renaming will automatically re-categorize all {selectedSchoolForEdit.classCount} currently assigned classes.
+                    </span>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="font-bold block mb-1 text-slate-700">
+                  Academic Focus & Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={schoolFormDesc}
+                  onChange={(e) => setSchoolFormDesc(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                  <div className="font-bold text-slate-900">Live on Public Homepage</div>
+                  <div className="text-[11px] text-slate-500">
+                    Display as a category pill in the filter bar
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={schoolFormActive}
+                  onChange={(e) => setSchoolFormActive(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEditSchoolModal(false)}
+                  className="rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingSchool}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer font-bold gap-1.5"
+                >
+                  {isSavingSchool ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  <span>Save Changes</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Subject Modal */}
+      {showDeleteSchoolModal && selectedSchoolForDelete && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">Delete Academic Subject</h3>
+                  <p className="text-[11px] text-slate-500">Remove subject from academy</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeleteSchoolModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {schoolActionMsg && (
+              <div className="p-3 rounded-xl text-xs flex items-center gap-2 bg-red-50 text-red-700 border border-red-200">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{schoolActionMsg.text}</span>
+              </div>
+            )}
+
+            <div className="space-y-3 text-xs text-slate-600">
+              <p>
+                Are you sure you want to remove <span className="font-bold text-slate-900">"{selectedSchoolForDelete.name}"</span>?
+              </p>
+
+              {(selectedSchoolForDelete.classCount || 0) > 0 && (
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 space-y-2">
+                  <div className="font-bold flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                    <span>Active Classes Detected ({selectedSchoolForDelete.classCount})</span>
+                  </div>
+                  <p className="text-[11px]">
+                    Select a target subject to reassign these {selectedSchoolForDelete.classCount} classes to:
+                  </p>
+                  <select
+                    value={deleteReassignTarget}
+                    onChange={(e) => setDeleteReassignTarget(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-amber-300 bg-white px-2 text-xs font-semibold"
+                  >
+                    {schoolsList
+                      .filter((s) => s.id !== selectedSchoolForDelete.id)
+                      .map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteSchoolModal(false)}
+                className="rounded-xl cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isSavingSchool || ((selectedSchoolForDelete.classCount || 0) > 0 && !deleteReassignTarget)}
+                onClick={handleDeleteSchool}
+                className="bg-red-600 hover:bg-red-700 text-white rounded-xl cursor-pointer font-bold gap-1.5"
+              >
+                {isSavingSchool ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>Delete Subject</span>
               </Button>
             </div>
           </div>

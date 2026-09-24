@@ -562,3 +562,18 @@ model Payment {
   @@index([checkoutId])
   @@map("payments")
 }
+
+// ========================================================
+// ACADEMIC SCHOOLS / FACULTIES
+// ========================================================
+model AcademicSchool {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  position    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("academic_schools")
+}

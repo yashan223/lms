@@ -253,12 +253,13 @@ model Event {
   conferenceRecordId String?     // Google Meet conference record e.g. "conferenceRecords/XYZ456"
   recordingUrl       String?     // Google Drive video recording URL
   recordingStatus    String?     // "AVAILABLE", "PROCESSING", "NONE"
-  actualStartTime    DateTime?   // Verified start time reported by Google Meet API
-  actualEndTime      DateTime?   // Verified end time reported by Google Meet API
+  actualStartTime    DateTime?   @db.Timestamptz // Verified start time reported by Google Meet API
+  actualEndTime      DateTime?   @db.Timestamptz // Verified end time reported by Google Meet API
   attendanceCount    Int?        @default(0) // Participant count from Google Meet
-  startedAt          DateTime?
-  endedAt            DateTime?
-  dueDate            DateTime
+  startedAt          DateTime?   @db.Timestamptz
+  endedAt            DateTime?   @db.Timestamptz
+  dueDate            DateTime    @db.Timestamptz
+  timezone           String?     @default("Asia/Colombo") // IANA regional timezone class was scheduled in
   courseId           String?
   course             Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
   userId             String?
@@ -266,7 +267,7 @@ model Event {
   requestedBy        String?
   approvalStatus     String?     @default("APPROVED")
   rejectionReason    String?
-  createdAt          DateTime    @default(now())
+  createdAt          DateTime    @default(now()) @db.Timestamptz
 
   @@map("events")
 }
@@ -381,7 +382,7 @@ model TrialRequest {
   tutor           User?        @relation("TutorTrials", fields: [tutorId], references: [id], onDelete: Cascade)
   studentId       String?
   student         User?        @relation("StudentTrials", fields: [studentId], references: [id], onDelete: Cascade)
-  preferredDate   DateTime
+  preferredDate   DateTime     @db.Timestamptz
   topic           String?
   timezone        String?      @default("Asia/Colombo") // Region/Timezone used when booked
   status             TrialStatus  @default(PENDING)
@@ -390,13 +391,13 @@ model TrialRequest {
   conferenceRecordId String?      // Google Meet conference record e.g. "conferenceRecords/XYZ456"
   recordingUrl       String?      // Google Drive video recording URL
   recordingStatus    String?      // "AVAILABLE", "PROCESSING", "NONE"
-  actualStartTime    DateTime?    // Verified start time reported by Google Meet API
-  actualEndTime      DateTime?    // Verified end time reported by Google Meet API
+  actualStartTime    DateTime?    @db.Timestamptz // Verified start time reported by Google Meet API
+  actualEndTime      DateTime?    @db.Timestamptz // Verified end time reported by Google Meet API
   notes              String?
   approvalStatus     String?      @default("APPROVED")
   rejectionReason    String?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  createdAt          DateTime     @default(now()) @db.Timestamptz
+  updatedAt          DateTime     @updatedAt @db.Timestamptz
 
   @@map("trial_requests")
 }
@@ -470,7 +471,7 @@ model TutorAvailability {
   courseId     String?
   course       Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   dayOfWeek    Int?      // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (for recurring weekly slots)
-  specificDate DateTime? // For specific date slots
+  specificDate DateTime? @db.Timestamptz // For specific date slots
   startTime    String    // "HH:mm" e.g. "09:00", "14:30"
   endTime      String    // "HH:mm" e.g. "10:30", "16:00"
   slotType     String    @default("ALL") // "ALL", "CLASS", "TRIAL"
@@ -478,8 +479,8 @@ model TutorAvailability {
   isRecurring  Boolean   @default(false)
   isActive     Boolean   @default(true)
   title        String?   // Optional label e.g., "Morning Masterclass", "Evening 1-on-1"
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @db.Timestamptz
 
   @@index([tutorId])
   @@index([courseId])
@@ -494,7 +495,7 @@ model StudentAvailability {
   studentId    String
   student      User      @relation("StudentAvailabilities", fields: [studentId], references: [id], onDelete: Cascade)
   dayOfWeek    Int?      // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (for weekly recurring study hours)
-  specificDate DateTime? // For specific available dates
+  specificDate DateTime? @db.Timestamptz // For specific available dates
   startTime    String    // "HH:mm" e.g. "16:00"
   endTime      String    // "HH:mm" e.g. "20:00"
   timezone     String?   @default("Asia/Colombo") // Student's local study timezone
@@ -502,8 +503,8 @@ model StudentAvailability {
   isActive     Boolean   @default(true)
   title        String?   // Optional label e.g., "After-School Study Window", "Weekend Revision"
   notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @db.Timestamptz
 
   @@index([studentId])
   @@map("student_availabilities")

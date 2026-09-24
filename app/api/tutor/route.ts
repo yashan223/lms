@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
 import { createGoogleMeetingSpace, syncClassMeetingSession } from "@/lib/google-meet";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
+import { parseDateTimeInputInTimezone } from "@/lib/timezones";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -158,6 +159,7 @@ export async function GET(request: NextRequest) {
         phone: tutor.phone || "",
         avatar: tutor.avatar || null,
         role: tutor.role,
+        timezone: tutor.timezone || "Asia/Colombo",
         createdAt: tutor.createdAt,
       },
       courses,
@@ -506,13 +508,24 @@ export async function POST(request: NextRequest) {
         .join("")
         .trim();
 
+      const operatingTimezone = body.timezone || tutor.timezone || "Asia/Colombo";
+      let parsedDueDate: Date;
+      if (typeof scheduledDate === "string" && !scheduledDate.includes("Z") && !scheduledDate.includes("+") && !scheduledDate.match(/-\d{2}:\d{2}$/)) {
+        parsedDueDate = parseDateTimeInputInTimezone(scheduledDate, operatingTimezone);
+      } else {
+        parsedDueDate = new Date(scheduledDate);
+      }
+      if (isNaN(parsedDueDate.getTime())) {
+        return NextResponse.json({ error: "Invalid scheduled date format." }, { status: 400 });
+      }
+
       const newClassEvent = await prisma.event.create({
         data: {
           title: title.trim(),
           description: fullDescription,
           meetingLink: meetLink,
           meetingSpaceId: spaceName,
-          dueDate: new Date(scheduledDate),
+          dueDate: parsedDueDate,
           status: EventStatus.SCHEDULED,
           approvalStatus: "APPROVED",
           requestedBy: tutor.id,
@@ -654,7 +667,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const parsedDate = new Date(scheduledDate);
+      const operatingTimezone = body.timezone || tutor.timezone || "Asia/Colombo";
+      let parsedDate: Date;
+      if (typeof scheduledDate === "string" && !scheduledDate.includes("Z") && !scheduledDate.includes("+") && !scheduledDate.match(/-\d{2}:\d{2}$/)) {
+        parsedDate = parseDateTimeInputInTimezone(scheduledDate, operatingTimezone);
+      } else {
+        parsedDate = new Date(scheduledDate);
+      }
       if (isNaN(parsedDate.getTime())) {
         return NextResponse.json(
           { error: "Invalid date format provided." },
@@ -870,7 +889,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const parsedDate = new Date(preferredDate);
+      const operatingTimezone = body.timezone || tutor.timezone || "Asia/Colombo";
+      let parsedDate: Date;
+      if (typeof preferredDate === "string" && !preferredDate.includes("Z") && !preferredDate.includes("+") && !preferredDate.match(/-\d{2}:\d{2}$/)) {
+        parsedDate = parseDateTimeInputInTimezone(preferredDate, operatingTimezone);
+      } else {
+        parsedDate = new Date(preferredDate);
+      }
       if (isNaN(parsedDate.getTime())) {
         return NextResponse.json(
           { error: "Invalid date format provided." },

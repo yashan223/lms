@@ -29,6 +29,12 @@ import {
   getRegionalTimezone,
   DEFAULT_TIMEZONE,
   formatTimeInTimezone,
+  formatDateInTimezone,
+  formatForUser,
+  formatForDateTimeInput,
+  parseDateTimeInputInTimezone,
+  getDualTimeDisplay,
+  getTimezoneAbbr,
 } from "@/lib/timezones";
 
 interface TrialRequestModalProps {
@@ -62,17 +68,6 @@ interface TrialRequestModalProps {
   } | null;
   onSuccess?: (trial: any) => void;
 }
-
-const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-
-const formatForDateTimeInput = (date: Date) => {
-  const y = date.getFullYear();
-  const m = pad(date.getMonth() + 1);
-  const d = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const mm = pad(date.getMinutes());
-  return `${y}-${m}-${d}T${hh}:${mm}`;
-};
 
 export function TrialRequestModal({
   isOpen,
@@ -192,7 +187,7 @@ export function TrialRequestModal({
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(10, 0, 0, 0);
-      setPreferredDate(formatForDateTimeInput(tomorrow));
+      setPreferredDate(formatForDateTimeInput(tomorrow, selectedTimezone));
 
       setError(null);
       setCreatedTrial(null);
@@ -335,6 +330,7 @@ export function TrialRequestModal({
     try {
       setLoading(true);
       setError(null);
+      const parsedUtcDate = parseDateTimeInputInTimezone(preferredDate, selectedTimezone);
 
       const res = await fetch("/api/trials", {
         method: "POST",
@@ -346,7 +342,7 @@ export function TrialRequestModal({
           studentId: currentUser?.id || null,
           studentName: currentUser?.name || null,
           studentEmail: currentUser?.email || null,
-          preferredDate: new Date(preferredDate).toISOString(),
+          preferredDate: parsedUtcDate.toISOString(),
           timezone: selectedTimezone,
           topic: topic?.trim() || "30-Min Free Trial & Syllabus Overview",
           notes: notes?.trim() || null,
@@ -550,19 +546,24 @@ export function TrialRequestModal({
                   {createdTrial.course?.title || selectedCourse?.title || "London A/L Individual Class"}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-slate-500">Requested Time:</span>
-                <span className="font-bold text-blue-800 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-blue-600" />
-                  {new Date(createdTrial.preferredDate).toLocaleString("en-US", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  {" "}(30 mins)
-                </span>
+                <div className="text-right">
+                  <span className="font-bold text-blue-800 flex items-center gap-1 justify-end">
+                    <Clock className="w-3.5 h-3.5 text-blue-600" />
+                    {formatForUser(createdTrial.preferredDate, selectedTimezone, {
+                      includeDate: true,
+                      includeTime: true,
+                      includeAbbr: true,
+                    })}
+                    {" "}(30 mins)
+                  </span>
+                  {tutorBaseTimezone && tutorBaseTimezone !== selectedTimezone && (
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      Tutor&apos;s time: {formatTimeInTimezone(createdTrial.preferredDate, tutorBaseTimezone, { includeAbbr: true })}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                 <span className="text-slate-500">Status:</span>
@@ -768,8 +769,7 @@ export function TrialRequestModal({
                         key={idx}
                         type="button"
                         onClick={() => {
-                          const d = new Date(s.startTime);
-                          setPreferredDate(formatForDateTimeInput(d));
+                          setPreferredDate(formatForDateTimeInput(s.startTime, selectedTimezone));
                         }}
                         className={`px-2 py-1 rounded-lg border text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
                           s.matchesStudent

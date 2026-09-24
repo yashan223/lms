@@ -235,13 +235,24 @@ export async function GET(request: NextRequest) {
       where: eventWhere,
       orderBy: { dueDate: "asc" },
       include: {
-        course: true,
+        course: {
+          include: {
+            tutor: {
+              select: {
+                id: true,
+                name: true,
+                timezone: true,
+              },
+            },
+          },
+        },
         user: {
           select: {
             id: true,
             name: true,
             email: true,
             role: true,
+            timezone: true,
           },
         },
       },
@@ -258,13 +269,24 @@ export async function GET(request: NextRequest) {
           ],
         },
         include: {
-          course: true,
+          course: {
+            include: {
+              tutor: {
+                select: {
+                  id: true,
+                  name: true,
+                  timezone: true,
+                },
+              },
+            },
+          },
           tutor: {
             select: {
               id: true,
               name: true,
               email: true,
               role: true,
+              timezone: true,
             },
           },
         },
@@ -322,13 +344,24 @@ export async function GET(request: NextRequest) {
               requestedBy: trial.tutorId || null,
             },
             include: {
-              course: true,
+              course: {
+                include: {
+                  tutor: {
+                    select: {
+                      id: true,
+                      name: true,
+                      timezone: true,
+                    },
+                  },
+                },
+              },
               user: {
                 select: {
                   id: true,
                   name: true,
                   email: true,
                   role: true,
+                  timezone: true,
                 },
               },
             },
@@ -338,14 +371,25 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Attach trialId to timeline events matching confirmed trials
+      // Attach trialId, tutorTimezone, and studentTimezone to timeline events
       timelineEvents = timelineEvents.map((ev: any) => {
         const matchingTrial = confirmedTrials.find(
           (t) =>
             (ev.description && ev.description.includes(t.id)) ||
             (t.courseId && ev.courseId === t.courseId)
         );
-        return matchingTrial ? { ...ev, trialId: matchingTrial.id } : ev;
+        const resolvedTutorTz =
+          matchingTrial?.tutor?.timezone ||
+          matchingTrial?.course?.tutor?.timezone ||
+          ev.course?.tutor?.timezone ||
+          matchingTrial?.timezone ||
+          "Asia/Colombo";
+        return {
+          ...ev,
+          trialId: matchingTrial ? matchingTrial.id : ev.trialId || null,
+          tutorTimezone: resolvedTutorTz,
+          tutorName: matchingTrial?.tutor?.name || ev.course?.tutor?.name || null,
+        };
       });
 
       // Re-sort timelineEvents by dueDate ascending

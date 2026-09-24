@@ -73,7 +73,14 @@ import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
 import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
-import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
+import {
+  getRegionalTimezone,
+  DEFAULT_TIMEZONE,
+  formatTimeInTimezone,
+  formatDateInTimezone,
+  formatForUser,
+  getUserBrowserTimezone,
+} from "@/lib/timezones";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -174,6 +181,7 @@ export default function AdminDashboardPage() {
   };
 
   // Approvals State
+  const adminTimezone = typeof window !== "undefined" ? getUserBrowserTimezone() : DEFAULT_TIMEZONE;
   const [pendingClassesList, setPendingClassesList] = useState<any[]>([]);
   const [pendingTrialsList, setPendingTrialsList] = useState<any[]>([]);
   const [pendingCoursesList, setPendingCoursesList] = useState<any[]>([]);
@@ -2431,12 +2439,10 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center gap-4 text-[11px] text-slate-500 flex-wrap">
                                 <span className="flex items-center gap-1 font-semibold text-slate-700">
                                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                  {new Date(ev.dueDate).toLocaleString("en-US", {
-                                    weekday: "short",
-                                    day: "numeric",
-                                    month: "short",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
+                                  {formatForUser(ev.dueDate, adminTimezone, {
+                                    includeDate: true,
+                                    includeTime: true,
+                                    includeAbbr: true,
                                   })}
                                 </span>
 
@@ -2465,11 +2471,10 @@ export default function AdminDashboardPage() {
                                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Started:</span>
                                   <span className="font-mono text-[11px] font-semibold text-slate-700">
                                     {ev.startedAt
-                                      ? new Date(ev.startedAt).toLocaleString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
+                                      ? formatForUser(ev.startedAt, adminTimezone, {
+                                          includeDate: true,
+                                          includeTime: true,
+                                          includeAbbr: true,
                                         })
                                       : "Not started yet"}
                                   </span>
@@ -2481,11 +2486,10 @@ export default function AdminDashboardPage() {
                                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ended:</span>
                                   <span className={`font-mono text-[11px] font-semibold ${isLive ? "text-blue-600 font-bold" : "text-slate-700"}`}>
                                     {ev.endedAt
-                                      ? new Date(ev.endedAt).toLocaleString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
+                                      ? formatForUser(ev.endedAt, adminTimezone, {
+                                          includeDate: true,
+                                          includeTime: true,
+                                          includeAbbr: true,
                                         })
                                       : isLive
                                       ? "● Live in Session"
@@ -2508,7 +2512,7 @@ export default function AdminDashboardPage() {
                                     <div className="flex items-center gap-1.5">
                                       <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meet Verified:</span>
                                       <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                        {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {formatTimeInTimezone(ev.actualStartTime, adminTimezone)} - {formatTimeInTimezone(ev.actualEndTime, adminTimezone, { includeAbbr: true })}
                                         {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
                                       </span>
                                     </div>
@@ -4506,7 +4510,7 @@ export default function AdminDashboardPage() {
 
                           <div className="text-right sm:shrink-0 text-xs">
                             <span className="font-bold text-slate-700 block">
-                              {new Date(cls.dueDate).toLocaleDateString("en-US", {
+                              {formatDateInTimezone(cls.dueDate, adminTimezone, {
                                 weekday: "short",
                                 month: "short",
                                 day: "numeric",
@@ -4514,9 +4518,8 @@ export default function AdminDashboardPage() {
                               })}
                             </span>
                             <span className="text-blue-600 font-mono font-bold">
-                              {new Date(cls.dueDate).toLocaleTimeString("en-US", {
-                                hour: "2-digit",
-                                minute: "2-digit",
+                              {formatTimeInTimezone(cls.dueDate, adminTimezone, {
+                                includeAbbr: true,
                               })}
                             </span>
                           </div>
@@ -4611,7 +4614,7 @@ export default function AdminDashboardPage() {
 
                           <div className="text-right sm:shrink-0 text-xs">
                             <span className="font-bold text-slate-700 block">
-                              {new Date(trial.preferredDate).toLocaleDateString("en-US", {
+                              {formatDateInTimezone(trial.preferredDate, adminTimezone, {
                                 weekday: "short",
                                 month: "short",
                                 day: "numeric",
@@ -4619,11 +4622,15 @@ export default function AdminDashboardPage() {
                               })}
                             </span>
                             <span className="text-blue-600 font-mono font-bold">
-                              {new Date(trial.preferredDate).toLocaleTimeString("en-US", {
-                                hour: "2-digit",
-                                minute: "2-digit",
+                              {formatTimeInTimezone(trial.preferredDate, adminTimezone, {
+                                includeAbbr: true,
                               })}
                             </span>
+                            {trial.timezone && trial.timezone !== adminTimezone && (
+                              <span className="text-[10px] text-slate-500 block mt-0.5">
+                                Student: {formatTimeInTimezone(trial.preferredDate, trial.timezone, { includeAbbr: true })}
+                              </span>
+                            )}
                           </div>
                         </div>
 

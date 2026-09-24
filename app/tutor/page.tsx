@@ -73,16 +73,17 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
 import { getSafeMeetingLink, normalizeGoogleMeetLink } from "@/lib/utils";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
-
-const formatForDateTimeInput = (date: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  const y = date.getFullYear();
-  const m = pad(date.getMonth() + 1);
-  const d = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const mm = pad(date.getMinutes());
-  return `${y}-${m}-${d}T${hh}:${mm}`;
-};
+import {
+  getUserBrowserTimezone,
+  formatTimeInTimezone,
+  formatDateInTimezone,
+  formatForUser,
+  formatForDateTimeInput,
+  parseDateTimeInputInTimezone,
+  getDualTimeDisplay,
+  getTimezoneAbbr,
+  DEFAULT_TIMEZONE,
+} from "@/lib/timezones";
 
 const formatSessionDuration = (startedAt?: string | Date | null, endedAt?: string | Date | null) => {
   if (!startedAt) return "—";
@@ -174,6 +175,7 @@ interface ScheduledClassEvent {
     name: string;
     email: string;
     avatar?: string;
+    timezone?: string | null;
   } | null;
 }
 
@@ -183,6 +185,7 @@ function TutorDashboardContent() {
 
   const [loading, setLoading] = useState(true);
   const [tutor, setTutor] = useState<any>(null);
+  const tutorTimezone: string = tutor?.timezone || (typeof window !== "undefined" ? getUserBrowserTimezone() : DEFAULT_TIMEZONE) || DEFAULT_TIMEZONE;
   const [courses, setCourses] = useState<TutorCourse[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [events, setEvents] = useState<ScheduledClassEvent[]>([]);
@@ -322,12 +325,12 @@ function TutorDashboardContent() {
       target.setDate(now.getDate() + 1);
     }
     target.setHours(hh, mm, 0, 0);
-    setNewClassDate(formatForDateTimeInput(target));
+    setNewClassDate(formatForDateTimeInput(target, tutorTimezone));
   };
 
   const scheduleClassConflict = useMemo(() => {
     if (!newClassDate) return null;
-    const targetStart = new Date(newClassDate);
+    const targetStart = parseDateTimeInputInTimezone(newClassDate, tutorTimezone);
     if (isNaN(targetStart.getTime())) return null;
     const targetEnd = new Date(targetStart.getTime() + 60 * 60 * 1000);
 
@@ -842,6 +845,7 @@ function TutorDashboardContent() {
 
     try {
       setSchedulingClass(true);
+      const parsedUtcDate = parseDateTimeInputInTimezone(newClassDate, tutorTimezone);
       const res = await fetch("/api/tutor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -850,7 +854,8 @@ function TutorDashboardContent() {
           title: newClassTitle.trim(),
           description: newClassDesc.trim(),
           meetingLink: newClassMeetingLink.trim(),
-          scheduledDate: newClassDate,
+          scheduledDate: parsedUtcDate.toISOString(),
+          timezone: tutorTimezone,
           courseId: scheduleMode === "COURSE" ? newClassCourseId : null,
           studentId: scheduleMode === "STUDENT" ? newClassStudentId : null,
           tutorId: tutor?.id,
@@ -1147,14 +1152,14 @@ function TutorDashboardContent() {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     d.setHours(10, 0, 0, 0);
-    setNewClassDate(formatForDateTimeInput(d));
+    setNewClassDate(formatForDateTimeInput(d, tutorTimezone));
     setShowScheduleModal(true);
   };
 
   const openRescheduleForClass = (event: ScheduledClassEvent) => {
     setRescheduleTargetEvent(event);
     setRescheduleTargetTrial(null);
-    setRescheduleDate(formatForDateTimeInput(new Date(event.dueDate)));
+    setRescheduleDate(formatForDateTimeInput(event.dueDate, tutorTimezone));
     setRescheduleMeetingLink(event.meetingLink || "");
     setRescheduleNotes(event.description || "");
     setRescheduleStatusMsg(null);
@@ -1172,6 +1177,7 @@ function TutorDashboardContent() {
     try {
       setRescheduling(true);
       setRescheduleStatusMsg(null);
+      const parsedRescheduleDate = parseDateTimeInputInTimezone(rescheduleDate, tutorTimezone);
 
       if (rescheduleTargetEvent) {
         const res = await fetch("/api/tutor", {
@@ -1180,7 +1186,8 @@ function TutorDashboardContent() {
           body: JSON.stringify({
             action: "reschedule_class",
             eventId: rescheduleTargetEvent.id,
-            scheduledDate: rescheduleDate,
+            scheduledDate: parsedRescheduleDate.toISOString(),
+            timezone: tutorTimezone,
             meetingLink: rescheduleMeetingLink,
             description: rescheduleNotes,
           }),
@@ -1207,7 +1214,8 @@ function TutorDashboardContent() {
           body: JSON.stringify({
             action: "reschedule_trial",
             trialId: rescheduleTargetTrial.id,
-            preferredDate: rescheduleDate,
+            preferredDate: parsedRescheduleDate.toISOString(),
+            timezone: tutorTimezone,
             notes: rescheduleNotes,
           }),
         });
@@ -2063,15 +2071,15 @@ function TutorDashboardContent() {
                               )}
 
                               <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 font-mono">
-                                <span className="flex items-center gap-1">
+                                <span className="flex items-center gap-1 font-semibold text-slate-700">
                                   <Calendar className="w-3 h-3 text-slate-400" />
-                                  {new Date(ev.dueDate).toLocaleDateString("en-US", {
-                                    day: "numeric",
-                                    month: "short",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                                  {formatForUser(ev.dueDate, tutorTimezone, { includeDate: true, includeTime: true, includeAbbr: true })}
                                 </span>
+                                {ev.user?.timezone && ev.user.timezone !== tutorTimezone && (
+                                  <span className="text-[10px] text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded font-sans">
+                                    Student: {formatTimeInTimezone(ev.dueDate, ev.user.timezone, { includeAbbr: true })}
+                                  </span>
+                                )}
                                 {ev.meetingLink && (
                                   <a
                                     href={getSafeMeetingLink(ev.meetingLink)}
@@ -2085,7 +2093,7 @@ function TutorDashboardContent() {
                                 {ev.actualStartTime && ev.actualEndTime && (
                                   <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
                                     <Clock className="w-3 h-3 text-emerald-600" />
-                                    Google Meet: {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    Google Meet: {formatTimeInTimezone(ev.actualStartTime, tutorTimezone)} - {formatTimeInTimezone(ev.actualEndTime, tutorTimezone, { includeAbbr: true })}
                                     {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
                                   </span>
                                 )}
@@ -2614,17 +2622,16 @@ function TutorDashboardContent() {
                           const isConfirmed = tr.status === "CONFIRMED";
                           const isCancelled = tr.status === "CANCELLED" || tr.status === "REJECTED";
 
-                          const slotDate = new Date(tr.preferredDate);
-                          const dateFormatted = slotDate.toLocaleDateString("en-US", {
+                          const dateFormatted = formatDateInTimezone(tr.preferredDate, tutorTimezone, {
                             weekday: "short",
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           });
-                          const timeFormatted = slotDate.toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
+                          const timeFormatted = formatTimeInTimezone(tr.preferredDate, tutorTimezone, {
+                            includeAbbr: true,
                           });
+                          const studentTz = tr.timezone || tr.student?.timezone;
 
                           const initials = (tr.studentName || "Student")
                             .split(" ")
@@ -2730,6 +2737,12 @@ function TutorDashboardContent() {
                                       <span className="text-slate-400">•</span>
                                       <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
                                       <span className="text-xs font-semibold text-slate-500">(30 mins)</span>
+                                      {studentTz && studentTz !== tutorTimezone && (
+                                        <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                                          <span>Student time:</span>
+                                          <strong className="font-mono">{formatTimeInTimezone(tr.preferredDate, studentTz, { includeAbbr: true })}</strong>
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

@@ -64,16 +64,17 @@ import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { formatStudentPrice } from "@/lib/currency";
-
-const formatForDateTimeInput = (date: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  const y = date.getFullYear();
-  const m = pad(date.getMonth() + 1);
-  const d = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const mm = pad(date.getMinutes());
-  return `${y}-${m}-${d}T${hh}:${mm}`;
-};
+import {
+  getUserBrowserTimezone,
+  formatTimeInTimezone,
+  formatDateInTimezone,
+  getDatePartsInTimezone,
+  getTimezoneAbbr,
+  DEFAULT_TIMEZONE,
+  formatForUser,
+  formatForDateTimeInput,
+  parseDateTimeInputInTimezone,
+} from "@/lib/timezones";
 
 interface UserProfile {
   id: string;
@@ -83,6 +84,7 @@ interface UserProfile {
   role: "STUDENT" | "TUTOR" | "INSTRUCTOR" | "ADMIN";
   headline: string | null;
   country: string | null;
+  timezone: string | null;
   academicLevel?: string | null;
   tokenWallet?: {
     balance: number;
@@ -177,6 +179,8 @@ function DashboardContent() {
   }, [router]);
 
   const userRole: "STUDENT" | "TUTOR" | "INSTRUCTOR" | "ADMIN" = user?.role || "STUDENT";
+  // Single source of truth: user's own timezone (from DB profile), fallback to browser, then UTC
+  const userTimezone: string = user?.timezone || (typeof window !== "undefined" ? getUserBrowserTimezone() : DEFAULT_TIMEZONE) || DEFAULT_TIMEZONE;
 
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
   const [navSitePagesOpen, setNavSitePagesOpen] = useState(false);
@@ -262,8 +266,7 @@ function DashboardContent() {
     }
 
     setRescheduleTargetEvent(event);
-    const d = new Date(event.dueDate);
-    setRescheduleDate(formatForDateTimeInput(d));
+    setRescheduleDate(formatForDateTimeInput(event.dueDate, userTimezone));
     setRescheduleReason("");
     setRescheduleStatusMsg(null);
     setShowStudentRescheduleModal(true);
@@ -276,6 +279,7 @@ function DashboardContent() {
     try {
       setReschedulingSession(true);
       setRescheduleStatusMsg(null);
+      const parsedUtcDate = parseDateTimeInputInTimezone(rescheduleDate, userTimezone);
 
       const res = await fetch("/api/dashboard", {
         method: "POST",
@@ -283,7 +287,8 @@ function DashboardContent() {
         body: JSON.stringify({
           action: "reschedule_event",
           eventId: rescheduleTargetEvent.id,
-          scheduledDate: rescheduleDate,
+          scheduledDate: parsedUtcDate.toISOString(),
+          timezone: userTimezone,
           reason: rescheduleReason,
         }),
       });
@@ -640,17 +645,18 @@ function DashboardContent() {
       events: any[];
     }> = [];
 
-    const todayStr = new Date().toDateString();
-    const selectedStr = selectedDate?.toDateString() || "";
+    const todayStr = getDatePartsInTimezone(new Date(), userTimezone).dateStr;
+    const selectedStr = selectedDate ? getDatePartsInTimezone(selectedDate, userTimezone).dateStr : "";
 
     for (let i = startOffset - 1; i >= 0; i--) {
       const d = prevMonthDaysCount - i;
       const date = new Date(calendarYear, calendarMonthIndex - 1, d);
-      const dateStr = date.toDateString();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const cellDateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       const events = studentTimelineEvents.filter((ev) => {
         const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
         if (isEnded) return false;
-        const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
+        const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === cellDateStr;
         if (!matchDate) return false;
         if (calendarCourseFilter !== "all") {
           return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
@@ -662,19 +668,20 @@ function DashboardContent() {
         date,
         dayNumber: d,
         isCurrentMonth: false,
-        isToday: dateStr === todayStr,
-        isSelected: dateStr === selectedStr,
+        isToday: cellDateStr === todayStr,
+        isSelected: cellDateStr === selectedStr,
         events,
       });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(calendarYear, calendarMonthIndex, d);
-      const dateStr = date.toDateString();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const cellDateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       const events = studentTimelineEvents.filter((ev) => {
         const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
         if (isEnded) return false;
-        const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
+        const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === cellDateStr;
         if (!matchDate) return false;
         if (calendarCourseFilter !== "all") {
           return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
@@ -686,8 +693,8 @@ function DashboardContent() {
         date,
         dayNumber: d,
         isCurrentMonth: true,
-        isToday: dateStr === todayStr,
-        isSelected: dateStr === selectedStr,
+        isToday: cellDateStr === todayStr,
+        isSelected: cellDateStr === selectedStr,
         events,
       });
     }
@@ -695,11 +702,12 @@ function DashboardContent() {
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let d = 1; d <= remaining; d++) {
       const date = new Date(calendarYear, calendarMonthIndex + 1, d);
-      const dateStr = date.toDateString();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const cellDateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       const events = studentTimelineEvents.filter((ev) => {
         const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
         if (isEnded) return false;
-        const matchDate = new Date(ev.dueDate).toDateString() === dateStr;
+        const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === cellDateStr;
         if (!matchDate) return false;
         if (calendarCourseFilter !== "all") {
           return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
@@ -711,22 +719,22 @@ function DashboardContent() {
         date,
         dayNumber: d,
         isCurrentMonth: false,
-        isToday: dateStr === todayStr,
-        isSelected: dateStr === selectedStr,
+        isToday: cellDateStr === todayStr,
+        isSelected: cellDateStr === selectedStr,
         events,
       });
     }
 
     return cells;
-  }, [calendarYear, calendarMonthIndex, studentTimelineEvents, calendarCourseFilter, selectedDate]);
+  }, [calendarYear, calendarMonthIndex, studentTimelineEvents, calendarCourseFilter, selectedDate, userTimezone]);
 
   const selectedDayEvents = useMemo(() => {
     if (!selectedDate) return [];
-    const selectedStr = selectedDate.toDateString();
+    const selectedStr = getDatePartsInTimezone(selectedDate, userTimezone).dateStr;
     return studentTimelineEvents.filter((ev) => {
       const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
       if (isEnded) return false;
-      const matchDate = new Date(ev.dueDate).toDateString() === selectedStr;
+      const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === selectedStr;
       if (!matchDate) return false;
       if (calendarCourseFilter !== "all") {
         return ev.courseId === calendarCourseFilter || ev.course?.id === calendarCourseFilter;
@@ -1219,7 +1227,7 @@ function DashboardContent() {
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  {calendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                  {formatDateInTimezone(calendarMonth, userTimezone, { month: "long", year: "numeric" })}
                 </h3>
                 <div className="flex items-center gap-1">
                   <button
@@ -1252,10 +1260,7 @@ function DashboardContent() {
                     ? cell.events
                         .map(
                           (e) =>
-                            `${e.title} (${new Date(e.dueDate).toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })})`
+                            `${e.title} (${formatTimeInTimezone(e.dueDate, userTimezone, { includeAbbr: true })})`
                         )
                         .join("\n")
                     : undefined;
@@ -1287,7 +1292,7 @@ function DashboardContent() {
                       {hasEvents && (
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col z-50 w-48 sm:w-56 p-2.5 bg-slate-900/95 text-white rounded-xl shadow-xl border border-slate-700/70 backdrop-blur-md pointer-events-none text-left animate-in fade-in zoom-in-95 duration-150">
                           <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider border-b border-slate-700/60 pb-1 flex items-center justify-between">
-                            <span>{cell.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+                            <span>{formatDateInTimezone(cell.date, userTimezone, { weekday: "short", month: "short", day: "numeric" })}</span>
                             <span className="text-[9px] font-normal text-slate-400 font-mono">{cell.events.length} class{cell.events.length > 1 ? "es" : ""}</span>
                           </div>
                           <div className="space-y-2 pt-1.5 max-h-40 overflow-y-auto">
@@ -1298,7 +1303,7 @@ function DashboardContent() {
                                 </div>
                                 <div className="flex items-center justify-between text-[10px]">
                                   <span className="font-mono text-sky-300">
-                                    {new Date(ev.dueDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                    {formatTimeInTimezone(ev.dueDate, userTimezone, { includeAbbr: true })}
                                   </span>
                                   <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
                                     ev.status === "LIVE"
@@ -1418,8 +1423,14 @@ function DashboardContent() {
                             <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1 flex-wrap">
                               <span className="text-blue-700 font-semibold flex items-center gap-1">
                                 <Calendar className="w-3 h-3 text-blue-600" />
-                                {new Date(ev.dueDate).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                {formatForUser(ev.dueDate, userTimezone, { includeDate: true, includeTime: true, includeAbbr: true })}
                               </span>
+                              {ev.tutorTimezone && ev.tutorTimezone !== userTimezone && (
+                                <span className="text-slate-600 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
+                                  <span>Tutor&apos;s time:</span>
+                                  <strong className="font-mono text-slate-800">{formatTimeInTimezone(ev.dueDate, ev.tutorTimezone, { includeAbbr: true })}</strong>
+                                </span>
+                              )}
                               {ev.course && (
                                 <span className="text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[180px]">
                                   {ev.course.title}
@@ -1428,7 +1439,7 @@ function DashboardContent() {
                               {ev.actualStartTime && ev.actualEndTime && (
                                 <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
                                   <Clock className="w-3 h-3 text-emerald-600" />
-                                  Verified: {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  Verified: {formatTimeInTimezone(ev.actualStartTime, userTimezone)} - {formatTimeInTimezone(ev.actualEndTime, userTimezone, { includeAbbr: true })}
                                 </span>
                               )}
                             </div>
@@ -1592,12 +1603,7 @@ function DashboardContent() {
                       </div>
                       <div className="text-[10px] text-slate-500 font-mono flex items-center justify-between">
                         <span>
-                          {new Date(ev.dueDate).toLocaleDateString("en-US", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {formatForUser(ev.dueDate, userTimezone, { includeDate: true, includeTime: true, includeAbbr: true })}
                         </span>
                         <div className="flex items-center gap-1.5">
                           <button
@@ -2088,12 +2094,10 @@ function DashboardContent() {
                 </div>
                 {rescheduleTargetEvent?.dueDate && (
                   <div className="text-[10px] text-slate-500 font-mono">
-                    Currently Scheduled: {new Date(rescheduleTargetEvent.dueDate).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
+                    Currently Scheduled: {formatForUser(rescheduleTargetEvent.dueDate, userTimezone, {
+                      includeDate: true,
+                      includeTime: true,
+                      includeAbbr: true,
                     })}
                   </div>
                 )}
@@ -2452,12 +2456,10 @@ function DashboardContent() {
                             <div className="flex items-center gap-2 text-[11px] text-slate-500">
                               <span>
                                 {tx.createdAt
-                                  ? new Date(tx.createdAt).toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
+                                  ? formatForUser(tx.createdAt, userTimezone, {
+                                      includeDate: true,
+                                      includeTime: true,
+                                      includeAbbr: true,
                                     })
                                   : "Recently"}
                               </span>

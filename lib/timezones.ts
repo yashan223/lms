@@ -366,14 +366,20 @@ export function getTimezoneOffsetString(date: Date = new Date(), timezone: strin
  */
 export function getTimezoneAbbr(date: Date = new Date(), timezone: string): string {
   try {
+    const regional = REGIONAL_TIMEZONES.find((r) => r.id === timezone);
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
       timeZoneName: "short",
     });
     const parts = formatter.formatToParts(date);
-    return parts.find((p) => p.type === "timeZoneName")?.value || "";
+    const intlName = parts.find((p) => p.type === "timeZoneName")?.value || "";
+    if ((intlName.startsWith("GMT+") || intlName.startsWith("GMT-") || intlName.startsWith("UTC")) && regional?.abbr) {
+      return regional.abbr;
+    }
+    return intlName || regional?.abbr || "";
   } catch {
-    return "";
+    const regional = REGIONAL_TIMEZONES.find((r) => r.id === timezone);
+    return regional?.abbr || "";
   }
 }
 
@@ -659,4 +665,116 @@ export function format12hTo24h(time12: string): string {
   }
 
   return `${String(hour).padStart(2, "0")}:${minute}`;
+}
+
+/**
+ * Formats a Date/ISO string for HTML <input type="datetime-local">
+ * respecting the user's regional timezone.
+ * Returns "YYYY-MM-DDTHH:mm"
+ */
+export function formatForDateTimeInput(
+  dateOrIso: Date | string | number,
+  timezone: string = DEFAULT_TIMEZONE
+): string {
+  const parts = getDatePartsInTimezone(dateOrIso, timezone);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${parts.dateStr}T${pad(parts.hour)}:${pad(parts.minute)}`;
+}
+
+/**
+ * Parses an HTML <input type="datetime-local"> string ("YYYY-MM-DDTHH:mm")
+ * interpreted inside the specified regional timezone and converts it to a UTC Date.
+ */
+export function parseDateTimeInputInTimezone(
+  dateTimeStr: string,
+  timezone: string = DEFAULT_TIMEZONE
+): Date {
+  if (!dateTimeStr) return new Date();
+  const [datePart, timePart] = dateTimeStr.split("T");
+  if (!datePart || !timePart) {
+    const fallback = new Date(dateTimeStr);
+    return isNaN(fallback.getTime()) ? new Date() : fallback;
+  }
+  return createDateFromTimezoneParts(datePart, timePart.slice(0, 5), timezone);
+}
+
+/**
+ * Centralized formatter for rendering dates & times for a specific user timezone.
+ * Example output: "Fri, Sep 25, 2026, 6:00 PM IST"
+ */
+export function formatForUser(
+  dateOrIso: Date | string | number,
+  timezone: string = DEFAULT_TIMEZONE,
+  options: {
+    includeDate?: boolean;
+    includeTime?: boolean;
+    includeAbbr?: boolean;
+    weekday?: "short" | "long";
+    month?: "short" | "long" | "numeric";
+    year?: boolean;
+  } = {}
+): string {
+  const {
+    includeDate = true,
+    includeTime = true,
+    includeAbbr = true,
+    weekday = "short",
+    month = "short",
+    year = true,
+  } = options;
+
+  const d = typeof dateOrIso === "string" || typeof dateOrIso === "number" ? new Date(dateOrIso) : dateOrIso;
+  if (!d || isNaN(d.getTime())) return "";
+
+  const resolvedTz = timezone || DEFAULT_TIMEZONE;
+  const parts: string[] = [];
+
+  if (includeDate) {
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      weekday,
+      month,
+      day: "numeric",
+      ...(year ? { year: "numeric" } : {}),
+    };
+    parts.push(formatDateInTimezone(d, resolvedTz, dateOptions));
+  }
+
+  if (includeTime) {
+    const timeStr = formatTimeInTimezone(d, resolvedTz, { hour12: true });
+    if (includeAbbr) {
+      const abbr = getTimezoneAbbr(d, resolvedTz);
+      parts.push(abbr ? `${timeStr} ${abbr}` : timeStr);
+    } else {
+      parts.push(timeStr);
+    }
+  }
+
+  return parts.join(", ");
+}
+
+/**
+ * Returns UTC Date representation
+ */
+export function toUTC(dateOrIso: Date | string | number): Date {
+  const d = typeof dateOrIso === "string" || typeof dateOrIso === "number" ? new Date(dateOrIso) : dateOrIso;
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+/**
+ * Break down a timestamp into user's timezone components
+ */
+export function toUserTime(
+  dateOrIso: Date | string | number,
+  timezone: string = DEFAULT_TIMEZONE
+) {
+  const d = typeof dateOrIso === "string" || typeof dateOrIso === "number" ? new Date(dateOrIso) : dateOrIso;
+  const parts = getDatePartsInTimezone(d, timezone);
+  const timeStr = formatTimeInTimezone(d, timezone);
+  const abbr = getTimezoneAbbr(d, timezone);
+  return {
+    ...parts,
+    timeStr,
+    abbr,
+    formatted12h: format24hTo12h(`${parts.hour}:${parts.minute}`),
+  };
 }

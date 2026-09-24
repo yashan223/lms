@@ -140,6 +140,7 @@ export type AuthUser = {
   headline: string | null;
   bio: string | null;
   phone: string | null;
+  timezone: string | null;
   createdAt: Date;
 };
 
@@ -156,6 +157,7 @@ const USER_SELECT_FIELDS = {
   headline: true,
   bio: true,
   phone: true,
+  timezone: true,
   createdAt: true,
 } as const;
 

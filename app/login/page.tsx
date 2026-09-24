@@ -6,16 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  GraduationCap,
   Lock,
   Mail,
   Eye,
   EyeOff,
   ArrowRight,
-  ShieldCheck,
   AlertCircle,
-  CheckCircle2,
-  UserCheck,
   Loader2,
 } from "lucide-react";
 
@@ -220,45 +216,14 @@ function LoginContent() {
               </Button>
             </form>
 
-            <div className="pt-4 border-t border-slate-100 space-y-2.5">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                Select Account to Log In:
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("student@edupulse.uk");
-                    setPassword("StudentPass123!");
-                  }}
-                  className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                >
-                  <GraduationCap className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span>Student</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("tutor@edupulse.uk");
-                    setPassword("TutorPass123!");
-                  }}
-                  className="p-2 rounded-xl bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                >
-                  <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span>Tutor</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("admin@edupulse.uk");
-                    setPassword("AdminPass123!");
-                  }}
-                  className="p-2 rounded-xl bg-[#0c2461]/10 hover:bg-[#0c2461]/15 border border-blue-300 text-[#0c2461] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#0c2461] shrink-0" />
-                  <span>Admin</span>
-                </button>
-              </div>
+            <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+              Don&apos;t have an account?{" "}
+              <Link
+                href={`/register${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ""}`}
+                className="font-bold text-blue-700 hover:text-blue-800 hover:underline"
+              >
+                Register as Student
+              </Link>
             </div>
           </div>
         </div>

@@ -3983,67 +3983,6 @@ export default function AdminDashboardPage() {
                   })}
                 </div>
               </div>
-
-              {/* Token Bundle Packages Manager */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                      <Coins className="w-4 h-4 text-blue-600" />
-                      Token Bundle Packages
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Configure the hour bundles available for students to purchase. Changes take effect immediately.
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleOpenBundleEditor()}
-                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-blue-900/20 cursor-pointer shrink-0"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-blue-200" />
-                    <span>Edit Bundles</span>
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(bundlesList.length > 0 ? bundlesList : [
-                    { id: "pack-6", name: "6 Hours Flexi Pack", hours: 6, tokens: 6, price: 24, lkrPrice: 7200, popular: false, badge: "Starter", description: "6 hours of learning tokens." },
-                    { id: "pack-16", name: "16 Hours Standard Bundle", hours: 16, tokens: 16, price: 58, lkrPrice: 17400, popular: true, badge: "Most Popular", description: "16 hours of learning tokens." },
-                    { id: "pack-24", name: "24 Hours Mastery Vault", hours: 24, tokens: 24, price: 84, lkrPrice: 25200, popular: false, badge: "Best Value", description: "24 hours of learning tokens." },
-                  ]).map((bundle) => (
-                    <div
-                      key={bundle.id}
-                      className={`p-4 rounded-xl border space-y-2.5 relative ${bundle.popular ? "border-blue-300 bg-blue-50/40 ring-1 ring-blue-300/50" : "border-slate-200 bg-slate-50/50"}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${bundle.popular ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-600"}`}>
-                          {bundle.popular ? "⭐ " : ""}{bundle.badge}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-black text-slate-900 text-sm leading-tight">{bundle.name}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{bundle.description}</div>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
-                        <div className="flex items-center gap-1.5 text-blue-700 font-bold text-sm">
-                          <Coins className="w-3.5 h-3.5 text-blue-600" />
-                          <span>{bundle.tokens} Hours</span>
-                        </div>
-                        <div className="text-right font-black text-slate-900 text-base">
-                          <div>{formatStudentPrice(bundle.price, null)}</div>
-                          <div className="text-[10px] font-semibold text-blue-600">
-                            {formatStudentPrice(bundle.price, "Sri Lanka", bundle.lkrPrice)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono">
-                        ${(bundle.price / bundle.tokens).toFixed(2)}/hr
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 

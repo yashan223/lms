@@ -19,12 +19,20 @@ import {
   RefreshCw,
   ExternalLink,
   CalendarClock,
+  Globe,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import {
+  getUserBrowserTimezone,
+  getRegionalTimezone,
+  DEFAULT_TIMEZONE,
+  format24hTo12h,
+} from "@/lib/timezones";
 
 interface TutorAvailabilitySlot {
   id: string;
@@ -35,6 +43,7 @@ interface TutorAvailabilitySlot {
   startTime: string;
   endTime: string;
   slotType: string;
+  timezone?: string | null;
   isRecurring: boolean;
   isActive: boolean;
   title?: string | null;
@@ -99,18 +108,27 @@ export function TutorAvailabilityManager({
   const [targetCourseId, setTargetCourseId] = useState("ALL");
   const [slotType, setSlotType] = useState<"ALL" | "CLASS" | "TRIAL">("ALL");
 
+  const [tutorTimezone, setTutorTimezone] = useState<string>(tutor?.timezone || DEFAULT_TIMEZONE);
+  const [previewTimezone, setPreviewTimezone] = useState<string>(tutor?.timezone || DEFAULT_TIMEZONE);
+
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   // Fetch tutor's configured availability
-  const fetchAvailability = async () => {
+  const fetchAvailability = async (tzOverride?: string) => {
     if (!tutor?.id) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/tutor/availability?tutorId=${tutor.id}&days=7`);
+      const activeTz = tzOverride || previewTimezone;
+      const res = await fetch(
+        `/api/tutor/availability?tutorId=${tutor.id}&timezone=${encodeURIComponent(activeTz)}&days=7`
+      );
       const data = await res.json();
       if (res.ok) {
+        if (data.tutorTimezone) {
+          setTutorTimezone(data.tutorTimezone);
+        }
         setAvailabilities(data.availabilities || []);
         setDaySlotsPreview(data.days || []);
       }
@@ -119,6 +137,28 @@ export function TutorAvailabilityManager({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpdateOperatingTimezone = async (newTz: string) => {
+    setTutorTimezone(newTz);
+    setPreviewTimezone(newTz);
+    try {
+      await fetch("/api/tutor/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_timezone", timezone: newTz }),
+      });
+      fetchAvailability(newTz);
+      setStatusMsg({
+        type: "success",
+        text: `Your operating regional timezone has been set to ${newTz}.`,
+      });
+    } catch {}
+  };
+
+  const handlePreviewTimezoneChange = (newTz: string) => {
+    setPreviewTimezone(newTz);
+    fetchAvailability(newTz);
   };
 
   useEffect(() => {
@@ -171,6 +211,7 @@ export function TutorAvailabilityManager({
             dayOfWeek: day,
             startTime,
             endTime,
+            timezone: tutorTimezone,
             isRecurring: true,
             title: slotTitle.trim() || undefined,
             courseId: targetCourseId !== "ALL" ? targetCourseId : null,
@@ -188,6 +229,7 @@ export function TutorAvailabilityManager({
           specificDate,
           startTime,
           endTime,
+          timezone: tutorTimezone,
           isRecurring: false,
           title: slotTitle.trim() || undefined,
           courseId: targetCourseId !== "ALL" ? targetCourseId : null,
@@ -201,6 +243,7 @@ export function TutorAvailabilityManager({
         body: JSON.stringify({
           action: "set_availability",
           slots: slotsToCreate,
+          timezone: tutorTimezone,
         }),
       });
 
@@ -260,6 +303,7 @@ export function TutorAvailabilityManager({
         body: JSON.stringify({
           action: "apply_preset",
           preset,
+          timezone: tutorTimezone,
           replaceExisting: false,
         }),
       });
@@ -314,13 +358,56 @@ export function TutorAvailabilityManager({
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchAvailability}
+            onClick={() => fetchAvailability()}
             disabled={loading}
             className="text-xs font-semibold rounded-xl gap-1.5 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-600" : ""}`} />
             <span>Refresh</span>
           </Button>
+        </div>
+      </div>
+
+      {/* Regional Timezone & Student Preview Bar */}
+      <div className="bg-white rounded-2xl border border-sky-200/90 p-4 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
+            <Globe className="w-5 h-5 text-sky-600" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+              <span>Operating Region:</span>
+              <strong className="text-sky-700 font-extrabold">
+                {getRegionalTimezone(tutorTimezone).flag} {getRegionalTimezone(tutorTimezone).region}
+              </strong>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              New slots you configure are pinned to this timezone. Students in other countries will see them converted into their local regional times.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-600">Operating Region:</span>
+            <RegionalTimezoneSelector
+              selectedTimezone={tutorTimezone}
+              onChange={(tz) => handleUpdateOperatingTimezone(tz)}
+              showDualNotice={false}
+              compact
+            />
+          </div>
+
+          <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
+            <span className="text-[11px] font-bold text-slate-600">Preview for Student in:</span>
+            <RegionalTimezoneSelector
+              selectedTimezone={previewTimezone}
+              onChange={(tz) => handlePreviewTimezoneChange(tz)}
+              tutorBaseTimezone={tutorTimezone}
+              showDualNotice={false}
+              compact
+            />
+          </div>
         </div>
       </div>
 
@@ -471,7 +558,7 @@ export function TutorAvailabilityManager({
                           </span>
                           <span className="font-mono text-xs font-bold text-blue-700 flex items-center gap-1 mt-0.5">
                             <Clock className="w-3 h-3 text-blue-500" />
-                            {av.startTime} – {av.endTime}
+                            {format24hTo12h(av.startTime)} – {format24hTo12h(av.endTime)}
                           </span>
                         </div>
                         <button

@@ -23,6 +23,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
+import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import {
+  getUserBrowserTimezone,
+  getRegionalTimezone,
+  DEFAULT_TIMEZONE,
+  formatTimeInTimezone,
+} from "@/lib/timezones";
 
 interface TrialRequestModalProps {
   isOpen: boolean;
@@ -98,31 +105,71 @@ export function TrialRequestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdTrial, setCreatedTrial] = useState<any | null>(null);
-  const [openSlots, setOpenSlots] = useState<Array<{ startTime: string; timeDisplay: string; dateLabel: string; matchesStudent?: boolean }>>([]);
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(DEFAULT_TIMEZONE);
+  const [tutorBaseTimezone, setTutorBaseTimezone] = useState<string>(DEFAULT_TIMEZONE);
+  const [openSlots, setOpenSlots] = useState<
+    Array<{
+      startTime: string;
+      timeDisplay: string;
+      tutorTimeDisplay?: string;
+      dateLabel: string;
+      matchesStudent?: boolean;
+      dualTime?: any;
+    }>
+  >([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSelectedTimezone(getUserBrowserTimezone());
+    }
+  }, []);
 
   // Fetch tutor slots helper
-  const fetchTutorSlots = (tutorIdParam?: string, courseIdParam?: string, studentIdParam?: string) => {
-    const targetTutorId = tutorIdParam || initialTutorId || allCourses.find((c) => c.id === (courseIdParam || courseId))?.instructor?.id;
+  const fetchTutorSlots = (
+    tutorIdParam?: string,
+    courseIdParam?: string,
+    studentIdParam?: string,
+    tzOverride?: string
+  ) => {
+    const targetTutorId =
+      tutorIdParam ||
+      initialTutorId ||
+      allCourses.find((c) => c.id === (courseIdParam || courseId))?.instructor?.id;
     const targetCourseId = courseIdParam || initialCourseId || courseId;
+    const tz = tzOverride || selectedTimezone;
     const params = new URLSearchParams();
     if (targetTutorId) params.set("tutorId", targetTutorId);
     if (targetCourseId) params.set("courseId", targetCourseId);
-    if (studentIdParam || currentUser?.id) params.set("studentId", studentIdParam || currentUser?.id || "");
+    if (studentIdParam || currentUser?.id)
+      params.set("studentId", studentIdParam || currentUser?.id || "");
+    params.set("timezone", tz);
     params.set("days", "7");
 
     fetch(`/api/tutor/availability?${params.toString()}`)
       .then((r) => r.json())
       .then((d) => {
+        if (d.tutorTimezone) {
+          setTutorBaseTimezone(d.tutorTimezone);
+        }
         if (d.days) {
-          const collected: Array<{ startTime: string; timeDisplay: string; dateLabel: string; matchesStudent?: boolean }> = [];
+          const collected: Array<{
+            startTime: string;
+            timeDisplay: string;
+            tutorTimeDisplay?: string;
+            dateLabel: string;
+            matchesStudent?: boolean;
+            dualTime?: any;
+          }> = [];
           for (const day of d.days) {
             for (const s of day.slots || []) {
-              if (s.isAvailable && collected.length < 6) {
+              if (s.isAvailable && collected.length < 8) {
                 collected.push({
                   startTime: s.startTime,
                   timeDisplay: s.timeDisplay,
+                  tutorTimeDisplay: s.tutorTimeDisplay,
                   dateLabel: day.dateLabel,
                   matchesStudent: Boolean(s.matchesStudentAvailability),
+                  dualTime: s.dualTime,
                 });
               }
             }
@@ -300,6 +347,7 @@ export function TrialRequestModal({
           studentName: currentUser?.name || null,
           studentEmail: currentUser?.email || null,
           preferredDate: new Date(preferredDate).toISOString(),
+          timezone: selectedTimezone,
           topic: topic?.trim() || "30-Min Free Trial & Syllabus Overview",
           notes: notes?.trim() || null,
         }),
@@ -678,12 +726,35 @@ export function TrialRequestModal({
               )}
             </div>
 
+            {/* Regional Timezone Selector */}
+            <div className="p-3 rounded-xl bg-sky-50/60 border border-sky-200/80 space-y-1.5">
+              <div className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center justify-between">
+                <span>Your Regional Timezone</span>
+                <span className="text-[10px] text-sky-700 font-medium">Slots adjust automatically</span>
+              </div>
+              <RegionalTimezoneSelector
+                selectedTimezone={selectedTimezone}
+                onChange={(tz) => {
+                  setSelectedTimezone(tz);
+                  fetchTutorSlots(undefined, undefined, undefined, tz);
+                }}
+                tutorBaseTimezone={tutorBaseTimezone}
+                compact
+              />
+            </div>
+
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="font-bold text-slate-700 block">
                   Preferred Date &amp; Time <span className="text-red-500">*</span>
                 </label>
-                <span className="text-[10px] text-slate-400">Verified against class schedule</span>
+                {preferredDate ? (
+                  <span className="text-[11px] font-bold text-blue-700 font-sans">
+                    {formatTimeInTimezone(new Date(preferredDate), selectedTimezone, { includeAbbr: true })}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-400">Verified against class schedule</span>
+                )}
               </div>
 
               {openSlots.length > 0 && (
@@ -708,6 +779,11 @@ export function TrialRequestModal({
                       >
                         <Clock className={`w-2.5 h-2.5 ${s.matchesStudent ? "text-blue-700" : "text-blue-600"}`} />
                         <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
+                        {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
+                          <span className="text-[9px] text-slate-500 font-medium">
+                            ({s.tutorTimeDisplay} LK)
+                          </span>
+                        )}
                         {s.matchesStudent && <span className="text-[9px] text-blue-800 font-extrabold">🌟 Mutual Match</span>}
                       </button>
                     ))}

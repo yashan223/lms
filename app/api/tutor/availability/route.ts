@@ -3,6 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
+import {
+  DEFAULT_TIMEZONE,
+  getRegionalTimezone,
+  getDatePartsInTimezone,
+  createDateFromTimezoneParts,
+  formatTimeInTimezone,
+  formatDateInTimezone,
+  getDualTimeDisplay,
+} from "@/lib/timezones";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -35,6 +44,7 @@ export async function GET(request: NextRequest) {
     const reqCourseId = searchParams.get("courseId");
     let reqStudentId = searchParams.get("studentId");
     const trialId = searchParams.get("trialId");
+    const requestedTimezone = searchParams.get("timezone") || searchParams.get("targetTimezone");
     const daysCount = Math.min(Math.max(parseInt(searchParams.get("days") || "14", 10), 1), 30);
 
     let resolvedTutorId = reqTutorId;
@@ -97,6 +107,8 @@ export async function GET(request: NextRequest) {
         headline: true,
         bio: true,
         phone: true,
+        country: true,
+        timezone: true,
       },
     });
 
@@ -104,8 +116,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Tutor not found." }, { status: 404 });
     }
 
+    // Resolve timezones:
+    // Base timezone for the tutor (defaults to tutor's stored timezone or country or DEFAULT_TIMEZONE)
+    const tutorTimezone = tutor.timezone || getRegionalTimezone(tutor.country).id || DEFAULT_TIMEZONE;
+    // Viewer timezone (requested by client, or fallback to tutor's timezone)
+    const viewerTimezone = requestedTimezone ? getRegionalTimezone(requestedTimezone).id : tutorTimezone;
+
     // Optional: Fetch student availability if studentId resolved
     let studentData: any = null;
+    let studentTimezone = viewerTimezone;
     if (resolvedStudentId) {
       const sUser = await prisma.user.findUnique({
         where: { id: resolvedStudentId },
@@ -115,15 +134,19 @@ export async function GET(request: NextRequest) {
           email: true,
           avatar: true,
           phone: true,
+          country: true,
+          timezone: true,
         },
       });
       if (sUser) {
+        studentTimezone = sUser.timezone || getRegionalTimezone(sUser.country).id || viewerTimezone;
         const sAvail = await prisma.studentAvailability.findMany({
           where: { studentId: resolvedStudentId, isActive: true },
           orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
         });
         studentData = {
           ...sUser,
+          timezone: studentTimezone,
           availabilities: sAvail,
         };
       }
@@ -153,10 +176,11 @@ export async function GET(request: NextRequest) {
     });
     const tutorCourseIds = tutorCourses.map((c) => c.id);
 
-    // 3. Fetch all currently scheduled events/classes for this tutor
+    // 3. Range start in tutor's timezone
     const now = new Date();
-    const rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const rangeEnd = new Date(rangeStart.getTime() + daysCount * 24 * 60 * 60 * 1000);
+    const nowTutorParts = getDatePartsInTimezone(now, tutorTimezone);
+    const rangeStart = createDateFromTimezoneParts(nowTutorParts.dateStr, "00:00", tutorTimezone);
+    const rangeEnd = new Date(rangeStart.getTime() + (daysCount + 1) * 24 * 60 * 60 * 1000);
 
     const scheduledClasses = await prisma.event.findMany({
       where: {
@@ -202,7 +226,7 @@ export async function GET(request: NextRequest) {
       orderBy: { preferredDate: "asc" },
     });
 
-    // Format scheduled busy intervals
+    // Format scheduled busy intervals (exact UTC Date bounds)
     const busyIntervals: Array<{
       start: Date;
       end: Date;
@@ -239,21 +263,54 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // 5. Compute concrete days and time slots
-    const daysData = [];
+    // 5. Compute concrete slots and group by calendar day for the viewer
+    // Map to group slots by viewer's calendar date: "YYYY-MM-DD"
+    const viewerDaysMap = new Map<
+      string,
+      {
+        date: string;
+        dateLabel: string;
+        dayOfWeek: number;
+        slots: Array<any>;
+      }
+    >();
+
+    // Initialize viewer days sequence
+    const viewerNowParts = getDatePartsInTimezone(now, viewerTimezone);
+    const viewerBaseDate = createDateFromTimezoneParts(viewerNowParts.dateStr, "00:00", viewerTimezone);
 
     for (let dayOffset = 0; dayOffset < daysCount; dayOffset++) {
-      const currentDate = new Date(rangeStart.getTime() + dayOffset * 24 * 60 * 60 * 1000);
-      const currentDayOfWeek = currentDate.getDay(); // 0 = Sun, 1 = Mon ...
-      const dateStr = currentDate.toISOString().split("T")[0];
+      const dayMoment = new Date(viewerBaseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000);
+      const parts = getDatePartsInTimezone(dayMoment, viewerTimezone);
+      const dLabel = formatDateInTimezone(dayMoment, viewerTimezone, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
 
-      // Find matching availability windows for this date
+      viewerDaysMap.set(parts.dateStr, {
+        date: parts.dateStr,
+        dateLabel: dLabel,
+        dayOfWeek: parts.dayOfWeek,
+        slots: [],
+      });
+    }
+
+    // Generate slots across all days in tutor's timezone
+    for (let dayOffset = 0; dayOffset < daysCount + 1; dayOffset++) {
+      const dayMomentInTutorTz = new Date(rangeStart.getTime() + dayOffset * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000);
+      const tutorDayParts = getDatePartsInTimezone(dayMomentInTutorTz, tutorTimezone);
+      const tutorDateStr = tutorDayParts.dateStr;
+      const tutorDayOfWeek = tutorDayParts.dayOfWeek;
+
+      // Find matching availability windows for this date in tutor's timezone
       let windows = rawAvailabilities.filter((av) => {
         if (av.specificDate) {
-          return av.specificDate.toISOString().split("T")[0] === dateStr;
+          const specParts = getDatePartsInTimezone(av.specificDate, av.timezone || tutorTimezone);
+          return specParts.dateStr === tutorDateStr;
         }
         if (av.isRecurring && av.dayOfWeek !== null) {
-          return av.dayOfWeek === currentDayOfWeek;
+          return av.dayOfWeek === tutorDayOfWeek;
         }
         return false;
       });
@@ -262,38 +319,21 @@ export async function GET(request: NextRequest) {
       // Mon - Fri: 09:00-12:00 and 14:00-18:00
       // Sat: 10:00-14:00
       if (rawAvailabilities.length === 0) {
-        if (currentDayOfWeek >= 1 && currentDayOfWeek <= 5) {
+        if (tutorDayOfWeek >= 1 && tutorDayOfWeek <= 5) {
           windows = [
-            { startTime: "09:00", endTime: "12:00", title: "Morning Consultation" },
-            { startTime: "14:00", endTime: "18:00", title: "Afternoon Live Classes" },
+            { startTime: "09:00", endTime: "12:00", title: "Morning Consultation", timezone: tutorTimezone },
+            { startTime: "14:00", endTime: "18:00", title: "Afternoon Live Classes", timezone: tutorTimezone },
           ] as any;
-        } else if (currentDayOfWeek === 6) {
+        } else if (tutorDayOfWeek === 6) {
           windows = [
-            { startTime: "10:00", endTime: "14:00", title: "Weekend Individual Class" },
+            { startTime: "10:00", endTime: "14:00", title: "Weekend Individual Class", timezone: tutorTimezone },
           ] as any;
         }
       }
 
       // Generate 30-minute intervals within each window
-      const slots: Array<{
-        startTime: string; // ISO string
-        endTime: string;   // ISO string
-        timeDisplay: string;
-        isAvailable: boolean;
-        isPast: boolean;
-        matchesStudentAvailability?: boolean;
-        conflict?: {
-          type: "CLASS" | "TRIAL";
-          id: string;
-          title: string;
-          courseTitle?: string;
-          start: string;
-          end: string;
-        } | null;
-        windowTitle?: string;
-      }> = [];
-
-      windows.forEach((win) => {
+      for (const win of windows) {
+        const winTimezone = win.timezone || tutorTimezone;
         const [startH, startM] = win.startTime.split(":").map(Number);
         const [endH, endM] = win.endTime.split(":").map(Number);
 
@@ -301,9 +341,11 @@ export async function GET(request: NextRequest) {
         const endMinutes = endH * 60 + endM;
 
         while (curMinutes + 30 <= endMinutes) {
-          const slotStart = new Date(currentDate);
-          slotStart.setHours(Math.floor(curMinutes / 60), curMinutes % 60, 0, 0);
+          const pad = (n: number) => String(n).padStart(2, "0");
+          const curTimeStr = `${pad(Math.floor(curMinutes / 60))}:${pad(curMinutes % 60)}`;
 
+          // Create exact UTC Date moment for slotStart and slotEnd
+          const slotStart = createDateFromTimezoneParts(tutorDateStr, curTimeStr, winTimezone);
           const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
 
           // Check if in past
@@ -328,22 +370,29 @@ export async function GET(request: NextRequest) {
 
           const isAvailable = !isPast && !conflict;
 
-          // Check if matches student availability
+          // Check if matches student availability (in student's regional study hours)
           let matchesStudentAvailability = false;
           if (studentData && studentData.availabilities.length > 0) {
+            const studentParts = getDatePartsInTimezone(slotStart, studentTimezone);
+            const slotStudentMinutes = studentParts.hour * 60 + studentParts.minute;
+
             for (const sAv of studentData.availabilities) {
+              const sAvTz = sAv.timezone || studentTimezone;
               let dayMatch = false;
+
               if (sAv.specificDate) {
-                dayMatch = sAv.specificDate.toISOString().split("T")[0] === dateStr;
+                const sDateParts = getDatePartsInTimezone(sAv.specificDate, sAvTz);
+                dayMatch = sDateParts.dateStr === studentParts.dateStr;
               } else if (sAv.isRecurring && sAv.dayOfWeek !== null) {
-                dayMatch = sAv.dayOfWeek === currentDayOfWeek;
+                dayMatch = sAv.dayOfWeek === studentParts.dayOfWeek;
               }
+
               if (dayMatch) {
                 const [sH, sM] = sAv.startTime.split(":").map(Number);
                 const [eH, eM] = sAv.endTime.split(":").map(Number);
                 const sStartMin = sH * 60 + sM;
                 const sEndMin = eH * 60 + eM;
-                if (curMinutes >= sStartMin && curMinutes + 30 <= sEndMin) {
+                if (slotStudentMinutes >= sStartMin && slotStudentMinutes + 30 <= sEndMin) {
                   matchesStudentAvailability = true;
                   break;
                 }
@@ -351,16 +400,39 @@ export async function GET(request: NextRequest) {
             }
           }
 
-          const timeDisplay = slotStart.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          });
+          // Format times in viewer's and tutor's regional timezone
+          const timeDisplay = formatTimeInTimezone(slotStart, viewerTimezone);
+          const tutorTimeDisplay = formatTimeInTimezone(slotStart, tutorTimezone);
+          const dualTime = getDualTimeDisplay(slotStart, viewerTimezone, tutorTimezone);
 
-          slots.push({
+          // Find which day of the viewer this slot belongs to
+          const viewerSlotParts = getDatePartsInTimezone(slotStart, viewerTimezone);
+          let targetDay = viewerDaysMap.get(viewerSlotParts.dateStr);
+
+          if (!targetDay) {
+            // If slot crosses into an adjacent viewer date, register it
+            const newLabel = formatDateInTimezone(slotStart, viewerTimezone, {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            });
+            targetDay = {
+              date: viewerSlotParts.dateStr,
+              dateLabel: newLabel,
+              dayOfWeek: viewerSlotParts.dayOfWeek,
+              slots: [],
+            };
+            viewerDaysMap.set(viewerSlotParts.dateStr, targetDay);
+          }
+
+          targetDay.slots.push({
             startTime: slotStart.toISOString(),
             endTime: slotEnd.toISOString(),
             timeDisplay,
+            tutorTimeDisplay,
+            viewerTimezone,
+            tutorTimezone,
+            dualTime,
             isAvailable,
             isPast,
             matchesStudentAvailability,
@@ -370,36 +442,53 @@ export async function GET(request: NextRequest) {
 
           curMinutes += 30;
         }
-      });
-
-      // Sort slots by start time
-      slots.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-
-      daysData.push({
-        date: dateStr,
-        dateLabel: currentDate.toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        }),
-        dayOfWeek: currentDayOfWeek,
-        hasAvailableSlots: slots.some((s) => s.isAvailable),
-        totalSlots: slots.length,
-        availableSlotsCount: slots.filter((s) => s.isAvailable).length,
-        conflictSlotsCount: slots.filter((s) => s.conflict).length,
-        slots,
-      });
+      }
     }
+
+    // Convert map to array and compute totals
+    const daysData = Array.from(viewerDaysMap.values())
+      .map((day) => {
+        // Sort slots by UTC start time
+        day.slots.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+        // Deduplicate any overlapping slots with identical startTime
+        const uniqueSlots: typeof day.slots = [];
+        const seenStarts = new Set<string>();
+        for (const s of day.slots) {
+          if (!seenStarts.has(s.startTime)) {
+            seenStarts.add(s.startTime);
+            uniqueSlots.push(s);
+          }
+        }
+
+        return {
+          date: day.date,
+          dateLabel: day.dateLabel,
+          dayOfWeek: day.dayOfWeek,
+          hasAvailableSlots: uniqueSlots.some((s) => s.isAvailable),
+          totalSlots: uniqueSlots.length,
+          availableSlotsCount: uniqueSlots.filter((s) => s.isAvailable).length,
+          conflictSlotsCount: uniqueSlots.filter((s) => s.conflict).length,
+          slots: uniqueSlots,
+        };
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, daysCount);
 
     return NextResponse.json({
       success: true,
       tutor,
+      tutorTimezone,
+      viewerTimezone,
+      tutorRegion: getRegionalTimezone(tutorTimezone),
+      viewerRegion: getRegionalTimezone(viewerTimezone),
       student: studentData,
       availabilities: rawAvailabilities,
       scheduledClasses: scheduledClasses.map((c) => ({
         id: c.id,
         title: c.title,
         dueDate: c.dueDate,
+        dueDateFormattedViewer: formatTimeInTimezone(c.dueDate, viewerTimezone),
+        dueDateFormattedTutor: formatTimeInTimezone(c.dueDate, tutorTimezone),
         durationMin: getEventDurationMinutes(c.title, c.description),
         course: c.course,
       })),
@@ -429,6 +518,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
+    // 0. Update tutor preferred regional timezone
+    if (action === "update_timezone") {
+      const { timezone } = body;
+      if (!timezone) {
+        return NextResponse.json({ error: "Timezone is required." }, { status: 400 });
+      }
+
+      const validTz = getRegionalTimezone(timezone).id;
+      await prisma.user.update({
+        where: { id: tutor.id },
+        data: { timezone: validTz },
+      });
+
+      broadcastLMSEvent("TUTOR_AVAILABILITY_CHANGED", { tutorId: tutor.id });
+
+      return NextResponse.json({
+        success: true,
+        message: `Regional timezone updated to ${validTz}.`,
+        timezone: validTz,
+      });
+    }
+
     // 1. Batch add or set multiple availability times
     if (action === "set_availability" || action === "batch_add") {
       const slots = Array.isArray(body.slots) ? body.slots : [body];
@@ -439,6 +550,12 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+
+      const tutorUser = await prisma.user.findUnique({
+        where: { id: tutor.id },
+        select: { timezone: true, country: true },
+      });
+      const defaultTz = tutorUser?.timezone || getRegionalTimezone(tutorUser?.country).id || DEFAULT_TIMEZONE;
 
       const createdList = [];
 
@@ -452,6 +569,7 @@ export async function POST(request: NextRequest) {
           title,
           courseId,
           slotType = "ALL",
+          timezone = defaultTz,
         } = s;
 
         const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
@@ -476,6 +594,7 @@ export async function POST(request: NextRequest) {
             specificDate: specificDate ? new Date(specificDate) : null,
             startTime: startTime.trim(),
             endTime: endTime.trim(),
+            timezone: timezone || defaultTz,
             isRecurring: Boolean(isRecurring),
             isActive: true,
             title: title?.trim() || null,
@@ -548,7 +667,13 @@ export async function POST(request: NextRequest) {
 
     // 4. Quick preset generator
     if (action === "apply_preset") {
-      const { preset } = body; // "WEEKDAYS", "WEEKENDS", "FULL_SCHEDULE"
+      const { preset, timezone } = body; // "WEEKDAYS", "WEEKENDS", "FULL_SCHEDULE"
+
+      const tutorUser = await prisma.user.findUnique({
+        where: { id: tutor.id },
+        select: { timezone: true, country: true },
+      });
+      const activeTz = timezone || tutorUser?.timezone || getRegionalTimezone(tutorUser?.country).id || DEFAULT_TIMEZONE;
 
       // Clear existing recurring slots if requested
       if (body.replaceExisting) {
@@ -567,6 +692,7 @@ export async function POST(request: NextRequest) {
             dayOfWeek: d,
             startTime: "10:00",
             endTime: "12:00",
+            timezone: activeTz,
             isRecurring: true,
             isActive: true,
             title: "Morning Academic Clinic",
@@ -577,6 +703,7 @@ export async function POST(request: NextRequest) {
             dayOfWeek: d,
             startTime: "14:00",
             endTime: "17:00",
+            timezone: activeTz,
             isRecurring: true,
             isActive: true,
             title: "Afternoon Classes & Consultation",
@@ -592,6 +719,7 @@ export async function POST(request: NextRequest) {
           dayOfWeek: 6,
           startTime: "09:30",
           endTime: "13:30",
+          timezone: activeTz,
           isRecurring: true,
           isActive: true,
           title: "Weekend Individual Class Window",
@@ -609,7 +737,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Applied ${preset} schedule preset (${slotsToInsert.length} slots generated).`,
+        message: `Applied ${preset} schedule preset (${slotsToInsert.length} slots generated in ${activeTz}).`,
       });
     }
 

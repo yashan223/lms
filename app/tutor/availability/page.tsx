@@ -22,11 +22,19 @@ import {
   ExternalLink,
   ChevronRight,
   Zap,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import {
+  getUserBrowserTimezone,
+  getRegionalTimezone,
+  DEFAULT_TIMEZONE,
+  format24hTo12h,
+} from "@/lib/timezones";
 
 interface TutorAvailabilitySlot {
   id: string;
@@ -37,6 +45,7 @@ interface TutorAvailabilitySlot {
   startTime: string;
   endTime: string;
   slotType: string;
+  timezone?: string | null;
   isRecurring: boolean;
   isActive: boolean;
   title?: string | null;
@@ -92,8 +101,11 @@ function TutorAvailabilityContent() {
   const [targetCourseId, setTargetCourseId] = useState("ALL");
   const [slotType, setSlotType] = useState<"ALL" | "CLASS" | "TRIAL">("ALL");
 
+  const [tutorTimezone, setTutorTimezone] = useState<string>(DEFAULT_TIMEZONE);
+  const [previewTimezone, setPreviewTimezone] = useState<string>(DEFAULT_TIMEZONE);
+
   // Load Tutor Data & Availability
-  const loadData = async () => {
+  const loadData = async (tzOverride?: string) => {
     try {
       setLoading(true);
       const resTutor = await fetch("/api/tutor");
@@ -110,10 +122,16 @@ function TutorAvailabilityContent() {
         setEvents(dataTutor.events || []);
         setTrials(dataTutor.trials || []);
 
+        const activeTz = tzOverride || previewTimezone || dataTutor.tutor.timezone || DEFAULT_TIMEZONE;
         // Fetch configured availability slots
-        const resAvail = await fetch(`/api/tutor/availability?tutorId=${dataTutor.tutor.id}&days=14`);
+        const resAvail = await fetch(
+          `/api/tutor/availability?tutorId=${dataTutor.tutor.id}&timezone=${encodeURIComponent(activeTz)}&days=14`
+        );
         if (resAvail.ok) {
           const dataAvail = await resAvail.json();
+          if (dataAvail.tutorTimezone) {
+            setTutorTimezone(dataAvail.tutorTimezone);
+          }
           setAvailabilities(dataAvail.availabilities || []);
         }
       }
@@ -123,6 +141,28 @@ function TutorAvailabilityContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpdateOperatingTimezone = async (newTz: string) => {
+    setTutorTimezone(newTz);
+    setPreviewTimezone(newTz);
+    try {
+      await fetch("/api/tutor/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_timezone", timezone: newTz }),
+      });
+      loadData(newTz);
+      setStatusMsg({
+        type: "success",
+        text: `Operating regional timezone set to ${newTz}.`,
+      });
+    } catch {}
+  };
+
+  const handlePreviewTimezoneChange = (newTz: string) => {
+    setPreviewTimezone(newTz);
+    loadData(newTz);
   };
 
   useEffect(() => {
@@ -174,6 +214,7 @@ function TutorAvailabilityContent() {
             dayOfWeek,
             startTime,
             endTime,
+            timezone: tutorTimezone,
             isRecurring: true,
             title: slotTitle.trim() || undefined,
             courseId: targetCourseId !== "ALL" ? targetCourseId : null,
@@ -191,6 +232,7 @@ function TutorAvailabilityContent() {
           specificDate,
           startTime,
           endTime,
+          timezone: tutorTimezone,
           isRecurring: false,
           title: slotTitle.trim() || undefined,
           courseId: targetCourseId !== "ALL" ? targetCourseId : null,
@@ -204,6 +246,7 @@ function TutorAvailabilityContent() {
         body: JSON.stringify({
           action: "set_availability",
           slots: slotsToCreate,
+          timezone: tutorTimezone,
         }),
       });
 
@@ -267,6 +310,7 @@ function TutorAvailabilityContent() {
         body: JSON.stringify({
           action: "apply_preset",
           preset,
+          timezone: tutorTimezone,
           replaceExisting: false,
         }),
       });
@@ -277,7 +321,9 @@ function TutorAvailabilityContent() {
           text: data.message || `Applied ${preset} preset schedule.`,
         });
         if (tutor?.id) {
-          const resAvail = await fetch(`/api/tutor/availability?tutorId=${tutor.id}&days=14`);
+          const resAvail = await fetch(
+            `/api/tutor/availability?tutorId=${tutor.id}&timezone=${encodeURIComponent(previewTimezone)}&days=14`
+          );
           if (resAvail.ok) {
             const dataAvail = await resAvail.json();
             setAvailabilities(dataAvail.availabilities || []);
@@ -317,7 +363,7 @@ function TutorAvailabilityContent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={loadData}
+              onClick={() => loadData()}
               disabled={loading}
               className="text-xs font-semibold rounded-xl gap-1.5 cursor-pointer shadow-2xs"
             >
@@ -379,6 +425,49 @@ function TutorAvailabilityContent() {
                 <Zap className="w-3.5 h-3.5" />
                 Apply Saturday Mornings
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Regional Timezone & Student Preview Bar */}
+        <div className="bg-white rounded-2xl border border-sky-200/90 p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
+              <Globe className="w-5 h-5 text-sky-600" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span>Tutor Operating Region:</span>
+                <strong className="text-sky-700 font-extrabold">
+                  {getRegionalTimezone(tutorTimezone).flag} {getRegionalTimezone(tutorTimezone).region}
+                </strong>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Times you specify in the studio are pinned to your region. Students across the globe see these slots converted into their local regional time.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-600">Operating Region:</span>
+              <RegionalTimezoneSelector
+                selectedTimezone={tutorTimezone}
+                onChange={(tz) => handleUpdateOperatingTimezone(tz)}
+                showDualNotice={false}
+                compact
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
+              <span className="text-[11px] font-bold text-slate-600">Preview as Student in:</span>
+              <RegionalTimezoneSelector
+                selectedTimezone={previewTimezone}
+                onChange={(tz) => handlePreviewTimezoneChange(tz)}
+                tutorBaseTimezone={tutorTimezone}
+                showDualNotice={false}
+                compact
+              />
             </div>
           </div>
         </div>
@@ -585,8 +674,9 @@ function TutorAvailabilityContent() {
                 {/* Time Range */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label htmlFor="availability-start-time" className="font-bold text-slate-700 block cursor-pointer">
-                      Start Time <span className="text-red-500">*</span>
+                    <label htmlFor="availability-start-time" className="font-bold text-slate-700 flex items-center justify-between cursor-pointer">
+                      <span>Start Time <span className="text-red-500">*</span></span>
+                      {startTime && <span className="text-[11px] font-bold text-blue-600 font-sans">({format24hTo12h(startTime)})</span>}
                     </label>
                     <Input
                       id="availability-start-time"
@@ -600,8 +690,9 @@ function TutorAvailabilityContent() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label htmlFor="availability-end-time" className="font-bold text-slate-700 block cursor-pointer">
-                      End Time <span className="text-red-500">*</span>
+                    <label htmlFor="availability-end-time" className="font-bold text-slate-700 flex items-center justify-between cursor-pointer">
+                      <span>End Time <span className="text-red-500">*</span></span>
+                      {endTime && <span className="text-[11px] font-bold text-blue-600 font-sans">({format24hTo12h(endTime)})</span>}
                     </label>
                     <Input
                       id="availability-end-time"
@@ -735,7 +826,7 @@ function TutorAvailabilityContent() {
                             </span>
                             <span className="font-mono text-xs font-bold text-blue-700 flex items-center gap-1 mt-0.5">
                               <Clock className="w-3 h-3 text-blue-500" />
-                              {av.startTime} – {av.endTime}
+                              {format24hTo12h(av.startTime)} – {format24hTo12h(av.endTime)}
                             </span>
                           </div>
                           <button

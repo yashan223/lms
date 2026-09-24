@@ -229,6 +229,7 @@ export async function POST(request: NextRequest) {
         preferredDate,
         topic,
         notes,
+        timezone,
       } = body;
 
       const auth = await getAuthenticatedUser(request);
@@ -420,6 +421,7 @@ export async function POST(request: NextRequest) {
           tutorId: resolvedTutorId,
           studentId: resolvedStudentId,
           preferredDate: parsedDate,
+          timezone: timezone || "Asia/Colombo",
           topic: topic?.trim() || "30-Min Free Trial & Syllabus Overview",
           notes: notes?.trim() || null,
           status: TrialStatus.PENDING,
@@ -757,6 +759,7 @@ export async function POST(request: NextRequest) {
         where: { id: trialId },
         data: {
           preferredDate: new Date(scheduledDate),
+          ...(body.timezone ? { timezone: body.timezone } : {}),
           meetingLink: link,
           notes: notes?.trim() || existing.notes,
           status: TrialStatus.CONFIRMED,

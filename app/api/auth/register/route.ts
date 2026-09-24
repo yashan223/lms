@@ -5,6 +5,7 @@ import { Role } from "@prisma/client";
 import { hashPassword } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { sendVerificationEmail } from "@/lib/email";
+import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
       examBoard,
       targetSeries,
       country,
+      timezone,
       agreedToTerms,
       guardianName,
       guardianRelationship,
@@ -93,6 +95,11 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = hashPassword(password);
+    const resolvedTimezone = timezone
+      ? getRegionalTimezone(timezone).id
+      : country
+      ? getRegionalTimezone(country).id
+      : DEFAULT_TIMEZONE;
 
     // 1. Create the new student account with unverified email status
     const newUser = await prisma.user.create({
@@ -102,6 +109,7 @@ export async function POST(request: Request) {
         passwordHash: hashedPassword,
         phone: phone ? phone.trim() : null,
         country: country ? country.trim() : null,
+        timezone: resolvedTimezone,
         guardianName: guardianName ? guardianName.trim() : null,
         guardianRelationship: guardianRelationship ? guardianRelationship.trim() : null,
         guardianPhone: guardianPhone ? guardianPhone.trim() : null,

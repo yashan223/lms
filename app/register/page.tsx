@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -24,6 +24,8 @@ import { PhoneInputWithCountry } from "@/components/ui/PhoneInputWithCountry";
 import { Country } from "@/lib/countries";
 import { TermsAndPolicyModal } from "@/components/legal/TermsAndPolicyModal";
 import { Scale, Ban } from "lucide-react";
+import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import { getUserBrowserTimezone, getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
 
 function RegisterContent() {
   const router = useRouter();
@@ -38,7 +40,15 @@ function RegisterContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [qualification, setQualification] = useState("London A/L (IAL)");
   const [country, setCountry] = useState("");
+  const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const detected = getUserBrowserTimezone();
+    if (detected) {
+      setTimezone(detected);
+    }
+  }, []);
 
   // Parent / Guardian Details
   const [guardianName, setGuardianName] = useState("");
@@ -61,6 +71,12 @@ function RegisterContent() {
       setCountryCode(selectedCountry.dialCode);
       if (!guardianCountryCode) {
         setGuardianCountryCode(selectedCountry.dialCode);
+      }
+    }
+    if (selectedCountry?.code) {
+      const suggestedTz = getRegionalTimezone(selectedCountry.code);
+      if (suggestedTz?.id) {
+        setTimezone(suggestedTz.id);
       }
     }
   };
@@ -156,6 +172,7 @@ function RegisterContent() {
           password,
           qualification,
           country,
+          timezone,
           agreedToTerms: true,
         }),
       });
@@ -290,20 +307,40 @@ function RegisterContent() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
-                  Qualification Program
-                </label>
-                <div className="relative">
-                  <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <select
-                    value={qualification}
-                    onChange={(e) => setQualification(e.target.value)}
-                    className="w-full h-11 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
-                  >
-                    <option value="London A/L (IAL)">London A/L (IAL AS & A2)</option>
-                    <option value="London O/L (IGCSE)">London O/L (IGCSE Foundation)</option>
-                  </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Regional Timezone
+                  </label>
+                  <RegionalTimezoneSelector
+                    selectedTimezone={timezone}
+                    onChange={(tz) => setTimezone(tz)}
+                    compact={false}
+                    showDualNotice={false}
+                  />
+                  <p className="text-[10px] text-slate-500">
+                    Your class slots and calendar will display in this regional timezone.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Qualification Program
+                  </label>
+                  <div className="relative">
+                    <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <select
+                      value={qualification}
+                      onChange={(e) => setQualification(e.target.value)}
+                      className="w-full h-11 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
+                    >
+                      <option value="London A/L (IAL)">London A/L (IAL AS & A2)</option>
+                      <option value="London O/L (IGCSE)">London O/L (IGCSE Foundation)</option>
+                    </select>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Selected British curriculum study pathway.
+                  </p>
                 </div>
               </div>
 

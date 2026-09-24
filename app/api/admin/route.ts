@@ -17,6 +17,7 @@ import {
   reorderSubjects as reorderSchools,
   resetDefaultSubjects as resetDefaultSchools,
 } from "@/lib/subjects";
+import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -356,7 +357,7 @@ export async function POST(request: NextRequest) {
     // ──────────────────────────────────────────────────────────────────────
 
     if (action === "create_user" || action === "create_candidate") {
-      const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate, hourlyRateAL, hourlyRateOL } = body;
+      const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate, hourlyRateAL, hourlyRateOL, timezone, country } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
       if (!email || typeof email !== "string" || !email.trim()) {
@@ -365,6 +366,12 @@ export async function POST(request: NextRequest) {
 
       const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "TutorPass123!" : "StudentPass123!");
       const hashedPassword = hashPassword(rawPassword);
+
+      const resolvedTimezone = timezone
+        ? getRegionalTimezone(timezone).id
+        : country
+        ? getRegionalTimezone(country).id
+        : DEFAULT_TIMEZONE;
 
       let initialBio = bio || `Registered academic member of EduPulse Academy.`;
       if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
@@ -391,6 +398,8 @@ export async function POST(request: NextRequest) {
           role: assignedRole,
           emailVerified: assignedRole === Role.TUTOR ? null : new Date(),
           phone: phone ? phone.trim() : null,
+          country: country ? country.trim() : null,
+          timezone: resolvedTimezone,
           headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Tutor" : "London A/L Student"),
           bio: initialBio,
           avatar: null,
@@ -444,7 +453,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_user") {
-      const { userId, name, email, phone, role, headline, bio, password, hourlyRate, hourlyRateAL, hourlyRateOL } = body;
+      const { userId, name, email, phone, role, headline, bio, password, hourlyRate, hourlyRateAL, hourlyRateOL, timezone, country } = body;
 
       let finalBio = bio;
       if (hourlyRate !== undefined || hourlyRateAL !== undefined || hourlyRateOL !== undefined) {
@@ -482,11 +491,25 @@ export async function POST(request: NextRequest) {
       if (password && password.trim()) {
         updateData.passwordHash = hashPassword(password.trim());
       }
+      if (timezone !== undefined) {
+        updateData.timezone = timezone ? getRegionalTimezone(timezone).id : DEFAULT_TIMEZONE;
+      }
+      if (country !== undefined) {
+        updateData.country = country ? country.trim() : null;
+      }
 
       const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: updateData,
       });
+
+      // Synchronize tutor availability slots timezone if tutor's timezone was modified
+      if (updateData.timezone && (updateData.role === Role.TUTOR || (updateData.role as any) === "INSTRUCTOR")) {
+        await prisma.tutorAvailability.updateMany({
+          where: { tutorId: userId },
+          data: { timezone: updateData.timezone },
+        });
+      }
 
       const { passwordHash: _uph, ...safeUpdatedUser } = updatedUser;
       broadcastLMSEvent("USERS_CHANGED");

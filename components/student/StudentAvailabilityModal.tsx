@@ -19,6 +19,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import {
+  getUserBrowserTimezone,
+  getRegionalTimezone,
+  DEFAULT_TIMEZONE,
+  format24hTo12h,
+} from "@/lib/timezones";
 
 interface StudentAvailabilitySlot {
   id: string;
@@ -27,6 +34,7 @@ interface StudentAvailabilitySlot {
   specificDate?: string | null;
   startTime: string;
   endTime: string;
+  timezone?: string | null;
   isRecurring: boolean;
   isActive: boolean;
   title?: string | null;
@@ -69,6 +77,15 @@ export function StudentAvailabilityModal({
 
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(
+    currentUser?.timezone || DEFAULT_TIMEZONE
+  );
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !currentUser?.timezone) {
+      setSelectedTimezone(getUserBrowserTimezone());
+    }
+  }, [currentUser?.timezone]);
 
   const fetchStudentAvailability = async () => {
     try {
@@ -77,12 +94,30 @@ export function StudentAvailabilityModal({
       const data = await res.json();
       if (res.ok) {
         setAvailabilities(data.availabilities || []);
+        if (data.timezone) {
+          setSelectedTimezone(data.timezone);
+        }
       }
     } catch (err) {
       console.error("Failed to load student availability:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTimezoneChange = async (newTz: string) => {
+    setSelectedTimezone(newTz);
+    try {
+      await fetch("/api/student/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_timezone", timezone: newTz }),
+      });
+      setStatusMsg({
+        type: "success",
+        text: `Study hours regional timezone set to ${newTz}.`,
+      });
+    } catch {}
   };
 
   useEffect(() => {
@@ -129,6 +164,7 @@ export function StudentAvailabilityModal({
             dayOfWeek: d,
             startTime,
             endTime,
+            timezone: selectedTimezone,
             isRecurring: true,
             title: title.trim() || "Preferred Study Window",
           });
@@ -143,6 +179,7 @@ export function StudentAvailabilityModal({
           specificDate,
           startTime,
           endTime,
+          timezone: selectedTimezone,
           isRecurring: false,
           title: title.trim() || "Specific Available Date",
         });
@@ -154,6 +191,7 @@ export function StudentAvailabilityModal({
         body: JSON.stringify({
           action: "set_availability",
           slots: slotsToCreate,
+          timezone: selectedTimezone,
         }),
       });
 
@@ -203,6 +241,7 @@ export function StudentAvailabilityModal({
         body: JSON.stringify({
           action: "apply_preset",
           preset,
+          timezone: selectedTimezone,
           replaceExisting: false,
         }),
       });
@@ -256,6 +295,20 @@ export function StudentAvailabilityModal({
           {/* LEFT COLUMN: form */}
           <div className="flex-1 flex flex-col overflow-y-auto px-8 py-6 space-y-5 border-r border-slate-100">
 
+          {/* Regional Timezone Setting */}
+          <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200/80 space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold text-sky-950">
+              <span>Your Study Hours Regional Timezone</span>
+              <span className="text-[11px] font-normal text-sky-700">Tutors see your hours converted to their time</span>
+            </div>
+            <RegionalTimezoneSelector
+              selectedTimezone={selectedTimezone}
+              onChange={(tz) => handleTimezoneChange(tz)}
+              showDualNotice={false}
+              compact
+            />
+          </div>
+
           {/* Informative Alert */}
           <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2.5">
             <GraduationCap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
@@ -297,7 +350,7 @@ export function StudentAvailabilityModal({
               className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5" />
-              Weekdays (16:00 – 20:00)
+              Weekdays (4:00 PM – 8:00 PM)
             </button>
             <button
               type="button"
@@ -306,7 +359,7 @@ export function StudentAvailabilityModal({
               className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5" />
-              Weekend Study (10:00 – 16:00)
+              Weekend Study (10:00 AM – 4:00 PM)
             </button>
           </div>
         </div>
@@ -376,7 +429,10 @@ export function StudentAvailabilityModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 block">Start Time</label>
+              <label className="font-bold text-slate-700 flex items-center justify-between">
+                <span>Start Time</span>
+                {startTime && <span className="text-[11px] font-bold text-blue-600 font-sans">({format24hTo12h(startTime)})</span>}
+              </label>
               <Input
                 type="time"
                 required
@@ -386,7 +442,10 @@ export function StudentAvailabilityModal({
               />
             </div>
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 block">End Time</label>
+              <label className="font-bold text-slate-700 flex items-center justify-between">
+                <span>End Time</span>
+                {endTime && <span className="text-[11px] font-bold text-blue-600 font-sans">({format24hTo12h(endTime)})</span>}
+              </label>
               <Input
                 type="time"
                 required
@@ -473,7 +532,7 @@ export function StudentAvailabilityModal({
                         </div>
                         <div className="text-[11px] font-mono text-blue-700 font-bold flex items-center gap-1 mt-0.5">
                           <Clock className="w-3 h-3 text-blue-500" />
-                          <span>{av.startTime} – {av.endTime}</span>
+                          <span>{format24hTo12h(av.startTime)} – {format24hTo12h(av.endTime)}</span>
                         </div>
                         <div className="text-[10px] text-slate-500 truncate max-w-[200px] mt-0.5">
                           {av.title || "Study hours"}

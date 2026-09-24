@@ -30,14 +30,23 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import {
+  getUserBrowserTimezone,
+  getRegionalTimezone,
+  DEFAULT_TIMEZONE,
+  format24hTo12h,
+} from "@/lib/timezones";
 
 interface TutorAvailabilitySlot {
   startTime: string;
   endTime: string;
   timeDisplay: string;
+  tutorTimeDisplay?: string;
   isAvailable: boolean;
   isPast: boolean;
   matchesStudentAvailability?: boolean;
+  dualTime?: any;
   conflict?: {
     type: "CLASS" | "TRIAL";
     id: string;
@@ -131,6 +140,8 @@ function RescheduleContent() {
   const router = useRouter();
   const trialId = searchParams.get("trialId") || searchParams.get("id");
 
+  const [viewerTimezone, setViewerTimezone] = useState<string>(DEFAULT_TIMEZONE);
+  const [tutorTimezone, setTutorTimezone] = useState<string>(DEFAULT_TIMEZONE);
   const [loading, setLoading] = useState(true);
   const [trial, setTrial] = useState<TrialDetail | null>(null);
   const [allTrials, setAllTrials] = useState<TrialDetail[]>([]);
@@ -148,20 +159,30 @@ function RescheduleContent() {
   const [error, setError] = useState<string | null>(null);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setViewerTimezone(getUserBrowserTimezone());
+    }
+  }, []);
+
   // Helper to load availability for a target trial session
-  const loadTrialAvailability = async (targetTrial: TrialDetail) => {
+  const loadTrialAvailability = async (targetTrial: TrialDetail, tzOverride?: string) => {
     setTrial(targetTrial);
     setMeetingLink(targetTrial.meetingLink || "");
     setRescheduleNotes(targetTrial.notes || "");
 
+    const activeTz = tzOverride || viewerTimezone;
     const tutorId = targetTrial.tutorId || targetTrial.course?.tutor?.id || "";
     const availUrl = `/api/tutor/availability?trialId=${encodeURIComponent(targetTrial.id)}${
       tutorId ? `&tutorId=${encodeURIComponent(tutorId)}` : ""
-    }&days=14`;
+    }&timezone=${encodeURIComponent(activeTz)}&days=14`;
 
     const availRes = await fetch(availUrl);
     const availData = await availRes.json();
     if (availRes.ok && availData.days) {
+      if (availData.tutorTimezone) {
+        setTutorTimezone(availData.tutorTimezone);
+      }
       setAvailabilityDays(availData.days);
       setScheduledClasses(availData.scheduledClasses || []);
       if (availData.student?.availabilities) {
@@ -338,6 +359,7 @@ function RescheduleContent() {
           action: "reschedule_trial",
           trialId: trial?.id,
           scheduledDate: finalDateIso,
+          timezone: viewerTimezone,
           meetingLink: meetingLink.trim(),
           notes: rescheduleNotes.trim(),
         }),
@@ -361,7 +383,7 @@ function RescheduleContent() {
       // Refresh availability
       const tutorId = trial?.tutorId || trial?.course?.tutor?.id || "";
       const availRes = await fetch(
-        `/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&days=14`
+        `/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&timezone=${encodeURIComponent(viewerTimezone)}&days=14`
       );
       const availData = await availRes.json();
       if (availRes.ok && availData.days) {
@@ -644,7 +666,7 @@ function RescheduleContent() {
                         return (
                           <div key={idx} className="flex items-center justify-between font-semibold">
                             <span>{dayLabel}:</span>
-                            <span className="font-mono text-blue-800">{av.startTime} – {av.endTime}</span>
+                            <span className="font-mono text-blue-800">{format24hTo12h(av.startTime)} – {format24hTo12h(av.endTime)}</span>
                           </div>
                         );
                       })}
@@ -690,7 +712,7 @@ function RescheduleContent() {
             <form onSubmit={handleSubmitReschedule} className="space-y-5">
               {/* Date & Slots Card */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
                     <h3 className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-blue-600" />
@@ -701,9 +723,22 @@ function RescheduleContent() {
                     </p>
                   </div>
 
-                  <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-[11px] font-bold self-start sm:self-center">
-                    Next 14 Days
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <RegionalTimezoneSelector
+                      selectedTimezone={viewerTimezone}
+                      onChange={(tz) => {
+                        setViewerTimezone(tz);
+                        if (trial) {
+                          loadTrialAvailability(trial, tz);
+                        }
+                      }}
+                      tutorBaseTimezone={tutorTimezone}
+                      compact
+                    />
+                    <Badge className="bg-blue-50 text-blue-800 border-blue-200 text-[11px] font-bold self-start md:self-center shrink-0">
+                      Next 14 Days
+                    </Badge>
+                  </div>
                 </div>
 
                 {/* Horizontal Date Picker */}
@@ -864,13 +899,27 @@ function RescheduleContent() {
                                 </Badge>
                               </div>
                             </div>
-                            <span
-                              className={`text-[10px] truncate ${
-                                isSelected ? "text-blue-100" : "text-slate-500"
-                              }`}
-                            >
-                              {slot.windowTitle || "30-Min 1-on-1 Consultation"}
-                            </span>
+                            <div className="flex items-center justify-between gap-1 text-[10px] pt-0.5">
+                              <span
+                                className={`truncate ${
+                                  isSelected ? "text-blue-100" : "text-slate-500"
+                                }`}
+                              >
+                                {slot.windowTitle || "30-Min 1-on-1 Consultation"}
+                              </span>
+                              {slot.tutorTimeDisplay && slot.tutorTimeDisplay !== slot.timeDisplay && (
+                                <span
+                                  className={`text-[9px] font-semibold shrink-0 ${
+                                    isSelected
+                                      ? "text-blue-200"
+                                      : "text-amber-800 bg-amber-50 px-1 py-0.5 rounded border border-amber-200/60"
+                                  }`}
+                                  title={`Tutor base time: ${slot.tutorTimeDisplay} Sri Lanka`}
+                                >
+                                  🇱🇰 {slot.tutorTimeDisplay}
+                                </span>
+                              )}
+                            </div>
                           </button>
                         );
                       })}

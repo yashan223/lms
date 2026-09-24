@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
+import {
+  DEFAULT_TIMEZONE,
+  getRegionalTimezone,
+} from "@/lib/timezones";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -42,12 +46,16 @@ export async function GET(request: NextRequest) {
         avatar: true,
         phone: true,
         headline: true,
+        country: true,
+        timezone: true,
       },
     });
 
     if (!student) {
       return NextResponse.json({ error: "Student user not found." }, { status: 404 });
     }
+
+    const resolvedTimezone = student.timezone || getRegionalTimezone(student.country).id || DEFAULT_TIMEZONE;
 
     const availabilities = await prisma.studentAvailability.findMany({
       where: {
@@ -76,7 +84,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      student,
+      student: {
+        ...student,
+        timezone: resolvedTimezone,
+      },
+      timezone: resolvedTimezone,
+      regionalTimezone: getRegionalTimezone(resolvedTimezone),
       availabilities,
       scheduledEvents,
     });
@@ -103,6 +116,34 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
+    const studentUser = await prisma.user.findUnique({
+      where: { id: student.id },
+      select: { timezone: true, country: true },
+    });
+    const defaultTz = studentUser?.timezone || getRegionalTimezone(studentUser?.country).id || DEFAULT_TIMEZONE;
+
+    // 0. Update student regional timezone
+    if (action === "update_timezone") {
+      const { timezone } = body;
+      if (!timezone) {
+        return NextResponse.json({ error: "Timezone is required." }, { status: 400 });
+      }
+
+      const validTz = getRegionalTimezone(timezone).id;
+      await prisma.user.update({
+        where: { id: student.id },
+        data: { timezone: validTz },
+      });
+
+      broadcastLMSEvent("STUDENT_AVAILABILITY_CHANGED", { studentId: student.id });
+
+      return NextResponse.json({
+        success: true,
+        message: `Regional timezone updated to ${validTz}.`,
+        timezone: validTz,
+      });
+    }
+
     // 1. Set availability / Batch Add
     if (action === "set_availability" || action === "batch_add") {
       const slots = Array.isArray(body.slots) ? body.slots : [body];
@@ -125,6 +166,7 @@ export async function POST(request: NextRequest) {
           isRecurring = true,
           title,
           notes,
+          timezone = defaultTz,
         } = s;
 
         if (!startTime || !endTime) continue;
@@ -136,6 +178,7 @@ export async function POST(request: NextRequest) {
             specificDate: specificDate ? new Date(specificDate) : null,
             startTime: startTime.trim(),
             endTime: endTime.trim(),
+            timezone: timezone || defaultTz,
             isRecurring: Boolean(isRecurring),
             isActive: true,
             title: title?.trim() || "Preferred Study & Mentoring Window",
@@ -207,7 +250,8 @@ export async function POST(request: NextRequest) {
 
     // 4. Quick presets for student
     if (action === "apply_preset") {
-      const { preset } = body; // "WEEKDAY_EVENINGS", "WEEKEND_STUDY", "ALL_WEEK"
+      const { preset, timezone } = body; // "WEEKDAY_EVENINGS", "WEEKEND_STUDY", "ALL_WEEK"
+      const activeTz = timezone || defaultTz;
 
       if (body.replaceExisting) {
         await prisma.studentAvailability.deleteMany({
@@ -225,6 +269,7 @@ export async function POST(request: NextRequest) {
             dayOfWeek: d,
             startTime: "16:00",
             endTime: "20:00",
+            timezone: activeTz,
             isRecurring: true,
             isActive: true,
             title: "After-School Study & Tutoring Hours",
@@ -239,6 +284,7 @@ export async function POST(request: NextRequest) {
           dayOfWeek: 6,
           startTime: "10:00",
           endTime: "16:00",
+          timezone: activeTz,
           isRecurring: true,
           isActive: true,
           title: "Saturday Revision & Past Paper Clinic",
@@ -248,6 +294,7 @@ export async function POST(request: NextRequest) {
           dayOfWeek: 0,
           startTime: "10:00",
           endTime: "14:00",
+          timezone: activeTz,
           isRecurring: true,
           isActive: true,
           title: "Sunday Exam Preparation Window",
@@ -264,7 +311,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Applied ${preset} study schedule (${slotsToInsert.length} slots generated).`,
+        message: `Applied ${preset} study schedule (${slotsToInsert.length} slots generated in ${activeTz}).`,
       });
     }
 

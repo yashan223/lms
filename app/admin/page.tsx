@@ -64,12 +64,15 @@ import {
   Building2,
   ArrowUp,
   ArrowDown,
+  Globe,
 } from "lucide-react";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { AcademicSchool, DEFAULT_SCHOOLS } from "@/lib/subjects";
 import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
 import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
+import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -215,6 +218,7 @@ export default function AdminDashboardPage() {
   const [formUserHourlyRate, setFormUserHourlyRate] = useState("5000");
   const [formUserHourlyRateAL, setFormUserHourlyRateAL] = useState("5000");
   const [formUserHourlyRateOL, setFormUserHourlyRateOL] = useState("3500");
+  const [formUserTimezone, setFormUserTimezone] = useState(DEFAULT_TIMEZONE);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
   // Grant Free Credit Modal State
@@ -725,6 +729,7 @@ export default function AdminDashboardPage() {
     setFormUserHourlyRate("5000");
     setFormUserHourlyRateAL("5000");
     setFormUserHourlyRateOL("3500");
+    setFormUserTimezone(DEFAULT_TIMEZONE);
     setShowAddUserModal(true);
   };
 
@@ -746,6 +751,7 @@ export default function AdminDashboardPage() {
           hourlyRate: formUserHourlyRateAL,
           hourlyRateAL: formUserHourlyRateAL,
           hourlyRateOL: formUserHourlyRateOL,
+          timezone: formUserTimezone,
         }),
       });
 
@@ -769,6 +775,7 @@ export default function AdminDashboardPage() {
     setFormUserRole(user.role);
     setFormUserHeadline(user.headline || "");
     setFormUserBio(user.bio || "");
+    setFormUserTimezone(user.timezone || DEFAULT_TIMEZONE);
     const rates = getUserRates(user);
     setFormUserHourlyRate(rates.alRate);
     setFormUserHourlyRateAL(rates.alRate);
@@ -795,6 +802,7 @@ export default function AdminDashboardPage() {
           hourlyRate: formUserHourlyRateAL,
           hourlyRateAL: formUserHourlyRateAL,
           hourlyRateOL: formUserHourlyRateOL,
+          timezone: formUserTimezone,
         }),
       });
 
@@ -2644,6 +2652,12 @@ export default function AdminDashboardPage() {
                                     <span>{u.phone}</span>
                                   </div>
                                 )}
+                                {u.timezone && (
+                                  <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mt-0.5" title={`Operating Regional Timezone: ${u.timezone}`}>
+                                    <Globe className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                    <span>{getRegionalTimezone(u.timezone).flag} {getRegionalTimezone(u.timezone).city} ({getRegionalTimezone(u.timezone).abbr || getRegionalTimezone(u.timezone).standardOffset})</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -3014,6 +3028,12 @@ export default function AdminDashboardPage() {
                                   <p className="text-[10px] text-slate-400 font-mono truncate">
                                     {tutor.email}
                                   </p>
+                                  {tutor.timezone && (
+                                    <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-800 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md mt-1" title={`Operating Regional Timezone: ${tutor.timezone}`}>
+                                      <Globe className="w-2.5 h-2.5 text-sky-600 shrink-0" />
+                                      <span>{getRegionalTimezone(tutor.timezone).flag} {getRegionalTimezone(tutor.timezone).city} ({getRegionalTimezone(tutor.timezone).standardOffset})</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
@@ -5114,6 +5134,22 @@ export default function AdminDashboardPage() {
                 <label className="font-bold block mb-1">Academic Title / Headline</label>
                 <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
               </div>
+              <div className="space-y-1">
+                <label className="font-bold block mb-1">
+                  Operating Regional Timezone
+                  {formUserRole === "TUTOR" && (
+                    <span className="text-blue-600 font-normal ml-1">
+                      (Tutor availability & trial slots operate in this timezone)
+                    </span>
+                  )}
+                </label>
+                <RegionalTimezoneSelector
+                  selectedTimezone={formUserTimezone}
+                  onChange={(tz) => setFormUserTimezone(tz)}
+                  compact={false}
+                  showDualNotice={false}
+                />
+              </div>
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
                 <div className="space-y-3 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200">
                   <div className="flex items-center justify-between">
@@ -5198,6 +5234,22 @@ export default function AdminDashboardPage() {
               <div>
                 <label className="font-bold block mb-1">Academic Title</label>
                 <Input value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold block mb-1">
+                  Operating Regional Timezone
+                  {formUserRole === "TUTOR" && (
+                    <span className="text-blue-600 font-normal ml-1">
+                      (Tutor availability & trial slots operate in this timezone)
+                    </span>
+                  )}
+                </label>
+                <RegionalTimezoneSelector
+                  selectedTimezone={formUserTimezone}
+                  onChange={(tz) => setFormUserTimezone(tz)}
+                  compact={false}
+                  showDualNotice={false}
+                />
               </div>
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
                 <div className="space-y-3 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200">

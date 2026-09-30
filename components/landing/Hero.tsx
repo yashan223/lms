@@ -102,7 +102,14 @@ export function Hero() {
                   return (
                     <Link
                       key={prog.id}
-                      href="#courses"
+                      href="/#courses"
+                      onClick={(e) => {
+                        if (typeof window !== "undefined" && window.location.pathname === "/") {
+                          e.preventDefault();
+                          document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
+                          window.history.replaceState(null, "", "/#courses");
+                        }
+                      }}
                       className="group cursor-pointer flex flex-col items-center"
                     >
                       <div

@@ -72,7 +72,14 @@ export function AboutSection() {
 
             <div className="pt-4 flex flex-wrap items-center gap-3">
               <Link
-                href="#courses"
+                href="/#courses"
+                onClick={(e) => {
+                  if (typeof window !== "undefined" && window.location.pathname === "/") {
+                    e.preventDefault();
+                    document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
+                    window.history.replaceState(null, "", "/#courses");
+                  }
+                }}
                 className="px-6 py-3 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-md shadow-blue-950/20 flex items-center gap-2 transition-all"
               >
                 <BookOpen className="w-4 h-4" />

@@ -25,7 +25,6 @@ export function Navbar() {
   const [confirmLogoutModalOpen, setConfirmLogoutModalOpen] = useState(false);
 
   useEffect(() => {
-
     if (typeof document !== "undefined") {
       const matchRole = document.cookie.match(/edupulse_user_role=([^;]+)/);
       const matchEmail = document.cookie.match(/edupulse_user_email=([^;]+)/);
@@ -36,7 +35,43 @@ export function Navbar() {
         setUserEmail(decodeURIComponent(matchEmail[1]));
       }
     }
+
+    // Automatically clean up malformed/duplicate hashes like #about#about in the URL
+    if (typeof window !== "undefined") {
+      const sanitizeHash = () => {
+        const rawHash = window.location.hash;
+        if (rawHash && (rawHash.match(/#/g) || []).length > 1) {
+          const parts = rawHash.split("#").filter(Boolean);
+          const validId = parts[0] || "";
+          if (validId) {
+            window.history.replaceState(null, "", `${window.location.pathname}#${validId}`);
+            const el = document.getElementById(validId);
+            if (el) {
+              setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 50);
+            }
+          }
+        }
+      };
+
+      sanitizeHash();
+      window.addEventListener("hashchange", sanitizeHash);
+      return () => window.removeEventListener("hashchange", sanitizeHash);
+    }
   }, []);
+
+  const handleAnchorClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    targetId: string
+  ) => {
+    if (typeof window !== "undefined" && window.location.pathname === "/") {
+      e.preventDefault();
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+      window.history.replaceState(null, "", `/#${targetId}`);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -117,12 +152,14 @@ export function Navbar() {
           </Link>
           <Link
             href="/#about"
+            onClick={(e) => handleAnchorClick(e, "about")}
             className="text-slate-600 hover:text-blue-700 transition-colors py-1"
           >
             ABOUT
           </Link>
           <Link
             href="/#faq"
+            onClick={(e) => handleAnchorClick(e, "faq")}
             className="text-slate-600 hover:text-blue-700 transition-colors py-1"
           >
             FAQ
@@ -264,14 +301,20 @@ export function Navbar() {
             </Link>
             <Link
               href="/#about"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => {
+                setMobileMenuOpen(false);
+                handleAnchorClick(e, "about");
+              }}
               className="text-slate-700 hover:text-blue-700 py-1.5 px-2 rounded-lg hover:bg-slate-50"
             >
               ABOUT
             </Link>
             <Link
               href="/#faq"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => {
+                setMobileMenuOpen(false);
+                handleAnchorClick(e, "faq");
+              }}
               className="text-slate-700 hover:text-blue-700 py-1.5 px-2 rounded-lg hover:bg-slate-50"
             >
               FAQ

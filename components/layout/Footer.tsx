@@ -54,22 +54,14 @@ export function Footer() {
                 >
                   <Globe className="w-4 h-4" />
                 </a>
-                <a
-                  href="#share"
+                <Link
+                  href="/classes"
                   className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center hover:text-blue-600 hover:border-blue-300 transition-colors shadow-sm"
-                  aria-label="Community"
-                  title="Academic Community"
-                >
-                  <Share2 className="w-4 h-4" />
-                </a>
-                <a
-                  href="#courses"
-                  className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center hover:text-blue-600 hover:border-blue-300 transition-colors shadow-sm"
-                  aria-label="Video Hub"
-                  title="Video Class Hub"
+                  aria-label="Courses"
+                  title="Accredited Classes"
                 >
                   <Video className="w-4 h-4" />
-                </a>
+                </Link>
               </div>
             </div>
 

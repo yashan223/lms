@@ -59,10 +59,13 @@ export default function TermsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
           {/* Navigation Pill Bar */}
           <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-md flex items-center gap-2 mb-8">
-            <a
-              href="#terms"
-              onClick={() => setActiveSection("terms")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSection("terms");
+                window.history.replaceState(null, "", "/terms#terms");
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeSection === "terms"
                   ? "bg-[#0c2461] text-white shadow-xs"
                   : "text-slate-600 hover:bg-slate-100"
@@ -70,12 +73,15 @@ export default function TermsPage() {
             >
               <Scale className="w-4 h-4" />
               <span>Terms & Conditions</span>
-            </a>
+            </button>
 
-            <a
-              href="#refund-policy"
-              onClick={() => setActiveSection("refund")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSection("refund");
+                window.history.replaceState(null, "", "/terms#refund-policy");
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeSection === "refund"
                   ? "bg-[#0c2461] text-white shadow-xs"
                   : "text-slate-600 hover:bg-slate-100"
@@ -83,7 +89,7 @@ export default function TermsPage() {
             >
               <Ban className="w-4 h-4" />
               <span>Strict No-Refund Policy</span>
-            </a>
+            </button>
           </div>
 
           <div className="space-y-8">

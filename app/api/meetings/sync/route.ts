@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
-import { syncClassMeetingSession, fetchConferenceRecord, fetchMeetingRecordings } from "@/lib/google-meet";
+import { syncClassMeetingSession } from "@/lib/google-meet";
 import { broadcastLMSEvent } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
@@ -55,30 +56,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      let actualStart = manualStartTime ? new Date(manualStartTime) : trial.actualStartTime || trial.preferredDate;
-      let actualEnd = manualEndTime ? new Date(manualEndTime) : trial.actualEndTime || new Date(actualStart.getTime() + 30 * 60 * 1000);
-      let recordingUrl = manualRecordingUrl || trial.recordingUrl;
-      let recordingStatus = trial.recordingStatus || "NONE";
-      let confRecordId = trial.conferenceRecordId;
-
-      if (trial.meetingSpaceId && trial.meetingSpaceId.startsWith("spaces/")) {
-        const record = await fetchConferenceRecord(trial.meetingSpaceId);
-        if (record) {
-          confRecordId = record.id;
-          if (record.actualStartTime) actualStart = record.actualStartTime;
-          if (record.actualEndTime) actualEnd = record.actualEndTime;
-
-          const recs = await fetchMeetingRecordings(record.id);
-          if (recs.length > 0 && recs[0].driveFileUrl) {
-            recordingUrl = recs[0].driveFileUrl;
-            recordingStatus = "AVAILABLE";
-          }
-        }
-      }
-
-      if (recordingUrl) {
-        recordingStatus = "AVAILABLE";
-      }
+      const actualStart = manualStartTime ? new Date(manualStartTime) : trial.actualStartTime || trial.preferredDate;
+      const actualEnd = manualEndTime ? new Date(manualEndTime) : trial.actualEndTime || new Date(actualStart.getTime() + 30 * 60 * 1000);
+      const recordingUrl = manualRecordingUrl ? manualRecordingUrl.trim() : trial.recordingUrl;
+      const recordingStatus = recordingUrl ? "AVAILABLE" : "NONE";
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },
@@ -86,7 +67,6 @@ export async function POST(request: NextRequest) {
           status: "COMPLETED",
           actualStartTime: actualStart,
           actualEndTime: actualEnd,
-          conferenceRecordId: confRecordId,
           recordingUrl,
           recordingStatus,
         },
@@ -111,16 +91,16 @@ export async function POST(request: NextRequest) {
         success: true,
         trial: updatedTrial,
         message: recordingUrl
-          ? `Trial session completed with verified times (${actualStart.toLocaleTimeString()} – ${actualEnd.toLocaleTimeString()}) and recording attached.`
-          : `Trial session marked completed with verified times.`,
+          ? `Trial session marked completed and recording attached.`
+          : `Trial session marked completed.`,
       });
     }
 
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   } catch (error: any) {
-    console.error("Sync Google Meet error:", error);
+    console.error("Sync meeting error:", error);
     return NextResponse.json(
-      { error: error?.message || "Failed to synchronize Google Meet session" },
+      { error: error?.message || "Failed to synchronize meeting session" },
       { status: 500 }
     );
   }

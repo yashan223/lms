@@ -18,7 +18,7 @@ import {
   resetDefaultSubjects as resetDefaultSchools,
 } from "@/lib/subjects";
 import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
-import { createGoogleMeetingSpace, syncClassMeetingSession } from "@/lib/google-meet";
+import { syncClassMeetingSession } from "@/lib/google-meet";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -798,15 +798,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "schedule_class" || action === "create_class") {
       const { title, description, dueDate, courseId, meetingLink } = body;
-      let meetLink = meetingLink?.trim();
-      let spaceName: string | null = null;
-      if (!meetLink || meetLink === "https://meet.google.com/new" || meetLink === "meet.google.com/new") {
-        const space = await createGoogleMeetingSpace({ title: title || "Scheduled Live Class" });
-        meetLink = space.meetingUri;
-        spaceName = space.spaceName;
-      } else {
-        meetLink = getSafeMeetingLink(meetLink);
-      }
+      const meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
 
       const newEvent = await prisma.event.create({
         data: {
@@ -815,7 +807,6 @@ export async function POST(request: NextRequest) {
           type: "LIVE_SEMINAR",
           status: "SCHEDULED",
           meetingLink: meetLink,
-          meetingSpaceId: spaceName,
           dueDate: new Date(dueDate || Date.now() + 24 * 60 * 60 * 1000),
           courseId: courseId || null,
           approvalStatus: "APPROVED",

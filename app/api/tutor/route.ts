@@ -4,7 +4,7 @@ import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
-import { createGoogleMeetingSpace, syncClassMeetingSession } from "@/lib/google-meet";
+import { syncClassMeetingSession } from "@/lib/google-meet";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone } from "@/lib/timezones";
 
@@ -491,19 +491,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      let meetLink = meetingLink?.trim();
-      let spaceName: string | null = null;
-      if (!meetLink || meetLink === "https://meet.google.com/new" || meetLink === "meet.google.com/new") {
-        const space = await createGoogleMeetingSpace({ title: title.trim() });
-        meetLink = space.meetingUri;
-        spaceName = space.spaceName;
-      } else {
-        meetLink = getSafeMeetingLink(meetLink);
-      }
+      const meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
 
       const fullDescription = [
         description?.trim() || "Live curriculum individual class with Tutor.",
-        `\n\nGoogle Meet Classroom: ${meetLink}`,
+        meetLink ? `\n\nGoogle Meet Classroom: ${meetLink}` : "",
       ]
         .join("")
         .trim();
@@ -524,7 +516,6 @@ export async function POST(request: NextRequest) {
           title: title.trim(),
           description: fullDescription,
           meetingLink: meetLink,
-          meetingSpaceId: spaceName,
           dueDate: parsedDueDate,
           status: EventStatus.SCHEDULED,
           approvalStatus: "APPROVED",

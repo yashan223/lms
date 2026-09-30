@@ -1058,6 +1058,74 @@ function DashboardContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           <aside className="lg:col-span-3 space-y-4 order-2 lg:order-1">
+            {/* Student Navigation */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
+                Navigation
+              </h3>
+              <div className="space-y-2 text-xs font-medium text-slate-700">
+                <div className="flex items-center gap-1.5 text-blue-700 font-bold">
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Dashboard</span>
+                </div>
+
+                <div className="pl-4 space-y-1.5 text-slate-600">
+                  <Link href="/" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
+                    <Home className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Site home</span>
+                  </Link>
+
+                  <Link href="/dashboard/profile" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
+                    <User className="w-3.5 h-3.5 text-slate-400" />
+                    <span>My Profile & Settings</span>
+                  </Link>
+
+                  <div>
+                    <div
+                      onClick={() => setNavCoursesOpen(!navCoursesOpen)}
+                      className="flex items-center gap-1.5 cursor-pointer hover:text-blue-700 font-semibold text-slate-800 transition-colors"
+                    >
+                      {navCoursesOpen ? (
+                        <ChevronDown className="w-3 h-3 text-slate-400" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3 text-slate-400" />
+                      )}
+                      <span>My classes</span>
+                    </div>
+
+                    {navCoursesOpen && (
+                      <div className="pl-4 pt-1 space-y-1 text-[11px] text-slate-600">
+                        {myCourses.length > 0 ? (
+                          myCourses.map((c, idx) => (
+                            <Link
+                              key={c.id || idx}
+                              href={c.slug ? `/classes/${c.slug}` : "/classes"}
+                              prefetch={true}
+                              onMouseEnter={() => prefetchCourse(c.slug)}
+                              className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
+                              title={c.title}
+                            >
+                              <ChevronRight className="w-2.5 h-2.5 text-slate-400 group-hover:text-blue-600 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                              <span className="truncate group-hover:underline">{c.title}</span>
+                            </Link>
+                          ))
+                        ) : (
+                          <div className="text-slate-400 italic py-0.5">No enrolled classes</div>
+                        )}
+                        <Link
+                          href="/classes"
+                          className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
+                        >
+                          <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
+                          <span>Browse all individual classes...</span>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Student Token / Hours Wallet Widget */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
@@ -1154,73 +1222,6 @@ function DashboardContent() {
                 </button>
               </div>
             )}
-
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
-                Navigation
-              </h3>
-              <div className="space-y-2 text-xs font-medium text-slate-700">
-                <div className="flex items-center gap-1.5 text-blue-700 font-bold">
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Dashboard</span>
-                </div>
-
-                <div className="pl-4 space-y-1.5 text-slate-600">
-                  <Link href="/" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
-                    <Home className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Site home</span>
-                  </Link>
-
-                  <Link href="/dashboard/profile" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                    <span>My Profile & Settings</span>
-                  </Link>
-
-                  <div>
-                    <div
-                      onClick={() => setNavCoursesOpen(!navCoursesOpen)}
-                      className="flex items-center gap-1.5 cursor-pointer hover:text-blue-700 font-semibold text-slate-800 transition-colors"
-                    >
-                      {navCoursesOpen ? (
-                        <ChevronDown className="w-3 h-3 text-slate-400" />
-                      ) : (
-                        <ChevronRight className="w-3 h-3 text-slate-400" />
-                      )}
-                      <span>My classes</span>
-                    </div>
-
-                    {navCoursesOpen && (
-                      <div className="pl-4 pt-1 space-y-1 text-[11px] text-slate-600">
-                        {myCourses.length > 0 ? (
-                          myCourses.map((c, idx) => (
-                            <Link
-                              key={c.id || idx}
-                              href={c.slug ? `/classes/${c.slug}` : "/classes"}
-                              prefetch={true}
-                              onMouseEnter={() => prefetchCourse(c.slug)}
-                              className="flex items-center gap-1.5 hover:text-blue-700 cursor-pointer py-0.5 truncate group"
-                              title={c.title}
-                            >
-                              <ChevronRight className="w-2.5 h-2.5 text-slate-400 group-hover:text-blue-600 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                              <span className="truncate group-hover:underline">{c.title}</span>
-                            </Link>
-                          ))
-                        ) : (
-                          <div className="text-slate-400 italic py-0.5">No enrolled classes</div>
-                        )}
-                        <Link
-                          href="/classes"
-                          className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
-                        >
-                          <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
-                          <span>Browse all individual classes...</span>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
 
 
 

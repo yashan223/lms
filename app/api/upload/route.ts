@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const ip = getClientIp(request);
-    const rateLimit = checkRateLimit(`upload:${auth.user.id}:${ip}`, 15, 60);
+    const rateLimit = checkRateLimit(`upload:${auth.user.id}:${ip}`, 30, 60);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: `Upload rate limit exceeded. Please wait ${rateLimit.resetSeconds}s before uploading again.` },
@@ -73,6 +73,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "File uploaded successfully",
+      fileUrl: savedFile.fileUrl,
+      fileName: savedFile.fileName,
+      originalName: savedFile.originalName,
+      fileSize: savedFile.fileSize,
+      fileSizeBytes: savedFile.fileSizeBytes,
+      fileType: savedFile.fileType,
+      mimeType: savedFile.fileType,
+      fileKey: savedFile.fileKey,
       file: {
         ...savedFile,
         dbId: dbRecord?.id || null,

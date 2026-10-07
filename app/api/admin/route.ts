@@ -703,7 +703,7 @@ export async function POST(request: NextRequest) {
           description,
           category,
           subjectCode,
-          thumbnail: thumbnail !== undefined ? thumbnail : undefined,
+          thumbnail: thumbnail !== undefined ? (typeof thumbnail === "string" && thumbnail.trim() ? thumbnail.trim() : null) : undefined,
           featured: featured !== undefined ? Boolean(featured) : undefined,
           price: isNaN(tokenValue) ? 10.0 : tokenValue,
           olPrice: olTokenValue,

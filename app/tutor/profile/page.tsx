@@ -216,28 +216,56 @@ function TutorProfileContent() {
   }, []);
 
   // Handle Photo Upload
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (!file.type.startsWith("image/")) {
       setStatusMsg({
         type: "error",
-        text: "Selected file exceeds 5MB limit. Please upload a smaller photo.",
+        text: "Please select a valid image file (JPEG, PNG, WebP).",
       });
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      setAvatar(base64);
+    if (file.size > 10 * 1024 * 1024) {
+      setStatusMsg({
+        type: "error",
+        text: "Selected file exceeds 10MB limit. Please upload a smaller photo.",
+      });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("category", "avatar");
+      formData.append("isPrivate", "false");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to upload photo to server.");
+
+      const uploadedUrl = data.fileUrl || data.file?.fileUrl;
+      if (!uploadedUrl) throw new Error("Server returned no image URL.");
+
+      setAvatar(uploadedUrl);
       setStatusMsg({
         type: "success",
-        text: "Profile photo uploaded! Click 'Save Profile Changes' to commit.",
+        text: "Profile photo saved on server! Click 'Save Profile Changes' to commit.",
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setStatusMsg({
+        type: "error",
+        text: err.message || "Failed to upload photo to server.",
+      });
+    } finally {
+      e.target.value = "";
+    }
   };
 
   // Degrees Management

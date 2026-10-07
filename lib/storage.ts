@@ -11,7 +11,9 @@ export const STORAGE_ROOT =
 export const MIME_MAP: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/jpg": ".jpg",
+  "image/pjpeg": ".jpg",
   "image/png": ".png",
+  "image/x-png": ".png",
   "image/webp": ".webp",
   "image/gif": ".gif",
   "image/svg+xml": ".svg",
@@ -40,6 +42,7 @@ export const MIME_MAP: Record<string, string> = {
 export const EXTENSION_TO_MIME: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
+  ".jfif": "image/jpeg",
   ".png": "image/png",
   ".webp": "image/webp",
   ".gif": "image/gif",
@@ -97,7 +100,10 @@ export async function ensureStorageDirectories(): Promise<void> {
 export function resolveSafeStoragePath(fileKey: string): string | null {
   if (!fileKey || typeof fileKey !== "string") return null;
 
-  const sanitizedKey = fileKey.replace(/\0/g, "").replace(/^[\/\\]+/, "");
+  let sanitizedKey = fileKey.replace(/\0/g, "").replace(/^[/\\]+/, "");
+  if (sanitizedKey.startsWith("api/files/")) {
+    sanitizedKey = sanitizedKey.replace(/^api\/files\//, "");
+  }
   const normalizedRoot = path.resolve(/*turbopackIgnore: true*/ STORAGE_ROOT);
   const resolvedPath = path.resolve(/*turbopackIgnore: true*/ STORAGE_ROOT, sanitizedKey);
 
@@ -143,10 +149,10 @@ export function validateFileSafety(buffer: Buffer, originalFileName: string, mim
     if ((ext === ".pdf" || mimeType === "application/pdf") && buffer.slice(0, 4).toString("ascii") !== "%PDF") {
       throw new Error("Invalid PDF file format: header signature mismatch.");
     }
-    if ((ext === ".png" || mimeType === "image/png") && (buffer[0] !== 0x89 || buffer[1] !== 0x50 || buffer[2] !== 0x4e || buffer[3] !== 0x47)) {
+    if ((ext === ".png" || mimeType === "image/png" || mimeType === "image/x-png") && (buffer[0] !== 0x89 || buffer[1] !== 0x50 || buffer[2] !== 0x4e || buffer[3] !== 0x47)) {
       throw new Error("Invalid PNG image format: header signature mismatch.");
     }
-    if ((ext === ".jpg" || ext === ".jpeg" || mimeType === "image/jpeg") && (buffer[0] !== 0xff || buffer[1] !== 0xd8 || buffer[2] !== 0xff)) {
+    if ((ext === ".jpg" || ext === ".jpeg" || ext === ".jfif" || mimeType === "image/jpeg" || mimeType === "image/pjpeg") && (buffer[0] !== 0xff || buffer[1] !== 0xd8)) {
       throw new Error("Invalid JPEG image format: header signature mismatch.");
     }
     if ((ext === ".gif" || mimeType === "image/gif") && buffer.slice(0, 4).toString("ascii") !== "GIF8") {
@@ -157,7 +163,7 @@ export function validateFileSafety(buffer: Buffer, originalFileName: string, mim
     }
   }
 
-  return ext;
+  return ext || (MIME_MAP[mimeType?.toLowerCase()] || "");
 }
 
 export async function saveUploadedFile(

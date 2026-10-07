@@ -264,9 +264,9 @@ export default function CourseDetailPage({
           action: "add_material",
           title: newMaterialTitle.trim(),
           description: newMaterialDesc.trim() || null,
-          fileUrl: uploadData.fileUrl,
-          fileSize: uploadData.fileSize,
-          fileType: uploadData.mimeType,
+          fileUrl: uploadData.fileUrl || uploadData.file?.fileUrl,
+          fileSize: uploadData.fileSize || uploadData.file?.fileSize || "1.0 MB",
+          fileType: uploadData.fileType || uploadData.mimeType || uploadData.file?.fileType || "application/pdf",
           category: newMaterialCategory,
         }),
       });
@@ -420,6 +420,15 @@ export default function CourseDetailPage({
               </div>
 
               <div className="lg:col-span-4 bg-white rounded-3xl p-6 text-slate-900 border border-slate-200 shadow-xl space-y-4">
+                {course?.thumbnail && (
+                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden mb-2 border border-slate-100 shadow-2xs">
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 {isLoggedIn ? (
                   <>
                     <div className="flex items-baseline justify-between gap-2">

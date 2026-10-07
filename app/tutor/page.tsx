@@ -992,28 +992,56 @@ function TutorDashboardContent() {
     });
   };
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (!file.type.startsWith("image/")) {
       setProfileStatusMsg({
         type: "error",
-        text: "Image file is too large. Please upload an image under 5MB.",
+        text: "Please select a valid image file (JPEG, PNG, WebP).",
       });
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      setProfileAvatar(base64);
+    if (file.size > 10 * 1024 * 1024) {
+      setProfileStatusMsg({
+        type: "error",
+        text: "Image file is too large. Please upload an image under 10MB.",
+      });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("category", "avatar");
+      formData.append("isPrivate", "false");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to upload photo to server.");
+
+      const uploadedUrl = data.fileUrl || data.file?.fileUrl;
+      if (!uploadedUrl) throw new Error("Server returned no image URL.");
+
+      setProfileAvatar(uploadedUrl);
       setProfileStatusMsg({
         type: "success",
-        text: "Profile photo uploaded! Click 'Save Profile Changes' to apply.",
+        text: "Profile photo saved on server! Click 'Save Profile Changes' to apply.",
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setProfileStatusMsg({
+        type: "error",
+        text: err.message || "Failed to upload photo to server.",
+      });
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleAddDegree = (e: React.FormEvent) => {

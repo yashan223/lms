@@ -1355,9 +1355,9 @@ export default function AdminDashboardPage() {
           courseId: selectedCourseForMaterials.id,
           title: matFormTitle.trim(),
           description: matFormDesc.trim() || null,
-          fileUrl: uploadData.fileUrl,
-          fileSize: uploadData.fileSize,
-          fileType: uploadData.mimeType,
+          fileUrl: uploadData.fileUrl || uploadData.file?.fileUrl,
+          fileSize: uploadData.fileSize || uploadData.file?.fileSize || "1.0 MB",
+          fileType: uploadData.fileType || uploadData.mimeType || uploadData.file?.fileType || "application/pdf",
           category: matFormCategory,
         }),
       });

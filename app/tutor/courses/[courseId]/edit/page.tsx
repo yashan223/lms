@@ -419,16 +419,31 @@ export function TutorCourseWorkspaceContent({
   const handleThumbnailUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("error", "Please select a valid image file (JPEG, PNG, WebP).");
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      showToast("error", "Image file exceeds 15MB limit. Please choose a smaller image.");
+      return;
+    }
+
     setIsUploadingThumb(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("category", "thumbnail");
       formData.append("isPrivate", "false");
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to upload image");
 
-      setDetailsForm((prev) => ({ ...prev, thumbnail: data.fileUrl }));
+      const uploadedUrl = data.fileUrl || data.file?.fileUrl;
+      if (!uploadedUrl) throw new Error("Server returned no image URL");
+
+      setDetailsForm((prev) => ({ ...prev, thumbnail: uploadedUrl }));
       if (!isNewCourse) {
         await callTutorApi({
           action: "update_course",
@@ -436,15 +451,16 @@ export function TutorCourseWorkspaceContent({
           title: detailsForm.title,
           description: detailsForm.description,
           category: detailsForm.category,
-          thumbnail: data.fileUrl,
+          thumbnail: uploadedUrl,
         });
         await loadData(true);
       }
-      showToast("success", "Class cover image uploaded and updated!");
+      showToast("success", "Course photo uploaded and saved on server!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to upload cover image.");
     } finally {
       setIsUploadingThumb(false);
+      e.target.value = "";
     }
   };
 
@@ -614,14 +630,17 @@ export function TutorCourseWorkspaceContent({
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadData.error || "File upload failed.");
 
+      const matUrl = uploadData.fileUrl || uploadData.file?.fileUrl;
+      if (!matUrl) throw new Error("Upload failed: No file URL returned");
+
       await callTutorApi({
         action: "add_course_material",
         courseId,
         title: matTitle.trim(),
         description: matDesc.trim() || null,
-        fileUrl: uploadData.fileUrl,
-        fileSize: uploadData.fileSize || "1.5 MB",
-        fileType: uploadData.mimeType || "application/pdf",
+        fileUrl: matUrl,
+        fileSize: uploadData.fileSize || uploadData.file?.fileSize || "1.5 MB",
+        fileType: uploadData.fileType || uploadData.mimeType || uploadData.file?.fileType || "application/pdf",
         category: matCategory,
       });
 

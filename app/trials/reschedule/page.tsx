@@ -87,6 +87,7 @@ interface TrialDetail {
   studentEmail: string;
   studentPhone?: string | null;
   preferredDate: string;
+  preferredDates?: any;
   topic?: string | null;
   status: string;
   meetingLink?: string | null;

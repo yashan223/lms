@@ -202,7 +202,6 @@ function TutorDashboardContent() {
     description: "",
     category: "",
     subjectCode: "",
-    price: "0",
     level: "ADVANCED",
   });
   const [courseFormError, setCourseFormError] = useState("");
@@ -374,6 +373,7 @@ function TutorDashboardContent() {
   const [showConfirmTrialModal, setShowConfirmTrialModal] = useState(false);
   const [confirmingTrial, setConfirmingTrial] = useState<any | null>(null);
   const [confirmDate, setConfirmDate] = useState("");
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
   const [confirmMeetLink, setConfirmMeetLink] = useState("");
   const [confirmNotes, setConfirmNotes] = useState("");
   const [isSubmittingConfirmTrial, setIsSubmittingConfirmTrial] = useState(false);
@@ -1247,7 +1247,11 @@ function TutorDashboardContent() {
 
   const openConfirmTrialModal = (trial: any) => {
     setConfirmingTrial(trial);
-    setConfirmDate(formatForDateTimeInput(new Date(trial.preferredDate)));
+    const slots: string[] = Array.isArray(trial.preferredDates) && trial.preferredDates.length > 0
+      ? trial.preferredDates
+      : [trial.preferredDate];
+    setSelectedSlotIndex(0);
+    setConfirmDate(formatForDateTimeInput(new Date(slots[0])));
     setConfirmMeetLink(trial.meetingLink || "https://meet.google.com/new");
     setConfirmNotes(trial.notes || "");
     setConfirmTrialStatusMsg(null);
@@ -1910,7 +1914,7 @@ function TutorDashboardContent() {
                               </span>
                               <span className="text-xs font-bold text-blue-700 font-mono flex items-center gap-1">
                                 <Coins className="w-3 h-3" />
-                                {c.price} Tokens
+                                {c.price > 0 ? `${c.price} Tokens` : "Admin Set Tokens"}
                               </span>
                             </div>
 
@@ -2703,50 +2707,101 @@ function TutorDashboardContent() {
                               </div>
 
                               {/* Middle Row: Confirmed / Requested Timeslot Highlight Banner */}
-                              <div
-                                className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                                  isConfirmed
-                                    ? "bg-blue-50/70 border-blue-200/80 text-blue-950"
-                                    : isPending
-                                    ? "bg-blue-50/80 border-blue-200 text-blue-950"
-                                    : "bg-slate-50 border-slate-200 text-slate-800"
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                                      isConfirmed
-                                        ? "bg-blue-100 text-blue-700"
-                                        : isPending
-                                        ? "bg-blue-100 text-blue-800"
-                                        : "bg-slate-200 text-slate-700"
-                                    }`}
-                                  >
-                                    <Clock className="w-4 h-4" />
+                              {isPending && Array.isArray(tr.preferredDates) && tr.preferredDates.length > 1 ? (
+                                <div className="p-3.5 rounded-xl border bg-blue-50/80 border-blue-200 text-blue-950 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
+                                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Student&apos;s 3 Preferred Time Options (Select 1 when confirming):</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
+                                      {tr.preferredDates.length} Options
+                                    </span>
                                   </div>
-                                  <div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    {tr.preferredDates.map((optStr: string, idx: number) => {
+                                      const optDate = formatDateInTimezone(optStr, tutorTimezone, {
+                                        weekday: "short",
+                                        month: "short",
+                                        day: "numeric",
+                                      });
+                                      const optTime = formatTimeInTimezone(optStr, tutorTimezone, {
+                                        includeAbbr: true,
+                                      });
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className="p-2.5 rounded-xl bg-white border border-blue-200 shadow-2xs space-y-1"
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1">
+                                              <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold inline-flex items-center justify-center">
+                                                {idx + 1}
+                                              </span>
+                                              <span>Choice {idx + 1}</span>
+                                            </span>
+                                            {idx === 0 && (
+                                              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1 rounded">Primary</span>
+                                            )}
+                                          </div>
+                                          <div className="text-xs font-bold text-slate-900">{optDate}</div>
+                                          <div className="text-xs font-mono font-extrabold text-blue-700">{optTime}</div>
+                                          {studentTz && studentTz !== tutorTimezone && (
+                                            <div className="text-[10px] text-slate-400 font-medium">
+                                              Student: {formatTimeInTimezone(optStr, studentTz, { includeAbbr: true })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                                    isConfirmed
+                                      ? "bg-blue-50/70 border-blue-200/80 text-blue-950"
+                                      : isPending
+                                      ? "bg-blue-50/80 border-blue-200 text-blue-950"
+                                      : "bg-slate-50 border-slate-200 text-slate-800"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
                                     <div
-                                      className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                                        isConfirmed ? "text-blue-700" : isPending ? "text-blue-700" : "text-slate-500"
+                                      className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                                        isConfirmed
+                                          ? "bg-blue-100 text-blue-700"
+                                          : isPending
+                                          ? "bg-blue-100 text-blue-800"
+                                          : "bg-slate-200 text-slate-700"
                                       }`}
                                     >
-                                      {isPending ? "Student Requested Slot" : "Confirmed Consultation Slot"}
+                                      <Clock className="w-4 h-4" />
                                     </div>
-                                    <div className="text-sm font-bold text-slate-900 flex flex-wrap items-center gap-1.5 mt-0.5">
-                                      <span>{dateFormatted}</span>
-                                      <span className="text-slate-400">•</span>
-                                      <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
-                                      <span className="text-xs font-semibold text-slate-500">(30 mins)</span>
-                                      {studentTz && studentTz !== tutorTimezone && (
-                                        <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
-                                          <span>Student time:</span>
-                                          <strong className="font-mono">{formatTimeInTimezone(tr.preferredDate, studentTz, { includeAbbr: true })}</strong>
-                                        </span>
-                                      )}
+                                    <div>
+                                      <div
+                                        className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                                          isConfirmed ? "text-blue-700" : isPending ? "text-blue-700" : "text-slate-500"
+                                        }`}
+                                      >
+                                        {isPending ? "Student Requested Slot" : "Confirmed Consultation Slot"}
+                                      </div>
+                                      <div className="text-sm font-bold text-slate-900 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                        <span>{dateFormatted}</span>
+                                        <span className="text-slate-400">•</span>
+                                        <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
+                                        <span className="text-xs font-semibold text-slate-500">(30 mins)</span>
+                                        {studentTz && studentTz !== tutorTimezone && (
+                                          <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                                            <span>Student time:</span>
+                                            <strong className="font-mono">{formatTimeInTimezone(tr.preferredDate, studentTz, { includeAbbr: true })}</strong>
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
+                              )}
 
                               {/* Topic & Notes (if available) */}
                               {tr.topic && (
@@ -4296,21 +4351,118 @@ function TutorDashboardContent() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">
-                  Confirmed Session Date & Time <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={confirmDate}
-                  onChange={(e) => setConfirmDate(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-500">
-                  You can keep the student&apos;s requested slot or adjust to your availability.
-                </p>
-              </div>
+              {/* Select 1 Time Slot from Student's 3 Preferred Options */}
+              {(() => {
+                const requestedSlots: string[] = Array.isArray(confirmingTrial.preferredDates) && confirmingTrial.preferredDates.length > 0
+                  ? confirmingTrial.preferredDates
+                  : [confirmingTrial.preferredDate];
+
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-800 block text-xs flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                        <span>Confirm 1 Time Slot (From Student&apos;s Choices):</span>
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                        Pick 1 of {requestedSlots.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {requestedSlots.map((slotStr: string, idx: number) => {
+                        const isSelected = selectedSlotIndex === idx;
+                        const dateFormatted = formatDateInTimezone(slotStr, tutorTimezone, {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        });
+                        const timeFormatted = formatTimeInTimezone(slotStr, tutorTimezone, {
+                          includeAbbr: true,
+                        });
+                        const studentTz = confirmingTrial.timezone || confirmingTrial.student?.timezone;
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setSelectedSlotIndex(idx);
+                              setConfirmDate(formatForDateTimeInput(new Date(slotStr)));
+                            }}
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                              isSelected
+                                ? "bg-blue-50/90 border-blue-600 ring-2 ring-blue-600/20 shadow-xs"
+                                : "bg-white border-slate-200 hover:border-blue-200 hover:bg-slate-50/60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                                  isSelected
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-100 text-slate-500 border border-slate-200"
+                                }`}
+                              >
+                                {isSelected ? "✓" : idx + 1}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-bold text-slate-900">
+                                    Choice {idx + 1} {idx === 0 ? "(Student 1st Preference)" : ""}
+                                  </span>
+                                  {isSelected && (
+                                    <span className="text-[9px] font-extrabold uppercase bg-blue-600 text-white px-1.5 py-0.2 rounded">
+                                      Confirmed Selection
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                                  <span>{dateFormatted}</span>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
+                                  <span className="text-[10px] text-slate-400 font-normal">(30 mins)</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {studentTz && studentTz !== tutorTimezone && (
+                              <div className="text-right text-[10px] text-slate-500 shrink-0 hidden sm:block">
+                                <span className="text-slate-400 block">Student time:</span>
+                                <span className="font-mono font-bold text-slate-700">
+                                  {formatTimeInTimezone(slotStr, studentTz, { includeAbbr: true })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-1">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                        <span className="font-medium">Active Session Time:</span>
+                        <span className="font-mono text-blue-700 font-bold">
+                          {confirmDate ? formatTimeInTimezone(new Date(confirmDate), tutorTimezone, { includeAbbr: true }) : ""}
+                        </span>
+                      </div>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={confirmDate}
+                        onChange={(e) => {
+                          setConfirmDate(e.target.value);
+                          setSelectedSlotIndex(-1);
+                        }}
+                        className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Select one of the student&apos;s 3 preferred options above, or adjust the date/time if needed.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">

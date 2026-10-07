@@ -200,12 +200,13 @@ export async function POST(request: NextRequest) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
+      const isAdmin = tutor.role === Role.ADMIN;
       const tokenPrice = Number(price);
       const olTokenPrice = olPrice !== undefined && olPrice !== null && olPrice !== "" && !isNaN(Number(olPrice)) ? Number(olPrice) : null;
 
       if (action === "update_course") {
         const existing = await prisma.course.findFirst({
-          where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
+          where: { id: courseId, ...(isAdmin ? {} : { tutorId: tutor.id }) },
         });
         if (!existing) {
           return NextResponse.json({ error: "Course not found or not owned by this tutor." }, { status: 404 });
@@ -221,8 +222,9 @@ export async function POST(request: NextRequest) {
             category: category.trim(),
             subjectCode: subjectCode?.trim() || null,
             thumbnail: thumbnail !== undefined ? (thumbnail?.trim() || null) : existing.thumbnail,
-            price: Number.isFinite(tokenPrice) ? tokenPrice : existing.price,
-            olPrice: olPrice !== undefined ? olTokenPrice : (existing as any).olPrice,
+            // Class tokens can only be set or changed by Admin
+            price: isAdmin && Number.isFinite(tokenPrice) ? tokenPrice : existing.price,
+            olPrice: isAdmin ? (olPrice !== undefined ? olTokenPrice : (existing as any).olPrice) : (existing as any).olPrice,
             level: (level as CourseLevel) || existing.level,
             status: status ? (status as CourseStatus) : existing.status,
           },
@@ -245,8 +247,9 @@ export async function POST(request: NextRequest) {
           category: category.trim(),
           subjectCode: subjectCode?.trim() || null,
           thumbnail: thumbnail?.trim() || null,
-          price: Number.isFinite(tokenPrice) ? tokenPrice : 0,
-          olPrice: olTokenPrice,
+          // Class tokens are set by Admin upon approval/review; tutors cannot set them on creation
+          price: isAdmin && Number.isFinite(tokenPrice) ? tokenPrice : 0,
+          olPrice: isAdmin ? olTokenPrice : null,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: CourseStatus.PENDING_REVIEW,
           tutorId: tutor.id,

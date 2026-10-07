@@ -93,7 +93,10 @@ export function TrialRequestModal({
   } | null>(null);
 
   const [courseId, setCourseId] = useState(initialCourseId || "");
-  const [preferredDate, setPreferredDate] = useState("");
+  const [preferredDate1, setPreferredDate1] = useState("");
+  const [preferredDate2, setPreferredDate2] = useState("");
+  const [preferredDate3, setPreferredDate3] = useState("");
+  const [activeSlotTarget, setActiveSlotTarget] = useState<1 | 2 | 3>(1);
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -175,6 +178,20 @@ export function TrialRequestModal({
       .catch(() => {});
   };
 
+  const applyTutorSlot = (slotStartTime: string) => {
+    const formatted = formatForDateTimeInput(slotStartTime, selectedTimezone);
+    if (activeSlotTarget === 1) {
+      setPreferredDate1(formatted);
+      setActiveSlotTarget(2);
+    } else if (activeSlotTarget === 2) {
+      setPreferredDate2(formatted);
+      setActiveSlotTarget(3);
+    } else {
+      setPreferredDate3(formatted);
+      setActiveSlotTarget(1);
+    }
+  };
+
   // Check student availability & load initial data
   useEffect(() => {
     if (isOpen) {
@@ -187,7 +204,18 @@ export function TrialRequestModal({
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(10, 0, 0, 0);
-      setPreferredDate(formatForDateTimeInput(tomorrow, selectedTimezone));
+
+      const slot2Date = new Date();
+      slot2Date.setDate(slot2Date.getDate() + 1);
+      slot2Date.setHours(14, 0, 0, 0);
+
+      const slot3Date = new Date();
+      slot3Date.setDate(slot3Date.getDate() + 2);
+      slot3Date.setHours(11, 0, 0, 0);
+
+      setPreferredDate1(formatForDateTimeInput(tomorrow, selectedTimezone));
+      setPreferredDate2(formatForDateTimeInput(slot2Date, selectedTimezone));
+      setPreferredDate3(formatForDateTimeInput(slot3Date, selectedTimezone));
 
       setError(null);
       setCreatedTrial(null);
@@ -322,15 +350,17 @@ export function TrialRequestModal({
       return;
     }
 
-    if (!preferredDate) {
-      setError("Please select a preferred date and time for your free trial session.");
+    if (!preferredDate1 || !preferredDate2 || !preferredDate3) {
+      setError("Please select all 3 preferred dates & times for your class session so your tutor can review and confirm the best matching time.");
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const parsedUtcDate = parseDateTimeInputInTimezone(preferredDate, selectedTimezone);
+      const parsedUtc1 = parseDateTimeInputInTimezone(preferredDate1, selectedTimezone);
+      const parsedUtc2 = parseDateTimeInputInTimezone(preferredDate2, selectedTimezone);
+      const parsedUtc3 = parseDateTimeInputInTimezone(preferredDate3, selectedTimezone);
 
       const res = await fetch("/api/trials", {
         method: "POST",
@@ -342,7 +372,12 @@ export function TrialRequestModal({
           studentId: currentUser?.id || null,
           studentName: currentUser?.name || null,
           studentEmail: currentUser?.email || null,
-          preferredDate: parsedUtcDate.toISOString(),
+          preferredDate: parsedUtc1.toISOString(),
+          preferredDates: [
+            parsedUtc1.toISOString(),
+            parsedUtc2.toISOString(),
+            parsedUtc3.toISOString(),
+          ],
           timezone: selectedTimezone,
           topic: topic?.trim() || "30-Min Free Trial & Syllabus Overview",
           notes: notes?.trim() || null,
@@ -546,29 +581,36 @@ export function TrialRequestModal({
                   {createdTrial.course?.title || selectedCourse?.title || "London A/L Individual Class"}
                 </span>
               </div>
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-slate-500">Requested Time:</span>
-                <div className="text-right">
-                  <span className="font-bold text-blue-800 flex items-center gap-1 justify-end">
-                    <Clock className="w-3.5 h-3.5 text-blue-600" />
-                    {formatForUser(createdTrial.preferredDate, selectedTimezone, {
-                      includeDate: true,
-                      includeTime: true,
-                      includeAbbr: true,
-                    })}
-                    {" "}(30 mins)
-                  </span>
-                  {tutorBaseTimezone && tutorBaseTimezone !== selectedTimezone && (
-                    <div className="text-[10px] text-slate-500 font-medium">
-                      Tutor&apos;s time: {formatTimeInTimezone(createdTrial.preferredDate, tutorBaseTimezone, { includeAbbr: true })}
+              <div className="space-y-1.5 pt-1 border-t border-slate-200/60">
+                <span className="text-slate-500 font-bold block text-[11px]">3 Requested Time Options:</span>
+                <div className="space-y-1">
+                  {(Array.isArray(createdTrial.preferredDates) && createdTrial.preferredDates.length > 0
+                    ? createdTrial.preferredDates
+                    : [createdTrial.preferredDate]
+                  ).map((dStr: string, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
+                      <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold inline-flex items-center justify-center">{idx + 1}</span>
+                        <span>Choice {idx + 1}</span>
+                      </span>
+                      <span className="font-mono text-blue-800 font-bold text-[11px]">
+                        {formatForUser(dStr, selectedTimezone, {
+                          includeDate: true,
+                          includeTime: true,
+                          includeAbbr: true,
+                        })}
+                      </span>
                     </div>
-                  )}
+                  ))}
                 </div>
+                <p className="text-[10px] text-slate-500 italic mt-1">
+                  Your tutor will review these 3 options and confirm only 1 matching time slot.
+                </p>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                 <span className="text-slate-500">Status:</span>
                 <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[11px] font-bold">
-                  ⏳ Pending Tutor Confirmation
+                  ⏳ Pending Tutor Selection
                 </Badge>
               </div>
             </div>
@@ -744,37 +786,44 @@ export function TrialRequestModal({
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="font-bold text-slate-700 block">
-                  Preferred Date &amp; Time <span className="text-red-500">*</span>
-                </label>
-                {preferredDate ? (
-                  <span className="text-[11px] font-bold text-blue-700 font-sans">
-                    {formatTimeInTimezone(new Date(preferredDate), selectedTimezone, { includeAbbr: true })}
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-slate-400">Verified against class schedule</span>
-                )}
+            {/* 3 Preferred Class Times */}
+            <div className="space-y-3 p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <span>Select 3 Preferred Class Times</span>
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500">
+                    Provide 3 convenient time options. Your tutor will confirm <strong>only 1</strong> matching time slot.
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
+                  3 Slots Required
+                </span>
               </div>
 
               {openSlots.length > 0 && (
-                <div className="mb-2 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Quick Available Tutor Slots:
-                  </span>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Quick Tutor Slots (Click to fill Choice {activeSlotTarget}):
+                    </span>
+                    <span className="text-[10px] font-semibold text-blue-600">
+                      Targeting: Choice {activeSlotTarget}
+                    </span>
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
                     {openSlots.map((s, idx) => (
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => {
-                          setPreferredDate(formatForDateTimeInput(s.startTime, selectedTimezone));
-                        }}
+                        onClick={() => applyTutorSlot(s.startTime)}
                         className={`px-2 py-1 rounded-lg border text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
                           s.matchesStudent
                             ? "bg-blue-100 hover:bg-blue-200/80 border-blue-300 text-blue-900 shadow-xs ring-1 ring-blue-300/60"
-                            : "bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800"
+                            : "bg-white hover:bg-blue-50 border-slate-200 text-slate-700"
                         }`}
                       >
                         <Clock className={`w-2.5 h-2.5 ${s.matchesStudent ? "text-blue-700" : "text-blue-600"}`} />
@@ -784,20 +833,96 @@ export function TrialRequestModal({
                             ({s.tutorTimeDisplay} LK)
                           </span>
                         )}
-                        {s.matchesStudent && <span className="text-[9px] text-blue-800 font-extrabold">🌟 Mutual Match</span>}
+                        {s.matchesStudent && <span className="text-[9px] text-blue-800 font-extrabold">★ Match</span>}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              <input
-                type="datetime-local"
-                required
-                value={preferredDate}
-                onChange={(e) => setPreferredDate(e.target.value)}
-                className="w-full h-9 px-2.5 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+              {/* Slot 1 Input */}
+              <div
+                className={`p-2.5 rounded-xl border transition-all ${
+                  activeSlotTarget === 1 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
+                }`}
+                onClick={() => setActiveSlotTarget(1)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                    <span className="w-4.5 h-4.5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold inline-flex items-center justify-center">1</span>
+                    <span>1st Choice (Primary Preferred Time) <span className="text-red-500">*</span></span>
+                  </span>
+                  {preferredDate1 && (
+                    <span className="text-[10px] font-bold text-blue-700 font-mono">
+                      {formatTimeInTimezone(new Date(preferredDate1), selectedTimezone, { includeAbbr: true })}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="datetime-local"
+                  required
+                  value={preferredDate1}
+                  onFocus={() => setActiveSlotTarget(1)}
+                  onChange={(e) => setPreferredDate1(e.target.value)}
+                  className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Slot 2 Input */}
+              <div
+                className={`p-2.5 rounded-xl border transition-all ${
+                  activeSlotTarget === 2 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
+                }`}
+                onClick={() => setActiveSlotTarget(2)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                    <span className="w-4.5 h-4.5 rounded-full bg-blue-500 text-white text-[10px] font-extrabold inline-flex items-center justify-center">2</span>
+                    <span>2nd Choice (Alternative Option) <span className="text-red-500">*</span></span>
+                  </span>
+                  {preferredDate2 && (
+                    <span className="text-[10px] font-bold text-blue-700 font-mono">
+                      {formatTimeInTimezone(new Date(preferredDate2), selectedTimezone, { includeAbbr: true })}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="datetime-local"
+                  required
+                  value={preferredDate2}
+                  onFocus={() => setActiveSlotTarget(2)}
+                  onChange={(e) => setPreferredDate2(e.target.value)}
+                  className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Slot 3 Input */}
+              <div
+                className={`p-2.5 rounded-xl border transition-all ${
+                  activeSlotTarget === 3 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
+                }`}
+                onClick={() => setActiveSlotTarget(3)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                    <span className="w-4.5 h-4.5 rounded-full bg-blue-500 text-white text-[10px] font-extrabold inline-flex items-center justify-center">3</span>
+                    <span>3rd Choice (Alternative Option) <span className="text-red-500">*</span></span>
+                  </span>
+                  {preferredDate3 && (
+                    <span className="text-[10px] font-bold text-blue-700 font-mono">
+                      {formatTimeInTimezone(new Date(preferredDate3), selectedTimezone, { includeAbbr: true })}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="datetime-local"
+                  required
+                  value={preferredDate3}
+                  onFocus={() => setActiveSlotTarget(3)}
+                  onChange={(e) => setPreferredDate3(e.target.value)}
+                  className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
             </div>
 
             <div>
@@ -847,7 +972,7 @@ export function TrialRequestModal({
               </Button>
               <Button
                 type="submit"
-                disabled={loading || isMaxTrialsReached || isCurrentTutorBooked || !preferredDate}
+                disabled={loading || isMaxTrialsReached || isCurrentTutorBooked || !preferredDate1 || !preferredDate2 || !preferredDate3}
                 className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 shadow-md shadow-blue-900/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (

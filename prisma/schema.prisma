@@ -383,6 +383,7 @@ model TrialRequest {
   studentId       String?
   student         User?        @relation("StudentTrials", fields: [studentId], references: [id], onDelete: Cascade)
   preferredDate   DateTime     @db.Timestamptz
+  preferredDates  Json?        // Stored array of the 3 preferred times selected by student
   topic           String?
   timezone        String?      @default("Asia/Colombo") // Region/Timezone used when booked
   status             TrialStatus  @default(PENDING)

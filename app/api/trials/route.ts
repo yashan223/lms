@@ -227,6 +227,7 @@ export async function POST(request: NextRequest) {
         tutorId,
         studentId,
         preferredDate,
+        preferredDates,
         topic,
         notes,
         timezone,
@@ -292,20 +293,34 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (!preferredDate) {
+      // Process up to 3 preferred dates selected by the student
+      let validPreferredDates: string[] = [];
+      if (Array.isArray(preferredDates) && preferredDates.length > 0) {
+        for (const item of preferredDates) {
+          if (item) {
+            const p = new Date(item);
+            if (!isNaN(p.getTime())) {
+              validPreferredDates.push(p.toISOString());
+            }
+          }
+        }
+      }
+
+      if (validPreferredDates.length === 0 && preferredDate) {
+        const p = new Date(preferredDate);
+        if (!isNaN(p.getTime())) {
+          validPreferredDates.push(p.toISOString());
+        }
+      }
+
+      if (validPreferredDates.length === 0) {
         return NextResponse.json(
-          { error: "Preferred date and time is required." },
+          { error: "Please provide preferred session dates and times." },
           { status: 400 }
         );
       }
 
-      let parsedDate = new Date(preferredDate);
-      if (isNaN(parsedDate.getTime())) {
-        return NextResponse.json(
-          { error: "Invalid date format provided for preferred session time." },
-          { status: 400 }
-        );
-      }
+      const parsedDate = new Date(validPreferredDates[0]);
 
       let resolvedTutorId = tutorId || null;
       let courseTitle = "London A/L Tutorial Individual Class";
@@ -421,6 +436,7 @@ export async function POST(request: NextRequest) {
           tutorId: resolvedTutorId,
           studentId: resolvedStudentId,
           preferredDate: parsedDate,
+          preferredDates: validPreferredDates,
           timezone: timezone || "Asia/Colombo",
           topic: topic?.trim() || "30-Min Free Trial & Syllabus Overview",
           notes: notes?.trim() || null,
@@ -444,7 +460,7 @@ export async function POST(request: NextRequest) {
           data: {
             userId: resolvedTutorId,
             title: "📅 New Free Trial Requested",
-            message: `${resolvedStudentName} requested a 30-min free trial for "${courseTitle}". Review and confirm the session time.`,
+            message: `${resolvedStudentName} requested a 30-min free trial for "${courseTitle}" with ${validPreferredDates.length} preferred time slots. Review and confirm 1 time slot.`,
             type: "INFO",
             link: "/tutor?tab=trials",
           },

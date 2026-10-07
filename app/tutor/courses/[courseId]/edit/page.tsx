@@ -215,7 +215,7 @@ export function TutorCourseWorkspaceContent({
     title: "",
     subjectCode: "",
     category: CATEGORIES[0],
-    price: "10",
+    price: "0",
     olPrice: "",
     level: "ADVANCED",
     status: "PUBLISHED",
@@ -310,7 +310,7 @@ export function TutorCourseWorkspaceContent({
         title: found.title || "",
         subjectCode: found.subjectCode || "",
         category: found.category || CATEGORIES[0],
-        price: String(found.price ?? 10),
+        price: String(found.price ?? 0),
         olPrice: found.olPrice !== null && found.olPrice !== undefined ? String(found.olPrice) : "",
         level: found.level || "ADVANCED",
         status: found.status || "PUBLISHED",
@@ -363,8 +363,6 @@ export function TutorCourseWorkspaceContent({
           title: detailsForm.title.trim(),
           subjectCode: detailsForm.subjectCode.trim(),
           category: detailsForm.category,
-          price: detailsForm.price,
-          olPrice: detailsForm.olPrice.trim() || null,
           level: detailsForm.level,
           subtitle: detailsForm.subtitle.trim(),
           description: detailsForm.description.trim(),
@@ -385,8 +383,6 @@ export function TutorCourseWorkspaceContent({
         title: detailsForm.title.trim(),
         subjectCode: detailsForm.subjectCode.trim(),
         category: detailsForm.category,
-        price: detailsForm.price,
-        olPrice: detailsForm.olPrice.trim() || null,
         level: detailsForm.level,
         status: detailsForm.status,
         subtitle: detailsForm.subtitle.trim(),
@@ -1015,14 +1011,16 @@ export function TutorCourseWorkspaceContent({
             <div className="text-[10px] text-slate-400">Handouts & slides</div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[11px] font-bold text-slate-500">Tuition Rate</span>
-              <Coins className="w-4 h-4 text-blue-600" />
+          {!isNewCourse && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[11px] font-bold text-slate-500">Tuition Rate</span>
+                <Coins className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="text-2xl font-black text-blue-900">{course?.price ?? 0}</div>
+              <div className="text-[10px] text-slate-400">Tokens / enrollment (Admin set)</div>
             </div>
-            <div className="text-2xl font-black text-blue-900">{detailsForm.price || "10"}</div>
-            <div className="text-[10px] text-slate-400">Tokens / enrollment</div>
-          </div>
+          )}
         </section>
 
         {/* ── Main Tabbed Section ────────────────────────────────────────── */}
@@ -1065,7 +1063,9 @@ export function TutorCourseWorkspaceContent({
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Individual Class Identification & Core Details</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Configure curriculum title, academic subject, tuition tokens, cover image, and syllabus breakdown.
+                    {isNewCourse
+                      ? "Configure curriculum title, academic subject, cover image, and syllabus breakdown. Tuition tokens are allocated by the platform admin upon approval."
+                      : "Configure curriculum title, academic subject, cover image, and syllabus breakdown."}
                   </p>
                 </div>
                 <Button
@@ -1123,46 +1123,42 @@ export function TutorCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Enrollment Price - A/L */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>A/L Student Tokens <span className="text-red-500">*</span></span>
-                    <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded">London A/L</span>
-                  </label>
-                  <div className="relative">
-                    <Coins className="w-4 h-4 text-blue-600 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <Input
-                      type="number"
-                      required
-                      min="0"
-                      step="0.5"
-                      value={detailsForm.price}
-                      onChange={(e) => setDetailsForm({ ...detailsForm, price: e.target.value })}
-                      className="pl-9 h-10 text-xs rounded-xl font-bold"
-                      placeholder="10"
-                    />
-                  </div>
-                </div>
+                {/* Read-only Token Display for existing classes (Set by Admin only) */}
+                {!isNewCourse && (
+                  <div className="md:col-span-2 lg:col-span-3 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+                        <Coins className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-900">Class Tuition Tokens</span>
+                          <span className="text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            Set by Admin
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Tuition token rates are set and managed exclusively by the Platform Administrator and cannot be edited by tutors.
+                        </p>
+                      </div>
+                    </div>
 
-                {/* Enrollment Price - O/L */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>O/L Student Tokens</span>
-                    <span className="text-[10px] text-blue-700 font-bold bg-blue-50 px-1.5 py-0.2 rounded">London O/L (Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <Coins className="w-4 h-4 text-blue-600 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={detailsForm.olPrice}
-                      onChange={(e) => setDetailsForm({ ...detailsForm, olPrice: e.target.value })}
-                      className="pl-9 h-10 text-xs rounded-xl font-bold"
-                      placeholder="Falls back to A/L rate"
-                    />
+                    <div className="flex items-center gap-4 self-start sm:self-center bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">London A/L</div>
+                        <div className="text-xs font-black text-slate-900">
+                          {course?.price ? `${course.price} Tokens` : "Pending Admin Allocation"}
+                        </div>
+                      </div>
+                      {course?.olPrice !== null && course?.olPrice !== undefined && (
+                        <div className="border-l border-slate-200 pl-4">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">London O/L</div>
+                          <div className="text-xs font-black text-slate-900">{course.olPrice} Tokens</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Academic Level */}
                 <div className="space-y-1.5">

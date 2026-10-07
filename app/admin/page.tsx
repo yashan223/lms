@@ -4717,8 +4717,17 @@ export default function AdminDashboardPage() {
                           </div>
 
                           <div className="text-right sm:shrink-0 text-xs">
-                            <span className="font-black text-sm text-blue-600 block">{course.price || 10} Tokens</span>
-                            <span className="text-[10px] text-slate-400 font-medium">Standard Tuition</span>
+                            {course.price > 0 ? (
+                              <>
+                                <span className="font-black text-sm text-blue-600 block">{course.price} Tokens</span>
+                                <span className="text-[10px] text-slate-400 font-medium">Admin Configured</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="font-bold text-xs text-amber-600 block">⚠️ Tokens Not Set</span>
+                                <span className="text-[10px] text-slate-400 font-medium">Requires Admin Pricing</span>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -4734,6 +4743,17 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div className="flex items-center justify-end gap-2.5 pt-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isProcessing}
+                            onClick={() => handleOpenEditCourse(course)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer gap-1.5"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Set Tokens & Details</span>
+                          </Button>
                           <Button
                             type="button"
                             variant="outline"

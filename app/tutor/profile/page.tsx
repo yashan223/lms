@@ -21,7 +21,6 @@ import {
   Globe,
   ArrowLeft,
   ExternalLink,
-  Eye,
   Phone,
   Mail,
   DollarSign,
@@ -30,9 +29,7 @@ import {
   Share2,
   Check,
   RefreshCw,
-  BadgeCheck,
   Lock,
-  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,14 +68,14 @@ function TutorProfileContent() {
   const [degrees, setDegrees] = useState<AcademicDegree[]>([]);
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [certifications, setCertifications] = useState<AcademicCertification[]>([]);
-  const [experienceYears, setExperienceYears] = useState("10+ Years");
+  const [experienceYears, setExperienceYears] = useState("");
   const [hourlyRate, setHourlyRate] = useState("5000");
   const [hourlyRateAL, setHourlyRateAL] = useState("5000");
   const [hourlyRateOL, setHourlyRateOL] = useState("3500");
-  const [officeHours, setOfficeHours] = useState("Mon - Fri: 4:00 PM - 8:00 PM GMT");
-  const [linkedin, setLinkedin] = useState("https://linkedin.com");
-  const [researchGate, setResearchGate] = useState("https://researchgate.net");
-  const [website, setWebsite] = useState("https://edupulse.uk");
+  const [officeHours, setOfficeHours] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [researchGate, setResearchGate] = useState("");
+  const [website, setWebsite] = useState("");
 
   // Temporary Form Inputs for adding items
   const [newDegreeTitle, setNewDegreeTitle] = useState("");
@@ -112,66 +109,31 @@ function TutorProfileContent() {
         setPhone(data.tutor.phone || "");
         setAvatar(data.tutor.avatar || "");
 
-        let parsedAbout = "Senior Tutor specializing in London A/L & O/L specifications.";
-        let parsedDegrees: AcademicDegree[] = [
-          {
-            id: "deg-1",
-            degree: "M.Sc. in Pure Mathematics & Mathematical Physics",
-            institution: "Imperial College London",
-            year: "2016",
-            honors: "First Class Distinction",
-          },
-          {
-            id: "deg-2",
-            degree: "B.Sc. (Hons) in Pure Mathematics & Statistics",
-            institution: "University of Warwick",
-            year: "2013",
-            honors: "First Class Honours",
-          },
-        ];
-        let parsedSpecs: string[] = [
-          "Pure Mathematics (P1, P2, P3, P4)",
-          "Mechanics (M1, M2)",
-          "Statistics (S1, S2)",
-          "Further Pure (FP1, FP2)",
-          "Edexcel International A/L",
-          "Cambridge CIE A/L",
-        ];
-        let parsedCerts: AcademicCertification[] = [
-          {
-            id: "cert-1",
-            title: "Pearson Edexcel Certified Senior Lead Examiner",
-            authority: "Pearson Education Ltd (UK)",
-            year: "2019",
-          },
-          {
-            id: "cert-2",
-            title: "Cambridge Assessment International Education Registered Examiner",
-            authority: "Cambridge University Press & Assessment",
-            year: "2021",
-          },
-        ];
-        let parsedExp = "10+ Years";
+        let parsedAbout = "";
+        let parsedDegrees: AcademicDegree[] = [];
+        let parsedSpecs: string[] = [];
+        let parsedCerts: AcademicCertification[] = [];
+        let parsedExp = "";
         let parsedRate = "5000";
         let parsedRateAL = "5000";
         let parsedRateOL = "3500";
-        let parsedHours = "Mon - Fri: 4:00 PM - 8:00 PM GMT";
-        let parsedLinkedin = "https://linkedin.com";
-        let parsedResearchGate = "https://researchgate.net";
-        let parsedWebsite = "https://edupulse.uk";
+        let parsedHours = "";
+        let parsedLinkedin = "";
+        let parsedResearchGate = "";
+        let parsedWebsite = "";
 
         if (data.tutor.bio) {
           try {
             const parsed = JSON.parse(data.tutor.bio);
             if (typeof parsed === "object" && parsed !== null) {
               if (parsed.about) parsedAbout = parsed.about;
-              if (Array.isArray(parsed.degrees) && parsed.degrees.length > 0) {
+              if (Array.isArray(parsed.degrees)) {
                 parsedDegrees = parsed.degrees;
               }
-              if (Array.isArray(parsed.specializations) && parsed.specializations.length > 0) {
+              if (Array.isArray(parsed.specializations)) {
                 parsedSpecs = parsed.specializations;
               }
-              if (Array.isArray(parsed.certifications) && parsed.certifications.length > 0) {
+              if (Array.isArray(parsed.certifications)) {
                 parsedCerts = parsed.certifications;
               }
               if (parsed.experienceYears) parsedExp = parsed.experienceYears;
@@ -491,114 +453,8 @@ function TutorProfileContent() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Real-Time Live Preview (4 cols) */}
-          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-5">
-            {/* Live Preview Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 sticky top-24">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-3.5 h-3.5 text-blue-600" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                    Live Public Preview
-                  </span>
-                </div>
-                <span className="flex items-center gap-1.5 text-[10px] text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  Live Sync
-                </span>
-              </div>
-
-              {/* Tutor Hero Preview */}
-              <div className="flex items-start gap-3.5">
-                <div className="w-16 h-16 rounded-2xl bg-[#0c2461] text-white flex items-center justify-center font-bold text-xl shrink-0 overflow-hidden border-2 border-slate-200 shadow-md">
-                  {avatar ? (
-                    <img src={avatar} alt={name} className="w-full h-full object-cover" />
-                  ) : (
-                    name.charAt(0) || "T"
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="font-extrabold text-sm text-slate-900 truncate">
-                      {name || "Senior Tutor"}
-                    </h3>
-                    <span title="Verified Tutor">
-                      <BadgeCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">
-                    {headline || "Lead Tutor in London A/L Pure Mathematics"}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-500 flex-wrap">
-                    <span className="bg-slate-100 px-2 py-0.5 rounded font-medium">
-                      {experienceYears || "10+ Years Experience"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Degrees Preview Snippet */}
-              {degrees.length > 0 && (
-                <div className="pt-3 border-t border-slate-100 space-y-1.5">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <GraduationCap className="w-3 h-3 text-blue-600" />
-                    <span>Academic Qualifications ({degrees.length})</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {degrees.slice(0, 2).map((deg) => (
-                      <div key={deg.id} className="text-[11px] bg-slate-50 p-2 rounded-xl border border-slate-200/60">
-                        <div className="font-bold text-slate-900 truncate">{deg.degree}</div>
-                        <div className="text-[10px] text-slate-500 flex items-center justify-between">
-                          <span className="truncate">{deg.institution}</span>
-                          <span className="font-mono text-slate-400">{deg.year}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Specializations Preview */}
-              {specializations.length > 0 && (
-                <div className="pt-3 border-t border-slate-100 space-y-1.5">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <BookOpen className="w-3 h-3 text-blue-600" />
-                    <span>Syllabus Modules</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {specializations.slice(0, 4).map((spec, i) => (
-                      <span
-                        key={i}
-                        className="text-[9px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200 truncate max-w-[140px]"
-                      >
-                        {spec}
-                      </span>
-                    ))}
-                    {specializations.length > 4 && (
-                      <span className="text-[9px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md">
-                        +{specializations.length - 4} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Bio Preview */}
-              <div className="pt-3 border-t border-slate-100 space-y-1">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Teaching Philosophy Preview
-                </div>
-                <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
-                  {about || "Experienced tutor focused on exam methodology and structured student mastery."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Customization Forms (8 cols) */}
-          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 space-y-6">
-            <form onSubmit={handleSaveProfile} className="space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <form onSubmit={handleSaveProfile} className="space-y-6">
               {/* Section 1: Photo & Avatar Customization */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -736,75 +592,6 @@ function TutorProfileContent() {
                     This appears prominently underneath your name on all class pages, search results, and booking forms.
                   </p>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-xs text-slate-700 block">
-                      Teaching Experience
-                    </label>
-                    <Input
-                      value={experienceYears}
-                      onChange={(e) => setExperienceYears(e.target.value)}
-                      placeholder="e.g. 12+ Years Lead Tutor"
-                      className="rounded-xl h-9 text-xs"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-xs text-slate-700 block">
-                      Consultation / Office Hours
-                    </label>
-                    <Input
-                      value={officeHours}
-                      onChange={(e) => setOfficeHours(e.target.value)}
-                      placeholder="e.g. Mon - Fri: 4:00 PM - 8:00 PM GMT"
-                      className="rounded-xl h-9 text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Official Tutor Hourly Rates (A/L & O/L) */}
-                <div className="pt-2">
-                  <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Coins className="w-4 h-4 text-blue-700" />
-                        <span className="font-bold text-xs text-slate-900">Official Tutor Hourly Rates (LKR)</span>
-                      </div>
-                      <Badge className="bg-blue-100 text-blue-900 border-blue-200 text-[10px] font-bold">
-                        Set by Administration
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
-                        <div className="text-[10px] uppercase tracking-wider font-extrabold text-blue-900">
-                          London A/L Hourly Rate
-                        </div>
-                        <div className="text-base font-black text-slate-900 font-mono">
-                          LKR {Number(hourlyRateAL || hourlyRate || 5000).toLocaleString()}{" "}
-                          <span className="text-xs font-normal text-slate-500 font-sans">/ hr</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400">
-                          Applies to IAL AS/A2 masterclasses, past paper clinics, and 1-on-1 sessions.
-                        </p>
-                      </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
-                        <div className="text-[10px] uppercase tracking-wider font-extrabold text-slate-700">
-                          London O/L (IGCSE) Hourly Rate
-                        </div>
-                        <div className="text-base font-black text-slate-900 font-mono">
-                          LKR {Number(hourlyRateOL || 3500).toLocaleString()}{" "}
-                          <span className="text-xs font-normal text-slate-500 font-sans">/ hr</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400">
-                          Applies to IGCSE foundation classes, topical drills, and mock review sessions.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Section 3: Academic Degrees & Educational Credentials */}
@@ -879,7 +666,7 @@ function TutorProfileContent() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-700 block">Degree Title *</label>
                       <Input
-                        placeholder="e.g. B.Sc. (Hons) in Pure Mathematics"
+                        placeholder="Degree title"
                         value={newDegreeTitle}
                         onChange={(e) => setNewDegreeTitle(e.target.value)}
                         className="bg-white rounded-xl h-8 text-xs"
@@ -889,7 +676,7 @@ function TutorProfileContent() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-700 block">Institution / University *</label>
                       <Input
-                        placeholder="e.g. Imperial College London"
+                        placeholder="Institution / University"
                         value={newDegreeInst}
                         onChange={(e) => setNewDegreeInst(e.target.value)}
                         className="bg-white rounded-xl h-8 text-xs"
@@ -901,7 +688,7 @@ function TutorProfileContent() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-700 block">Graduation Year</label>
                       <Input
-                        placeholder="e.g. 2018"
+                        placeholder="Year"
                         value={newDegreeYear}
                         onChange={(e) => setNewDegreeYear(e.target.value)}
                         className="bg-white rounded-xl h-8 text-xs"
@@ -911,7 +698,7 @@ function TutorProfileContent() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-700 block">Honors / Distinctions (Optional)</label>
                       <Input
-                        placeholder="e.g. First Class Honours, Dean's List"
+                        placeholder="Honors / Distinctions (Optional)"
                         value={newDegreeHonors}
                         onChange={(e) => setNewDegreeHonors(e.target.value)}
                         className="bg-white rounded-xl h-8 text-xs"
@@ -965,7 +752,7 @@ function TutorProfileContent() {
 
                 <div className="flex items-center gap-2">
                   <Input
-                    placeholder="Add custom specialization (e.g. Further Pure FP2, Mechanics M2)..."
+                    placeholder="Add custom specialization subject or module..."
                     value={newSpecTag}
                     onChange={(e) => setNewSpecTag(e.target.value)}
                     onKeyDown={(e) => {
@@ -1076,7 +863,7 @@ function TutorProfileContent() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-700 block">Certification Title *</label>
                       <Input
-                        placeholder="e.g. Pearson Edexcel Certified Senior Lead Examiner"
+                        placeholder="Certification title"
                         value={newCertTitle}
                         onChange={(e) => setNewCertTitle(e.target.value)}
                         className="bg-white rounded-xl h-8 text-xs"
@@ -1086,7 +873,7 @@ function TutorProfileContent() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-700 block">Issuing Authority / Board</label>
                       <Input
-                        placeholder="e.g. Pearson Edexcel International"
+                        placeholder="Issuing authority / Board"
                         value={newCertAuth}
                         onChange={(e) => setNewCertAuth(e.target.value)}
                         className="bg-white rounded-xl h-8 text-xs"
@@ -1098,7 +885,7 @@ function TutorProfileContent() {
                     <div className="w-36 space-y-1">
                       <label className="text-[11px] font-bold text-slate-700 block">Year Awarded</label>
                       <Input
-                        placeholder="e.g. 2021"
+                        placeholder="Year"
                         value={newCertYear}
                         onChange={(e) => setNewCertYear(e.target.value)}
                         className="bg-white rounded-xl h-8 text-xs"
@@ -1135,7 +922,7 @@ function TutorProfileContent() {
                     rows={6}
                     value={about}
                     onChange={(e) => setAbout(e.target.value)}
-                    placeholder="Write an engaging introduction about your teaching style, past student A* scores, syllabus mastery, and passion for London A/L..."
+                    placeholder="Describe your academic background, teaching approach, and subject expertise..."
                     className="w-full p-3.5 rounded-xl border border-slate-200 text-xs leading-relaxed resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                   <div className="flex items-center justify-between text-[10px] text-slate-400">
@@ -1190,50 +977,7 @@ function TutorProfileContent() {
                 </div>
               </div>
 
-              {/* Bottom Sticky Action Banner */}
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950 via-[#0c2461] to-slate-900 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h4 className="font-bold text-base text-white flex items-center gap-2">
-                    <BadgeCheck className="w-4 h-4 text-blue-300" />
-                    <span>Ready to publish your updated credentials?</span>
-                  </h4>
-                  <p className="text-xs text-blue-200">
-                    Saved changes immediately synchronize to your class pages, consultation booking desks, and student directories.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Link href="/tutor">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="bg-transparent border-white/20 hover:bg-white/10 text-white text-xs font-bold rounded-xl"
-                    >
-                      Return to Studio
-                    </Button>
-                  </Link>
-
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="px-6 py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-black shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                        <span>Saving Profile...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                        <span>Save Profile Changes</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
             </form>
-          </div>
         </div>
       </main>
     </div>

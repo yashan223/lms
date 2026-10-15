@@ -388,51 +388,17 @@ function TutorDashboardContent() {
   const [profileAbout, setProfileAbout] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("");
-  const [profileDegrees, setProfileDegrees] = useState<AcademicDegree[]>([
-    {
-      id: "deg-1",
-      degree: "B.Sc. (Hons) in Pure Mathematics",
-      institution: "Imperial College London",
-      year: "2016",
-      honors: "First Class Honours",
-    },
-    {
-      id: "deg-2",
-      degree: "M.Sc. in Applied Mathematics & Mechanics",
-      institution: "University of Cambridge",
-      year: "2018",
-      honors: "Distinction",
-    },
-  ]);
-  const [profileSpecs, setProfileSpecs] = useState<string[]>([
-    "Pure Mathematics (P1-P4)",
-    "Further Mechanics (M1-M3)",
-    "Differential Equations & Calculus",
-    "Pearson Edexcel IAL",
-    "Cambridge International A/L",
-  ]);
-  const [profileCerts, setProfileCerts] = useState<AcademicCertification[]>([
-    {
-      id: "cert-1",
-      title: "Certified Lead Examiner & Assessment Specialist",
-      authority: "Pearson Edexcel International",
-      year: "2021",
-    },
-    {
-      id: "cert-2",
-      title: "Fellow of the Higher Education Academy (FHEA)",
-      authority: "Advance HE",
-      year: "2019",
-    },
-  ]);
-  const [profileExp, setProfileExp] = useState("10+ Years");
+  const [profileDegrees, setProfileDegrees] = useState<AcademicDegree[]>([]);
+  const [profileSpecs, setProfileSpecs] = useState<string[]>([]);
+  const [profileCerts, setProfileCerts] = useState<AcademicCertification[]>([]);
+  const [profileExp, setProfileExp] = useState("");
   const [profileRate, setProfileRate] = useState("5000");
   const [profileRateAL, setProfileRateAL] = useState("5000");
   const [profileRateOL, setProfileRateOL] = useState("3500");
-  const [profileHours, setProfileHours] = useState("Mon - Fri: 4:00 PM - 8:00 PM GMT");
-  const [profileLinkedin, setProfileLinkedin] = useState("https://linkedin.com");
-  const [profileResearchGate, setProfileResearchGate] = useState("https://researchgate.net");
-  const [profileWebsite, setProfileWebsite] = useState("https://edupulse.uk");
+  const [profileHours, setProfileHours] = useState("");
+  const [profileLinkedin, setProfileLinkedin] = useState("");
+  const [profileResearchGate, setProfileResearchGate] = useState("");
+  const [profileWebsite, setProfileWebsite] = useState("");
 
   const [newDegreeTitle, setNewDegreeTitle] = useState("");
   const [newDegreeInst, setNewDegreeInst] = useState("");
@@ -489,65 +455,31 @@ function TutorDashboardContent() {
         setProfilePhone(data.tutor.phone || "");
         setProfileAvatar(data.tutor.avatar || "");
 
-        let parsedAbout = "Senior Tutor specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum with a focus on deep conceptual proofs, problem sets, and examination individual classes.";
-        let parsedDegrees: AcademicDegree[] = [
-          {
-            id: "deg-1",
-            degree: "B.Sc. (Hons) in Pure Mathematics",
-            institution: "Imperial College London",
-            year: "2016",
-            honors: "First Class Honours",
-          },
-          {
-            id: "deg-2",
-            degree: "M.Sc. in Applied Mathematics & Mechanics",
-            institution: "University of Cambridge",
-            year: "2018",
-            honors: "Distinction",
-          },
-        ];
-        let parsedSpecs: string[] = [
-          "Pure Mathematics (P1-P4)",
-          "Further Mechanics (M1-M3)",
-          "Differential Equations & Calculus",
-          "Pearson Edexcel IAL",
-          "Cambridge International A/L",
-        ];
-        let parsedCerts: AcademicCertification[] = [
-          {
-            id: "cert-1",
-            title: "Certified Lead Examiner & Assessment Specialist",
-            authority: "Pearson Edexcel International",
-            year: "2021",
-          },
-          {
-            id: "cert-2",
-            title: "Fellow of the Higher Education Academy (FHEA)",
-            authority: "Advance HE",
-            year: "2019",
-          },
-        ];
-        let parsedExp = "10+ Years";
+        let parsedAbout = "";
+        let parsedDegrees: AcademicDegree[] = [];
+        let parsedSpecs: string[] = [];
+        let parsedCerts: AcademicCertification[] = [];
+        let parsedExp = "";
         let parsedRate = "5000";
         let parsedRateAL = "5000";
         let parsedRateOL = "3500";
-        let parsedHours = "Mon - Fri: 4:00 PM - 8:00 PM GMT";
-        let parsedLinkedin = "https://linkedin.com";
-        let parsedResearchGate = "https://researchgate.net";
-        let parsedWebsite = "https://edupulse.uk";
+        let parsedHours = "";
+        let parsedLinkedin = "";
+        let parsedResearchGate = "";
+        let parsedWebsite = "";
 
         if (data.tutor.bio) {
           try {
             if (data.tutor.bio.trim().startsWith("{") && data.tutor.bio.trim().endsWith("}")) {
               const parsed = JSON.parse(data.tutor.bio);
               if (parsed.about) parsedAbout = parsed.about;
-              if (Array.isArray(parsed.degrees) && parsed.degrees.length > 0) {
+              if (Array.isArray(parsed.degrees)) {
                 parsedDegrees = parsed.degrees;
               }
-              if (Array.isArray(parsed.specializations) && parsed.specializations.length > 0) {
+              if (Array.isArray(parsed.specializations)) {
                 parsedSpecs = parsed.specializations;
               }
-              if (Array.isArray(parsed.certifications) && parsed.certifications.length > 0) {
+              if (Array.isArray(parsed.certifications)) {
                 parsedCerts = parsed.certifications;
               }
               if (parsed.experienceYears) parsedExp = parsed.experienceYears;
@@ -1729,7 +1661,7 @@ function TutorDashboardContent() {
 
           <div className="lg:col-span-6 space-y-4 order-1 lg:order-2">
 
-            <div className="bg-white rounded-lg border border-slate-200 p-2 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <div className="lg:hidden bg-white rounded-lg border border-slate-200 p-2 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setCenterTab("courses")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
@@ -3212,31 +3144,6 @@ function TutorDashboardContent() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-                      <div className="space-y-1.5">
-                        <label className="font-bold text-xs text-slate-700 block">
-                          Teaching Experience
-                        </label>
-                        <Input
-                          value={profileExp}
-                          onChange={(e) => setProfileExp(e.target.value)}
-                          placeholder="e.g. 12+ Years Lead Tutor"
-                          className="rounded-xl h-9 text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="font-bold text-xs text-slate-700 block">
-                          Office / Availability Hours
-                        </label>
-                        <Input
-                          value={profileHours}
-                          onChange={(e) => setProfileHours(e.target.value)}
-                          placeholder="e.g. Mon - Fri: 4:00 PM - 8:00 PM GMT"
-                          className="rounded-xl h-9 text-xs"
-                        />
-                      </div>
-                    </div>
                   </div>
 
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
@@ -3310,7 +3217,7 @@ function TutorDashboardContent() {
                           <label className="text-[11px] font-bold text-slate-700 block">Degree Name *</label>
                           <Input
                             required
-                            placeholder="e.g. B.Sc. (Hons) in Pure Mathematics"
+                            placeholder="Degree title"
                             value={newDegreeTitle}
                             onChange={(e) => setNewDegreeTitle(e.target.value)}
                             className="bg-white rounded-xl h-8 text-xs"
@@ -3321,7 +3228,7 @@ function TutorDashboardContent() {
                           <label className="text-[11px] font-bold text-slate-700 block">Institution / University *</label>
                           <Input
                             required
-                            placeholder="e.g. Imperial College London"
+                            placeholder="Institution / University"
                             value={newDegreeInst}
                             onChange={(e) => setNewDegreeInst(e.target.value)}
                             className="bg-white rounded-xl h-8 text-xs"
@@ -3333,7 +3240,7 @@ function TutorDashboardContent() {
                         <div className="space-y-1">
                           <label className="text-[11px] font-bold text-slate-700 block">Graduation Year</label>
                           <Input
-                            placeholder="e.g. 2018"
+                            placeholder="Year"
                             value={newDegreeYear}
                             onChange={(e) => setNewDegreeYear(e.target.value)}
                             className="bg-white rounded-xl h-8 text-xs"
@@ -3343,7 +3250,7 @@ function TutorDashboardContent() {
                         <div className="space-y-1">
                           <label className="text-[11px] font-bold text-slate-700 block">Honors / Distinctions (Optional)</label>
                           <Input
-                            placeholder="e.g. First Class Honours, Dean's List"
+                            placeholder="Honors / Distinctions (Optional)"
                             value={newDegreeHonors}
                             onChange={(e) => setNewDegreeHonors(e.target.value)}
                             className="bg-white rounded-xl h-8 text-xs"
@@ -3395,7 +3302,7 @@ function TutorDashboardContent() {
 
                     <div className="flex items-center gap-2">
                       <Input
-                        placeholder="Add custom specialization (e.g. Further Pure FP2, Mechanics M2)..."
+                        placeholder="Add custom specialization subject or module..."
                         value={newSpecTag}
                         onChange={(e) => setNewSpecTag(e.target.value)}
                         onKeyDown={(e) => {
@@ -3505,7 +3412,7 @@ function TutorDashboardContent() {
                           <label className="text-[11px] font-bold text-slate-700 block">Certification Title *</label>
                           <Input
                             required
-                            placeholder="e.g. Pearson Edexcel Certified Senior Lead Examiner"
+                            placeholder="Certification title"
                             value={newCertTitle}
                             onChange={(e) => setNewCertTitle(e.target.value)}
                             className="bg-white rounded-xl h-8 text-xs"
@@ -3515,7 +3422,7 @@ function TutorDashboardContent() {
                         <div className="space-y-1">
                           <label className="text-[11px] font-bold text-slate-700 block">Issuing Authority / Board</label>
                           <Input
-                            placeholder="e.g. Pearson Edexcel International"
+                            placeholder="Issuing authority / Board"
                             value={newCertAuth}
                             onChange={(e) => setNewCertAuth(e.target.value)}
                             className="bg-white rounded-xl h-8 text-xs"
@@ -3527,7 +3434,7 @@ function TutorDashboardContent() {
                         <div className="w-36 space-y-1">
                           <label className="text-[11px] font-bold text-slate-700 block">Year Awarded</label>
                           <Input
-                            placeholder="e.g. 2021"
+                            placeholder="Year"
                             value={newCertYear}
                             onChange={(e) => setNewCertYear(e.target.value)}
                             className="bg-white rounded-xl h-8 text-xs"
@@ -3562,7 +3469,7 @@ function TutorDashboardContent() {
                         rows={6}
                         value={profileAbout}
                         onChange={(e) => setProfileAbout(e.target.value)}
-                        placeholder="Write an engaging introduction about your teaching style, past student A* scores, class structure, and passion for mathematics and sciences..."
+                        placeholder="Describe your academic background, teaching approach, and subject expertise..."
                         className="w-full p-3.5 rounded-xl border border-slate-200 text-xs leading-relaxed resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
                       <div className="flex items-center justify-between text-[10px] text-slate-400">

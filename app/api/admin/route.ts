@@ -373,7 +373,7 @@ export async function POST(request: NextRequest) {
         ? getRegionalTimezone(country).id
         : DEFAULT_TIMEZONE;
 
-      let initialBio = bio || `Registered academic member of EduPulse Academy.`;
+      let initialBio = bio ? bio.trim() : "";
       if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
         try {
           const parsed = initialBio.trim().startsWith("{") ? JSON.parse(initialBio) : { about: initialBio };

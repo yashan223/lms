@@ -3561,64 +3561,6 @@ function TutorDashboardContent() {
           </div>
 
           <aside className="lg:col-span-3 space-y-4 order-3 lg:order-3">
-
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Instructor Profile
-                </h3>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-950 text-white overflow-hidden border border-slate-200 shrink-0 flex items-center justify-center">
-                  {(profileAvatar || tutor?.avatar) ? (
-                    <img
-                      src={profileAvatar || tutor?.avatar}
-                      alt={tutorName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-base font-bold text-white">
-                      {(profileName || tutorName || "T").charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-bold text-xs text-slate-900 truncate">{profileName || tutorName}</h4>
-                  <p className="text-[11px] text-slate-500 truncate">{profileHeadline || tutor?.headline || "Subject Lead"}</p>
-                </div>
-              </div>
-
-              {profileDegrees.length > 0 && (
-                <div className="space-y-1 border-t border-slate-100 pt-2">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                    <GraduationCap className="w-3 h-3 text-blue-600" />
-                    <span>Academic Degrees:</span>
-                  </div>
-                  <div className="space-y-1">
-                    {profileDegrees.slice(0, 2).map((deg) => (
-                      <div key={deg.id} className="text-[11px] text-slate-700 font-medium truncate flex items-center justify-between">
-                        <span className="truncate">{deg.degree}</span>
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0 ml-1">{deg.year}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed border-t border-slate-100 pt-2">
-                {profileAbout || "Tutor specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum."}
-              </p>
-
-              <Link
-                href="/tutor/profile"
-                className="w-full py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0c2461] text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Manage Profile &amp; Settings</span>
-              </Link>
-            </div>
-
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">

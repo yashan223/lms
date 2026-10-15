@@ -2464,7 +2464,7 @@ function TutorDashboardContent() {
                               </div>
                               <div>
                                 <h4 className="font-bold text-xs text-slate-900">{st.name}</h4>
-                                <p className="text-[10px] text-slate-500">{st.email}</p>
+                                <p className="text-[10px] text-slate-500">{st.headline || "Enrolled Student"}</p>
                               </div>
                             </div>
 
@@ -2599,7 +2599,7 @@ function TutorDashboardContent() {
                             year: "numeric",
                           });
                           const timeFormatted = formatTimeInTimezone(tr.preferredDate, tutorTimezone, {
-                            includeAbbr: true,
+                            includeAbbr: false,
                           });
                           const studentTz = tr.timezone || tr.student?.timezone;
 
@@ -2636,18 +2636,14 @@ function TutorDashboardContent() {
                                         {tr.course?.title || "London A/L Tutorial"}
                                       </Badge>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
-                                      <span className="flex items-center gap-1">
-                                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                                        <span>{tr.studentEmail}</span>
-                                      </span>
-                                      {tr.studentPhone && (
-                                        <span className="flex items-center gap-1 font-mono">
-                                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                                          <span>{tr.studentPhone}</span>
+                                    {studentTz && (
+                                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                                        <CountryFlag countryCode={getTimezoneCountryCode(studentTz)} size="xs" />
+                                        <span className="text-[11px] font-medium text-slate-600">
+                                          Student Region: {studentTz.replace(/_/g, " ")}
                                         </span>
-                                      )}
-                                    </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -2690,7 +2686,7 @@ function TutorDashboardContent() {
                                         day: "numeric",
                                       });
                                       const optTime = formatTimeInTimezone(optStr, tutorTimezone, {
-                                        includeAbbr: true,
+                                        includeAbbr: false,
                                       });
                                       return (
                                         <div
@@ -2709,10 +2705,15 @@ function TutorDashboardContent() {
                                             )}
                                           </div>
                                           <div className="text-xs font-bold text-slate-900">{optDate}</div>
-                                          <div className="text-xs font-mono font-extrabold text-blue-700">{optTime}</div>
+                                          <div className="text-xs font-mono font-extrabold text-blue-700 flex items-center gap-1.5">
+                                            <CountryFlag countryCode={getTimezoneCountryCode(tutorTimezone)} size="xs" />
+                                            <span>{optTime}</span>
+                                          </div>
                                           {studentTz && studentTz !== tutorTimezone && (
-                                            <div className="text-[10px] text-slate-400 font-medium">
-                                              Student: {formatTimeInTimezone(optStr, studentTz, { includeAbbr: true })}
+                                            <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mt-0.5">
+                                              <span className="text-slate-400">Student:</span>
+                                              <CountryFlag countryCode={getTimezoneCountryCode(studentTz)} size="xs" />
+                                              <span className="font-mono">{formatTimeInTimezone(optStr, studentTz, { includeAbbr: false })}</span>
                                             </div>
                                           )}
                                         </div>
@@ -2753,12 +2754,16 @@ function TutorDashboardContent() {
                                       <div className="text-sm font-bold text-slate-900 flex flex-wrap items-center gap-1.5 mt-0.5">
                                         <span>{dateFormatted}</span>
                                         <span className="text-slate-400">•</span>
-                                        <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
+                                        <span className="inline-flex items-center gap-1.5 font-mono text-blue-700 font-extrabold">
+                                          <CountryFlag countryCode={getTimezoneCountryCode(tutorTimezone)} size="xs" />
+                                          <span>{timeFormatted}</span>
+                                        </span>
                                         <span className="text-xs font-semibold text-slate-500">(30 mins)</span>
                                         {studentTz && studentTz !== tutorTimezone && (
-                                          <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                                          <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1.5">
                                             <span>Student time:</span>
-                                            <strong className="font-mono">{formatTimeInTimezone(tr.preferredDate, studentTz, { includeAbbr: true })}</strong>
+                                            <CountryFlag countryCode={getTimezoneCountryCode(studentTz)} size="xs" />
+                                            <strong className="font-mono">{formatTimeInTimezone(tr.preferredDate, studentTz, { includeAbbr: false })}</strong>
                                           </span>
                                         )}
                                       </div>
@@ -4094,12 +4099,8 @@ function TutorDashboardContent() {
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-100">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500 font-medium">Email:</span>
-                  <span className="font-mono font-bold text-slate-800">{selectedStudentForModal.email}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500 font-medium">Phone:</span>
-                  <span className="font-bold text-slate-800">{selectedStudentForModal.phone}</span>
+                  <span className="text-slate-500 font-medium">Communication:</span>
+                  <span className="font-semibold text-slate-800">Use LMS Encrypted Chat</span>
                 </div>
               </div>
 
@@ -4222,10 +4223,12 @@ function TutorDashboardContent() {
                             Student
                           </span>
                         </div>
-                        <div className="text-xs text-slate-500 font-mono flex items-center gap-1.5">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{confirmingTrial.studentEmail}</span>
-                        </div>
+                        {(confirmingTrial.timezone || confirmingTrial.student?.timezone) && (
+                          <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                            <CountryFlag countryCode={getTimezoneCountryCode(confirmingTrial.timezone || confirmingTrial.student?.timezone)} size="xs" />
+                            <span className="text-[11px] font-medium text-slate-600">Student Region: {(confirmingTrial.timezone || confirmingTrial.student?.timezone).replace(/_/g, " ")}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="sm:text-right space-y-1 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">

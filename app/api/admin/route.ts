@@ -47,18 +47,18 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
 
 async function clearLocalStorageUploads(): Promise<void> {
   try {
-    const storageDir = process.env.STORAGE_DIR || path.join( process.cwd(), "storage", "uploads");
+    const storageDir = process.env.STORAGE_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "storage", "uploads");
     const subdirs = ["public", "private"];
     for (const sub of subdirs) {
-      const fullPath = path.join( storageDir, sub);
-      if (fs.existsSync( fullPath)) {
-        const files = fs.readdirSync( fullPath);
+      const fullPath = path.join(/*turbopackIgnore: true*/ storageDir, sub);
+      if (fs.existsSync(/*turbopackIgnore: true*/ fullPath)) {
+        const files = fs.readdirSync(/*turbopackIgnore: true*/ fullPath);
         for (const file of files) {
           if (file === ".gitkeep") continue;
           try {
-            const filePath = path.join( fullPath, file);
-            if (fs.statSync( filePath).isFile()) {
-              fs.unlinkSync( filePath);
+            const filePath = path.join(/*turbopackIgnore: true*/ fullPath, file);
+            if (fs.statSync(/*turbopackIgnore: true*/ filePath).isFile()) {
+              fs.unlinkSync(/*turbopackIgnore: true*/ filePath);
             }
           } catch (e) {
             console.error(`[storage] Failed to delete storage file ${file}:`, e);

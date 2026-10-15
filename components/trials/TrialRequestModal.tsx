@@ -412,16 +412,16 @@ export function TrialRequestModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
-        <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex">
+      <div className="bg-slate-50 w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-200">
+        <div className="bg-white border-b border-slate-200 px-6 sm:px-8 py-4 flex items-center justify-between shrink-0 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+            <div className="w-11 h-11 rounded-2xl bg-[#0c2461] text-white flex items-center justify-center shadow-md shadow-blue-500/20">
               <CalendarCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-slate-900">
+                <h3 className="font-extrabold text-base sm:text-lg text-slate-900">
                   {step === "SETUP_AVAILABILITY" ? "Configure Your Study Hours" : "Request a 30-Min Free Trial"}
                 </h3>
                 {step === "SETUP_AVAILABILITY" ? (
@@ -453,527 +453,562 @@ export function TrialRequestModal({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {checkingAvailability ? (
-          <div className="py-12 text-center space-y-3">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-            <p className="text-xs text-slate-500 font-medium">Checking academic availability...</p>
+          <div className="flex-1 flex flex-col items-center justify-center py-16 space-y-3">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+            <p className="text-sm text-slate-500 font-medium">Checking academic availability...</p>
           </div>
         ) : step === "SETUP_AVAILABILITY" ? (
-          <div className="space-y-3.5 animate-in fade-in duration-200 text-xs">
-            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200">
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <CalendarClock className="w-4 h-4" />
-                </div>
-                <div className="space-y-0.5">
-                  <h4 className="font-bold text-xs text-blue-950">
-                    Step 1: Set Up Your Study Hours First
-                  </h4>
-                  <p className="text-[11px] text-blue-900/80 leading-relaxed">
-                    Tutors schedule 1-on-1 individual classes and trials around your routine. Choose when you are free to study to immediately unlock trial booking!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {error && (
-              <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Select a 1-Click Quick Study Schedule:
-              </span>
-
-              <div className="p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-3 bg-white shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                    <Moon className="w-4 h-4" />
+          <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-8">
+            <div className="max-w-2xl mx-auto space-y-4 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs animate-in fade-in duration-200">
+              <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <CalendarClock className="w-5 h-5" />
                   </div>
-                  <div>
-                    <div className="font-bold text-xs text-slate-800">Weekday Evenings</div>
-                    <div className="text-[10px] text-slate-500">Mon – Fri • 04:00 PM – 08:00 PM (After-School)</div>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-sm text-blue-950">
+                      Step 1: Set Up Your Study Hours First
+                    </h4>
+                    <p className="text-xs text-blue-900/80 leading-relaxed">
+                      Tutors schedule 1-on-1 individual classes and trials around your routine. Choose when you are free to study to immediately unlock trial booking!
+                    </p>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={savingAvailability}
-                  onClick={() => handleApplyPreset("WEEKDAY_EVENINGS")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg px-3.5 py-1.5 cursor-pointer shrink-0"
-                >
-                  {savingAvailability ? <Loader2 className="w-3 h-3 animate-spin" /> : "Use Schedule"}
-                </Button>
               </div>
 
-              <div className="p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-3 bg-white shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                    <Sun className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-xs text-slate-800">Weekend Study Intensives</div>
-                    <div className="text-[10px] text-slate-500">Sat &amp; Sun • 10:00 AM – 03:00 PM (Past Paper Practice)</div>
-                  </div>
+              {error && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{error}</span>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={savingAvailability}
-                  onClick={() => handleApplyPreset("WEEKEND_STUDY")}
-                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-lg px-3.5 py-1.5 cursor-pointer shrink-0"
-                >
-                  {savingAvailability ? <Loader2 className="w-3 h-3 animate-spin" /> : "Use Schedule"}
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-[11px] text-slate-500">
-              <span>💡 You can fine-tune specific days & times anytime in your Dashboard.</span>
-              {studentAvailabilities.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setStep("REQUEST_TRIAL")}
-                  className="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
-                >
-                  Skip to Trial
-                </button>
               )}
+
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                  Select a 1-Click Quick Study Schedule:
+                </span>
+
+                <div className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-4 bg-white shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <Moon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-slate-800">Weekday Evenings</div>
+                      <div className="text-xs text-slate-500">Mon – Fri • 04:00 PM – 08:00 PM (After-School)</div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={savingAvailability}
+                    onClick={() => handleApplyPreset("WEEKDAY_EVENINGS")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-4 py-2 cursor-pointer shrink-0"
+                  >
+                    {savingAvailability ? <Loader2 className="w-4 h-4 animate-spin" /> : "Use Schedule"}
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-4 bg-white shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <Sun className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-slate-800">Weekend Study Intensives</div>
+                      <div className="text-xs text-slate-500">Sat &amp; Sun • 10:00 AM – 03:00 PM (Past Paper Practice)</div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={savingAvailability}
+                    onClick={() => handleApplyPreset("WEEKEND_STUDY")}
+                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-4 py-2 cursor-pointer shrink-0"
+                  >
+                    {savingAvailability ? <Loader2 className="w-4 h-4 animate-spin" /> : "Use Schedule"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
+                <span>💡 You can fine-tune specific days & times anytime in your Dashboard.</span>
+                {studentAvailabilities.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStep("REQUEST_TRIAL")}
+                    className="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
+                  >
+                    Skip to Trial
+                  </button>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="text-xs font-semibold rounded-xl"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
         ) : createdTrial ? (
-          <div className="space-y-4 py-2 text-center animate-in fade-in duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto shadow-sm">
-              <Clock className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-1">
-              <h4 className="font-extrabold text-base text-slate-900">
-                Trial Request Submitted!
-              </h4>
-              <p className="text-xs text-slate-600 max-w-sm mx-auto">
-                Your 30-minute 1-on-1 trial request has been sent to your instructor. Your tutor will review and confirm the session date & time shortly.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left space-y-2.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Subject / Individual Class:</span>
-                <span className="font-bold text-slate-900">
-                  {createdTrial.course?.title || selectedCourse?.title || "London A/L Individual Class"}
-                </span>
+          <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-8">
+            <div className="max-w-2xl mx-auto space-y-4 py-2 text-center animate-in fade-in duration-200 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto shadow-sm">
+                <Clock className="w-8 h-8" />
               </div>
-              <div className="space-y-1.5 pt-1 border-t border-slate-200/60">
-                <span className="text-slate-500 font-bold block text-[11px]">3 Requested Time Options:</span>
-                <div className="space-y-1">
-                  {(Array.isArray(createdTrial.preferredDates) && createdTrial.preferredDates.length > 0
-                    ? createdTrial.preferredDates
-                    : [createdTrial.preferredDate]
-                  ).map((dStr: string, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
-                      <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                        <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold inline-flex items-center justify-center">{idx + 1}</span>
-                        <span>Choice {idx + 1}</span>
-                      </span>
-                      <span className="font-mono text-blue-800 font-bold text-[11px]">
-                        {formatForUser(dStr, selectedTimezone, {
-                          includeDate: true,
-                          includeTime: true,
-                          includeAbbr: true,
-                        })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] text-slate-500 italic mt-1">
-                  Your tutor will review these 3 options and confirm only 1 matching time slot.
+
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-base sm:text-lg text-slate-900">
+                  Trial Request Submitted!
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-sm mx-auto">
+                  Your 30-minute 1-on-1 trial request has been sent to your instructor. Your tutor will review and confirm the session date & time shortly.
                 </p>
               </div>
-              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
-                <span className="text-slate-500">Status:</span>
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[11px] font-bold">
-                  ⏳ Pending Tutor Selection
-                </Badge>
+
+              <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 text-left space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Subject / Individual Class:</span>
+                  <span className="font-bold text-slate-900">
+                    {createdTrial.course?.title || selectedCourse?.title || "London A/L Individual Class"}
+                  </span>
+                </div>
+                <div className="space-y-2 pt-2 border-t border-slate-200/60">
+                  <span className="text-slate-500 font-bold block text-xs">3 Requested Time Options:</span>
+                  <div className="space-y-1.5">
+                    {(Array.isArray(createdTrial.preferredDates) && createdTrial.preferredDates.length > 0
+                      ? createdTrial.preferredDates
+                      : [createdTrial.preferredDate]
+                    ).map((dStr: string, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between bg-white px-3.5 py-2 rounded-lg border border-slate-200 text-xs">
+                        <span className="font-bold text-slate-700 flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold inline-flex items-center justify-center">{idx + 1}</span>
+                          <span>Choice {idx + 1}</span>
+                        </span>
+                        <span className="font-mono text-blue-800 font-bold text-xs">
+                          {formatForUser(dStr, selectedTimezone, {
+                            includeDate: true,
+                            includeTime: true,
+                            includeAbbr: true,
+                          })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-slate-500 italic mt-1">
+                    Your tutor will review these 3 options and confirm only 1 matching time slot.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                  <span className="text-slate-500">Status:</span>
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs font-bold">
+                    ⏳ Pending Tutor Selection
+                  </Badge>
+                </div>
               </div>
-            </div>
 
-            {trialStats && (
-              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
-                <span className="font-semibold flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-blue-600" />
-                  Trial {trialStats.totalUsed} of 5 Booked
-                </span>
-                <span className="text-[11px] text-blue-800 font-bold">
-                  {trialStats.remaining} trial{trialStats.remaining === 1 ? "" : "s"} left with other tutors
-                </span>
+              {trialStats && (
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-blue-600" />
+                    Trial {trialStats.totalUsed} of 5 Booked
+                  </span>
+                  <span className="text-xs text-blue-800 font-bold">
+                    {trialStats.remaining} trial{trialStats.remaining === 1 ? "" : "s"} left with other tutors
+                  </span>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-500 bg-blue-50/70 border border-blue-100 rounded-xl p-3 text-left">
+                💡 <strong>Next Step:</strong> As soon as your tutor accepts or confirms the time, you will receive an in-app notification and the Google Meet room link will appear on your Academic Dashboard.
+              </p>
+
+              <div className="pt-2">
+                <Button
+                  onClick={onClose}
+                  className="w-full bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl py-3 shadow-xs cursor-pointer"
+                >
+                  Got It, Return to Class
+                </Button>
               </div>
-            )}
-
-            <p className="text-[11px] text-slate-500 bg-blue-50/70 border border-blue-100 rounded-xl p-3 text-left">
-              💡 <strong>Next Step:</strong> As soon as your tutor accepts or confirms the time, you will receive an in-app notification and the Google Meet room link will appear on your Academic Dashboard.
-            </p>
-
-            <div className="pt-2">
-              <Button
-                onClick={onClose}
-                className="w-full bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl py-2.5 shadow-xs cursor-pointer"
-              >
-                Got It, Return to Class
-              </Button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-            {availSuccessMsg && (
-              <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2 animate-in fade-in">
-                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>{availSuccessMsg}</span>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-bold text-slate-700">
-                  Your Study Availability is Set
-                </span>
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
-                  {studentAvailabilities.length} active window{studentAvailabilities.length > 1 ? "s" : ""}
-                </Badge>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStep("SETUP_AVAILABILITY")}
-                className="text-[11px] text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
-              >
-                Edit Hours
-              </button>
-            </div>
-
-            {error && (
-              <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {isMaxTrialsReached ? (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-red-800">
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                  <span>Maximum 5 Free Trials Used</span>
-                </div>
-                <p className="text-[11px] text-red-700 leading-relaxed">
-                  You have already used all 5 of your free trial sessions across different tutors. To book more 1-on-1 classes, you can enroll or purchase session token packages.
-                </p>
-              </div>
-            ) : isCurrentTutorBooked ? (
-              <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-xs space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-blue-800">
-                  <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span>1 Trial Per Tutor Limit</span>
-                </div>
-                <p className="text-[11px] text-blue-800/90 leading-relaxed">
-                  You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {allCourses.length > 1 ? "Please select a different class or tutor below." : "Please select another tutor from the individual classes directory."}
-                </p>
-              </div>
-            ) : trialStats && (
-              <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/70 flex items-center justify-between text-xs text-blue-900">
-                <span className="font-medium flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-blue-600" />
-                  Free Trial <strong>{trialStats.totalUsed + 1} of 5</strong>
-                </span>
-                <span className="text-[11px] text-blue-700 font-bold">
-                  {trialStats.remaining} remaining • 1 per tutor
-                </span>
-              </div>
-            )}
-
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-1.5">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Selected Subject / Individual Class</span>
-                </span>
-                {allCourses.length > 1 && (
-                  <span className="text-[10px] text-blue-600 font-semibold">Change Subject</span>
-                )}
-              </div>
-              {allCourses.length > 1 ? (
-                <select
-                  value={courseId}
-                  onChange={(e) => {
-                    const newCourseId = e.target.value;
-                    setCourseId(newCourseId);
-                    const newCourse = allCourses.find((c) => c.id === newCourseId);
-                    const newTutorId = newCourse?.instructor?.id || (newCourse as any)?.tutorId || (newCourse as any)?.tutor?.id;
-                    fetchTutorSlots(newTutorId, newCourseId);
-                  }}
-                  className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  {allCourses.map((c) => {
-                    const cTutorId = c.instructor?.id || (c as any)?.tutorId || (c as any)?.tutor?.id;
-                    const cTutorName = c.instructor?.name || (c as any)?.tutor?.name || "Tutor";
-                    const isBooked = cTutorId && trialStats?.bookedTutorIds?.includes(cTutorId);
-                    return (
-                      <option key={c.id} value={c.id}>
-                        {c.title} — {cTutorName} {isBooked ? " (Trial Already Booked)" : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              ) : (
-                <div className="flex items-center justify-between gap-2 pt-0.5">
-                  <div className="font-extrabold text-xs text-slate-900 leading-snug">
-                    {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Individual Class")}
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+              <div className="max-w-4xl mx-auto space-y-4">
+                {availSuccessMsg && (
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>{availSuccessMsg}</span>
                   </div>
-                  {selectedCourse?.subjectCode && (
-                    <Badge variant="outline" className="text-[10px] font-bold bg-white text-blue-700 border-blue-200 shrink-0">
-                      {selectedCourse.subjectCode}
-                    </Badge>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-bold text-slate-700">
+                        Your Study Availability is Set
+                      </span>
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
+                        {studentAvailabilities.length} active window{studentAvailabilities.length > 1 ? "s" : ""}
+                      </Badge>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep("SETUP_AVAILABILITY")}
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
+                    >
+                      Edit Hours
+                    </button>
+                  </div>
+
+                  {trialStats && (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 shadow-xs text-xs text-blue-900">
+                      <span className="font-medium flex items-center gap-1.5">
+                        <Award className="w-4 h-4 text-blue-600" />
+                        Free Trial <strong>{trialStats.totalUsed + 1} of 5</strong>
+                      </span>
+                      <span className="text-[11px] text-blue-700 font-bold">
+                        {trialStats.remaining} remaining • 1 per tutor
+                      </span>
+                    </div>
                   )}
                 </div>
-              )}
-              {currentTutorName && (
-                <div className="text-[11px] text-slate-500 pt-0.5 flex items-center justify-between">
-                  <span>
-                    Tutor: <span className="font-semibold text-slate-700">{currentTutorName}</span>
-                  </span>
-                  {isCurrentTutorBooked && (
-                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
-                      Already Booked
-                    </Badge>
-                  )}
+
+                {error && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {isMaxTrialsReached ? (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">
+                    <div className="font-bold flex items-center gap-1.5 text-red-800">
+                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>Maximum 5 Free Trials Used</span>
+                    </div>
+                    <p className="text-[11px] text-red-700 leading-relaxed">
+                      You have already used all 5 of your free trial sessions across different tutors. To book more 1-on-1 classes, you can enroll or purchase session token packages.
+                    </p>
+                  </div>
+                ) : isCurrentTutorBooked ? (
+                  <div className="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-xs space-y-1">
+                    <div className="font-bold flex items-center gap-1.5 text-blue-800">
+                      <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>1 Trial Per Tutor Limit</span>
+                    </div>
+                    <p className="text-[11px] text-blue-800/90 leading-relaxed">
+                      You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {allCourses.length > 1 ? "Please select a different class or tutor below." : "Please select another tutor from the individual classes directory."}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Selected Subject / Individual Class</span>
+                      </span>
+                      {allCourses.length > 1 && (
+                        <span className="text-[10px] text-blue-600 font-semibold">Change Subject</span>
+                      )}
+                    </div>
+                    {allCourses.length > 1 ? (
+                      <select
+                        value={courseId}
+                        onChange={(e) => {
+                          const newCourseId = e.target.value;
+                          setCourseId(newCourseId);
+                          const newCourse = allCourses.find((c) => c.id === newCourseId);
+                          const newTutorId = newCourse?.instructor?.id || (newCourse as any)?.tutorId || (newCourse as any)?.tutor?.id;
+                          fetchTutorSlots(newTutorId, newCourseId);
+                        }}
+                        className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      >
+                        {allCourses.map((c) => {
+                          const cTutorId = c.instructor?.id || (c as any)?.tutorId || (c as any)?.tutor?.id;
+                          const cTutorName = c.instructor?.name || (c as any)?.tutor?.name || "Tutor";
+                          const isBooked = cTutorId && trialStats?.bookedTutorIds?.includes(cTutorId);
+                          return (
+                            <option key={c.id} value={c.id}>
+                              {c.title} — {cTutorName} {isBooked ? " (Trial Already Booked)" : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2 pt-0.5">
+                        <div className="font-extrabold text-sm text-slate-900 leading-snug">
+                          {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Individual Class")}
+                        </div>
+                        {selectedCourse?.subjectCode && (
+                          <Badge variant="outline" className="text-[10px] font-bold bg-white text-blue-700 border-blue-200 shrink-0">
+                            {selectedCourse.subjectCode}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {currentTutorName && (
+                      <div className="text-[11px] text-slate-500 pt-0.5 flex items-center justify-between">
+                        <span>
+                          Tutor: <span className="font-semibold text-slate-700">{currentTutorName}</span>
+                        </span>
+                        {isCurrentTutorBooked && (
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
+                            Already Booked
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2">
+                    <div className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center justify-between">
+                      <span>Your Regional Timezone</span>
+                      <span className="text-[10px] text-sky-700 font-medium">Slots adjust automatically</span>
+                    </div>
+                    <RegionalTimezoneSelector
+                      selectedTimezone={selectedTimezone}
+                      onChange={(tz) => {
+                        setSelectedTimezone(tz);
+                        fetchTutorSlots(undefined, undefined, undefined, tz);
+                      }}
+                      tutorBaseTimezone={tutorBaseTimezone}
+                      compact
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="p-3 rounded-xl bg-sky-50/60 border border-sky-200/80 space-y-1.5">
-              <div className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center justify-between">
-                <span>Your Regional Timezone</span>
-                <span className="text-[10px] text-sky-700 font-medium">Slots adjust automatically</span>
-              </div>
-              <RegionalTimezoneSelector
-                selectedTimezone={selectedTimezone}
-                onChange={(tz) => {
-                  setSelectedTimezone(tz);
-                  fetchTutorSlots(undefined, undefined, undefined, tz);
-                }}
-                tutorBaseTimezone={tutorBaseTimezone}
-                compact
-              />
-            </div>
+                <div className="space-y-4 p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <label className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-blue-600" />
+                        <span>Select 3 Preferred Class Times</span>
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Provide 3 convenient time options. Your tutor will confirm <strong>only 1</strong> matching time slot.
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-bold bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full border border-blue-200 shrink-0">
+                      3 Slots Required
+                    </span>
+                  </div>
 
-            <div className="space-y-3 p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <span>Select 3 Preferred Class Times</span>
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <p className="text-[10px] text-slate-500">
-                    Provide 3 convenient time options. Your tutor will confirm <strong>only 1</strong> matching time slot.
+                  {openSlots.length > 0 && (
+                    <div className="space-y-2 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                          Quick Tutor Slots (Click to fill Choice {activeSlotTarget}):
+                        </span>
+                        <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
+                          Targeting Choice {activeSlotTarget}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {openSlots.map((s, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => applyTutorSlot(s.startTime)}
+                            className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                              s.matchesStudent
+                                ? "bg-blue-100 hover:bg-blue-200/80 border-blue-300 text-blue-900 shadow-xs ring-1 ring-blue-300/60 font-bold"
+                                : "bg-white hover:bg-blue-50 border-slate-200 text-slate-700"
+                            }`}
+                          >
+                            <Clock className={`w-3 h-3 ${s.matchesStudent ? "text-blue-700" : "text-blue-600"}`} />
+                            <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
+                            {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
+                              <span className="text-[10px] text-slate-500 font-medium">
+                                ({s.tutorTimeDisplay} LK)
+                              </span>
+                            )}
+                            {s.matchesStudent && <span className="text-[10px] text-blue-800 font-extrabold bg-blue-200/60 px-1 py-0.2 rounded">★ Match</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                    <div
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                        activeSlotTarget === 1 ? "bg-blue-50/20 border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200 hover:border-slate-300"
+                      }`}
+                      onClick={() => setActiveSlotTarget(1)}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-extrabold inline-flex items-center justify-center">1</span>
+                          <span>1st Choice (Primary) <span className="text-red-500">*</span></span>
+                        </span>
+                      </div>
+                      {preferredDate1 && (
+                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate">
+                          {formatTimeInTimezone(new Date(preferredDate1), selectedTimezone, { includeAbbr: true })}
+                        </div>
+                      )}
+                      <input
+                        type="datetime-local"
+                        required
+                        value={preferredDate1}
+                        onFocus={() => setActiveSlotTarget(1)}
+                        onChange={(e) => setPreferredDate1(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                        activeSlotTarget === 2 ? "bg-blue-50/20 border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200 hover:border-slate-300"
+                      }`}
+                      onClick={() => setActiveSlotTarget(2)}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[11px] font-extrabold inline-flex items-center justify-center">2</span>
+                          <span>2nd Choice (Alternative) <span className="text-red-500">*</span></span>
+                        </span>
+                      </div>
+                      {preferredDate2 && (
+                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate">
+                          {formatTimeInTimezone(new Date(preferredDate2), selectedTimezone, { includeAbbr: true })}
+                        </div>
+                      )}
+                      <input
+                        type="datetime-local"
+                        required
+                        value={preferredDate2}
+                        onFocus={() => setActiveSlotTarget(2)}
+                        onChange={(e) => setPreferredDate2(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                        activeSlotTarget === 3 ? "bg-blue-50/20 border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200 hover:border-slate-300"
+                      }`}
+                      onClick={() => setActiveSlotTarget(3)}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[11px] font-extrabold inline-flex items-center justify-center">3</span>
+                          <span>3rd Choice (Alternative) <span className="text-red-500">*</span></span>
+                        </span>
+                      </div>
+                      {preferredDate3 && (
+                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate">
+                          {formatTimeInTimezone(new Date(preferredDate3), selectedTimezone, { includeAbbr: true })}
+                        </div>
+                      )}
+                      <input
+                        type="datetime-local"
+                        required
+                        value={preferredDate3}
+                        onFocus={() => setActiveSlotTarget(3)}
+                        onChange={(e) => setPreferredDate3(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs">
+                    <label className="font-bold text-xs text-slate-700 block mb-1.5">
+                      Topic or Questions of Interest
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Mention any specific syllabus modules or questions (optional)..."
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs">
+                    <label className="font-bold text-xs text-slate-700 block mb-1.5">
+                      Additional Notes / Target Exam
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Target exam series, syllabus units, or coaching goals..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs text-blue-900 space-y-1">
+                  <div className="font-bold flex items-center gap-2">
+                    <Video className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>30-Minute Live Online Interactive Consultation</span>
+                  </div>
+                  <p className="text-slate-600 text-xs leading-relaxed">
+                    Connect directly with our subject tutors over video for syllabus diagnostics, problem-solving, and a tailored study plan.
                   </p>
                 </div>
-                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
-                  3 Slots Required
-                </span>
               </div>
+            </div>
 
-              {openSlots.length > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      Quick Tutor Slots (Click to fill Choice {activeSlotTarget}):
-                    </span>
-                    <span className="text-[10px] font-semibold text-blue-600">
-                      Targeting: Choice {activeSlotTarget}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {openSlots.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => applyTutorSlot(s.startTime)}
-                        className={`px-2 py-1 rounded-lg border text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
-                          s.matchesStudent
-                            ? "bg-blue-100 hover:bg-blue-200/80 border-blue-300 text-blue-900 shadow-xs ring-1 ring-blue-300/60"
-                            : "bg-white hover:bg-blue-50 border-slate-200 text-slate-700"
-                        }`}
-                      >
-                        <Clock className={`w-2.5 h-2.5 ${s.matchesStudent ? "text-blue-700" : "text-blue-600"}`} />
-                        <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
-                        {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
-                          <span className="text-[9px] text-slate-500 font-medium">
-                            ({s.tutorTimeDisplay} LK)
-                          </span>
-                        )}
-                        {s.matchesStudent && <span className="text-[9px] text-blue-800 font-extrabold">★ Match</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div
-                className={`p-2.5 rounded-xl border transition-all ${
-                  activeSlotTarget === 1 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
-                }`}
-                onClick={() => setActiveSlotTarget(1)}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
-                    <span className="w-4.5 h-4.5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold inline-flex items-center justify-center">1</span>
-                    <span>1st Choice (Primary Preferred Time) <span className="text-red-500">*</span></span>
-                  </span>
-                  {preferredDate1 && (
-                    <span className="text-[10px] font-bold text-blue-700 font-mono">
-                      {formatTimeInTimezone(new Date(preferredDate1), selectedTimezone, { includeAbbr: true })}
-                    </span>
+            <div className="bg-white border-t border-slate-200 px-6 sm:px-8 py-3.5 flex items-center justify-between shrink-0 shadow-xs">
+              <div className="text-xs text-slate-500 hidden sm:flex items-center gap-2">
+                <Video className="w-4 h-4 text-blue-600" />
+                <span>30-Min Live 1-on-1 Consultation • Direct Video Session with Tutor</span>
+              </div>
+              <div className="flex items-center gap-2.5 ml-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="text-xs font-semibold rounded-xl h-9 px-4"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading || isMaxTrialsReached || isCurrentTutorBooked || !preferredDate1 || !preferredDate2 || !preferredDate3}
+                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 h-9 gap-1.5 shadow-md shadow-blue-900/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Reserving Session...</span>
+                    </>
+                  ) : isMaxTrialsReached ? (
+                    <span>5 of 5 Free Trials Used</span>
+                  ) : isCurrentTutorBooked ? (
+                    <span>Already Booked With Tutor</span>
+                  ) : (
+                    <>
+                      <CalendarCheck className="w-3.5 h-3.5" />
+                      <span>Confirm 30-Min Free Trial</span>
+                    </>
                   )}
-                </div>
-                <input
-                  type="datetime-local"
-                  required
-                  value={preferredDate1}
-                  onFocus={() => setActiveSlotTarget(1)}
-                  onChange={(e) => setPreferredDate1(e.target.value)}
-                  className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                />
+                </Button>
               </div>
-
-              <div
-                className={`p-2.5 rounded-xl border transition-all ${
-                  activeSlotTarget === 2 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
-                }`}
-                onClick={() => setActiveSlotTarget(2)}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
-                    <span className="w-4.5 h-4.5 rounded-full bg-blue-500 text-white text-[10px] font-extrabold inline-flex items-center justify-center">2</span>
-                    <span>2nd Choice (Alternative Option) <span className="text-red-500">*</span></span>
-                  </span>
-                  {preferredDate2 && (
-                    <span className="text-[10px] font-bold text-blue-700 font-mono">
-                      {formatTimeInTimezone(new Date(preferredDate2), selectedTimezone, { includeAbbr: true })}
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="datetime-local"
-                  required
-                  value={preferredDate2}
-                  onFocus={() => setActiveSlotTarget(2)}
-                  onChange={(e) => setPreferredDate2(e.target.value)}
-                  className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div
-                className={`p-2.5 rounded-xl border transition-all ${
-                  activeSlotTarget === 3 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
-                }`}
-                onClick={() => setActiveSlotTarget(3)}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
-                    <span className="w-4.5 h-4.5 rounded-full bg-blue-500 text-white text-[10px] font-extrabold inline-flex items-center justify-center">3</span>
-                    <span>3rd Choice (Alternative Option) <span className="text-red-500">*</span></span>
-                  </span>
-                  {preferredDate3 && (
-                    <span className="text-[10px] font-bold text-blue-700 font-mono">
-                      {formatTimeInTimezone(new Date(preferredDate3), selectedTimezone, { includeAbbr: true })}
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="datetime-local"
-                  required
-                  value={preferredDate3}
-                  onFocus={() => setActiveSlotTarget(3)}
-                  onChange={(e) => setPreferredDate3(e.target.value)}
-                  className="w-full h-8 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Topic or Questions of Interest
-              </label>
-              <input
-                type="text"
-                placeholder="Mention any specific syllabus modules or questions (optional)..."
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Additional Notes / Target Exam
-              </label>
-              <input
-                type="text"
-                placeholder="Target exam series, syllabus units, or coaching goals..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/80 text-[11px] text-blue-900 space-y-1">
-              <div className="font-bold flex items-center gap-1.5">
-                <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>30-Minute Live Online Interactive Consultation</span>
-              </div>
-              <p className="text-slate-600 leading-relaxed">
-                Connect directly with our subject tutors over video for syllabus diagnostics, problem-solving, and a tailored study plan.
-              </p>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="text-xs font-semibold rounded-xl"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading || isMaxTrialsReached || isCurrentTutorBooked || !preferredDate1 || !preferredDate2 || !preferredDate3}
-                className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 shadow-md shadow-blue-900/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Reserving Session...</span>
-                  </>
-                ) : isMaxTrialsReached ? (
-                  <span>5 of 5 Free Trials Used</span>
-                ) : isCurrentTutorBooked ? (
-                  <span>Already Booked With Tutor</span>
-                ) : (
-                  <>
-                    <CalendarCheck className="w-3.5 h-3.5" />
-                    <span>Confirm 30-Min Free Trial</span>
-                  </>
-                )}
-              </Button>
             </div>
           </form>
         )}

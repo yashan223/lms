@@ -58,18 +58,22 @@ export async function GET() {
       instructor: c.tutor,
     }));
 
-    const tutors = (rawTutors as any[]).map((t: any) => ({
-      ...t,
-      classesCount: (t.createdCourses?.length || 0) + (t.events?.length || 0),
-      subjects: Array.from(
-        new Set(
-          (t.createdCourses || [])
-            .map((c: any) => c.category)
-            .concat(t.headline ? [t.headline] : [])
-            .filter(Boolean)
-        )
-      ),
-    }));
+    const tutors = (rawTutors as any[])
+      .filter(
+        (t: any) =>
+          (t.createdCourses?.length || 0) > 0 || (t.events?.length || 0) > 0
+      )
+      .map((t: any) => ({
+        ...t,
+        classesCount: (t.createdCourses?.length || 0) + (t.events?.length || 0),
+        subjects: Array.from(
+          new Set(
+            (t.createdCourses || [])
+              .map((c: any) => c.category)
+              .filter(Boolean)
+          )
+        ),
+      }));
 
     return NextResponse.json({ courses, tutors });
   } catch (error) {

@@ -2123,7 +2123,7 @@ function DashboardContent() {
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="e.g. Schedule clash with school examination, requesting to move to tomorrow afternoon..."
+                  placeholder="Reason for reschedule or note to tutor..."
                   value={rescheduleReason}
                   onChange={(e) => setRescheduleReason(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"

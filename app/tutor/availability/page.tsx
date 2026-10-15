@@ -714,7 +714,7 @@ function TutorAvailabilityContent() {
                     Timeslot Label / Focus
                   </label>
                   <Input
-                    placeholder="e.g. Afternoon Class & Consultation Hours"
+                    placeholder="Timeslot label or focus"
                     value={slotTitle}
                     onChange={(e) => setSlotTitle(e.target.value)}
                     className="rounded-xl h-9 text-xs"

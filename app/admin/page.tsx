@@ -5813,7 +5813,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Tokens Required (Tokens)</label>
-                  <Input type="text" inputMode="numeric" required placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
+                  <Input type="text" inputMode="numeric" required placeholder="10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
               <div>
@@ -5876,7 +5876,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Tokens Required (Tokens)</label>
-                  <Input type="text" inputMode="numeric" required placeholder="e.g. 10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
+                  <Input type="text" inputMode="numeric" required placeholder="10" value={courseFormPrice} onChange={(e) => setCourseFormPrice(e.target.value)} className="rounded-xl" />
                 </div>
               </div>
               <div>
@@ -6280,7 +6280,7 @@ export default function AdminDashboardPage() {
                 <textarea
                   rows={3}
                   required
-                  placeholder="e.g. Please reschedule by 30 mins to prevent clash with mock examination..."
+                  placeholder="Reason for declining or revision notes..."
                   value={rejectionReasonInput}
                   onChange={(e) => setRejectionReasonInput(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none"
@@ -6513,7 +6513,7 @@ export default function AdminDashboardPage() {
                 </label>
                 <Input
                   required
-                  placeholder="e.g. Pure Mathematics & Mechanics"
+                  placeholder="Subject name"
                   value={schoolFormName}
                   onChange={(e) => setSchoolFormName(e.target.value)}
                   className="rounded-xl border-slate-200"
@@ -6526,7 +6526,7 @@ export default function AdminDashboardPage() {
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="e.g. Pure Mathematics, Mechanics, Statistics & Computer Science"
+                  placeholder="Academic focus and description"
                   value={schoolFormDesc}
                   onChange={(e) => setSchoolFormDesc(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 p-2.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -6896,7 +6896,7 @@ export default function AdminDashboardPage() {
                               setEditingBundles(updated);
                             }}
                             className="h-9 text-xs rounded-xl"
-                            placeholder="e.g. 16 Hours Standard Bundle"
+                            placeholder="Package title"
                           />
                         </div>
 
@@ -6910,7 +6910,7 @@ export default function AdminDashboardPage() {
                               setEditingBundles(updated);
                             }}
                             className="h-9 text-xs rounded-xl"
-                            placeholder="e.g. 16 Tokens (16 Hours Tutoring)"
+                            placeholder="Package subtitle / role target"
                           />
                         </div>
 
@@ -6924,7 +6924,7 @@ export default function AdminDashboardPage() {
                               setEditingBundles(updated);
                             }}
                             className="h-9 text-xs rounded-xl"
-                            placeholder="e.g. Most Popular"
+                            placeholder="Badge text (optional)"
                           />
                         </div>
 
@@ -7087,7 +7087,7 @@ export default function AdminDashboardPage() {
                               setEditingBundles(updated);
                             }}
                             className="h-9 text-xs rounded-xl"
-                            placeholder="e.g. Get 16 Hours Bundle"
+                            placeholder="Button CTA text"
                           />
                         </div>
 
@@ -7474,7 +7474,7 @@ export default function AdminDashboardPage() {
                 <div className="space-y-1.5">
                   <Input
                     required
-                    placeholder="e.g. Free Trial Consultation Grant"
+                    placeholder="Reason or administrative note"
                     value={grantTokensReason}
                     onChange={(e) => setGrantTokensReason(e.target.value)}
                     className="h-10 text-xs rounded-xl"

@@ -38,15 +38,18 @@ export function parseTutorBio(bio: string | null | undefined): string {
       if (typeof parsed.bio === "string" && parsed.bio.trim()) {
         return parsed.bio.trim();
       }
+      return "";
     } catch {
       const match = trimmed.match(/"about"\s*:\s*"((?:[^"\\]|\\.)*)"/);
       if (match && match[1]) {
         try {
-          return JSON.parse(`"${match[1]}"`);
+          const res = JSON.parse(`"${match[1]}"`);
+          if (typeof res === "string" && res.trim()) return res.trim();
         } catch {
-          return match[1];
+          if (match[1].trim()) return match[1].trim();
         }
       }
+      return "";
     }
   }
   return trimmed;

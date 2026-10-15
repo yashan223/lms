@@ -3924,7 +3924,7 @@ function TutorDashboardContent() {
                 </label>
                 <Input
                   required
-                  placeholder="e.g. Pure Mathematics Unit 4 Differential Calculus Past Papers"
+                  placeholder="Class topic or title"
                   value={newClassTitle}
                   onChange={(e) => setNewClassTitle(e.target.value)}
                   className="rounded-xl h-9 text-xs"
@@ -4096,7 +4096,7 @@ function TutorDashboardContent() {
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="e.g. Session moved by 1 hour due to student schedule adjustment..."
+                  placeholder="Reason for reschedule..."
                   value={rescheduleNotes}
                   onChange={(e) => setRescheduleNotes(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -4427,7 +4427,7 @@ function TutorDashboardContent() {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Please have your Unit 3 past paper ready with questions marked."
+                  placeholder="Notes or instructions for student..."
                   value={confirmNotes}
                   onChange={(e) => setConfirmNotes(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -4494,7 +4494,7 @@ function TutorDashboardContent() {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Schedule fully booked on requested day. Please request next week."
+                  placeholder="Reason for declining..."
                   value={declineReason}
                   onChange={(e) => setDeclineReason(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"

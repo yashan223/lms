@@ -861,14 +861,16 @@ export function TutorCourseWorkspaceContent({
     : 0;
   const totalTokensEarned = course ? course.price * (course.enrollments?.length || 0) : 0;
 
-  const tabList: { id: Tab; label: string; count?: number; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "overview", label: isNewCourse ? "Individual Class Setup & Details" : "Class Details", icon: BookOpen },
-    { id: "curriculum", label: "Curriculum & Syllabus", count: isNewCourse ? undefined : totalLessons, icon: Layers3 },
-    { id: "materials", label: "Study Materials", count: isNewCourse ? undefined : course?.materials?.length, icon: FileText },
-    { id: "students", label: "Enrolled Students", count: isNewCourse ? undefined : course?.enrollments?.length, icon: Users },
-    { id: "live_classes", label: "Live Google Meets", count: isNewCourse ? undefined : course?.events?.length, icon: Video },
-    { id: "reviews", label: "Reviews & Ratings", count: isNewCourse ? undefined : course?.reviews?.length, icon: Star },
-  ];
+  const tabList: { id: Tab; label: string; count?: number; icon: React.ComponentType<{ className?: string }> }[] = isNewCourse
+    ? []
+    : [
+        { id: "overview", label: "Class Details", icon: BookOpen },
+        { id: "curriculum", label: "Curriculum & Syllabus", count: totalLessons, icon: Layers3 },
+        { id: "materials", label: "Study Materials", count: course?.materials?.length, icon: FileText },
+        { id: "students", label: "Enrolled Students", count: course?.enrollments?.length, icon: Users },
+        { id: "live_classes", label: "Live Google Meets", count: course?.events?.length, icon: Video },
+        { id: "reviews", label: "Reviews & Ratings", count: course?.reviews?.length, icon: Star },
+      ];
 
   const currentStatus = course?.status || detailsForm.status;
   const statusBadgeColor =
@@ -991,7 +993,7 @@ export function TutorCourseWorkspaceContent({
         )}
 
         {/* ── Top Summary KPI Bar ───────────────────────────────────────── */}
-        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <section className={`grid grid-cols-2 sm:grid-cols-2 ${isNewCourse ? "lg:grid-cols-4" : "sm:grid-cols-3 lg:grid-cols-5"} gap-3`}>
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
               <span className="text-[11px] font-bold text-slate-500">Enrolled Students</span>
@@ -1045,7 +1047,8 @@ export function TutorCourseWorkspaceContent({
         {/* ── Main Tabbed Section ────────────────────────────────────────── */}
         <div className="bg-white border border-slate-200 rounded-3xl shadow-xs overflow-hidden">
           {/* Tab Navigation Header */}
-          <div className="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 pt-3 flex items-center overflow-x-auto gap-1 scrollbar-none">
+          {!isNewCourse && tabList.length > 0 && (
+            <div className="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 pt-3 flex items-center overflow-x-auto gap-1 scrollbar-none">
             {tabList.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -1074,6 +1077,7 @@ export function TutorCourseWorkspaceContent({
               );
             })}
           </div>
+          )}
 
           {/* Tab 1: Individual Class Details & Settings */}
           {activeTab === "overview" && (
@@ -1087,14 +1091,6 @@ export function TutorCourseWorkspaceContent({
                       : "Configure curriculum title, academic subject, cover image, and syllabus breakdown."}
                   </p>
                 </div>
-                <Button
-                  type="submit"
-                  disabled={savingDetails}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-5 rounded-xl gap-2 shadow-xs cursor-pointer shrink-0"
-                >
-                  {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? (isNewCourse ? "Creating Individual Class..." : "Saving Details...") : (isNewCourse ? "Create Individual Class & Continue" : "Save All Changes")}</span>
-                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1107,7 +1103,7 @@ export function TutorCourseWorkspaceContent({
                     required
                     value={detailsForm.title}
                     onChange={(e) => setDetailsForm({ ...detailsForm, title: e.target.value })}
-                    placeholder="e.g. Pure Mathematics & Mechanics Core"
+                    placeholder="Class title"
                     className="h-10 text-xs rounded-xl"
                   />
                 </div>
@@ -1121,7 +1117,7 @@ export function TutorCourseWorkspaceContent({
                     required
                     value={detailsForm.subjectCode}
                     onChange={(e) => setDetailsForm({ ...detailsForm, subjectCode: e.target.value })}
-                    placeholder="e.g. MATH-AL-01"
+                    placeholder="Subject code"
                     className="h-10 text-xs rounded-xl font-mono uppercase"
                   />
                 </div>
@@ -1281,16 +1277,18 @@ export function TutorCourseWorkspaceContent({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={savingDetails}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-6 rounded-xl gap-2 shadow-xs cursor-pointer"
-                >
-                  {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingDetails ? (isNewCourse ? "Creating Individual Class..." : "Saving Details...") : (isNewCourse ? "Create Individual Class & Open Workspace" : "Save All Changes")}</span>
-                </Button>
-              </div>
+              {!isNewCourse && (
+                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                  <Button
+                    type="submit"
+                    disabled={savingDetails}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-6 rounded-xl gap-2 shadow-xs cursor-pointer"
+                  >
+                    {savingDetails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    <span>Save All Changes</span>
+                  </Button>
+                </div>
+              )}
             </form>
           )}
 
@@ -1341,7 +1339,7 @@ export function TutorCourseWorkspaceContent({
                     required
                     value={newModuleTitle}
                     onChange={(e) => setNewModuleTitle(e.target.value)}
-                    placeholder="Enter new syllabus module title (e.g. Unit 3: Differential Calculus)..."
+                    placeholder="Enter new syllabus module title..."
                     className="pl-9 h-10 bg-white rounded-xl text-xs"
                   />
                 </div>
@@ -1465,7 +1463,7 @@ export function TutorCourseWorkspaceContent({
                             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                               <div className="sm:col-span-5">
                                 <Input
-                                  placeholder="Lesson title (e.g. Fundamental Theorem Proofs)..."
+                                  placeholder="Lesson title..."
                                   value={lessonForm.title}
                                   onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
                                   className="h-9 text-xs bg-white rounded-xl"
@@ -1723,7 +1721,7 @@ export function TutorCourseWorkspaceContent({
                     </label>
                     <Input
                       required
-                      placeholder="e.g. Unit 2 Mechanics Formula Handbook"
+                      placeholder="Resource title"
                       value={matTitle}
                       onChange={(e) => setMatTitle(e.target.value)}
                       className="bg-white rounded-xl h-10"
@@ -2005,7 +2003,7 @@ export function TutorCourseWorkspaceContent({
                     </label>
                     <Input
                       required
-                      placeholder="e.g. Unit 3 Problem Solving Workshop & Past Paper Q&A"
+                      placeholder="Class title"
                       value={classTitle}
                       onChange={(e) => setClassTitle(e.target.value)}
                       className="bg-white rounded-xl h-10"
@@ -2038,7 +2036,7 @@ export function TutorCourseWorkspaceContent({
                   <div className="space-y-1.5">
                     <label className="font-bold text-slate-700">Brief Agenda / Topic Focus</label>
                     <Input
-                      placeholder="e.g. Mechanics formulas review"
+                      placeholder="Brief agenda or topic focus"
                       value={classDescription}
                       onChange={(e) => setClassDescription(e.target.value)}
                       className="bg-white rounded-xl h-10"

@@ -461,7 +461,7 @@ export function StudentAvailabilityModal({
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. After-School Revision, Physics Past Paper Drill"
+              placeholder="Study focus or activity label"
               className="bg-white rounded-xl h-9 text-xs"
             />
           </div>

@@ -361,46 +361,50 @@ export function CourseGrid() {
                       </div>
 
                       {/* Bio */}
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                          {parseTutorBio(tutor.bio)}
-                        </p>
-                      </div>
+                      {Boolean(parseTutorBio(tutor.bio)) && (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                            {parseTutorBio(tutor.bio)}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Subjects & Specifications */}
-                      <div className="space-y-2 pt-2 border-t border-slate-100">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
-                            London O/L & A/L Subjects:
-                          </span>
-                          <span className="text-[11px] font-bold text-blue-600">
-                            {tutor.subjects.length} Units
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1.5">
-                          {tutor.subjects.map((sub, idx) => (
-                            <span
-                              key={idx}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
-                                sub.level === "AL"
-                                  ? "bg-blue-50/80 text-blue-900 border-blue-200 hover:bg-blue-100/80"
-                                  : "bg-blue-100/70 text-blue-950 border-blue-200 hover:bg-blue-100"
-                              }`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  sub.level === "AL" ? "bg-blue-600" : "bg-[#0c2461]"
-                                }`}
-                              />
-                              <span className="font-mono text-[10px] font-bold opacity-80">
-                                {sub.code}
-                              </span>
-                              <span>{sub.name}</span>
+                      {tutor.subjects && tutor.subjects.length > 0 && (
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                              London O/L & A/L Subjects:
                             </span>
-                          ))}
+                            <span className="text-[11px] font-bold text-blue-600">
+                              {tutor.subjects.length} Units
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            {tutor.subjects.map((sub, idx) => (
+                              <span
+                                key={idx}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
+                                  sub.level === "AL"
+                                    ? "bg-blue-50/80 text-blue-900 border-blue-200 hover:bg-blue-100/80"
+                                    : "bg-blue-100/70 text-blue-950 border-blue-200 hover:bg-blue-100"
+                                }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    sub.level === "AL" ? "bg-blue-600" : "bg-[#0c2461]"
+                                  }`}
+                                />
+                                <span className="font-mono text-[10px] font-bold opacity-80">
+                                  {sub.code}
+                                </span>
+                                <span>{sub.name}</span>
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Footer Action CTAs */}

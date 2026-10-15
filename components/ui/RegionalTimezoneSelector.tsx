@@ -245,7 +245,7 @@ export function RegionalTimezoneSelector({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search region, city, country (e.g. UK, London, Colombo)..."
+              placeholder="Search region, city, country..."
               className="w-full rounded-lg border border-slate-200 bg-slate-50/70 py-1.5 pl-8 pr-7 text-xs text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
             {searchQuery && (

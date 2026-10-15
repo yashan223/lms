@@ -944,7 +944,7 @@ export function TrialRequestModal({
               </label>
               <input
                 type="text"
-                placeholder="E.g. Target May/June 2026 series, Edexcel P2..."
+                placeholder="Target exam series, syllabus units, or coaching goals..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"

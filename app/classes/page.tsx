@@ -602,7 +602,7 @@ export default function CoursesPage() {
                         </div>
 
                         {/* Tutor Bio */}
-                        {tutor.bio && (
+                        {Boolean(parseTutorBio(tutor.bio)) && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                             <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
                               {parseTutorBio(tutor.bio)}

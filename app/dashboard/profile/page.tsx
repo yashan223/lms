@@ -547,7 +547,7 @@ export default function StudentProfilePage() {
                 <Input
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
-                  placeholder="e.g. Edexcel IAL Mathematics & Physics Candidate (2026/2027)"
+                  placeholder="Academic qualification target or examination series"
                   className="rounded-xl border-slate-200 text-xs h-10 bg-white"
                 />
               </div>
@@ -597,7 +597,7 @@ export default function StudentProfilePage() {
                 <Input
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  placeholder="e.g. United Kingdom, Sri Lanka, UAE, Singapore..."
+                  placeholder="Country or region of residence"
                   className="rounded-xl border-slate-200 text-xs h-10 bg-white pl-9"
                 />
                 <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -669,7 +669,7 @@ export default function StudentProfilePage() {
                 rows={4}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Share your target universities, upcoming exam series (e.g. Summer 2026), syllabus units you want to master, or specific areas where you need individual coaching..."
+                placeholder="Share your target universities, upcoming exam series, syllabus units you want to master, or specific areas where you need individual coaching..."
                 className="w-full rounded-2xl border border-slate-200 p-4 text-xs font-medium leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0c2461] bg-white resize-y"
               />
             </div>

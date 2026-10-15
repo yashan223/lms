@@ -52,20 +52,18 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
       };
     });
 
-    if (tutorSubjects.length === 0 && dbTutor.headline) {
-      const isOL =
-        dbTutor.headline.toLowerCase().includes("o/l") ||
-        dbTutor.headline.toLowerCase().includes("igcse");
-      tutorSubjects.push({
-        name: dbTutor.headline,
-        code: isOL ? "IGCSE" : "IAL",
-        level: isOL ? "OL" : "AL",
-        levelBadge: isOL ? "London O/L" : "London A/L",
-      });
+    let isALTutor = false;
+    let isOLTutor = false;
+    if (typeof dbTutor.bio === "string" && dbTutor.bio.trim().startsWith("{")) {
+      try {
+        const parsed = JSON.parse(dbTutor.bio);
+        isALTutor = Boolean(parsed.isALTutor);
+        isOLTutor = Boolean(parsed.isOLTutor);
+      } catch {}
     }
 
-    const hasAL = tutorSubjects.some((s) => s.level === "AL");
-    const hasOL = tutorSubjects.some((s) => s.level === "OL");
+    const hasAL = isALTutor || tutorSubjects.some((s) => s.level === "AL");
+    const hasOL = isOLTutor || tutorSubjects.some((s) => s.level === "OL");
     const levelVal = hasAL && hasOL ? "BOTH" : hasOL ? "OL" : "AL";
     const levelLabel =
       hasAL && hasOL
@@ -82,7 +80,8 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
       bio: parseTutorBio(dbTutor.bio),
       category:
         dbTutor.createdCourses?.[0]?.category ||
-        "Chemistry & Biology",
+        dbTutor.headline ||
+        "All",
       level: levelVal,
       levelLabel: levelLabel,
       rating: 5.0,

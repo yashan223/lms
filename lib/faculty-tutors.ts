@@ -1,4 +1,5 @@
 import { parseTutorBio } from "@/lib/utils";
+import { isCourseOL } from "@/lib/currency";
 export { parseTutorBio };
 
 export interface TutorSubject {
@@ -40,10 +41,7 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
 
   return dbTutors.map((dbTutor) => {
     const tutorSubjects: TutorSubject[] = (dbTutor.createdCourses || []).map((c: any) => {
-      const isOL =
-        c.level === "BEGINNER" ||
-        c.title?.toLowerCase().includes("o/l") ||
-        c.title?.toLowerCase().includes("igcse");
+      const isOL = isCourseOL(c);
       return {
         name: c.title,
         code: c.subjectCode || (isOL ? "IGCSE" : "IAL"),

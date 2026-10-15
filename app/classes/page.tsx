@@ -27,6 +27,7 @@ import {
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
 import { FacultyTutor, formatDbTutors, parseTutorBio } from "@/lib/faculty-tutors";
+import { isCourseOL, isCourseAL, getStudentAcademicLevel } from "@/lib/currency";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -75,7 +76,7 @@ export default function CoursesPage() {
         const dashData = await dashRes.json();
         if (dashData.user) {
           setIsLoggedIn(true);
-          const lvl: "OL" | "AL" = dashData.user.academicLevel === "OL" || dashData.user.headline?.includes("O/L") || dashData.user.headline?.includes("IGCSE") ? "OL" : "AL";
+          const lvl = getStudentAcademicLevel(dashData.user);
           setStudentLevel(lvl);
           setUserAcademicLevel(lvl);
           setSelectedLevel(lvl);
@@ -99,7 +100,7 @@ export default function CoursesPage() {
               slug: c.slug,
               subtitle: c.subtitle || c.description,
               category: c.category,
-              level: c.level === "ADVANCED" ? "London A/L" : "London O/L",
+              level: isCourseOL(c) ? "London O/L" : "London A/L",
               subjectCode: c.subjectCode || "MATH-101",
               thumbnail: c.thumbnail || null,
               price: c.price,
@@ -163,8 +164,8 @@ export default function CoursesPage() {
         selectedCategory === "All" || course.category === selectedCategory;
       const matchLevel =
         effectiveLevel === "ALL" ||
-        (effectiveLevel === "AL" && (course.level.includes("A/L") || course.title.includes("A/L") || course.title.includes("IAL"))) ||
-        (effectiveLevel === "OL" && (course.level.includes("O/L") || course.title.includes("O/L") || course.title.includes("IGCSE")));
+        (effectiveLevel === "AL" && isCourseAL(course)) ||
+        (effectiveLevel === "OL" && isCourseOL(course));
       const matchSearch =
         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||

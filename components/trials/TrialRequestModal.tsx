@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
   CalendarCheck,
@@ -37,6 +37,7 @@ import {
   getDualTimeDisplay,
   getTimezoneAbbr,
 } from "@/lib/timezones";
+import { getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 
 interface TrialRequestModalProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ interface TrialRequestModalProps {
     id: string;
     title: string;
     slug?: string;
+    level?: string | null;
     subjectCode?: string | null;
     tutorId?: string;
     tutor?: {
@@ -66,6 +68,8 @@ interface TrialRequestModalProps {
     id: string;
     name: string;
     email: string;
+    academicLevel?: string | null;
+    headline?: string | null;
   } | null;
   onSuccess?: (trial: any) => void;
 }
@@ -117,6 +121,15 @@ export function TrialRequestModal({
     }>
   >([]);
 
+  const userAcademicTrack = currentUser ? getStudentAcademicLevel(currentUser) : null;
+  const trackCourses = useMemo(() => {
+    if (!userAcademicTrack) return allCourses;
+    const filtered = allCourses.filter((c) =>
+      userAcademicTrack === "OL" ? isCourseOL(c) : isCourseAL(c)
+    );
+    return filtered.length > 0 ? filtered : allCourses;
+  }, [allCourses, userAcademicTrack]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       setSelectedTimezone(getUserBrowserTimezone());
@@ -132,7 +145,7 @@ export function TrialRequestModal({
     const targetTutorId =
       tutorIdParam ||
       initialTutorId ||
-      allCourses.find((c) => c.id === (courseIdParam || courseId))?.instructor?.id;
+      trackCourses.find((c) => c.id === (courseIdParam || courseId))?.instructor?.id;
     const targetCourseId = courseIdParam || initialCourseId || courseId;
     const tz = tzOverride || selectedTimezone;
     const params = new URLSearchParams();
@@ -196,8 +209,8 @@ export function TrialRequestModal({
     if (isOpen) {
       if (initialCourseId) {
         setCourseId(initialCourseId);
-      } else if (allCourses.length > 0 && !courseId) {
-        setCourseId(allCourses[0].id);
+      } else if (trackCourses.length > 0 && !courseId) {
+        setCourseId(trackCourses[0].id);
       }
 
       const tomorrow = new Date();
@@ -272,7 +285,7 @@ export function TrialRequestModal({
         })
         .catch(() => {});
     }
-  }, [isOpen, initialCourseId, allCourses, courseId, initialTutorId, currentUser]);
+  }, [isOpen, initialCourseId, allCourses, trackCourses, courseId, initialTutorId, currentUser]);
 
   const handleApplyPreset = async (presetType: string) => {
     try {
@@ -313,7 +326,7 @@ export function TrialRequestModal({
 
   if (!isOpen) return null;
 
-  const selectedCourse = allCourses.find((c) => c.id === courseId);
+  const selectedCourse = trackCourses.find((c) => c.id === courseId) || allCourses.find((c) => c.id === courseId);
   const currentTutorId =
     initialTutorId ||
     selectedCourse?.instructor?.id ||
@@ -686,7 +699,7 @@ export function TrialRequestModal({
                       <span>1 Trial Per Tutor Limit</span>
                     </div>
                     <p className="text-[11px] text-blue-800/90 leading-relaxed">
-                      You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {allCourses.length > 1 ? "Please select a different class or tutor below." : "Please select another tutor from the individual classes directory."}
+                      You have already requested a free trial with <strong>{currentTutorName}</strong>. Students can request up to 5 free trials, but each trial must be with a different tutor. {trackCourses.length > 1 ? "Please select a different class or tutor below." : "Please select another tutor from the individual classes directory."}
                     </p>
                   </div>
                 ) : null}
@@ -698,23 +711,23 @@ export function TrialRequestModal({
                         <BookOpen className="w-3.5 h-3.5 text-blue-600" />
                         <span>Selected Subject / Individual Class</span>
                       </span>
-                      {allCourses.length > 1 && (
+                      {trackCourses.length > 1 && (
                         <span className="text-[10px] text-blue-600 font-semibold">Change Subject</span>
                       )}
                     </div>
-                    {allCourses.length > 1 ? (
+                    {trackCourses.length > 1 ? (
                       <select
                         value={courseId}
                         onChange={(e) => {
                           const newCourseId = e.target.value;
                           setCourseId(newCourseId);
-                          const newCourse = allCourses.find((c) => c.id === newCourseId);
+                          const newCourse = trackCourses.find((c) => c.id === newCourseId);
                           const newTutorId = newCourse?.instructor?.id || (newCourse as any)?.tutorId || (newCourse as any)?.tutor?.id;
                           fetchTutorSlots(newTutorId, newCourseId);
                         }}
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       >
-                        {allCourses.map((c) => {
+                        {trackCourses.map((c) => {
                           const cTutorId = c.instructor?.id || (c as any)?.tutorId || (c as any)?.tutor?.id;
                           const cTutorName = c.instructor?.name || (c as any)?.tutor?.name || "Tutor";
                           const isBooked = cTutorId && trialStats?.bookedTutorIds?.includes(cTutorId);
@@ -728,7 +741,7 @@ export function TrialRequestModal({
                     ) : (
                       <div className="flex items-center justify-between gap-2 pt-0.5">
                         <div className="font-extrabold text-sm text-slate-900 leading-snug">
-                          {selectedCourse?.title || (allCourses.length > 0 ? allCourses[0].title : "London A/L Tutorial Individual Class")}
+                          {selectedCourse?.title || (trackCourses.length > 0 ? trackCourses[0].title : "London A/L Tutorial Individual Class")}
                         </div>
                         {selectedCourse?.subjectCode && (
                           <Badge variant="outline" className="text-[10px] font-bold bg-white text-blue-700 border-blue-200 shrink-0">

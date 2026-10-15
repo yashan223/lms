@@ -63,7 +63,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
-import { formatStudentPrice } from "@/lib/currency";
+import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 import {
   getUserBrowserTimezone,
   formatTimeInTimezone,
@@ -352,7 +352,16 @@ function DashboardContent() {
           setTokenTransactions([]);
         }
       }
-      setAllCourses(data.allCourses || []);
+      if (data.user?.role === "STUDENT") {
+        const studentTrack = getStudentAcademicLevel(data.user);
+        const raw = data.allCourses || [];
+        const filtered = raw.filter((c: any) =>
+          studentTrack === "OL" ? isCourseOL(c) : isCourseAL(c)
+        );
+        setAllCourses(filtered.length > 0 ? filtered : raw);
+      } else {
+        setAllCourses(data.allCourses || []);
+      }
       setOnlineUsers(data.onlineUsers || []);
       setTimelineEvents(data.timelineEvents || []);
 

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { getStudentAcademicLevel } from "@/lib/currency";
 import { Role } from "@prisma/client";
 
 async function findCourseBySlugOrId(rawSlug: string) {
@@ -76,7 +77,7 @@ export async function GET(
       if (auth.user) {
         isLoggedIn = true;
         isEnrolled = course.enrollments.some((e) => e.userId === auth.user.id);
-        academicLevel = (auth.user as any).academicLevel === "OL" || auth.user.headline?.includes("O/L") || auth.user.headline?.includes("IGCSE") ? "OL" : "AL";
+        academicLevel = getStudentAcademicLevel(auth.user);
       }
     } catch {
     }

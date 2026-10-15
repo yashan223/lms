@@ -26,18 +26,24 @@ import {
 } from "@/lib/faculty-tutors";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
-import { getStudentAcademicLevel } from "@/lib/currency";
+import { getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 
-export function CourseGrid() {
+interface CourseGridProps {
+  initialAcademicLevel?: "OL" | "AL" | null;
+}
+
+export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
   const [courses, setCourses] = useState<any[]>([]);
   const [tutors, setTutors] = useState<FacultyTutor[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"tutors" | "classes">("tutors");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [selectedLevel, setSelectedLevel] = useState<string>("ALL");
+  const [selectedLevel, setSelectedLevel] = useState<string>(initialAcademicLevel || "ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(initialAcademicLevel));
+  const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(
+    initialAcademicLevel || null
+  );
 
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialTutorId, setSelectedTrialTutorId] = useState<string | undefined>(undefined);
@@ -96,7 +102,7 @@ export function CourseGrid() {
                 slug: c.slug,
                 subtitle: c.subtitle || c.description,
                 category: c.category,
-                level: c.level === "ADVANCED" ? "London A/L" : "London O/L",
+                level: isCourseOL(c) ? "London O/L" : "London A/L",
                 subjectCode: c.subjectCode || "MATH-101",
                 thumbnail: c.thumbnail || null,
                 price: c.price,
@@ -147,8 +153,8 @@ export function CourseGrid() {
         selectedCategory === "All" || course.category === selectedCategory;
       const matchesLevel =
         effectiveLevel === "ALL" ||
-        (effectiveLevel === "AL" && (course.level.includes("A/L") || course.title.includes("A/L") || course.title.includes("IAL"))) ||
-        (effectiveLevel === "OL" && (course.level.includes("O/L") || course.title.includes("O/L") || course.title.includes("IGCSE")));
+        (effectiveLevel === "AL" && isCourseAL(course)) ||
+        (effectiveLevel === "OL" && isCourseOL(course));
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||

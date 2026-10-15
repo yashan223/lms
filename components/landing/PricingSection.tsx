@@ -12,6 +12,7 @@ interface PricingSectionProps {
   initialCountry?: string | null;
   initialIsSriLanka?: boolean;
   initialIsLoggedIn?: boolean;
+  initialAcademicLevel?: "OL" | "AL" | null;
 }
 
 export function PricingSection({
@@ -19,6 +20,7 @@ export function PricingSection({
   initialCountry,
   initialIsSriLanka,
   initialIsLoggedIn,
+  initialAcademicLevel,
 }: PricingSectionProps) {
   const [bundles, setBundles] = useState<TokenBundle[]>(
     initialBundles && initialBundles.length > 0 ? initialBundles : DEFAULT_BUNDLES
@@ -27,8 +29,10 @@ export function PricingSection({
     initialCountry || (initialIsSriLanka ? "Sri Lanka" : null)
   );
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(Boolean(initialIsLoggedIn));
-  const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
-  const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(null);
+  const [studentLevel, setStudentLevel] = useState<"OL" | "AL">(initialAcademicLevel || "AL");
+  const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(
+    initialAcademicLevel || null
+  );
 
   useEffect(() => {
     async function loadBundles() {
@@ -105,48 +109,57 @@ export function PricingSection({
           </p>
 
           <div className="w-full max-w-md mx-auto space-y-2">
-            <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner w-full gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!userAcademicLevel) setStudentLevel("AL");
-                }}
-                disabled={Boolean(userAcademicLevel && userAcademicLevel !== "AL")}
-                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
-                  userAcademicLevel && userAcademicLevel !== "AL"
-                    ? "opacity-40 cursor-not-allowed text-slate-400"
-                    : studentLevel === "AL"
-                    ? "bg-white text-blue-700 shadow-sm cursor-pointer"
-                    : "text-slate-600 hover:text-slate-900 cursor-pointer"
-                }`}
-                title={userAcademicLevel && userAcademicLevel !== "AL" ? "Locked to your registered curriculum" : undefined}
-              >
-                <GraduationCap className={`w-4 h-4 shrink-0 ${studentLevel === "AL" ? "text-blue-600" : "text-slate-500"}`} />
-                <span className="truncate">London A/L (IAL)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!userAcademicLevel) setStudentLevel("OL");
-                }}
-                disabled={Boolean(userAcademicLevel && userAcademicLevel !== "OL")}
-                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
-                  userAcademicLevel && userAcademicLevel !== "OL"
-                    ? "opacity-40 cursor-not-allowed text-slate-400"
-                    : studentLevel === "OL"
-                    ? "bg-white text-blue-800 shadow-sm cursor-pointer"
-                    : "text-slate-600 hover:text-slate-900 cursor-pointer"
-                }`}
-                title={userAcademicLevel && userAcademicLevel !== "OL" ? "Locked to your registered curriculum" : undefined}
-              >
-                <BookOpen className={`w-4 h-4 shrink-0 ${studentLevel === "OL" ? "text-blue-600" : "text-slate-500"}`} />
-                <span className="truncate">London O/L (IGCSE)</span>
-              </button>
-            </div>
-            {userAcademicLevel && (
-              <p className="text-[11px] text-slate-500 text-center font-medium">
-                🔒 Displaying packages for your registered <strong className="text-slate-700">{userAcademicLevel === "AL" ? "London A/L (IAL)" : "London O/L (IGCSE)"}</strong> track
-              </p>
+            {userAcademicLevel ? (
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-50 border border-blue-200/80 shadow-2xs">
+                {userAcademicLevel === "AL" ? (
+                  <>
+                    <GraduationCap className="w-4 h-4 text-blue-700 shrink-0" />
+                    <span className="text-xs sm:text-sm font-extrabold text-blue-950">
+                      London A/L (IAL) Packages
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold bg-blue-600 text-white px-2 py-0.5 rounded-full ml-1">
+                      Your Registered Track
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="w-4 h-4 text-blue-800 shrink-0" />
+                    <span className="text-xs sm:text-sm font-extrabold text-blue-950">
+                      London O/L (IGCSE) Packages
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold bg-blue-700 text-white px-2 py-0.5 rounded-full ml-1">
+                      Your Registered Track
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner w-full gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setStudentLevel("AL")}
+                  className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
+                    studentLevel === "AL"
+                      ? "bg-white text-blue-700 shadow-sm cursor-pointer"
+                      : "text-slate-600 hover:text-slate-900 cursor-pointer"
+                  }`}
+                >
+                  <GraduationCap className={`w-4 h-4 shrink-0 ${studentLevel === "AL" ? "text-blue-600" : "text-slate-500"}`} />
+                  <span className="truncate">London A/L (IAL)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentLevel("OL")}
+                  className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
+                    studentLevel === "OL"
+                      ? "bg-white text-blue-800 shadow-sm cursor-pointer"
+                      : "text-slate-600 hover:text-slate-900 cursor-pointer"
+                  }`}
+                >
+                  <BookOpen className={`w-4 h-4 shrink-0 ${studentLevel === "OL" ? "text-blue-600" : "text-slate-500"}`} />
+                  <span className="truncate">London O/L (IGCSE)</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

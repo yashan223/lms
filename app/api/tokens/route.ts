@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getBundles } from "@/lib/bundles";
+import { getStudentAcademicLevel } from "@/lib/currency";
 import { Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const academicLevel = (auth.user as any).academicLevel === "OL" || auth.user.headline?.includes("O/L") || auth.user.headline?.includes("IGCSE") ? "OL" : "AL";
+    const academicLevel = getStudentAcademicLevel(auth.user);
 
     return NextResponse.json({
       success: true,

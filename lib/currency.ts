@@ -55,3 +55,49 @@ export function formatStudentPrice(
     maximumFractionDigits: 2,
   })}`;
 }
+
+export function isCourseOL(
+  course?: { level?: string | null; title?: string | null; subjectCode?: string | null; subtitle?: string | null } | null
+): boolean {
+  if (!course) return false;
+  const title = (course.title || "").toLowerCase();
+  const code = (course.subjectCode || "").toLowerCase();
+  const subtitle = (course.subtitle || "").toLowerCase();
+  if (
+    title.includes("o/l") ||
+    title.includes("igcse") ||
+    title.includes("ordinary level") ||
+    code.includes("igcse") ||
+    code.includes("ol") ||
+    subtitle.includes("o/l") ||
+    subtitle.includes("igcse")
+  ) {
+    return true;
+  }
+  if (
+    title.includes("a/l") ||
+    title.includes("ial") ||
+    title.includes("advanced level") ||
+    code.includes("ial") ||
+    code.includes("al") ||
+    subtitle.includes("a/l") ||
+    subtitle.includes("ial")
+  ) {
+    return false;
+  }
+  const lvl = (course.level || "").toUpperCase();
+  return lvl === "INTERMEDIATE" || lvl === "BEGINNER" || lvl.includes("O/L") || lvl.includes("IGCSE");
+}
+
+export function isCourseAL(
+  course?: { level?: string | null; title?: string | null; subjectCode?: string | null; subtitle?: string | null } | null
+): boolean {
+  if (!course) return true;
+  return !isCourseOL(course);
+}
+
+export function getCourseAcademicLevel(
+  course?: { level?: string | null; title?: string | null; subjectCode?: string | null; subtitle?: string | null } | null
+): "OL" | "AL" {
+  return isCourseOL(course) ? "OL" : "AL";
+}

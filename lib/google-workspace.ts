@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { JWT } from "google-auth-library";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 
@@ -10,7 +10,7 @@ export function isGoogleWorkspaceConfigured(): boolean {
   );
 }
 
-export function getGoogleWorkspaceAuthClient() {
+export function getGoogleWorkspaceAuthClient(): JWT | null {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
   let privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim();
   const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim();
@@ -21,7 +21,7 @@ export function getGoogleWorkspaceAuthClient() {
 
   privateKey = privateKey.replace(/\\n/g, "\n");
 
-  return new google.auth.JWT({
+  return new JWT({
     email: clientEmail,
     key: privateKey,
     subject: adminEmail,
@@ -31,7 +31,6 @@ export function getGoogleWorkspaceAuthClient() {
       "https://www.googleapis.com/auth/drive",
       "https://www.googleapis.com/auth/drive.file",
       "https://www.googleapis.com/auth/drive.readonly",
-      "https://www.googleapis.com/auth/calendar.events",
     ],
   });
 }
@@ -53,16 +52,27 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
     );
   }
 
-  const meet = google.meet({ version: "v2", auth });
-  const response = await meet.spaces.create({
-    requestBody: {
+  const authHeaders = await auth.getRequestHeaders();
+
+  const response = await fetch("https://meet.googleapis.com/v2/spaces", {
+    method: "POST",
+    headers: {
+      ...authHeaders,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
       config: {
         accessType: "OPEN",
       },
-    },
+    }),
   });
 
-  const space = response.data;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Google Meet space creation failed (${response.status}): ${errorText}`);
+  }
+
+  const space = await response.json();
   const meetingUri = space.meetingUri || `https://meet.google.com/${space.meetingCode}`;
   const spaceName = space.name || "";
   const meetingCode = space.meetingCode || spaceName.split("/").pop() || "";
@@ -91,18 +101,24 @@ export async function fetchGoogleMeetSessionData(
   if (!auth) return null;
 
   try {
-    const meet = google.meet({ version: "v2", auth });
-
+    const authHeaders = await auth.getRequestHeaders();
     const cleanSpaceName = spaceIdentifier.startsWith("spaces/")
       ? spaceIdentifier
       : `spaces/${spaceIdentifier}`;
 
-    const confListRes = await meet.conferenceRecords.list({
-      filter: `space.name="${cleanSpaceName}"`,
-      pageSize: 10,
-    });
+    const filterQuery = encodeURIComponent(`space.name="${cleanSpaceName}"`);
+    const confListRes = await fetch(
+      `https://meet.googleapis.com/v2/conferenceRecords?filter=${filterQuery}&pageSize=10`,
+      { headers: authHeaders }
+    );
 
-    const records = confListRes.data.conferenceRecords || [];
+    if (!confListRes.ok) {
+      console.warn(`[Google Meet] Failed to list conference records (${confListRes.status})`);
+      return null;
+    }
+
+    const confData = await confListRes.json();
+    const records: any[] = confData.conferenceRecords || [];
     if (records.length === 0) {
       return null;
     }
@@ -126,45 +142,55 @@ export async function fetchGoogleMeetSessionData(
 
     if (conferenceRecordId) {
       try {
-        const recordingsRes = await meet.conferenceRecords.recordings.list({
-          parent: conferenceRecordId,
-        });
+        const recordingsRes = await fetch(
+          `https://meet.googleapis.com/v2/${conferenceRecordId}/recordings`,
+          { headers: authHeaders }
+        );
 
-        const recordings = recordingsRes.data.recordings || [];
-        const fileGenRec = recordings.find(
-          (r) => r.state === "FILE_GENERATED" && r.driveDestination?.file
-        ) || recordings[0];
+        if (recordingsRes.ok) {
+          const recData = await recordingsRes.json();
+          const recordings: any[] = recData.recordings || [];
+          const fileGenRec = recordings.find(
+            (r) => r.state === "FILE_GENERATED" && r.driveDestination?.file
+          ) || recordings[0];
 
-        if (fileGenRec?.driveDestination?.file) {
-          driveFileId = fileGenRec.driveDestination.file;
-          recordingStatus = "AVAILABLE";
+          if (fileGenRec?.driveDestination?.file) {
+            driveFileId = fileGenRec.driveDestination.file;
+            recordingStatus = "AVAILABLE";
 
-          try {
-            const drive = google.drive({ version: "v3", auth });
-            await drive.permissions.create({
-              fileId: driveFileId,
-              requestBody: {
-                role: "reader",
-                type: "anyone",
-              },
-            });
+            try {
+              await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}/permissions`, {
+                method: "POST",
+                headers: {
+                  ...authHeaders,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  role: "reader",
+                  type: "anyone",
+                }),
+              });
 
-            const fileRes = await drive.files.get({
-              fileId: driveFileId,
-              fields: "id, name, webViewLink, webContentLink",
-            });
+              const fileRes = await fetch(
+                `https://www.googleapis.com/drive/v3/files/${driveFileId}?fields=id,name,webViewLink,webContentLink`,
+                { headers: authHeaders }
+              );
 
-            recordingUrl =
-              fileRes.data.webViewLink ||
-              `https://drive.google.com/file/d/${driveFileId}/view`;
-          } catch (driveErr) {
-            console.warn("[Google Drive] Error sharing recording file:", driveErr);
-            recordingUrl =
-              fileGenRec.driveDestination.exportUri ||
-              `https://drive.google.com/file/d/${driveFileId}/view`;
+              if (fileRes.ok) {
+                const fileData = await fileRes.json();
+                recordingUrl = fileData.webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`;
+              } else {
+                recordingUrl = `https://drive.google.com/file/d/${driveFileId}/view`;
+              }
+            } catch (driveErr) {
+              console.warn("[Google Drive] Error setting permissions on recording:", driveErr);
+              recordingUrl =
+                fileGenRec.driveDestination.exportUri ||
+                `https://drive.google.com/file/d/${driveFileId}/view`;
+            }
+          } else if (recordings.some((r) => r.state === "STARTED")) {
+            recordingStatus = "RECORDING";
           }
-        } else if (recordings.some((r) => r.state === "STARTED")) {
-          recordingStatus = "RECORDING";
         }
       } catch (recErr) {
         console.warn("[Google Meet] Error listing recordings:", recErr);

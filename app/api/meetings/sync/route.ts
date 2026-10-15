@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { syncClassMeetingSession } from "@/lib/google-meet";
+import {
+  syncTrialFromGoogleWorkspace,
+  autoSyncActiveGoogleWorkspaceMeetings,
+  isGoogleWorkspaceConfigured,
+} from "@/lib/google-workspace";
 import { broadcastLMSEvent } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +24,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { eventId, trialId, manualStartTime, manualEndTime, manualRecordingUrl } = body;
+    const { action, eventId, trialId, manualStartTime, manualEndTime, manualRecordingUrl } = body;
+
+    if (action === "auto_sync_all" || action === "sync_all") {
+      const result = await autoSyncActiveGoogleWorkspaceMeetings();
+      return NextResponse.json({
+        success: true,
+        message: `Synchronized ${result.syncedEvents} classes and ${result.syncedTrials} trials with Google Workspace.`,
+        ...result,
+      });
+    }
 
     if (!eventId && !trialId) {
       return NextResponse.json(
@@ -43,6 +57,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (trialId) {
+      if (
+        isGoogleWorkspaceConfigured() &&
+        !manualStartTime &&
+        !manualEndTime &&
+        !manualRecordingUrl
+      ) {
+        const wsResult = await syncTrialFromGoogleWorkspace(trialId);
+        if (wsResult.syncedWithGoogle) {
+          return NextResponse.json({
+            success: true,
+            trial: wsResult.trial,
+            message: wsResult.message,
+          });
+        }
+      }
       const trial = await prisma.trialRequest.findUnique({
         where: { id: trialId },
         include: { course: true, tutor: true, student: true },

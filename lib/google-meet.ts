@@ -2,18 +2,41 @@
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
+import {
+  isGoogleWorkspaceConfigured,
+  createGoogleWorkspaceMeetingSpace,
+  syncEventFromGoogleWorkspace,
+} from "@/lib/google-workspace";
 
 export interface GoogleMeetSpace {
   meetingUri: string;
   spaceName?: string | null;
   meetingCode?: string | null;
-  mode: "MANUAL";
+  mode: "WORKSPACE_API" | "MANUAL";
 }
 
 export async function createGoogleMeetingSpace(opts?: {
   title?: string;
   meetingLink?: string | null;
+  eventId?: string;
 }): Promise<GoogleMeetSpace> {
+  if (isGoogleWorkspaceConfigured() && !opts?.meetingLink?.trim()) {
+    try {
+      const space = await createGoogleWorkspaceMeetingSpace({
+        title: opts?.title,
+        eventId: opts?.eventId,
+      });
+      return {
+        meetingUri: space.meetingUri,
+        spaceName: space.spaceName,
+        meetingCode: space.meetingCode,
+        mode: "WORKSPACE_API",
+      };
+    } catch (err) {
+      console.warn("[Google Meet] Failed to create Workspace space via API, falling back to manual link:", err);
+    }
+  }
+
   const link = opts?.meetingLink?.trim() ? getSafeMeetingLink(opts.meetingLink) : "";
   return {
     meetingUri: link,
@@ -35,6 +58,22 @@ export async function syncClassMeetingSession(
   event: any;
   message: string;
 }> {
+  if (
+    isGoogleWorkspaceConfigured() &&
+    !opts?.manualStartTime &&
+    !opts?.manualEndTime &&
+    !opts?.manualRecordingUrl
+  ) {
+    const wsResult = await syncEventFromGoogleWorkspace(eventId);
+    if (wsResult.syncedWithGoogle) {
+      return {
+        success: true,
+        event: wsResult.event,
+        message: wsResult.message,
+      };
+    }
+  }
+
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {

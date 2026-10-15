@@ -4,7 +4,7 @@ import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
-import { syncClassMeetingSession } from "@/lib/google-meet";
+import { syncClassMeetingSession, createGoogleMeetingSpace } from "@/lib/google-meet";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone } from "@/lib/timezones";
 
@@ -490,7 +490,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
+      let meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
+      let meetingSpaceId: string | null = null;
+
+      if (!meetLink) {
+        try {
+          const spaceResult = await createGoogleMeetingSpace({ title: title.trim() });
+          if (spaceResult.meetingUri) {
+            meetLink = spaceResult.meetingUri;
+            meetingSpaceId = spaceResult.spaceName || null;
+          }
+        } catch (err) {
+          console.warn("[tutor] Error generating meeting space:", err);
+        }
+      }
 
       const fullDescription = [
         description?.trim() || "Live curriculum individual class with Tutor.",
@@ -515,6 +528,7 @@ export async function POST(request: NextRequest) {
           title: title.trim(),
           description: fullDescription,
           meetingLink: meetLink,
+          meetingSpaceId,
           dueDate: parsedDueDate,
           status: EventStatus.SCHEDULED,
           approvalStatus: "APPROVED",

@@ -105,9 +105,11 @@ export default function CourseDetailPage({
 
   const isOL = studentLevel === "OL";
   const effectivePrice =
-    isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0
+    isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) >= 0
       ? Number(course.olPrice)
-      : Number(course?.price) || 10;
+      : (course?.price !== null && course?.price !== undefined && !isNaN(Number(course.price))
+          ? Number(course.price)
+          : 0);
 
   const [isStaff, setIsStaff] = useState(false);
   useEffect(() => {
@@ -480,7 +482,11 @@ export default function CourseDetailPage({
                           className="w-full py-3.5 h-auto rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
                         >
                           <Lock className="w-4 h-4 text-blue-300" />
-                          <span>Enroll & Unlock All Materials ({effectivePrice} Tokens)</span>
+                          <span>
+                            {effectivePrice === 0
+                              ? "Enroll in Class (Free / 0 Tokens)"
+                              : `Enroll & Unlock All Materials (${effectivePrice} Tokens)`}
+                          </span>
                           <ArrowRight className="w-4 h-4" />
                         </Button>
                         <button
@@ -688,7 +694,11 @@ export default function CourseDetailPage({
                   className="bg-[#0c2461] hover:bg-[#103080] text-white font-bold text-xs h-9 rounded-xl shadow-xs shrink-0 cursor-pointer gap-1.5"
                 >
                   <Lock className="w-3.5 h-3.5 text-blue-300" />
-                  <span>Enroll in Class ({effectivePrice} Tokens)</span>
+                  <span>
+                    {effectivePrice === 0
+                      ? "Enroll in Class (Free / 0 Tokens)"
+                      : `Enroll in Class (${effectivePrice} Tokens)`}
+                  </span>
                 </Button>
               </div>
             )}

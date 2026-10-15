@@ -422,7 +422,10 @@ export default function CoursesPage() {
                           <>
                             {(() => {
                               const isOL = studentLevel === "OL";
-                              const effectivePrice = isOL && course.olPrice !== null && course.olPrice !== undefined && Number(course.olPrice) > 0 ? Number(course.olPrice) : course.price;
+                              const effectivePrice =
+                                isOL && course.olPrice !== null && course.olPrice !== undefined && Number(course.olPrice) >= 0
+                                  ? Number(course.olPrice)
+                                  : (course.price !== null && course.price !== undefined ? Number(course.price) : 0);
                               return (
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">

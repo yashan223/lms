@@ -637,7 +637,7 @@ export async function POST(request: NextRequest) {
       }
 
       const generatedSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + `-${Date.now()}`;
-      const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 10.0);
+      const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 0);
       const olTokenValue = olPrice !== undefined && olPrice !== null && olPrice !== "" && !isNaN(parseFloat(olPrice)) ? parseFloat(olPrice) : null;
 
       const newCourse = await prisma.course.create({
@@ -648,7 +648,7 @@ export async function POST(request: NextRequest) {
           description: description || "Comprehensive lesson walkthroughs, unit proofs, and coursework solutions.",
           category: category || "Mathematics & Computing",
           subjectCode: subjectCode || "MATH-101",
-          price: isNaN(tokenValue) ? 10.0 : tokenValue,
+          price: isNaN(tokenValue) ? 0 : tokenValue,
           olPrice: olTokenValue,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,
@@ -677,7 +677,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "update_course") {
       const { courseId, title, subtitle, description, category, subjectCode, price, olPrice, tokens, level, status, tutorId, instructorId, thumbnail, featured } = body;
-      const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 10.0);
+      const tokenValue = tokens !== undefined ? parseFloat(tokens) : (price !== undefined ? parseFloat(price) : 0);
       const olTokenValue = olPrice !== undefined ? (olPrice !== null && olPrice !== "" && !isNaN(parseFloat(olPrice)) ? parseFloat(olPrice) : null) : undefined;
       const updatedCourse = await prisma.course.update({
         where: { id: courseId },
@@ -689,7 +689,7 @@ export async function POST(request: NextRequest) {
           subjectCode,
           thumbnail: thumbnail !== undefined ? (typeof thumbnail === "string" && thumbnail.trim() ? thumbnail.trim() : null) : undefined,
           featured: featured !== undefined ? Boolean(featured) : undefined,
-          price: isNaN(tokenValue) ? 10.0 : tokenValue,
+          price: isNaN(tokenValue) ? 0 : tokenValue,
           olPrice: olTokenValue,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
           status: (status as CourseStatus) || CourseStatus.PUBLISHED,

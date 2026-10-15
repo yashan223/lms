@@ -104,9 +104,11 @@ export async function POST(request: NextRequest) {
         user.headline?.includes("IGCSE");
 
       const effectiveCourseTokens =
-        isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) > 0
+        isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) >= 0
           ? Number((course as any).olPrice)
-          : Number(course.price) || 10;
+          : (course.price !== null && course.price !== undefined && !isNaN(Number(course.price))
+              ? Number(course.price)
+              : 0);
 
       const courseLkrPrice = Math.max(1, effectiveCourseTokens * 1200);
       amountCents = Math.round(courseLkrPrice * 100);

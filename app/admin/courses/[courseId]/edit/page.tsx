@@ -234,7 +234,7 @@ export function AdminCourseWorkspaceContent({
     title: "",
     subjectCode: "",
     category: CATEGORIES[0],
-    price: "10",
+    price: "0",
     olPrice: "",
     level: "ADVANCED",
     status: "PUBLISHED",
@@ -346,7 +346,7 @@ export function AdminCourseWorkspaceContent({
         title: found.title || "",
         subjectCode: found.subjectCode || "",
         category: found.category || CATEGORIES[0],
-        price: String(found.price ?? 10),
+        price: String(found.price ?? 0),
         olPrice: found.olPrice !== null && found.olPrice !== undefined ? String(found.olPrice) : "",
         level: found.level || "ADVANCED",
         status: found.status || "PUBLISHED",
@@ -1085,7 +1085,7 @@ export function AdminCourseWorkspaceContent({
               <span className="text-[11px] font-bold text-slate-500">Tuition Rate</span>
               <Coins className="w-4 h-4 text-blue-600" />
             </div>
-            <div className="text-2xl font-black text-blue-900">{detailsForm.price || course?.price || 10}</div>
+            <div className="text-2xl font-black text-blue-900">{detailsForm.price !== "" ? detailsForm.price : (course?.price ?? 0)}</div>
             <div className="text-[10px] text-slate-400">Tokens / enrollment</div>
           </div>
 

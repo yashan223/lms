@@ -276,7 +276,7 @@ export default function AdminDashboardPage() {
   const [courseFormTitle, setCourseFormTitle] = useState("");
   const [courseFormCode, setCourseFormCode] = useState("");
   const [courseFormCategory, setCourseFormCategory] = useState("Mathematics & Computing");
-  const [courseFormPrice, setCourseFormPrice] = useState("10");
+  const [courseFormPrice, setCourseFormPrice] = useState("0");
   const [courseFormLevel, setCourseFormLevel] = useState("ADVANCED");
   const [courseFormStatus, setCourseFormStatus] = useState("PUBLISHED");
   const [courseFormSubtitle, setCourseFormSubtitle] = useState("");
@@ -704,7 +704,7 @@ export default function AdminDashboardPage() {
   const totalCalculatedRevenue = useMemo(() => {
     return coursesList.reduce((acc, c) => {
       const count = c.enrollments?.length || 0;
-      return acc + count * (c.price || 6);
+      return acc + count * (c.price ?? 0);
     }, 0);
   }, [coursesList]);
 
@@ -1769,7 +1769,7 @@ export default function AdminDashboardPage() {
           courseSlug: c.slug,
           courseSubjectCode: c.subjectCode || "LONDON-AL",
           courseCategory: c.category,
-          price: Number(c.price) || 6,
+          price: Number.isFinite(Number(c.price)) ? Number(c.price) : 0,
           enrolledAt: enr.enrolledAt,
         });
       });
@@ -4020,7 +4020,7 @@ export default function AdminDashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {coursesList.map((c) => {
                     const enrCount = c.enrollments?.length || 0;
-                    const cRevenue = enrCount * (Number(c.price) || 6);
+                    const cRevenue = enrCount * (Number.isFinite(Number(c.price)) ? Number(c.price) : 0);
                     const percentOfTotal = totalCalculatedRevenue > 0 ? (cRevenue / totalCalculatedRevenue) * 100 : 0;
 
                     return (
@@ -4034,7 +4034,7 @@ export default function AdminDashboardPage() {
                           </div>
                           <div className="text-right shrink-0">
                             <div className="font-black text-sm text-slate-900">${cRevenue.toLocaleString()}</div>
-                            <div className="text-[10px] text-slate-500">{c.price || 10} Tokens / seat</div>
+                            <div className="text-[10px] text-slate-500">{c.price ?? 0} Tokens / seat</div>
                           </div>
                         </div>
 

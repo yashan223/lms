@@ -73,9 +73,11 @@ export async function POST(
       user.headline?.includes("IGCSE");
 
     const coursePrice =
-      isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) > 0
+      isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) >= 0
         ? Number((course as any).olPrice)
-        : Number(course.price) || 0;
+        : (course.price !== null && course.price !== undefined && !isNaN(Number(course.price))
+            ? Number(course.price)
+            : 0);
 
     let wallet = await prisma.tokenWallet.findUnique({
       where: { userId: user.id },

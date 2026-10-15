@@ -65,9 +65,12 @@ export function CoursePurchaseModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isOL = studentLevel === "OL";
-  const price = isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) > 0
-    ? Number(course.olPrice)
-    : Number(course?.price) || 3;
+  const price =
+    isOL && course?.olPrice !== null && course?.olPrice !== undefined && Number(course.olPrice) >= 0
+      ? Number(course.olPrice)
+      : (course?.price !== null && course?.price !== undefined && !isNaN(Number(course.price))
+          ? Number(course.price)
+          : 0);
 
   useEffect(() => {
     if (!isOpen || !course) return;
@@ -111,7 +114,7 @@ export function CoursePurchaseModal({
   if (!isOpen || !course) return null;
 
   const hasSufficientTokens =
-    tokenBalance !== null && tokenBalance >= price;
+    price === 0 || (tokenBalance !== null && tokenBalance >= price);
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,6 +384,13 @@ export function CoursePurchaseModal({
                     <span>Top Up</span>
                   </Link>
                 </div>
+              ) : price === 0 ? (
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-[11px] text-emerald-900 font-medium">
+                    This class is complimentary (0 Tokens). Instant enrollment with zero fee deduction.
+                  </span>
+                </div>
               ) : (
                 <div className="p-2.5 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-950 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
@@ -447,7 +457,7 @@ export function CoursePurchaseModal({
                   ) : (
                     <>
                       <Coins className="w-3.5 h-3.5 text-blue-200" />
-                      <span>Spend {price} Tokens</span>
+                      <span>{price === 0 ? "Enroll Now (Free)" : `Spend ${price} Tokens`}</span>
                     </>
                   )}
                 </Button>

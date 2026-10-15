@@ -3,7 +3,7 @@ import { Coins, Star, Clock, Zap, Gem } from "lucide-react";
 
 interface TokenIconProps {
   className?: string;
-  variant?: "coins" | "gem" | "zap" | "clock" | "sparkles" | "star";
+  variant?: "coins" | "gem" | "zap" | "clock" | "star";
   size?: "xs" | "sm" | "md" | "lg";
 }
 
@@ -33,7 +33,7 @@ export function TokenIcon({
     return <Clock className={finalClass} />;
   }
 
-  if (variant === "sparkles" || variant === "star") {
+  if (variant === "star") {
     return <Star className={finalClass} />;
   }
 

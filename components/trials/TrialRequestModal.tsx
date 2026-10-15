@@ -18,7 +18,7 @@ import {
   Moon,
   CalendarDays,
   ShieldCheck,
-  Sparkles,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -618,7 +618,7 @@ export function TrialRequestModal({
             {trialStats && (
               <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
                 <span className="font-semibold flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <Award className="w-3.5 h-3.5 text-blue-600" />
                   Trial {trialStats.totalUsed} of 5 Booked
                 </span>
                 <span className="text-[11px] text-blue-800 font-bold">
@@ -700,7 +700,7 @@ export function TrialRequestModal({
             ) : trialStats && (
               <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/70 flex items-center justify-between text-xs text-blue-900">
                 <span className="font-medium flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <Award className="w-3.5 h-3.5 text-blue-600" />
                   Free Trial <strong>{trialStats.totalUsed + 1} of 5</strong>
                 </span>
                 <span className="text-[11px] text-blue-700 font-bold">

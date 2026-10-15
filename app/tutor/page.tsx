@@ -1324,18 +1324,27 @@ function TutorDashboardContent() {
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
-            <div className="flex items-center gap-2 pl-1">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wide hidden md:block">
-                {tutorName}
-              </span>
-              <div className="w-8 h-8 rounded-full bg-[#0c2461] text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden">
+            <Link
+              href="/tutor/profile"
+              title="View & Edit Profile"
+              className="flex items-center gap-2 pl-1 group p-1 -m-1 rounded-xl hover:bg-slate-100 transition-colors"
+            >
+              <div className="text-right hidden md:block">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wide group-hover:text-blue-700 transition-colors block leading-tight">
+                  {tutorName}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                  Profile & Settings
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-[#0c2461] text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden ring-2 ring-transparent group-hover:ring-blue-500 transition-all shrink-0">
                 {tutor?.avatar ? (
                   <img src={tutor.avatar} alt={tutorName} className="w-full h-full object-cover" />
                 ) : (
                   tutorName.charAt(0)
                 )}
               </div>
-            </div>
+            </Link>
 
             <button
               onClick={handleLogout}
@@ -1507,19 +1516,18 @@ function TutorDashboardContent() {
                   </span>
                 </button>
 
-                <button
-                  onClick={() => router.push("/tutor/profile")}
+                <Link
+                  href="/tutor/profile"
                   className="w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer text-slate-700 hover:bg-slate-50"
                 >
                   <span className="flex items-center gap-2">
                     <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Instructor Profile & Credentials</span>
+                    <span>My Profile & Settings</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold flex items-center gap-1">
-                    <span>Studio Page</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold">
+                    Edit Profile
                   </span>
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -3569,14 +3577,6 @@ function TutorDashboardContent() {
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Instructor Profile
                 </h3>
-                <button
-                  onClick={() => router.push("/tutor/profile")}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  <span>Edit Profile</span>
-                  <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-60" />
-                </button>
               </div>
 
               <div className="flex items-center gap-3">
@@ -3620,14 +3620,13 @@ function TutorDashboardContent() {
                 {profileAbout || "Tutor specializing in London A/L & O/L Pearson Edexcel and Cambridge curriculum."}
               </p>
 
-              <button
-                onClick={() => router.push("/tutor/profile")}
-                className="w-full py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              <Link
+                href="/tutor/profile"
+                className="w-full py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0c2461] text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <UserCheck className="w-3.5 h-3.5" />
-                <span>Customize Full Profile</span>
-                <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-70" />
-              </button>
+                <span>Manage Profile &amp; Settings</span>
+              </Link>
             </div>
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">

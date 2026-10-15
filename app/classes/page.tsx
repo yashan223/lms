@@ -21,7 +21,7 @@ import {
   Video,
   Lock,
   Coins,
-  Sparkles,
+  Award,
   CheckCircle2,
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
@@ -545,7 +545,7 @@ export default function CoursesPage() {
                 <div className="mb-6 p-4 rounded-2xl bg-blue-50/90 border border-blue-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Sparkles className="w-4 h-4" />
+                      <Award className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="font-bold text-xs text-blue-950">

@@ -20,7 +20,7 @@ import {
   Mail,
   Clock,
   Lock,
-  Sparkles,
+  User,
   Users,
   Save,
   Check,
@@ -430,7 +430,7 @@ export default function StudentProfilePage() {
         <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-blue-600" />
+              <User className="w-5 h-5 text-blue-600" />
               <span>Academic Details &amp; Personal Info</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">

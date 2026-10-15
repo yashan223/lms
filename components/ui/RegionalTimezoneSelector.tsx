@@ -5,7 +5,6 @@ import {
   Globe,
   ChevronDown,
   Check,
-  Sparkles,
   Search,
   Clock,
   MapPin,
@@ -232,7 +231,7 @@ export function RegionalTimezoneSelector({
               className="flex items-center gap-1 rounded-lg bg-sky-50 px-2 py-1 text-[11px] font-medium text-sky-700 transition hover:bg-sky-100 hover:text-sky-800"
               title="Detect timezone from browser"
             >
-              <Sparkles className="h-3 w-3 text-sky-600" />
+              <Globe className="h-3 w-3 text-sky-600" />
               <span>Auto-detect</span>
             </button>
           </div>

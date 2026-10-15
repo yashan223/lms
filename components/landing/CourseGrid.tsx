@@ -17,7 +17,6 @@ import {
   Lock,
   GraduationCap,
   CalendarCheck,
-  Sparkles,
   Award,
 } from "lucide-react";
 import {

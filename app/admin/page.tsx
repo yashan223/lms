@@ -182,7 +182,6 @@ export default function AdminDashboardPage() {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  // Approvals State
   const adminTimezone = typeof window !== "undefined" ? getUserBrowserTimezone() : DEFAULT_TIMEZONE;
   const [pendingClassesList, setPendingClassesList] = useState<any[]>([]);
   const [pendingTrialsList, setPendingTrialsList] = useState<any[]>([]);
@@ -236,7 +235,6 @@ export default function AdminDashboardPage() {
   const [formUserTimezone, setFormUserTimezone] = useState(DEFAULT_TIMEZONE);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
-  // Grant Free Credit Modal State
   const [showGrantTokensModal, setShowGrantTokensModal] = useState(false);
   const [selectedStudentForTokens, setSelectedStudentForTokens] = useState<any>(null);
   const [grantTokensAmount, setGrantTokensAmount] = useState<number>(6);
@@ -245,7 +243,6 @@ export default function AdminDashboardPage() {
   const [isGrantingTokens, setIsGrantingTokens] = useState(false);
   const [grantFeedbackMsg, setGrantFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Token Bundle Editor State
   const [bundlesList, setBundlesList] = useState<TokenBundle[]>([]);
   const [showBundleEditorModal, setShowBundleEditorModal] = useState(false);
   const [editingBundles, setEditingBundles] = useState<TokenBundle[]>([]);
@@ -254,7 +251,6 @@ export default function AdminDashboardPage() {
   const [isSavingBundles, setIsSavingBundles] = useState(false);
   const [bundleSaveMsg, setBundleSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Academic Schools State
   const [schoolsList, setSchoolsList] = useState<AcademicSchool[]>([]);
   const [showAddSchoolModal, setShowAddSchoolModal] = useState(false);
   const [showEditSchoolModal, setShowEditSchoolModal] = useState(false);
@@ -330,7 +326,6 @@ export default function AdminDashboardPage() {
 
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // ── Audit Log State ────────────────────────────────────────────────────
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [auditLogsError, setAuditLogsError] = useState<string | null>(null);
@@ -349,7 +344,6 @@ export default function AdminDashboardPage() {
   const [selectedLogForModal, setSelectedLogForModal] = useState<any | null>(null);
   const [copiedLogJson, setCopiedLogJson] = useState(false);
 
-  // ── Clear All Data State ───────────────────────────────────────────────
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [clearDataConfirmInput, setClearDataConfirmInput] = useState("");
   const [isClearingAllData, setIsClearingAllData] = useState(false);
@@ -403,7 +397,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // ── Admin Chat Monitoring State ───────────────────────────────────────
   const [adminConversations, setAdminConversations] = useState<any[]>([]);
   const [adminChatsLoading, setAdminChatsLoading] = useState(false);
   const [adminChatsSearch, setAdminChatsSearch] = useState("");
@@ -582,7 +575,6 @@ export default function AdminDashboardPage() {
     document.body.removeChild(link);
   };
 
-  // Load audit logs or chats when tab becomes active
   const prevTabRef = React.useRef<string>("");
   React.useEffect(() => {
     if (activeTab === "audit_log" && prevTabRef.current !== "audit_log") {
@@ -1593,7 +1585,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // ── Academic Subjects Handlers ────────────────────────────────────────────
   const handleOpenAddSchool = () => {
     setSchoolFormName("");
     setSchoolFormDesc("");
@@ -2881,7 +2872,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* View Mode Switcher: Masterclasses vs Tutors */}
               <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
                 <button
                   onClick={() => setAdminCourseViewMode("masterclasses")}
@@ -2908,7 +2898,6 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
 
-              {/* SUB-VIEW 1: MASTERCLASSES */}
               {adminCourseViewMode === "masterclasses" && (
                 <>
                   <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
@@ -2980,7 +2969,6 @@ export default function AdminDashboardPage() {
                             {course.subtitle || course.description}
                           </p>
 
-                          {/* Tutor Information on Class Card */}
                           <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                             <Avatar className="w-6 h-6 border border-slate-200 shrink-0">
                               <AvatarImage src={course.tutor?.avatar} />
@@ -3043,7 +3031,6 @@ export default function AdminDashboardPage() {
                 </>
               )}
 
-              {/* SUB-VIEW 2: TUTORS CONDUCTING CLASSES */}
               {adminCourseViewMode === "tutors" && (
                 <>
                   <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
@@ -3134,7 +3121,6 @@ export default function AdminDashboardPage() {
                                 </div>
                               )}
 
-                              {/* Stats Bar */}
                               <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-center">
                                 <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100">
                                   <div className="text-sm font-black text-blue-900">{tutorCourses.length}</div>
@@ -3146,7 +3132,6 @@ export default function AdminDashboardPage() {
                                 </div>
                               </div>
 
-                              {/* Individual Classes List */}
                               <div className="space-y-1.5 pt-1">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                                   Individual Classes Taught:
@@ -3201,7 +3186,6 @@ export default function AdminDashboardPage() {
 
           {(activeTab === "subjects" || activeTab === "schools") && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Top Subjects KPI Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -3265,7 +3249,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Main Subjects Management Panel */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                   <div>
@@ -3302,7 +3285,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Subjects List */}
                 <div className="space-y-3">
                   {schoolsList.length === 0 ? (
                     <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 space-y-2">
@@ -3319,7 +3301,6 @@ export default function AdminDashboardPage() {
                         className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-200 transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
                       >
                         <div className="flex items-start sm:items-center gap-3 min-w-0">
-                          {/* Reorder Arrows */}
                           <div className="flex flex-col gap-0.5 shrink-0 pt-0.5 sm:pt-0">
                             <button
                               onClick={() => handleMoveSchool(index, "up")}
@@ -3404,7 +3385,6 @@ export default function AdminDashboardPage() {
 
           {activeTab === "chats" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Top Chat Monitoring KPI Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -3453,11 +3433,8 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Two-Column Chat Workspace */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Left Column: Conversation Directory */}
                 <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs flex flex-col h-[650px]">
-                  {/* Left Column Header & Search */}
                   <div className="p-4 border-b border-slate-100 space-y-3 bg-slate-50/50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -3485,7 +3462,6 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Conversation Cards List */}
                   <div className="flex-1 overflow-y-auto p-2 space-y-1.5 divide-y divide-slate-50">
                     {adminChatsLoading && adminConversations.length === 0 ? (
                       <div className="py-20 text-center space-y-2">
@@ -3520,7 +3496,6 @@ export default function AdminDashboardPage() {
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2 mb-2">
-                              {/* Participant Avatars & Info */}
                               <div className="flex items-center gap-2 min-w-0">
                                 <div className="flex -space-x-2 shrink-0">
                                   <Avatar className="w-7 h-7 ring-2 ring-white">
@@ -3552,7 +3527,6 @@ export default function AdminDashboardPage() {
                                 </div>
                               </div>
 
-                              {/* Time & Msg Count */}
                               <div className="text-right shrink-0 space-y-0.5">
                                 <div className="text-[10px] text-slate-400">
                                   {conv.lastMessageAt ? getRelativeTimeString(conv.lastMessageAt) : "Recent"}
@@ -3563,7 +3537,6 @@ export default function AdminDashboardPage() {
                               </div>
                             </div>
 
-                            {/* Thread Delete Quick Button */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3581,7 +3554,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Right Column: Active Conversation Transcript & Messages */}
                 <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs flex flex-col h-[650px]">
                   {!selectedConversation ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3 bg-slate-50/30">
@@ -3601,7 +3573,6 @@ export default function AdminDashboardPage() {
                     </div>
                   ) : (
                     <>
-                      {/* Active Conversation Header */}
                       <div className="p-4 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="flex -space-x-2 shrink-0">
@@ -3640,7 +3611,6 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
 
-                        {/* Search in messages & Actions */}
                         <div className="flex items-center gap-2 shrink-0">
                           <div className="relative w-36 sm:w-44">
                             <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -3675,7 +3645,6 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      {/* Messages Scroll Area */}
                       <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/30">
                         {loadingConversationMessages ? (
                           <div className="py-24 text-center space-y-2">
@@ -3775,7 +3744,6 @@ export default function AdminDashboardPage() {
                         )}
                       </div>
 
-                      {/* Footer compliance notice */}
                       <div className="p-3 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-1.5">
                           <Lock className="w-3.5 h-3.5 text-blue-600" />
@@ -3792,7 +3760,6 @@ export default function AdminDashboardPage() {
 
           {activeTab === "finances" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Top Financial KPI Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -3856,7 +3823,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Course Purchases Ledger Table */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-4 p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
@@ -3893,7 +3859,6 @@ export default function AdminDashboardPage() {
                   </Button>
                 </div>
 
-                {/* Filters */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
                   <div className="relative w-full sm:w-80">
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -3921,7 +3886,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Table */}
                 {purchasesList.length === 0 ? (
                   <div className="py-12 text-center space-y-2 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                     <FileText className="w-8 h-8 text-slate-400 mx-auto" />
@@ -4045,7 +4009,6 @@ export default function AdminDashboardPage() {
                 )}
               </div>
 
-              {/* Course Revenue Breakdown Grid */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
                 <div className="border-b border-slate-100 pb-3">
                   <h3 className="font-bold text-sm text-slate-900">Revenue Breakdown by Course</h3>
@@ -4097,7 +4060,6 @@ export default function AdminDashboardPage() {
 
           {activeTab === "pricing" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Top Pricing KPI Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -4166,7 +4128,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Main Pricing Management Panel */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                   <div>
@@ -4208,7 +4169,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Cards Preview Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
                   {(bundlesList.length > 0 ? bundlesList : DEFAULT_BUNDLES).map((plan, planIdx) => {
                     const price = plan.price;
@@ -4267,7 +4227,6 @@ export default function AdminDashboardPage() {
                           </p>
 
                           <div className="space-y-2 mb-5 pb-5 border-b border-slate-100">
-                            {/* A/L Tier */}
                             <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/60">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
@@ -4288,7 +4247,6 @@ export default function AdminDashboardPage() {
                               </div>
                             </div>
 
-                            {/* O/L Tier */}
                             <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/60">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
@@ -4385,7 +4343,6 @@ export default function AdminDashboardPage() {
 
           {activeTab === "approvals" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Approvals Metric Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className={`p-5 rounded-2xl bg-white border shadow-2xs space-y-1 ${totalPendingApprovals > 0 ? "border-blue-300 ring-2 ring-blue-500/20" : "border-slate-200"}`}>
                   <div className="flex items-center justify-between">
@@ -4441,7 +4398,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Sub-tab filter buttons */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1">
                 <button
                   onClick={() => setApprovalSubTab("ALL")}
@@ -4485,7 +4441,6 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
 
-              {/* Approvals Content List */}
               {totalPendingApprovals === 0 ? (
                 <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 shadow-2xs">
                   <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
@@ -4500,7 +4455,6 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Live Classes Pending */}
                   {(approvalSubTab === "ALL" || approvalSubTab === "CLASSES") && pendingClassesList.map((cls) => {
                     const tutorName = cls.course?.tutor?.name || cls.user?.name || "Senior Tutor";
                     const isProcessing = processingApprovalId === cls.id;
@@ -4607,7 +4561,6 @@ export default function AdminDashboardPage() {
                     );
                   })}
 
-                  {/* Trials Pending */}
                   {(approvalSubTab === "ALL" || approvalSubTab === "TRIALS") && pendingTrialsList.map((trial) => {
                     const tutorName = trial.tutor?.name || trial.course?.tutor?.name || "Assigned Tutor";
                     const isProcessing = processingApprovalId === trial.id;
@@ -4712,7 +4665,6 @@ export default function AdminDashboardPage() {
                     );
                   })}
 
-                  {/* Courses Pending */}
                   {(approvalSubTab === "ALL" || approvalSubTab === "COURSES") && pendingCoursesList.map((course) => {
                     const tutorName = course.tutor?.name || "Senior Tutor";
                     const isProcessing = processingApprovalId === course.id;
@@ -4812,12 +4764,8 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ════════════════════════════════════════════════════════════
-              AUDIT LOG TAB (REVAMPED UI)
-              ════════════════════════════════════════════════════════════ */}
           {activeTab === "audit_log" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Top KPI Metrics Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -4881,10 +4829,8 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Main Log Control & Filter Bar */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3.5">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  {/* Search Input */}
                   <div className="relative flex-1 max-w-md">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <Input
@@ -4910,7 +4856,6 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
 
-                  {/* Actions & Refresh */}
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
@@ -4936,7 +4881,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Category Filter Pills */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-3">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1 shrink-0">
                     <Filter className="w-3 h-3 text-slate-400" />
@@ -4968,9 +4912,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Main Audit Log Table Panel */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-                {/* Table Header Strip */}
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                   <div>
                     <h3 className="font-bold text-sm text-slate-900">Recorded Activity Ledger</h3>
@@ -4983,7 +4925,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Error Banner */}
                 {auditLogsError && (
                   <div className="p-6 text-center text-sm text-red-600 font-semibold bg-red-50/50 border-b border-red-100">
                     <AlertCircle className="w-5 h-5 text-red-600 mx-auto mb-2" />
@@ -4997,7 +4938,6 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                {/* Loading State */}
                 {auditLogsLoading && auditLogs.length === 0 && (
                   <div className="py-20 text-center space-y-3">
                     <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
@@ -5006,7 +4946,6 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                {/* Empty State */}
                 {!auditLogsLoading && !auditLogsError && auditLogs.length === 0 && (
                   <div className="py-20 text-center space-y-3">
                     <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
@@ -5035,7 +4974,6 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                {/* Data Table */}
                 {auditLogs.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
@@ -5061,7 +4999,6 @@ export default function AdminDashboardPage() {
 
                           return (
                             <tr key={log.id} className="hover:bg-blue-50/20 transition-colors">
-                              {/* Operation & Action */}
                               <td className="py-3.5 px-4">
                                 <div className="flex items-center gap-3">
                                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${actionConfig.color}`}>
@@ -5080,14 +5017,12 @@ export default function AdminDashboardPage() {
                                 </div>
                               </td>
 
-                              {/* Category */}
                               <td className="py-3.5 px-4 whitespace-nowrap">
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold ${categoryConfig.badge}`}>
                                   <span>{log.category}</span>
                                 </span>
                               </td>
 
-                              {/* Target Record */}
                               <td className="py-3.5 px-4 max-w-[220px]">
                                 {log.targetLabel ? (
                                   <div>
@@ -5109,7 +5044,6 @@ export default function AdminDashboardPage() {
                                 )}
                               </td>
 
-                              {/* Administrator */}
                               <td className="py-3.5 px-4 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
                                   <Avatar className="w-6 h-6 ring-1 ring-slate-200">
@@ -5128,7 +5062,6 @@ export default function AdminDashboardPage() {
                                 </div>
                               </td>
 
-                              {/* Timestamp */}
                               <td className="py-3.5 px-4 whitespace-nowrap">
                                 <div className="font-bold text-slate-800 text-xs">
                                   {getRelativeTimeString(log.createdAt)}
@@ -5148,7 +5081,6 @@ export default function AdminDashboardPage() {
                                 </div>
                               </td>
 
-                              {/* Details / Inspect */}
                               <td className="py-3.5 px-4 text-right whitespace-nowrap">
                                 <button
                                   onClick={() => setSelectedLogForModal(log)}
@@ -5167,7 +5099,6 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                {/* Pagination Footer */}
                 {auditLogTotalPages > 1 && (
                   <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
                     <span className="text-xs text-slate-500 font-medium">
@@ -5214,7 +5145,6 @@ export default function AdminDashboardPage() {
                 : "max-w-3xl w-full my-auto max-h-[92vh]"
             }`}
           >
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
               <div>
                 <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -5246,7 +5176,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Scrollable Form Body */}
             <form onSubmit={handleCreateUser} className="flex-1 overflow-y-auto p-6 space-y-5 text-xs flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -5300,7 +5229,6 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              {/* Tutor Teaching Levels & Official Hourly Rates */}
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
                 <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-slate-50 to-indigo-50/50 border border-blue-200/80 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-blue-100">
@@ -5318,7 +5246,6 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* London A/L Tutor Card */}
                     <div className={`p-4 rounded-xl border transition-all ${
                       formUserIsALTutor
                         ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
@@ -5378,7 +5305,6 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    {/* London O/L Tutor Card */}
                     <div className={`p-4 rounded-xl border transition-all ${
                       formUserIsOLTutor
                         ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
@@ -5445,7 +5371,6 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* Sticky Bottom Actions */}
               <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowAddUserModal(false)} className="rounded-xl h-9 px-4 cursor-pointer">
                   Cancel
@@ -5468,7 +5393,6 @@ export default function AdminDashboardPage() {
                 : "max-w-3xl w-full my-auto max-h-[92vh]"
             }`}
           >
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
               <div>
                 <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -5500,7 +5424,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Scrollable Form Body */}
             <form onSubmit={handleUpdateUser} className="flex-1 overflow-y-auto p-6 space-y-5 text-xs flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -5550,7 +5473,6 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              {/* Tutor Teaching Levels & Official Hourly Rates */}
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
                 <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-slate-50 to-indigo-50/50 border border-blue-200/80 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-blue-100">
@@ -5568,7 +5490,6 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* London A/L Tutor Card */}
                     <div className={`p-4 rounded-xl border transition-all ${
                       formUserIsALTutor
                         ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
@@ -5628,7 +5549,6 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    {/* London O/L Tutor Card */}
                     <div className={`p-4 rounded-xl border transition-all ${
                       formUserIsOLTutor
                         ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
@@ -5695,7 +5615,6 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* Sticky Bottom Actions */}
               <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowEditUserModal(false)} className="rounded-xl h-9 px-4 cursor-pointer">
                   Cancel
@@ -5720,7 +5639,6 @@ export default function AdminDashboardPage() {
               <button onClick={() => setShowEnrollUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
             </div>
 
-            {/* Current Active Enrollments List */}
             <div className="space-y-2">
               <label className="font-bold text-xs text-slate-700 block">
                 Current Active Enrollments ({selectedUserForEdit.enrollments?.length || 0})
@@ -5765,7 +5683,6 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Add New Enrollment Form */}
             <form onSubmit={handleEnrollUserSubmit} className="space-y-3 pt-2 border-t border-slate-100 text-xs">
               <div>
                 <label className="font-bold block mb-1">Enroll in Additional Class</label>
@@ -6243,7 +6160,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Rejection Feedback Modal */}
       {rejectionModalData.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -6320,11 +6236,9 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
-      {/* Audit Log Entry Inspector Modal */}
       {selectedLogForModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
@@ -6351,7 +6265,6 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Event Meta Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
                 <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
@@ -6411,7 +6324,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Event Payload Details */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800">
@@ -6449,7 +6361,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="pt-2 flex justify-end border-t border-slate-100">
               <Button
                 size="sm"
@@ -6466,7 +6377,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Add Subject Modal */}
       {showAddSchoolModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -6573,7 +6483,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Edit Subject Modal */}
       {showEditSchoolModal && selectedSchoolForEdit && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -6686,7 +6595,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Delete Subject Modal */}
       {showDeleteSchoolModal && selectedSchoolForDelete && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -6772,7 +6680,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Token Bundle Editor Modal */}
       {showBundleEditorModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-4xl w-full max-h-[95vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
@@ -6814,7 +6721,6 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
-            {/* Package Tabs */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100">
               {editingBundles.map((b, idx) => (
                 <button
@@ -6841,15 +6747,12 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Currently Selected Bundle Editing Form */}
             {editingBundles[selectedBundleIndex] && (() => {
               const curBundle = editingBundles[selectedBundleIndex];
               return (
                 <form onSubmit={handleSaveBundles} className="space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* Left Column: Form Controls (7 cols) */}
                     <div className="lg:col-span-7 space-y-4">
-                      {/* Popular Switcher & Delete Option */}
                       <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <span className="text-xs font-bold text-slate-700">Most Popular / Featured Card</span>
@@ -6947,7 +6850,6 @@ export default function AdminDashboardPage() {
                           />
                         </div>
 
-                        {/* A/L Pricing Section */}
                         <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3 sm:col-span-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
@@ -7013,7 +6915,6 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
 
-                        {/* O/L Pricing Section */}
                         <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3 sm:col-span-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
@@ -7107,7 +7008,6 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      {/* Features List / Perk Editor */}
                       <div className="space-y-2.5 pt-3 border-t border-slate-100">
                         <label className="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
@@ -7136,7 +7036,6 @@ export default function AdminDashboardPage() {
                           ))}
                         </div>
 
-                        {/* Add Feature input row */}
                         <div className="flex items-center gap-2 pt-1">
                           <Input
                             value={newFeatureInput}
@@ -7162,7 +7061,6 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    {/* Right Column: Live Card Preview (5 cols) */}
                     <div className="lg:col-span-5 bg-slate-50/80 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
                       <div>
                         <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-3 flex items-center justify-between">
@@ -7282,7 +7180,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Grant Free Credit Modal */}
       {showGrantTokensModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
@@ -7327,7 +7224,6 @@ export default function AdminDashboardPage() {
             )}
 
             <form onSubmit={handleGrantTokens} className="space-y-4 text-xs">
-              {/* Target Student Selection */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1.5">
                   Select Student <span className="text-red-500">*</span>
@@ -7352,7 +7248,6 @@ export default function AdminDashboardPage() {
                 </select>
               </div>
 
-              {/* Selected Student Card */}
               {selectedStudentForTokens && (
                 <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -7383,7 +7278,6 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* Grant Mode */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1.5">
                   Allocation Mode
@@ -7416,7 +7310,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Quick Preset Amount Buttons */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1.5">
                   Quick Amount Presets (Hours / Tokens)
@@ -7445,7 +7338,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Custom Amount Input */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Credit Amount (Hours / Tokens) <span className="text-red-500">*</span>
@@ -7466,7 +7358,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Grant Reason / Note */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Reason / Administrative Note <span className="text-red-500">*</span>
@@ -7499,7 +7390,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Preview Summary Calculation */}
               {selectedStudentForTokens && (
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
                   <span className="text-slate-600 font-medium">Updated Wallet Balance:</span>
@@ -7550,11 +7440,9 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ── Clear All Data Confirmation Modal ── */}
       {showClearDataModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
             <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
                 <Trash2 className="w-6 h-6 text-slate-700" />
@@ -7582,7 +7470,6 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-5 sm:p-6 space-y-4">
               {clearDataSuccessMsg ? (
                 <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-3">
@@ -7643,7 +7530,6 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Modal Actions */}
             <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
               <Button
                 type="button"

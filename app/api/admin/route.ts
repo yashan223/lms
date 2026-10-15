@@ -23,7 +23,6 @@ import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ── Audit log helper ────────────────────────────────────────────────────────
 const ACTION_CATEGORY_MAP: Record<string, string> = {
   create_user: "USER", create_candidate: "USER",
   update_user: "USER", delete_user: "USER", delete_candidate: "USER",
@@ -48,18 +47,18 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
 
 async function clearLocalStorageUploads(): Promise<void> {
   try {
-    const storageDir = process.env.STORAGE_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "storage", "uploads");
+    const storageDir = process.env.STORAGE_DIR || path.join( process.cwd(), "storage", "uploads");
     const subdirs = ["public", "private"];
     for (const sub of subdirs) {
-      const fullPath = path.join(/*turbopackIgnore: true*/ storageDir, sub);
-      if (fs.existsSync(/*turbopackIgnore: true*/ fullPath)) {
-        const files = fs.readdirSync(/*turbopackIgnore: true*/ fullPath);
+      const fullPath = path.join( storageDir, sub);
+      if (fs.existsSync( fullPath)) {
+        const files = fs.readdirSync( fullPath);
         for (const file of files) {
           if (file === ".gitkeep") continue;
           try {
-            const filePath = path.join(/*turbopackIgnore: true*/ fullPath, file);
-            if (fs.statSync(/*turbopackIgnore: true*/ filePath).isFile()) {
-              fs.unlinkSync(/*turbopackIgnore: true*/ filePath);
+            const filePath = path.join( fullPath, file);
+            if (fs.statSync( filePath).isFile()) {
+              fs.unlinkSync( filePath);
             }
           } catch (e) {
             console.error(`[storage] Failed to delete storage file ${file}:`, e);
@@ -336,7 +335,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
-    // ── Fire-and-forget audit log for every admin POST action ─────────────
     const ipAddress =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||
@@ -354,7 +352,6 @@ export async function POST(request: NextRequest) {
       details: { body: { ...body, password: body.password ? "[REDACTED]" : undefined } },
       ipAddress,
     });
-    // ──────────────────────────────────────────────────────────────────────
 
     if (action === "create_user" || action === "create_candidate") {
       const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate, hourlyRateAL, hourlyRateOL, isALTutor, isOLTutor, timezone, country } = body;
@@ -493,7 +490,6 @@ export async function POST(request: NextRequest) {
         data: updateData,
       });
 
-      // Synchronize tutor availability slots timezone if tutor's timezone was modified
       if (updateData.timezone && (updateData.role === Role.TUTOR || (updateData.role as any) === "INSTRUCTOR")) {
         await prisma.tutorAvailability.updateMany({
           where: { tutorId: userId },
@@ -561,7 +557,6 @@ export async function POST(request: NextRequest) {
           newBalance = Math.max(0, wallet.balance - parsedAmount);
           txAmount = -parsedAmount;
         } else {
-          // Default: GRANT / ADD
           newBalance = wallet.balance + parsedAmount;
           txAmount = parsedAmount;
         }
@@ -934,7 +929,6 @@ export async function POST(request: NextRequest) {
         include: { course: { include: { tutor: true } }, user: true },
       });
 
-      // Notify tutor
       const tutorId = existing.requestedBy || existing.course?.tutorId;
       if (tutorId) {
         await prisma.notification.create({
@@ -949,7 +943,6 @@ export async function POST(request: NextRequest) {
         broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tutorId });
       }
 
-      // Notify enrolled students
       if (updated.courseId) {
         const enrollments = await prisma.enrollment.findMany({
           where: { courseId: updated.courseId },
@@ -1214,7 +1207,6 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(bundles) || bundles.length === 0) {
         return NextResponse.json({ error: "Invalid bundles data. Must be a non-empty array." }, { status: 400 });
       }
-      // Validate and clean each bundle
       const cleanBundles = bundles.map((b: any, index: number) => {
         const id = b.id ? String(b.id).trim() : `pack-${Date.now()}-${index}`;
         const name = String(b.name || `Bundle ${index + 1}`).trim();
@@ -1264,7 +1256,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ── Academic Subjects Actions ─────────────────────────────────────────────
     if (
       action === "create_subject" ||
       action === "add_subject" ||
@@ -1424,7 +1415,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "clear_all_data") {
-      // 1. Identify all administrator accounts to preserve
       const adminUsers = await prisma.user.findMany({
         where: { role: Role.ADMIN },
         select: { id: true, email: true, name: true },
@@ -1437,47 +1427,35 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 2. Clear all LMS platform data inside a transaction
       await prisma.$transaction(async (tx) => {
-        // Chat messages & conversations
         await tx.message.deleteMany({});
         await tx.conversation.deleteMany({});
 
-        // Realtime notifications
         await tx.notification.deleteMany({});
 
-        // Tutor & Student calendar availabilities
         await tx.studentAvailability.deleteMany({});
         await tx.tutorAvailability.deleteMany({});
 
-        // 1-on-1 Trial consultation requests
         await tx.trialRequest.deleteMany({});
 
-        // Live classes, workshops, seminars, and calendar events
         await tx.event.deleteMany({});
 
-        // Student learning progress and enrollments
         await tx.userProgress.deleteMany({});
         await tx.enrollment.deleteMany({});
 
-        // Course ratings, reviews, and completion certificates
         await tx.review.deleteMany({});
         await tx.certificate.deleteMany({});
 
-        // Syllabus contents: materials, lessons, modules, and courses
         await tx.courseMaterial.deleteMany({});
         await tx.lesson.deleteMany({});
         await tx.module.deleteMany({});
         await tx.course.deleteMany({});
 
-        // Vault private files and student badge awards
         await tx.privateFile.deleteMany({});
         await tx.badgeAward.deleteMany({});
 
-        // Financial ledger: token transactions
         await tx.tokenTransaction.deleteMany({});
 
-        // Reset admin wallet balance to 0, delete wallets for non-admins
         await tx.tokenWallet.updateMany({
           where: { user: { role: Role.ADMIN } },
           data: { balance: 0 },
@@ -1486,19 +1464,15 @@ export async function POST(request: NextRequest) {
           where: { user: { role: { not: Role.ADMIN } } },
         });
 
-        // Verification & reset auth tokens
         await tx.passwordResetToken.deleteMany({});
         await tx.emailVerificationToken.deleteMany({});
 
-        // Delete all non-admin users (students, tutors, instructors)
         await tx.user.deleteMany({
           where: { role: { not: Role.ADMIN } },
         });
 
-        // Realtime SSE system events
         await tx.systemEvent.deleteMany({});
 
-        // Reset previous audit logs and record this wipe
         await tx.auditLog.deleteMany({});
         await tx.auditLog.create({
           data: {
@@ -1517,17 +1491,14 @@ export async function POST(request: NextRequest) {
         });
       }, { timeout: 30000 });
 
-      // 3. Reset token pricing packages to platform defaults
       try {
         await saveBundles(DEFAULT_BUNDLES);
       } catch (bundleErr) {
         console.warn("[clear_all_data] Failed to restore default bundles:", bundleErr);
       }
 
-      // 4. Wipe physical files from storage uploads
       await clearLocalStorageUploads();
 
-      // 5. Broadcast real-time events to all connected clients
       broadcastLMSEvent("USERS_CHANGED");
       broadcastLMSEvent("COURSES_CHANGED");
       broadcastLMSEvent("ENROLLMENTS_CHANGED");

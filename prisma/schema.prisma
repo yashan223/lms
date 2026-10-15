@@ -1,4 +1,3 @@
-// Prisma Schema for PulseEDU Global (LMS)
 
 generator client {
   provider = "prisma-client-js"
@@ -64,20 +63,18 @@ model User {
   bio           String?
   phone         String?
   country       String?
-  timezone      String?        @default("Asia/Colombo") // Regional Timezone e.g. "Asia/Colombo", "Europe/London"
-  academicLevel String?        @default("AL") // "OL" or "AL"
-  emailVerified DateTime?      // Date & time student verified their email address
-  publicKey     String?        // E2EE Public Key for client-side encryption
+  timezone      String?        @default("Asia/Colombo")
+  academicLevel String?        @default("AL")
+  emailVerified DateTime?
+  publicKey     String?
   guardianName         String?
   guardianRelationship String?
   guardianPhone        String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  // Tutor relations
   createdCourses Course[]      @relation("TutorCourses")
   
-  // Student relations
   enrollments    Enrollment[]
   progress       UserProgress[]
   reviews        Review[]
@@ -93,13 +90,11 @@ model User {
   tutorAvailabilities TutorAvailability[] @relation("TutorAvailabilities")
   studentAvailabilities StudentAvailability[] @relation("StudentAvailabilities")
 
-  // E2EE Chat Relations
   conversationsA Conversation[] @relation("ParticipantA")
   conversationsB Conversation[] @relation("ParticipantB")
   sentMessages   Message[]      @relation("SentMessages")
   receivedMessages Message[]    @relation("ReceivedMessages")
 
-  // Notification Relations
   notifications  Notification[]
   payments       Payment[]
 
@@ -110,7 +105,7 @@ model TokenWallet {
   id           String             @id @default(cuid())
   userId       String             @unique
   user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance      Float              @default(0) // Available tokens / hours
+  balance      Float              @default(0)
   transactions TokenTransaction[]
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -122,10 +117,10 @@ model TokenTransaction {
   id          String          @id @default(cuid())
   walletId    String
   wallet      TokenWallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  amount      Float             // Positive for credit (+), negative for debit (-)
+  amount      Float
   type        TransactionType
-  description String          // e.g., "Purchased 20 Hours Token Pack" or "1-on-1 Tutoring Session"
-  referenceId String?         // Related eventId, trialId, or paymentId
+  description String
+  referenceId String?
   createdAt   DateTime        @default(now())
 
   @@map("token_transactions")
@@ -249,17 +244,17 @@ model Event {
   type               EventType   @default(LIVE_SEMINAR)
   status             EventStatus @default(SCHEDULED)
   meetingLink        String?
-  meetingSpaceId     String?     // Google Meet space resource e.g. "spaces/ABC123"
-  conferenceRecordId String?     // Google Meet conference record e.g. "conferenceRecords/XYZ456"
-  recordingUrl       String?     // Google Drive video recording URL
-  recordingStatus    String?     // "AVAILABLE", "PROCESSING", "NONE"
-  actualStartTime    DateTime?   @db.Timestamptz // Verified start time reported by Google Meet API
-  actualEndTime      DateTime?   @db.Timestamptz // Verified end time reported by Google Meet API
-  attendanceCount    Int?        @default(0) // Participant count from Google Meet
+  meetingSpaceId     String?
+  conferenceRecordId String?
+  recordingUrl       String?
+  recordingStatus    String?
+  actualStartTime    DateTime?   @db.Timestamptz
+  actualEndTime      DateTime?   @db.Timestamptz
+  attendanceCount    Int?        @default(0)
   startedAt          DateTime?   @db.Timestamptz
   endedAt            DateTime?   @db.Timestamptz
   dueDate            DateTime    @db.Timestamptz
-  timezone           String?     @default("Asia/Colombo") // IANA regional timezone class was scheduled in
+  timezone           String?     @default("Asia/Colombo")
   courseId           String?
   course             Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
   userId             String?
@@ -329,7 +324,7 @@ model CourseMaterial {
   fileUrl     String
   fileSize    String   @default("1.5 MB")
   fileType    String   @default("application/pdf")
-  category    String   @default("HANDOUT") // "HANDOUT", "FORMULA_SHEET", "MOCK_PAPER", "LAB_GUIDE", "SLIDES"
+  category    String   @default("HANDOUT")
   courseId    String
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
@@ -383,17 +378,17 @@ model TrialRequest {
   studentId       String?
   student         User?        @relation("StudentTrials", fields: [studentId], references: [id], onDelete: Cascade)
   preferredDate   DateTime     @db.Timestamptz
-  preferredDates  Json?        // Stored array of the 3 preferred times selected by student
+  preferredDates  Json?
   topic           String?
-  timezone        String?      @default("Asia/Colombo") // Region/Timezone used when booked
+  timezone        String?      @default("Asia/Colombo")
   status             TrialStatus  @default(PENDING)
   meetingLink        String?
-  meetingSpaceId     String?      // Google Meet space resource e.g. "spaces/ABC123"
-  conferenceRecordId String?      // Google Meet conference record e.g. "conferenceRecords/XYZ456"
-  recordingUrl       String?      // Google Drive video recording URL
-  recordingStatus    String?      // "AVAILABLE", "PROCESSING", "NONE"
-  actualStartTime    DateTime?    @db.Timestamptz // Verified start time reported by Google Meet API
-  actualEndTime      DateTime?    @db.Timestamptz // Verified end time reported by Google Meet API
+  meetingSpaceId     String?
+  conferenceRecordId String?
+  recordingUrl       String?
+  recordingStatus    String?
+  actualStartTime    DateTime?    @db.Timestamptz
+  actualEndTime      DateTime?    @db.Timestamptz
   notes              String?
   approvalStatus     String?      @default("APPROVED")
   rejectionReason    String?
@@ -403,16 +398,13 @@ model TrialRequest {
   @@map("trial_requests")
 }
 
-// ========================================================
-// NOTIFICATIONS SYSTEM
-// ========================================================
 model Notification {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
-  type      String   @default("INFO") // "INFO", "CLASS_LIVE", "CLASS_SCHEDULED", "CHAT_MESSAGE", "MATERIAL_ADDED", "TRIAL_UPDATE"
+  type      String   @default("INFO")
   link      String?
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -421,9 +413,6 @@ model Notification {
   @@map("notifications")
 }
 
-// ========================================================
-// END-TO-END ENCRYPTED (E2EE) CHAT SYSTEM
-// ========================================================
 model Conversation {
   id             String    @id @default(cuid())
   participantAId String
@@ -451,9 +440,9 @@ model Message {
   sender           User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiverId       String
   receiver         User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  encryptedContent String       // AES-GCM Ciphertext (Base64) - Zero Knowledge to Server
-  iv               String       // AES-GCM Initialization Vector (Base64)
-  senderPublicKey  String?      // Ephemeral / Session Key Identifier
+  encryptedContent String
+  iv               String
+  senderPublicKey  String?
   isRead           Boolean      @default(false)
   createdAt        DateTime     @default(now())
 
@@ -462,24 +451,21 @@ model Message {
   @@map("messages")
 }
 
-// ========================================================
-// TUTOR AVAILABILITY SYSTEM
-// ========================================================
 model TutorAvailability {
   id           String    @id @default(cuid())
   tutorId      String
   tutor        User      @relation("TutorAvailabilities", fields: [tutorId], references: [id], onDelete: Cascade)
   courseId     String?
   course       Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  dayOfWeek    Int?      // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (for recurring weekly slots)
-  specificDate DateTime? @db.Timestamptz // For specific date slots
-  startTime    String    // "HH:mm" e.g. "09:00", "14:30"
-  endTime      String    // "HH:mm" e.g. "10:30", "16:00"
-  slotType     String    @default("ALL") // "ALL", "CLASS", "TRIAL"
-  timezone     String?   @default("Asia/Colombo") // Base timezone tutor set this slot in
+  dayOfWeek    Int?
+  specificDate DateTime? @db.Timestamptz
+  startTime    String
+  endTime      String
+  slotType     String    @default("ALL")
+  timezone     String?   @default("Asia/Colombo")
   isRecurring  Boolean   @default(false)
   isActive     Boolean   @default(true)
-  title        String?   // Optional label e.g., "Morning Masterclass", "Evening 1-on-1"
+  title        String?
   createdAt    DateTime  @default(now()) @db.Timestamptz
   updatedAt    DateTime  @updatedAt @db.Timestamptz
 
@@ -488,21 +474,18 @@ model TutorAvailability {
   @@map("tutor_availabilities")
 }
 
-// ========================================================
-// STUDENT AVAILABILITY / STUDY HOURS SYSTEM
-// ========================================================
 model StudentAvailability {
   id           String    @id @default(cuid())
   studentId    String
   student      User      @relation("StudentAvailabilities", fields: [studentId], references: [id], onDelete: Cascade)
-  dayOfWeek    Int?      // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat (for weekly recurring study hours)
-  specificDate DateTime? @db.Timestamptz // For specific available dates
-  startTime    String    // "HH:mm" e.g. "16:00"
-  endTime      String    // "HH:mm" e.g. "20:00"
-  timezone     String?   @default("Asia/Colombo") // Student's local study timezone
+  dayOfWeek    Int?
+  specificDate DateTime? @db.Timestamptz
+  startTime    String
+  endTime      String
+  timezone     String?   @default("Asia/Colombo")
   isRecurring  Boolean   @default(true)
   isActive     Boolean   @default(true)
-  title        String?   // Optional label e.g., "After-School Study Window", "Weekend Revision"
+  title        String?
   notes        String?
   createdAt    DateTime  @default(now()) @db.Timestamptz
   updatedAt    DateTime  @updatedAt @db.Timestamptz
@@ -510,32 +493,26 @@ model StudentAvailability {
   @@index([studentId])
   @@map("student_availabilities")
 }
-// ========================================================
-// REALTIME EVENT LOG (Cross-process SSE)
-// ========================================================
 model SystemEvent {
   id        String   @id @default(cuid())
-  type      String   // e.g. "TRIALS_CHANGED", "CHAT_MESSAGE", "NOTIFICATIONS_CHANGED"
-  data      Json?    // optional payload (userId filter, classLive flag, etc.)
+  type      String
+  data      Json?
   createdAt DateTime @default(now())
 
   @@index([createdAt])
   @@map("system_events")
 }
 
-// ========================================================
-// ADMIN AUDIT LOG — Full immutable history of all admin actions
-// ========================================================
 model AuditLog {
   id          String   @id @default(cuid())
-  adminId     String                         // ID of the admin who performed the action
-  adminEmail  String                         // Email snapshot at time of action
-  action      String                         // e.g. "create_user", "delete_course", "approve_trial"
-  category    String   @default("GENERAL")  // "USER", "COURSE", "CLASS", "TRIAL", "FINANCE", "PRICING", "GENERAL"
-  targetId    String?                        // ID of the affected record (userId, courseId, eventId, etc.)
-  targetLabel String?                        // Human-readable name/title of the affected record
-  details     Json?                          // Extra context (before/after diff, reason, amount, etc.)
-  ipAddress   String?                        // Admin's IP address
+  adminId     String
+  adminEmail  String
+  action      String
+  category    String   @default("GENERAL")
+  targetId    String?
+  targetLabel String?
+  details     Json?
+  ipAddress   String?
   createdAt   DateTime @default(now())
 
   @@index([adminId])
@@ -545,9 +522,6 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ========================================================
-// PAYMENTS.LK GATEWAY TRANSACTIONS
-// ========================================================
 enum PaymentStatus {
   PENDING
   SUCCEEDED
@@ -562,13 +536,13 @@ model Payment {
   reference     String        @unique
   userId        String
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amountCents   Int           // e.g. 720000 = Rs. 7,200.00
+  amountCents   Int
   currency      String        @default("LKR")
   status        PaymentStatus @default(PENDING)
-  itemType      String        // "TOKEN_BUNDLE" | "COURSE"
-  itemId        String        // pack-6, pack-16, or courseId
-  itemTitle     String        // Bundle or course name
-  tokens        Int?          // Credit amount (if token bundle)
+  itemType      String
+  itemId        String
+  itemTitle     String
+  tokens        Int?
   checkoutUrl   String?
   paymentMethod String?
   rawWebhook    Json?
@@ -582,9 +556,6 @@ model Payment {
   @@map("payments")
 }
 
-// ========================================================
-// ACADEMIC SCHOOLS / FACULTIES
-// ========================================================
 model AcademicSchool {
   id          String   @id @default(cuid())
   name        String   @unique

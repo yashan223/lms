@@ -98,9 +98,8 @@ export function TutorAvailabilityManager({
   const [availabilities, setAvailabilities] = useState<TutorAvailabilitySlot[]>([]);
   const [daySlotsPreview, setDaySlotsPreview] = useState<any[]>([]);
 
-  // Form State for Adding Available Times
   const [scheduleMode, setScheduleMode] = useState<"RECURRING" | "SPECIFIC">("RECURRING");
-  const [selectedDays, setSelectedDays] = useState<number[]>([1, 3, 5]); // Default: Mon, Wed, Fri
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 3, 5]);
   const [specificDate, setSpecificDate] = useState("");
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -115,7 +114,6 @@ export function TutorAvailabilityManager({
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Fetch tutor's configured availability
   const fetchAvailability = async (tzOverride?: string) => {
     if (!tutor?.id) return;
     try {
@@ -173,14 +171,12 @@ export function TutorAvailabilityManager({
     },
   });
 
-  // Toggle Day selection for multi-day batch addition
   const toggleDaySelection = (dayVal: number) => {
     setSelectedDays((prev) =>
       prev.includes(dayVal) ? prev.filter((d) => d !== dayVal) : [...prev, dayVal]
     );
   };
 
-  // Submit Multiple Available Times
   const handleAddAvailableTimes = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startTime || !endTime) {
@@ -271,7 +267,6 @@ export function TutorAvailabilityManager({
     }
   };
 
-  // Delete single availability slot
   const handleDeleteSlot = async (id: string) => {
     try {
       const res = await fetch("/api/tutor/availability", {
@@ -292,7 +287,6 @@ export function TutorAvailabilityManager({
     }
   };
 
-  // Apply Quick Preset
   const handleApplyPreset = async (preset: "WEEKDAYS" | "WEEKENDS" | "FULL_SCHEDULE") => {
     try {
       setSaving(true);
@@ -327,7 +321,6 @@ export function TutorAvailabilityManager({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Header */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -368,7 +361,6 @@ export function TutorAvailabilityManager({
         </div>
       </div>
 
-      {/* Regional Timezone & Student Preview Bar */}
       <div className="bg-white rounded-2xl border border-sky-200/90 p-4 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
@@ -411,7 +403,6 @@ export function TutorAvailabilityManager({
         </div>
       </div>
 
-      {/* Quick Summary & Presets Ribbon */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -460,7 +451,6 @@ export function TutorAvailabilityManager({
         </div>
       </div>
 
-      {/* Status Message */}
       {statusMsg && (
         <div
           className={`p-4 rounded-xl border text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
@@ -486,9 +476,7 @@ export function TutorAvailabilityManager({
         </div>
       )}
 
-      {/* Grid: 2 Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Configured Available Timeslots (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -593,9 +581,7 @@ export function TutorAvailabilityManager({
           </div>
         </div>
 
-        {/* Right Column: Scheduled Classes & Trials Cross-Reference (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
-          {/* Real-time Conflict Cross-Reference against Scheduled Classes */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>

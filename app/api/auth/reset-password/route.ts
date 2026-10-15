@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const rateLimit = checkRateLimit(`reset-pass:${ip}`, 5, 300); // 5 attempts per 5 minutes
+    const rateLimit = checkRateLimit(`reset-pass:${ip}`, 5, 300);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(

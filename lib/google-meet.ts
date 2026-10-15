@@ -3,11 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 
-/**
- * Meeting Management Module for PulseEDU Global (Manual Links Only)
- * All live meetings use manual links (Google Meet, etc.) provided directly by tutors/admins.
- */
-
 export interface GoogleMeetSpace {
   meetingUri: string;
   spaceName?: string | null;
@@ -15,9 +10,6 @@ export interface GoogleMeetSpace {
   mode: "MANUAL";
 }
 
-/**
- * Normalizes and returns a manual meeting link object.
- */
 export async function createGoogleMeetingSpace(opts?: {
   title?: string;
   meetingLink?: string | null;
@@ -31,11 +23,6 @@ export async function createGoogleMeetingSpace(opts?: {
   };
 }
 
-/**
- * End-to-end sync helper for an LMS Class Event:
- * Records session completion, timestamps, and optional manual recording URL,
- * then notifies enrolled students.
- */
 export async function syncClassMeetingSession(
   eventId: string,
   opts?: {
@@ -69,7 +56,6 @@ export async function syncClassMeetingSession(
   const recordingUrl = opts?.manualRecordingUrl?.trim() || event.recordingUrl;
   const recordingStatus = recordingUrl ? "AVAILABLE" : "NONE";
 
-  // Update Event record in Database
   const updatedEvent = await prisma.event.update({
     where: { id: eventId },
     data: {
@@ -86,7 +72,6 @@ export async function syncClassMeetingSession(
     },
   });
 
-  // If recording is available, notify all enrolled students
   if (recordingUrl && event.courseId) {
     const enrollments = event.course?.enrollments || [];
     if (enrollments.length > 0) {

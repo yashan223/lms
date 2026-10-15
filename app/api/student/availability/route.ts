@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     let studentId = searchParams.get("studentId");
 
-    // If not provided, try authenticated user
     if (!studentId) {
       const auth = await getAuthenticatedUser(request);
       if (auth.user) {
@@ -24,7 +23,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // If still not provided, fallback to first student
     if (!studentId) {
       const firstStudent = await prisma.user.findFirst({
         where: { role: Role.STUDENT },
@@ -68,7 +66,6 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    // Student's scheduled events & classes
     const scheduledEvents = await prisma.event.findMany({
       where: {
         userId: studentId,
@@ -122,7 +119,6 @@ export async function POST(request: NextRequest) {
     });
     const defaultTz = studentUser?.timezone || getRegionalTimezone(studentUser?.country).id || DEFAULT_TIMEZONE;
 
-    // 0. Update student regional timezone
     if (action === "update_timezone") {
       const { timezone } = body;
       if (!timezone) {
@@ -144,7 +140,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 1. Set availability / Batch Add
     if (action === "set_availability" || action === "batch_add") {
       const slots = Array.isArray(body.slots) ? body.slots : [body];
 
@@ -198,7 +193,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2. Delete availability slot
     if (action === "delete_availability") {
       const { id } = body;
       if (!id) {
@@ -220,7 +214,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Toggle slot active status
     if (action === "toggle_availability") {
       const { id, isActive } = body;
       if (!id) {
@@ -248,9 +241,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. Quick presets for student
     if (action === "apply_preset") {
-      const { preset, timezone } = body; // "WEEKDAY_EVENINGS", "WEEKEND_STUDY", "ALL_WEEK"
+      const { preset, timezone } = body;
       const activeTz = timezone || defaultTz;
 
       if (body.replaceExisting) {
@@ -262,7 +254,6 @@ export async function POST(request: NextRequest) {
       const slotsToInsert = [];
 
       if (preset === "WEEKDAY_EVENINGS" || preset === "ALL_WEEK") {
-        // Mon-Fri: 16:00 - 20:00
         for (let d = 1; d <= 5; d++) {
           slotsToInsert.push({
             studentId: student.id,
@@ -278,7 +269,6 @@ export async function POST(request: NextRequest) {
       }
 
       if (preset === "WEEKEND_STUDY" || preset === "ALL_WEEK") {
-        // Sat (6) & Sun (0): 10:00 - 16:00
         slotsToInsert.push({
           studentId: student.id,
           dayOfWeek: 6,
@@ -315,7 +305,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 5. Clear all
     if (action === "clear_all") {
       await prisma.studentAvailability.deleteMany({
         where: { studentId: student.id },

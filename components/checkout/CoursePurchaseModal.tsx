@@ -69,7 +69,6 @@ export function CoursePurchaseModal({
     ? Number(course.olPrice)
     : Number(course?.price) || 3;
 
-  // Fetch student's real-time token wallet when modal opens
   useEffect(() => {
     if (!isOpen || !course) return;
 
@@ -169,7 +168,6 @@ export function CoursePurchaseModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 animate-in zoom-in-95 my-8">
-        {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20 shrink-0">
@@ -201,7 +199,6 @@ export function CoursePurchaseModal({
         </div>
 
         {purchaseSuccess ? (
-          /* Success Screen */
           <div className="py-6 text-center space-y-4 animate-in fade-in zoom-in-95">
             <div className="w-16 h-16 rounded-3xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto shadow-sm">
               <CheckCircle2 className="w-10 h-10 text-blue-600" />
@@ -252,9 +249,7 @@ export function CoursePurchaseModal({
             </div>
           </div>
         ) : (
-          /* Enrollment Form with Academic Tokens */
           <form onSubmit={handlePurchase} className="space-y-4 text-xs">
-            {/* Course Summary Item */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1 min-w-0">
                 <h4 className="font-extrabold text-sm text-slate-900 leading-snug truncate">
@@ -291,7 +286,6 @@ export function CoursePurchaseModal({
               </div>
             </div>
 
-            {/* Error Message */}
             {errorMessage && (
               <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
@@ -299,7 +293,6 @@ export function CoursePurchaseModal({
               </div>
             )}
 
-            {/* Student Token Wallet Ledger */}
             <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3 shadow-2xs">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2 font-bold text-slate-800 text-xs">
@@ -324,7 +317,6 @@ export function CoursePurchaseModal({
                 </div>
               </div>
 
-              {/* Wallet Computation Rows */}
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between text-slate-600">
                   <span>Current Available Balance</span>
@@ -358,7 +350,6 @@ export function CoursePurchaseModal({
                 </div>
               </div>
 
-              {/* Status Notice */}
               {loadingWallet ? null : !isLoggedIn ? (
                 <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -400,7 +391,6 @@ export function CoursePurchaseModal({
               )}
             </div>
 
-            {/* Price Breakdown Specification */}
             <div className="space-y-1.5 pt-1 text-slate-600 text-xs">
               <div className="flex items-center justify-between">
                 <span>Individual Class Tuition Specification</span>
@@ -419,13 +409,11 @@ export function CoursePurchaseModal({
               </div>
             </div>
 
-            {/* Security Guarantee */}
             <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 pt-1">
               <ShieldCheck className="w-4 h-4 text-blue-600" />
               <span>Instant Digital Access • 30-Day Academic Guarantee • Zero Processing Fees</span>
             </div>
 
-            {/* Action Buttons */}
             <div className="pt-2 flex items-center justify-end gap-2">
               <Button
                 type="button"

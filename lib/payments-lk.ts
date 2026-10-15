@@ -7,7 +7,7 @@ export interface PaymentsLkCustomer {
 }
 
 export interface CreateCheckoutParams {
-  amountCents: number; // e.g. 720000 for Rs. 7,200.00
+  amountCents: number;
   description: string;
   reference?: string;
   customer?: PaymentsLkCustomer;
@@ -55,39 +55,25 @@ export interface WebhookEvent<T = any> {
 const PAYMENTS_LK_API_URL =
   process.env.PAYMENTS_LK_API_URL || "https://api.payments.lk/v1";
 
-/**
- * Returns the configured Payments.lk secret key (sk_test_... or sk_live_...)
- */
 export function getPaymentsLkSecretKey(): string | null {
   return process.env.PAYMENTS_LK_SECRET_KEY || null;
 }
 
-/**
- * Returns the configured Payments.lk webhook signing secret
- */
 export function getPaymentsLkWebhookSecret(): string | null {
   return process.env.PAYMENTS_LK_WEBHOOK_SECRET || null;
 }
 
-/**
- * Check whether Payments.lk is properly configured with an API key
- */
 export function isPaymentsLkConfigured(): boolean {
   const key = getPaymentsLkSecretKey();
   return Boolean(key && key.trim().length > 0);
 }
 
-/**
- * Create a hosted checkout session on Payments.lk
- * POST https://api.payments.lk/v1/checkouts
- */
 export async function createPaymentsLkCheckout(
   params: CreateCheckoutParams
 ): Promise<CheckoutResponse> {
   const secretKey = getPaymentsLkSecretKey();
 
   if (!secretKey) {
-    // If not configured, throw a clear actionable error or allow simulation
     throw new Error(
       "PAYMENTS_LK_SECRET_KEY is not configured in environment variables. Obtain your sandbox key (sk_test_...) from https://payments.lk/developers"
     );
@@ -144,10 +130,6 @@ export async function createPaymentsLkCheckout(
   return data as CheckoutResponse;
 }
 
-/**
- * Retrieve an existing checkout session from Payments.lk
- * GET https://api.payments.lk/v1/checkouts/:id
- */
 export async function getPaymentsLkCheckout(
   checkoutId: string
 ): Promise<CheckoutResponse> {
@@ -172,10 +154,6 @@ export async function getPaymentsLkCheckout(
   return data as CheckoutResponse;
 }
 
-/**
- * Retrieve an individual payment record from Payments.lk
- * GET https://api.payments.lk/v1/payments/:id
- */
 export async function getPaymentsLkPayment(paymentId: string): Promise<any> {
   const secretKey = getPaymentsLkSecretKey();
   if (!secretKey) {
@@ -198,11 +176,6 @@ export async function getPaymentsLkPayment(paymentId: string): Promise<any> {
   return data;
 }
 
-/**
- * Verify webhook signature from Payments.lk using HMAC-SHA256
- * Signature format: "t=1726400000,v1=<hex>"
- * Tolerance default: 300 seconds (5 minutes)
- */
 export function verifyPaymentsLkWebhookSignature(
   header: string | null | undefined,
   rawBody: string,
@@ -223,7 +196,6 @@ export function verifyPaymentsLkWebhookSignature(
     const t = Number(parts.t);
     if (!t || isNaN(t)) return false;
 
-    // Reject events outside tolerance window to prevent replay attacks
     const nowInSeconds = Math.floor(Date.now() / 1000);
     if (Math.abs(nowInSeconds - t) > toleranceSeconds) {
       console.warn("Payments.lk webhook timestamp exceeds tolerance:", {

@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check student academic level (O/L vs A/L) for tiered token pack pricing
       const isOL =
         (user as any).academicLevel === "OL" ||
         user.headline?.includes("O/L") ||
@@ -83,7 +82,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if already enrolled
       const existingEnrollment = await prisma.enrollment.findUnique({
         where: {
           userId_courseId: {
@@ -110,7 +108,6 @@ export async function POST(request: NextRequest) {
           ? Number((course as any).olPrice)
           : Number(course.price) || 10;
 
-      // Convert course token price to LKR (1 Token = ~Rs. 1,200)
       const courseLkrPrice = Math.max(1, effectiveCourseTokens * 1200);
       amountCents = Math.round(courseLkrPrice * 100);
       description = `PulseEDU Enrollment: ${course.title}${isOL ? " (O/L Tier)" : ""}`;
@@ -129,10 +126,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Unique payment reference
     const reference = `EDU-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 
-    // Target return and cancel URLs
     const successRedirectUrl =
       returnUrl ||
       `${origin}/payments/success?reference=${reference}`;
@@ -140,7 +135,6 @@ export async function POST(request: NextRequest) {
       cancelUrl ||
       `${origin}/payments/cancel?reference=${reference}`;
 
-    // Create DB Payment record
     const payment = await prisma.payment.create({
       data: {
         reference,
@@ -155,7 +149,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Check if Payments.lk API key is active
     if (isPaymentsLkConfigured()) {
       try {
         const checkout = await createPaymentsLkCheckout({
@@ -171,7 +164,6 @@ export async function POST(request: NextRequest) {
           idempotencyKey: reference,
         });
 
-        // Update payment with checkout info
         await prisma.payment.update({
           where: { id: payment.id },
           data: {
@@ -196,7 +188,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If API key is not yet set in .env, offer interactive sandbox test checkout
     const mockCheckoutUrl = `${origin}/payments/sandbox-checkout?reference=${reference}`;
     await prisma.payment.update({
       where: { id: payment.id },

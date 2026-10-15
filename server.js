@@ -3,10 +3,8 @@ const next = require("next");
 const { WebSocketServer, WebSocket } = require("ws");
 const { loadEnvConfig } = require("@next/env");
 
-// Load .env and .env.local configuration
 loadEnvConfig(process.cwd());
 
-// Default to production mode on VPS unless explicitly specified as development
 const dev = process.env.NODE_ENV === "development" || process.env.npm_lifecycle_event === "dev";
 if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = dev ? "development" : "production";
@@ -30,14 +28,12 @@ app.prepare().then(() => {
     }
   });
 
-  // ─── Real-Time WebSocket Server Setup ─────────────────────────────────────
   const wss = new WebSocketServer({ noServer: true });
   const clients = new Set();
 
   global.lmsWsServer = wss;
   global.lmsWsClients = clients;
 
-  // Broadcast function attached globally so lib/events.ts can dispatch instantly
   const broadcastWs = (payload) => {
     if (!clients || clients.size === 0) return;
     const data = JSON.stringify(payload);
@@ -56,7 +52,6 @@ app.prepare().then(() => {
 
   global.lmsWsBroadcast = broadcastWs;
 
-  // Keep alive heartbeat: pings connected clients every 25 seconds
   const heartbeatInterval = setInterval(() => {
     for (const ws of clients) {
       if (!ws.isAlive) {
@@ -83,7 +78,6 @@ app.prepare().then(() => {
     ws.isAlive = true;
     clients.add(ws);
 
-    // Extract user session cookie if present
     try {
       const cookieHeader = req.headers.cookie;
       if (cookieHeader) {
@@ -105,10 +99,8 @@ app.prepare().then(() => {
         }
       }
     } catch {
-      // Ignore invalid session cookies during WS handshake
     }
 
-    // Send connection greeting
     try {
       ws.send(
         JSON.stringify({
@@ -144,7 +136,6 @@ app.prepare().then(() => {
           return;
         }
       } catch {
-        // Ignore unparseable frames
       }
     });
 
@@ -158,7 +149,6 @@ app.prepare().then(() => {
     });
   });
 
-  // Handle WebSocket HTTP upgrades on /ws and /api/ws
   server.on("upgrade", (req, socket, head) => {
     try {
       const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
@@ -168,7 +158,6 @@ app.prepare().then(() => {
           wss.emit("connection", ws, req);
         });
       }
-      // Leave all other upgrade paths (e.g. Next.js HMR) to Next.js
     } catch (err) {
       console.error("[server] Upgrade exception:", err);
       socket.destroy();
@@ -180,7 +169,6 @@ app.prepare().then(() => {
     console.log(`> Native WebSocket server attached at ws://${hostname}:${port}/ws`);
   });
 
-  // Graceful shutdown handling
   const handleShutdown = (signal) => {
     console.log(`\n> Received ${signal}. Closing server gracefully...`);
     clearInterval(heartbeatInterval);

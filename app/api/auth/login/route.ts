@@ -49,7 +49,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Safely sync default admin from .env
     try {
       await syncDefaultAdminFromEnv();
     } catch (syncErr) {
@@ -83,12 +82,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Require email verification before students or tutors can access the LMS.
     if ((user.role === "STUDENT" || user.role === "TUTOR" || (user.role as any) === "INSTRUCTOR") && !user.emailVerified) {
       let emailDispatched = false;
 
       try {
-        // Prevent spamming Resend if user clicks login repeatedly within 60 seconds
         const recentToken = await prisma.emailVerificationToken.findFirst({
           where: {
             userId: user.id,
@@ -100,12 +97,10 @@ export async function POST(request: Request) {
         });
 
         if (!recentToken) {
-          // Invalidate old unused tokens for this user
           await prisma.emailVerificationToken.deleteMany({
             where: { userId: user.id, used: false },
           });
 
-          // Generate a secure 24-hour verification token
           const verificationToken = crypto.randomBytes(32).toString("hex");
           const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -117,7 +112,6 @@ export async function POST(request: Request) {
             },
           });
 
-          // Dispatch verification email (e.g., when tutor logs in for the 1st time)
           const emailResult = await sendVerificationEmail({
             email: user.email,
             name: user.name,
@@ -150,7 +144,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Seamlessly upgrade legacy/plaintext password hashes to cryptographic scrypt
     if (isLegacyPasswordHash(user.passwordHash)) {
       try {
         const upgradedHash = hashPassword(password);
@@ -186,7 +179,6 @@ export async function POST(request: Request) {
       redirectTo: redirectPath,
     });
 
-    // Attach HMAC-signed HttpOnly session token + client UI sync cookies
     attachSessionCookies(response, user);
 
     return response;

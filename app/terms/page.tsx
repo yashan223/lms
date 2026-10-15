@@ -28,7 +28,6 @@ export default function TermsPage() {
       <Navbar />
 
       <main className="flex-1 bg-slate-50/60 pb-16">
-        {/* Header Hero */}
         <section className="bg-gradient-to-b from-[#0c2461] to-[#12366b] text-white py-14 px-4 sm:px-6 lg:px-8 shadow-inner">
           <div className="max-w-4xl mx-auto space-y-4 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-blue-200">
@@ -55,9 +54,7 @@ export default function TermsPage() {
           </div>
         </section>
 
-        {/* Content Container */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
-          {/* Navigation Pill Bar */}
           <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-md flex items-center gap-2 mb-8">
             <button
               type="button"
@@ -93,7 +90,6 @@ export default function TermsPage() {
           </div>
 
           <div className="space-y-8">
-            {/* SECTION 1: TERMS & CONDITIONS */}
             <section
               id="terms"
               className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-xs space-y-6"
@@ -195,7 +191,6 @@ export default function TermsPage() {
               </div>
             </section>
 
-            {/* SECTION 2: NO-REFUND POLICY */}
             <section
               id="refund-policy"
               className="bg-white rounded-3xl border border-blue-200 p-6 sm:p-10 shadow-xs space-y-6"
@@ -294,7 +289,6 @@ export default function TermsPage() {
               </div>
             </section>
 
-            {/* Bottom Registration CTA */}
             <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
               <div className="space-y-1 text-center sm:text-left">
                 <h3 className="text-lg font-bold">Ready to Start Learning?</h3>

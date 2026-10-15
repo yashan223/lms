@@ -15,7 +15,6 @@ interface SessionPayload {
   exp: number;
 }
 
-// Allowed CORS origins for pulseedu.online, subdomains, and local dev
 const ALLOWED_ORIGIN_REGEX =
   /^(https?:\/\/(?:[a-z0-9-]+\.)*pulseedu\.online(:[0-9]+)?|https?:\/\/(?:[a-z0-9-]+\.)*xoxod33p\.tech(:[0-9]+)?|http:\/\/localhost:[0-9]+|http:\/\/127\.0\.0\.1:[0-9]+)$/i;
 
@@ -104,7 +103,6 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const origin = request.headers.get("origin");
 
-  // ── 0. Handle CORS preflight OPTIONS requests for API routes ──────────────
   if (pathname.startsWith("/api/")) {
     const corsHeaders = getCorsHeaders(origin);
 
@@ -116,7 +114,6 @@ export async function middleware(request: NextRequest) {
       return applySecurityHeaders(optRes);
     }
 
-    // CSRF Guard: For state-modifying requests, verify origin matches allowed domains
     const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
     const isWebhook = pathname.startsWith("/api/webhooks/");
     if (isMutation && origin && !isWebhook) {
@@ -138,7 +135,6 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // For other API requests, process downstream and attach CORS + Security headers
     const response = NextResponse.next();
     Object.entries(corsHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
@@ -149,7 +145,6 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = sessionCookie ? await verifySessionTokenEdge(sessionCookie) : null;
 
-  // 1. Protect /admin routes
   if (pathname.startsWith("/admin")) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
@@ -162,7 +157,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Protect /tutor routes
   if (pathname.startsWith("/tutor")) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
@@ -174,7 +168,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Protect /dashboard routes
   if (pathname.startsWith("/dashboard")) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
@@ -183,7 +176,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 4. Redirect already authenticated users away from auth pages
   if (pathname === "/login" || pathname === "/register") {
     if (request.nextUrl.searchParams.has("logout")) {
       const cleanUrl = new URL(pathname, request.url);

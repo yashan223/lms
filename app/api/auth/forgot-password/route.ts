@@ -9,7 +9,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const rateLimit = checkRateLimit(`forgot-pass:${ip}`, 3, 300); // 3 requests per 5 minutes
+    const rateLimit = checkRateLimit(`forgot-pass:${ip}`, 3, 300);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(

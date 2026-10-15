@@ -33,7 +33,6 @@ export interface Tutor {
   studentsCount?: number;
 }
 
-// Alias for backward compatibility if needed
 export type Instructor = Tutor;
 
 export interface Course {
@@ -58,7 +57,7 @@ export interface Course {
   bestseller?: boolean;
   tutorId?: string;
   tutor?: Tutor;
-  instructor?: Tutor; // backward compatibility
+  instructor?: Tutor;
   tags: string[];
   skills: string[];
 }

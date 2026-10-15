@@ -7,10 +7,6 @@ import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/auth/verify-email?token=...
- * Validates the email verification token, marks user as verified, and creates an authenticated session.
- */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -36,7 +32,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (verificationRecord.used) {
-      // If the user's email is already verified, gracefully treat as a successful authentication
       if (verificationRecord.user.emailVerified) {
         const user = verificationRecord.user;
         const safeUser = {
@@ -81,7 +76,6 @@ export async function GET(request: NextRequest) {
 
     const user = verificationRecord.user;
 
-    // Mark email as verified and token as used
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
@@ -110,7 +104,6 @@ export async function GET(request: NextRequest) {
       redirectTo: user.role === "TUTOR" ? "/tutor" : "/dashboard",
     });
 
-    // Automatically establish authenticated session upon successful verification
     attachSessionCookies(response, user);
 
     return response;
@@ -123,10 +116,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * POST /api/auth/verify-email
- * Resends a fresh email verification link to the academic account email address.
- */
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
@@ -157,7 +146,6 @@ export async function POST(request: NextRequest) {
       where: { email: normalizedEmail },
     });
 
-    // If user does not exist or is already verified, return success to prevent email enumeration
     if (!user) {
       return NextResponse.json({
         success: true,
@@ -174,12 +162,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Invalidate old unused tokens for this user
     await prisma.emailVerificationToken.deleteMany({
       where: { userId: user.id, used: false },
     });
 
-    // Create fresh 24-hour verification token
     const newToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -191,7 +177,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Dispatch email via Resend
     const emailResult = await sendVerificationEmail({
       email: user.email,
       name: user.name,

@@ -1,4 +1,3 @@
-// High-performance sliding window rate limiter for security-sensitive endpoints
 
 interface RateLimitRecord {
   timestamps: number[];
@@ -6,12 +5,10 @@ interface RateLimitRecord {
 
 const rateLimitStore = new Map<string, RateLimitRecord>();
 
-// Cleanup stale entries every 5 minutes to prevent memory leaks
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now();
     for (const [key, record] of rateLimitStore.entries()) {
-      // Retain entries active within the last 15 minutes
       const activeTimestamps = record.timestamps.filter((ts) => now - ts < 15 * 60 * 1000);
       if (activeTimestamps.length === 0) {
         rateLimitStore.delete(key);
@@ -28,12 +25,6 @@ export interface RateLimitResult {
   resetSeconds: number;
 }
 
-/**
- * Checks and records a rate limit hit.
- * @param key Unique key (e.g. `login:192.168.1.1` or `login:user@example.com`)
- * @param maxAttempts Maximum attempts allowed within the window
- * @param windowSeconds Window length in seconds
- */
 export function checkRateLimit(
   key: string,
   maxAttempts: number = 10,
@@ -49,7 +40,6 @@ export function checkRateLimit(
     rateLimitStore.set(key, record);
   }
 
-  // Filter timestamps within the current sliding window
   record.timestamps = record.timestamps.filter((ts) => ts > cutoff);
 
   if (record.timestamps.length >= maxAttempts) {
@@ -62,7 +52,6 @@ export function checkRateLimit(
     };
   }
 
-  // Record this attempt
   record.timestamps.push(now);
 
   return {
@@ -72,9 +61,6 @@ export function checkRateLimit(
   };
 }
 
-/**
- * Extracts a client IP from Next.js request headers
- */
 export function getClientIp(request: Request): string {
   const cfConnectingIp = request.headers.get("cf-connecting-ip");
   if (cfConnectingIp) {

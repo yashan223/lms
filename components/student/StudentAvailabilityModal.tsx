@@ -67,9 +67,8 @@ export function StudentAvailabilityModal({
   const [loading, setLoading] = useState(true);
   const [availabilities, setAvailabilities] = useState<StudentAvailabilitySlot[]>([]);
 
-  // Form states
   const [scheduleMode, setScheduleMode] = useState<"RECURRING" | "SPECIFIC">("RECURRING");
-  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [specificDate, setSpecificDate] = useState("");
   const [startTime, setStartTime] = useState("16:00");
   const [endTime, setEndTime] = useState("20:00");
@@ -261,7 +260,6 @@ export function StudentAvailabilityModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex">
       <div className="bg-white w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-200">
-        {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-200 px-8 py-5 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-[#0c2461] text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
@@ -289,13 +287,10 @@ export function StudentAvailabilityModal({
           </button>
         </div>
 
-        {/* Body — two-column layout */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* LEFT COLUMN: form */}
           <div className="flex-1 flex flex-col overflow-y-auto px-8 py-6 space-y-5 border-r border-slate-100">
 
-          {/* Regional Timezone Setting */}
           <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200/80 space-y-1.5">
             <div className="flex items-center justify-between text-xs font-bold text-sky-950">
               <span>Your Study Hours Regional Timezone</span>
@@ -309,7 +304,6 @@ export function StudentAvailabilityModal({
             />
           </div>
 
-          {/* Informative Alert */}
           <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2.5">
             <GraduationCap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="space-y-0.5 leading-relaxed">
@@ -319,7 +313,6 @@ export function StudentAvailabilityModal({
             </div>
           </div>
 
-        {/* Status Message */}
         {statusMsg && (
           <div
             className={`p-3 rounded-xl border text-xs flex items-center gap-2 animate-in fade-in ${
@@ -337,7 +330,6 @@ export function StudentAvailabilityModal({
           </div>
         )}
 
-        {/* Quick Presets */}
         <div className="space-y-1.5">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
             Quick Study Presets
@@ -364,7 +356,6 @@ export function StudentAvailabilityModal({
           </div>
         </div>
 
-        {/* Add Availability Form */}
         <form onSubmit={handleSaveAvailability} className="space-y-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
           <div className="font-extrabold text-xs text-slate-900 flex items-center justify-between">
             <span>Add Available Study Times</span>
@@ -485,9 +476,8 @@ export function StudentAvailabilityModal({
           </Button>
         </form>
 
-          </div>{/* end LEFT COLUMN */}
+          </div>
 
-          {/* RIGHT COLUMN: current slots */}
           <div className="w-[400px] shrink-0 flex flex-col overflow-hidden px-8 py-6 bg-slate-50/50 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-extrabold text-slate-800">
@@ -552,11 +542,10 @@ export function StudentAvailabilityModal({
                 })}
               </div>
             )}
-          </div>{/* end RIGHT COLUMN */}
+          </div>
 
-        </div>{/* end body */}
+        </div>
 
-        {/* Footer */}
         <div className="px-8 py-4 border-t border-slate-200 flex items-center justify-end shrink-0">
           <Button
             onClick={onClose}

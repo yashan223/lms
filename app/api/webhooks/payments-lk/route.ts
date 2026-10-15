@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("payments-signature");
     const webhookSecret = getPaymentsLkWebhookSecret();
 
-    // Verify signature if secret is configured
     if (webhookSecret) {
       const isValid = verifyPaymentsLkWebhookSignature(
         signature,
@@ -59,7 +58,6 @@ export async function POST(request: NextRequest) {
     const reference = data.reference || data.orderId || data.checkoutReference;
     const checkoutId = data.checkoutId || (type.startsWith("checkout.") ? data.id : undefined);
 
-    // Find the corresponding payment in our database
     const payment = await prisma.payment.findFirst({
       where: {
         OR: [
@@ -77,7 +75,6 @@ export async function POST(request: NextRequest) {
         reference,
         checkoutId,
       });
-      // Return 200 so Payments.lk doesn't keep retrying unknown non-existent orders
       return NextResponse.json(
         { received: true, message: "Payment record not found in system" },
         { status: 200 }

@@ -122,7 +122,6 @@ export function TrialRequestModal({
     }
   }, []);
 
-  // Fetch tutor slots helper
   const fetchTutorSlots = (
     tutorIdParam?: string,
     courseIdParam?: string,
@@ -192,7 +191,6 @@ export function TrialRequestModal({
     }
   };
 
-  // Check student availability & load initial data
   useEffect(() => {
     if (isOpen) {
       if (initialCourseId) {
@@ -221,7 +219,6 @@ export function TrialRequestModal({
       setCreatedTrial(null);
       setAvailSuccessMsg(null);
 
-      // Check student study availability
       setCheckingAvailability(true);
       const studentQuery = currentUser?.id ? `?studentId=${currentUser.id}` : "";
       fetch(`/api/student/availability${studentQuery}`)
@@ -239,7 +236,6 @@ export function TrialRequestModal({
           }
         })
         .catch(() => {
-          // If check fails, default to request trial but handle 428 on submit
           setStep("REQUEST_TRIAL");
         })
         .finally(() => {
@@ -247,7 +243,6 @@ export function TrialRequestModal({
           fetchTutorSlots();
         });
 
-      // Check student trial stats & booked tutors
       const trialsQuery = currentUser?.id ? `?studentId=${currentUser.id}` : "";
       fetch(`/api/trials${trialsQuery}`)
         .then((r) => r.json())
@@ -278,7 +273,6 @@ export function TrialRequestModal({
     }
   }, [isOpen, initialCourseId, allCourses, courseId, initialTutorId, currentUser]);
 
-  // Quick preset apply handler
   const handleApplyPreset = async (presetType: string) => {
     try {
       setSavingAvailability(true);
@@ -298,7 +292,6 @@ export function TrialRequestModal({
         throw new Error(data.error || "Failed to save study availability.");
       }
 
-      // Re-fetch student availability to verify
       const studentQuery = currentUser?.id ? `?studentId=${currentUser.id}` : "";
       const checkRes = await fetch(`/api/student/availability${studentQuery}`);
       const checkData = await checkRes.json();
@@ -501,7 +494,6 @@ export function TrialRequestModal({
                 Select a 1-Click Quick Study Schedule:
               </span>
 
-              {/* Preset 1: Weekday Evenings */}
               <div className="p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-3 bg-white shadow-xs">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -523,7 +515,6 @@ export function TrialRequestModal({
                 </Button>
               </div>
 
-              {/* Preset 2: Weekend Intensives */}
               <div className="p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-3 bg-white shadow-xs">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -649,7 +640,6 @@ export function TrialRequestModal({
               </div>
             )}
 
-            {/* Availability Status Badge */}
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-blue-600" />
@@ -676,7 +666,6 @@ export function TrialRequestModal({
               </div>
             )}
 
-            {/* Trial Limit Notice Banners */}
             {isMaxTrialsReached ? (
               <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">
                 <div className="font-bold flex items-center gap-1.5 text-red-800">
@@ -709,7 +698,6 @@ export function TrialRequestModal({
               </div>
             )}
 
-            {/* Subject / Individual Class Selection or Display */}
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-1.5">
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
@@ -769,7 +757,6 @@ export function TrialRequestModal({
               )}
             </div>
 
-            {/* Regional Timezone Selector */}
             <div className="p-3 rounded-xl bg-sky-50/60 border border-sky-200/80 space-y-1.5">
               <div className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center justify-between">
                 <span>Your Regional Timezone</span>
@@ -786,7 +773,6 @@ export function TrialRequestModal({
               />
             </div>
 
-            {/* 3 Preferred Class Times */}
             <div className="space-y-3 p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -840,7 +826,6 @@ export function TrialRequestModal({
                 </div>
               )}
 
-              {/* Slot 1 Input */}
               <div
                 className={`p-2.5 rounded-xl border transition-all ${
                   activeSlotTarget === 1 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
@@ -868,7 +853,6 @@ export function TrialRequestModal({
                 />
               </div>
 
-              {/* Slot 2 Input */}
               <div
                 className={`p-2.5 rounded-xl border transition-all ${
                   activeSlotTarget === 2 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"
@@ -896,7 +880,6 @@ export function TrialRequestModal({
                 />
               </div>
 
-              {/* Slot 3 Input */}
               <div
                 className={`p-2.5 rounded-xl border transition-all ${
                   activeSlotTarget === 3 ? "bg-white border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200"

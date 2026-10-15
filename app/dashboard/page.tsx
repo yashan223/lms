@@ -179,7 +179,6 @@ function DashboardContent() {
   }, [router]);
 
   const userRole: "STUDENT" | "TUTOR" | "INSTRUCTOR" | "ADMIN" = user?.role || "STUDENT";
-  // Single source of truth: user's own timezone (from DB profile), fallback to browser, then UTC
   const userTimezone: string = user?.timezone || (typeof window !== "undefined" ? getUserBrowserTimezone() : DEFAULT_TIMEZONE) || DEFAULT_TIMEZONE;
 
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
@@ -357,7 +356,6 @@ function DashboardContent() {
       setOnlineUsers(data.onlineUsers || []);
       setTimelineEvents(data.timelineEvents || []);
 
-      // Fetch dynamic packages for wallet purchase
       try {
         const bundlesRes = await fetch("/api/bundles");
         if (bundlesRes.ok) {
@@ -371,7 +369,6 @@ function DashboardContent() {
         }
       } catch {}
 
-      // Fetch student trial stats
       try {
         const trialsRes = await fetch("/api/trials");
         if (trialsRes.ok) {
@@ -1058,7 +1055,6 @@ function DashboardContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           <aside className="lg:col-span-3 space-y-4 order-2 lg:order-1">
-            {/* Student Navigation */}
             <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
                 Navigation
@@ -1126,7 +1122,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Student Token / Hours Wallet Widget */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -1222,8 +1217,6 @@ function DashboardContent() {
                 </button>
               </div>
             )}
-
-
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -2162,7 +2155,6 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Buy Tokens / Learning Hours Top-Up Modal */}
       {showBuyTokensModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 space-y-5">
@@ -2279,11 +2271,9 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Purchasing & Token Transaction History Modal */}
       {showPurchaseHistoryModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 space-y-5 max-h-[90vh] flex flex-col">
-            {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-700 flex items-center justify-center shadow-2xs">
@@ -2306,7 +2296,6 @@ function DashboardContent() {
               </button>
             </div>
 
-            {/* Quick Summary Cards */}
             <div className="grid grid-cols-3 gap-3 shrink-0">
               <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80">
                 <div className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">Available Balance</div>
@@ -2341,7 +2330,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Filter Tabs */}
             <div className="flex items-center justify-between gap-2 shrink-0 pt-1">
               <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-bold">
                 <button
@@ -2389,7 +2377,6 @@ function DashboardContent() {
               </Button>
             </div>
 
-            {/* Transaction List */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 min-h-[220px]">
               {tokenTransactions.length === 0 ? (
                 <div className="py-12 text-center space-y-3">
@@ -2502,7 +2489,6 @@ function DashboardContent() {
               )}
             </div>
 
-            {/* Footer */}
             <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center justify-between text-xs text-slate-600 shrink-0">
               <div className="flex items-center gap-1.5">
                 <Receipt className="w-3.5 h-3.5 text-slate-500" />

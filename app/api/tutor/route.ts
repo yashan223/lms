@@ -222,7 +222,6 @@ export async function POST(request: NextRequest) {
             category: category.trim(),
             subjectCode: subjectCode?.trim() || null,
             thumbnail: thumbnail !== undefined ? (thumbnail?.trim() || null) : existing.thumbnail,
-            // Class tokens can only be set or changed by Admin
             price: isAdmin && Number.isFinite(tokenPrice) ? tokenPrice : existing.price,
             olPrice: isAdmin ? (olPrice !== undefined ? olTokenPrice : (existing as any).olPrice) : (existing as any).olPrice,
             level: (level as CourseLevel) || existing.level,
@@ -247,7 +246,6 @@ export async function POST(request: NextRequest) {
           category: category.trim(),
           subjectCode: subjectCode?.trim() || null,
           thumbnail: thumbnail?.trim() || null,
-          // Class tokens are set by Admin upon approval/review; tutors cannot set them on creation
           price: isAdmin && Number.isFinite(tokenPrice) ? tokenPrice : 0,
           olPrice: isAdmin ? olTokenPrice : null,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
@@ -425,7 +423,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Fetch existing tutor to preserve admin-configured hourly rate
       const existingTutor = await prisma.user.findUnique({
         where: { id: tutorId },
         select: { bio: true },
@@ -443,7 +440,6 @@ export async function POST(request: NextRequest) {
         } catch {}
       }
 
-      // Ensure hourlyRate cannot be modified by tutor (must retain admin-set rate)
       let finalBio = bio ? bio.trim() : undefined;
       if (finalBio) {
         try {
@@ -725,7 +721,6 @@ export async function POST(request: NextRequest) {
       const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
       const link = getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
 
-      // Resolve studentId if not yet set
       let resolvedStudentId = existingTrial.studentId;
       if (!resolvedStudentId && existingTrial.studentEmail) {
         const studentUser = await prisma.user.findUnique({
@@ -751,7 +746,6 @@ export async function POST(request: NextRequest) {
         include: { course: true, tutor: true, student: true },
       });
 
-      // Create calendar event so student sees it on Timeline, Upcoming, and Calendar
       const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updatedTrial.course?.subjectCode || "";
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
@@ -766,7 +760,6 @@ export async function POST(request: NextRequest) {
 
       const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;
 
-      // Delete any prior trial event for this student/course to prevent duplicates
       await prisma.event.deleteMany({
         where: {
           OR: [
@@ -791,7 +784,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Notify student of confirmation
       if (studentIdToMatch) {
         const dateStr = targetDate.toLocaleDateString("en-US", {
           weekday: "short", month: "short", day: "numeric",
@@ -945,7 +937,6 @@ export async function POST(request: NextRequest) {
 
       const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;
 
-      // Update existing event or create if not found
       const existingEvents = await prisma.event.findMany({
         where: {
           OR: [
@@ -984,7 +975,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Notify student of reschedule
       if (studentIdToMatch) {
         const dateStr = parsedDate.toLocaleDateString("en-US", {
           weekday: "short", month: "short", day: "numeric",

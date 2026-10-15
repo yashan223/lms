@@ -101,7 +101,6 @@ export async function POST(request: Request) {
       ? getRegionalTimezone(country).id
       : DEFAULT_TIMEZONE;
 
-    // 1. Create the new student account with unverified email status
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
@@ -115,7 +114,7 @@ export async function POST(request: Request) {
         guardianPhone: guardianPhone ? guardianPhone.trim() : null,
         role: Role.STUDENT,
         academicLevel: qualification?.includes("O/L") || qualification?.includes("IGCSE") ? "OL" : "AL",
-        emailVerified: null, // Student must verify via email!
+        emailVerified: null,
         headline: null,
         bio: null,
         avatar: null,
@@ -127,7 +126,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // 2. Generate a secure 24-hour verification token
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -139,7 +137,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // 3. Dispatch verification email via Resend
     let emailSent = false;
     let emailNotice: string | undefined;
     try {
@@ -157,7 +154,6 @@ export async function POST(request: Request) {
       emailNotice = err?.message;
     }
 
-    // Return redirect to verify-email without auto-session
     return NextResponse.json({
       success: true,
       email: newUser.email,

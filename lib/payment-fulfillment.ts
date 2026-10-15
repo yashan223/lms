@@ -1,13 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 
-/**
- * Idempotently fulfills a successful payment:
- * - Credits the student's TokenWallet
- * - Creates a TokenTransaction ledger row
- * - Creates student in-app notifications
- * - Or enrolls into the course if itemType is COURSE
- */
 export async function fulfillPayment(
   paymentIdOrReference: string,
   paymentMethod?: string,
@@ -31,14 +24,12 @@ export async function fulfillPayment(
     return { success: false, error: "Payment not found" };
   }
 
-  // Check if this payment reference was already fulfilled in TokenTransaction or Enrollment
   if (payment.itemType === "TOKEN_BUNDLE") {
     const existingTx = await prisma.tokenTransaction.findFirst({
       where: { referenceId: payment.reference },
     });
 
     if (existingTx) {
-      // Already credited to wallet! Ensure payment status is SUCCEEDED
       if (payment.status !== "SUCCEEDED") {
         await prisma.payment.update({
           where: { id: payment.id },
@@ -71,7 +62,6 @@ export async function fulfillPayment(
   const tokensToAdd = payment.tokens || 0;
 
   await prisma.$transaction(async (tx) => {
-    // 1. Mark payment as SUCCEEDED
     await tx.payment.update({
       where: { id: payment.id },
       data: {
@@ -81,7 +71,6 @@ export async function fulfillPayment(
       },
     });
 
-    // 2. Fulfill based on itemType
     if (payment.itemType === "TOKEN_BUNDLE" && tokensToAdd > 0) {
       let wallet = await tx.tokenWallet.findUnique({
         where: { userId: payment.userId },
@@ -96,7 +85,6 @@ export async function fulfillPayment(
         });
       }
 
-      // Credit student balance
       await tx.tokenWallet.update({
         where: { id: wallet.id },
         data: {
@@ -104,7 +92,6 @@ export async function fulfillPayment(
         },
       });
 
-      // Add to official audit ledger
       await tx.tokenTransaction.create({
         data: {
           walletId: wallet.id,
@@ -115,7 +102,6 @@ export async function fulfillPayment(
         },
       });
 
-      // Notification
       await tx.notification.create({
         data: {
           userId: payment.userId,
@@ -174,7 +160,6 @@ export async function fulfillPayment(
     }
   });
 
-  // Broadcast real-time LMS sync events
   try {
     broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: payment.userId });
     broadcastLMSEvent("ENROLLMENTS_CHANGED");

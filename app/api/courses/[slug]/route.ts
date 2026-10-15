@@ -79,7 +79,6 @@ export async function GET(
         academicLevel = (auth.user as any).academicLevel === "OL" || auth.user.headline?.includes("O/L") || auth.user.headline?.includes("IGCSE") ? "OL" : "AL";
       }
     } catch {
-      // Unauthenticated visitor
     }
 
     return NextResponse.json(

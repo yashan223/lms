@@ -4,7 +4,7 @@ import { LMSEventPayload, eventEmitter } from "@/lib/events";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const PING_INTERVAL_MS = 20000; // SSE keepalive ping every 20 seconds
+const PING_INTERVAL_MS = 20000;
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -29,7 +29,6 @@ export async function GET(request: Request) {
 
       request.signal.addEventListener("abort", cleanup);
 
-      // ── Event listener for instant in-process SSE dispatch ───────────────────
       const onEvent = (payload: LMSEventPayload) => {
         if (closed) return;
         try {
@@ -41,7 +40,6 @@ export async function GET(request: Request) {
 
       eventEmitter.on("lms_event", onEvent);
 
-      // ── Initial PING ─────────────────────────────────────────────────────────
       try {
         controller.enqueue(encode({ type: "PING", timestamp: Date.now() }));
       } catch {
@@ -49,7 +47,6 @@ export async function GET(request: Request) {
         return;
       }
 
-      // ── Catch up on any events since `since` timestamp ───────────────────────
       try {
         const missedEvents = await prisma.systemEvent.findMany({
           where: { createdAt: { gt: since } },
@@ -70,7 +67,6 @@ export async function GET(request: Request) {
         console.warn("[events/sse] Error fetching missed events:", err);
       }
 
-      // ── Keepalive Ping Timer ─────────────────────────────────────────────────
       const pingTimer = setInterval(() => {
         if (closed) {
           clearInterval(pingTimer);

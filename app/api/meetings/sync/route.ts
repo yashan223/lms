@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Trial Request Sync
     if (trialId) {
       const trial = await prisma.trialRequest.findUnique({
         where: { id: trialId },

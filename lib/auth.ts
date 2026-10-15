@@ -9,16 +9,11 @@ const SESSION_SECRET =
   "edupulse_academic_secure_session_secret_key_v1_2026";
 
 export const SESSION_COOKIE_NAME = "edupulse_session";
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
-// Validate secret on startup
 if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET && !process.env.AUTH_SECRET) {
   console.warn("⚠️ SECURITY WARNING: SESSION_SECRET or AUTH_SECRET is not set in environment variables!");
 }
-
-// ==========================================
-// 1. Cryptographic Password Hashing (scrypt)
-// ==========================================
 
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -45,7 +40,6 @@ export function verifyPassword(password: string, storedHash: string): boolean {
     }
   }
 
-  // Legacy comparison for seeded/initial plain text passwords
   try {
     const a = Buffer.from(password);
     const b = Buffer.from(storedHash);
@@ -61,10 +55,6 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 export function isLegacyPasswordHash(storedHash: string): boolean {
   return !storedHash || !storedHash.startsWith("scrypt:");
 }
-
-// ==========================================
-// 2. Tamper-Proof HMAC Session Tokens
-// ==========================================
 
 export interface SessionPayload {
   userId: string;
@@ -118,7 +108,7 @@ export function verifySessionToken(token: string): SessionPayload | null {
 
     const now = Math.floor(Date.now() / 1000);
     if (payload.exp < now) {
-      return null; // Expired
+      return null;
     }
 
     return payload;
@@ -126,10 +116,6 @@ export function verifySessionToken(token: string): SessionPayload | null {
     return null;
   }
 }
-
-// ==========================================
-// 3. Centralized RBAC Authentication Guard
-// ==========================================
 
 export type AuthUser = {
   id: string;
@@ -176,7 +162,6 @@ export async function getAuthenticatedUser(
     return { error: "Unauthorized: Invalid or expired session", status: 401 };
   }
 
-  // Verify user still exists in DB
   const dbUser = await prisma.user.findUnique({
     where: { id: sessionPayload.userId },
     select: USER_SELECT_FIELDS,
@@ -186,7 +171,6 @@ export async function getAuthenticatedUser(
     return { error: "Unauthorized: User account not found or deleted", status: 401 };
   }
 
-  // Verify Role match
   if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(dbUser.role)) {
     return { error: "Forbidden: Access denied for role", status: 403 };
   }
@@ -197,10 +181,6 @@ export async function getAuthenticatedUser(
   };
 }
 
-// ==========================================
-// 4. Session Cookie Helpers
-// ==========================================
-
 export function attachSessionCookies(
   response: NextResponse,
   user: { id: string; email: string; role: Role }
@@ -208,7 +188,6 @@ export function attachSessionCookies(
   const token = createSessionToken(user);
   const isProd = process.env.NODE_ENV === "production";
 
-  // Secure HttpOnly session cookie
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     path: "/",
     httpOnly: true,
@@ -217,7 +196,6 @@ export function attachSessionCookies(
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
 
-  // Client-readable non-sensitive UI sync cookies
   response.cookies.set("edupulse_user_role", user.role, {
     path: "/",
     httpOnly: false,
@@ -238,7 +216,6 @@ export function attachSessionCookies(
 export function clearSessionCookies(response: NextResponse): void {
   const isProd = process.env.NODE_ENV === "production";
 
-  // 1. Session Token (HTTP-only) - Must match path, sameSite, secure, and httpOnly to ensure RFC 6265 browser deletion
   response.cookies.delete(SESSION_COOKIE_NAME);
   response.cookies.set(SESSION_COOKIE_NAME, "", {
     path: "/",
@@ -249,7 +226,6 @@ export function clearSessionCookies(response: NextResponse): void {
     expires: new Date(0),
   });
 
-  // 2. Client role sync cookie
   response.cookies.delete("edupulse_user_role");
   response.cookies.set("edupulse_user_role", "", {
     path: "/",
@@ -260,7 +236,6 @@ export function clearSessionCookies(response: NextResponse): void {
     expires: new Date(0),
   });
 
-  // 3. Client email sync cookie
   response.cookies.delete("edupulse_user_email");
   response.cookies.set("edupulse_user_email", "", {
     path: "/",
@@ -272,18 +247,9 @@ export function clearSessionCookies(response: NextResponse): void {
   });
 }
 
-// ==========================================
-// 5. Automatic .env Admin Synchronization
-// ==========================================
-
 let lastSyncTimestamp = 0;
-const SYNC_COOLDOWN_MS = 2000; // Throttle DB lookups to at most once per 2 seconds
+const SYNC_COOLDOWN_MS = 2000;
 
-/**
- * Automatically synchronizes the default admin user in the database
- * whenever DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, or DEFAULT_ADMIN_NAME
- * are updated in .env / environment variables.
- */
 export async function syncDefaultAdminFromEnv(force = false): Promise<void> {
   const now = Date.now();
   if (!force && now - lastSyncTimestamp < SYNC_COOLDOWN_MS) {
@@ -324,7 +290,6 @@ export async function syncDefaultAdminFromEnv(force = false): Promise<void> {
       return;
     }
 
-    // If no user exists with this specific email, check if an existing primary ADMIN exists
     const existingAdmin = await prisma.user.findFirst({
       where: { role: Role.ADMIN },
       orderBy: { createdAt: "asc" },
@@ -343,7 +308,6 @@ export async function syncDefaultAdminFromEnv(force = false): Promise<void> {
       return;
     }
 
-    // If no admin exists at all in the database, create one
     await prisma.user.create({
       data: {
         email: envEmail,

@@ -42,7 +42,6 @@ export const DEFAULT_SUBJECTS = [
 
 export const DEFAULT_SCHOOLS = DEFAULT_SUBJECTS;
 
-/** Read all academic subjects. Auto-seeds defaults if the table is empty. */
 export async function getSubjects(onlyActive = false): Promise<AcademicSubject[]> {
   try {
     let rows = await prisma.academicSchool.findMany({
@@ -50,7 +49,6 @@ export async function getSubjects(onlyActive = false): Promise<AcademicSubject[]
       orderBy: { position: "asc" },
     });
 
-    // Auto-seed defaults if table is empty
     if (rows.length === 0) {
       try {
         for (const def of DEFAULT_SUBJECTS) {
@@ -75,7 +73,6 @@ export async function getSubjects(onlyActive = false): Promise<AcademicSubject[]
     }
 
     if (rows.length > 0) {
-      // Get class counts for each subject
       const counts = await prisma.course.groupBy({
         by: ["category"],
         _count: { id: true },
@@ -100,7 +97,6 @@ export async function getSubjects(onlyActive = false): Promise<AcademicSubject[]
     console.error("[subjects] DB query error, using defaults:", err);
   }
 
-  // Graceful fallback to default subjects
   return DEFAULT_SUBJECTS.map((s, idx) => ({
     id: `default-${idx}`,
     name: s.name,
@@ -111,13 +107,11 @@ export async function getSubjects(onlyActive = false): Promise<AcademicSubject[]
   }));
 }
 
-/** Get list of subject names for category dropdowns and filter bars. */
 export async function getSubjectNames(onlyActive = true): Promise<string[]> {
   const subjects = await getSubjects(onlyActive);
   return subjects.map((s) => s.name);
 }
 
-/** Add a new academic subject. */
 export async function createSubject(data: {
   name: string;
   description?: string;
@@ -160,7 +154,6 @@ export async function createSubject(data: {
   };
 }
 
-/** Update an existing academic subject. Automatically renames existing course categories if renamed. */
 export async function updateSubject(
   id: string,
   data: {
@@ -180,7 +173,6 @@ export async function updateSubject(
     throw new Error("Subject name cannot be empty.");
   }
 
-  // If renaming, check for collisions
   if (newName !== current.name) {
     const existing = await prisma.academicSchool.findUnique({ where: { name: newName } });
     if (existing && existing.id !== id) {
@@ -190,7 +182,6 @@ export async function updateSubject(
 
   let coursesMigrated = 0;
   if (newName !== current.name) {
-    // Migrate any classes under old category to new category
     const updateResult = await prisma.course.updateMany({
       where: { category: current.name },
       data: { category: newName },
@@ -228,7 +219,6 @@ export async function updateSubject(
   };
 }
 
-/** Delete an academic subject. */
 export async function deleteSubject(
   id: string,
   reassignToCategory?: string
@@ -262,7 +252,6 @@ export async function deleteSubject(
   return { deletedId: id, affectedCourses };
 }
 
-/** Reorder subjects according to provided ID list. */
 export async function reorderSubjects(orderedIds: string[]): Promise<void> {
   await prisma.$transaction(
     orderedIds.map((id, index) =>
@@ -274,7 +263,6 @@ export async function reorderSubjects(orderedIds: string[]): Promise<void> {
   );
 }
 
-/** Reset subjects to default 4 subjects. */
 export async function resetDefaultSubjects(): Promise<AcademicSubject[]> {
   for (const def of DEFAULT_SUBJECTS) {
     await prisma.academicSchool.upsert({
@@ -295,7 +283,6 @@ export async function resetDefaultSubjects(): Promise<AcademicSubject[]> {
   return getSubjects(false);
 }
 
-// ── Backward-Compatible Aliases ──────────────────────────────────────────────
 export const getSchools = getSubjects;
 export const getSchoolNames = getSubjectNames;
 export const createSchool = createSubject;

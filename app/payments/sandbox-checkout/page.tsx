@@ -51,7 +51,6 @@ function SandboxCheckoutContent() {
   const [paymentData, setPaymentData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Card form state
   const [selectedCardIdx, setSelectedCardIdx] = useState(0);
   const [expiryOption, setExpiryOption] = useState<"APPROVED" | "DECLINED" | "EXPIRED">("APPROVED");
   const [cardHolder, setCardHolder] = useState("Alex Perera");
@@ -108,7 +107,6 @@ function SandboxCheckoutContent() {
         throw new Error(result.error || "Payment authorization failed");
       }
 
-      // Redirect to outcome page
       router.push(result.redirectUrl);
     } catch (err: any) {
       setError(err.message || "Transaction authorization failed.");
@@ -155,7 +153,6 @@ function SandboxCheckoutContent() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
-      {/* Top Payments.lk Header Banner */}
       <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
@@ -173,10 +170,8 @@ function SandboxCheckoutContent() {
         </div>
       </header>
 
-      {/* Main Checkout Modal Container */}
       <main className="max-w-3xl w-full mx-auto px-4 py-8 flex-1 flex flex-col justify-center">
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl backdrop-blur">
-          {/* Order Summary Ribbon */}
           <div className="p-6 bg-gradient-to-r from-blue-900/40 via-sky-900/20 to-slate-900 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
@@ -197,7 +192,6 @@ function SandboxCheckoutContent() {
             </div>
           </div>
 
-          {/* Payment Method Switcher Tabs */}
           <div className="p-6 sm:p-8 space-y-6">
             <div className="flex gap-2 border-b border-slate-800 pb-4">
               <button
@@ -226,7 +220,6 @@ function SandboxCheckoutContent() {
 
             {paymentMethodTab === "CARD" ? (
               <div className="space-y-6">
-                {/* Official Test Card Preset Picker */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-2">
                     Select Payments.lk Test Card
@@ -255,7 +248,6 @@ function SandboxCheckoutContent() {
                   </div>
                 </div>
 
-                {/* Card Fields Form Preview */}
                 <div className="bg-slate-950/60 p-5 rounded-2xl border border-slate-800 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-mono text-sky-400 font-semibold uppercase">
@@ -303,7 +295,6 @@ function SandboxCheckoutContent() {
                   </div>
                 </div>
 
-                {/* Simulated 3D Secure / Authorisation Note */}
                 <div className="p-4 bg-sky-950/30 border border-sky-800/40 rounded-2xl flex items-start gap-3">
                   <ShieldCheck className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
                   <div className="text-xs text-slate-300 leading-relaxed">
@@ -318,7 +309,6 @@ function SandboxCheckoutContent() {
                   </div>
                 )}
 
-                {/* Actions */}
                 <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                   <button
                     type="button"
@@ -352,7 +342,6 @@ function SandboxCheckoutContent() {
                 </div>
               </div>
             ) : (
-              /* LankaQR Simulator Tab */
               <div className="space-y-6 text-center py-4">
                 <div className="bg-white p-6 rounded-2xl inline-block shadow-lg">
                   <div className="w-44 h-44 bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300 rounded-xl relative">
@@ -392,7 +381,6 @@ function SandboxCheckoutContent() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-slate-800/60 py-4 text-center text-xs text-slate-500">
         Payments powered by <a href="https://payments.lk" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">Payments.lk</a> · A Payable Company
       </footer>

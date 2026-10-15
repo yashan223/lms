@@ -19,14 +19,11 @@ async function main() {
     );
   }
 
-  // Upsert the 2 default accounts without deleting existing user data
-
   const adminPassHash = hashPassword(adminPassword);
   const tutorPassHash = hashPassword("TutorPass123!");
 
   const now = new Date();
 
-  // 1. Single Admin Account
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {
@@ -50,7 +47,6 @@ async function main() {
     },
   });
 
-  // 2. Single Tutor Account
   const tutorUser = await prisma.user.upsert({
     where: { email: "tutor@edupulse.uk" },
     update: {
@@ -78,8 +74,6 @@ async function main() {
   console.log("   👑 Admin:   admin@edupulse.uk   / AdminPass123!");
   console.log("   🎓 Tutor:   tutor@edupulse.uk   / TutorPass123!");
 
-  // Course creation is intentionally handled by tutors and reviewed by admins.
-  // Keep the seed limited to accounts and package definitions.
   for (const bundle of DEFAULT_BUNDLES) {
     await prisma.tokenBundle.upsert({
       where: { id: bundle.id },
@@ -117,14 +111,12 @@ async function main() {
   console.log("🚀 Database successfully seeded with 1 Admin and 1 Tutor. Courses require tutor creation and admin approval.");
   return;
 
-  // 4. Update all courses to belong to the single Tutor
   await prisma.course.updateMany({
     data: {
       tutorId: tutorUser.id,
     },
   });
 
-  // 5. Seed Complete London A/L and O/L Course Matrix (1 Token = 1 Hour)
   const coursesData = [
     {
       title: "London A/L Pure Mathematics (P1, P2, P3, P4 & Mechanics M1)",
@@ -389,7 +381,6 @@ async function main() {
 
   }
 
-  // 6. Seed Course Study Materials & Handbooks
   await prisma.courseMaterial.deleteMany({});
   const allSeededCourses = await prisma.course.findMany();
   for (const c of allSeededCourses) {
@@ -524,11 +515,10 @@ async function main() {
     }
   }
 
-  // 7. Seed Timeline Events & Live Seminars
   const mathCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-pure-mathematics-mechanics" } });
   const physicsCourse = await prisma.course.findFirst({ where: { slug: "edexcel-ial-physics-unit-1-to-6" } });
 
-  await prisma.event.deleteMany({}); // clear old events
+  await prisma.event.deleteMany({});
 
   if (mathCourse) {
     await prisma.event.create({
@@ -559,7 +549,6 @@ async function main() {
     });
   }
 
-  // 8. Upsert default token bundle packages into the database
   for (const bundle of DEFAULT_BUNDLES) {
     await prisma.tokenBundle.upsert({
       where: { id: bundle.id },

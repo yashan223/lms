@@ -57,10 +57,8 @@ function TutorProfileContent() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Tutor Profile Data
   const [tutor, setTutor] = useState<any>(null);
 
-  // Form Fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [headline, setHeadline] = useState("");
@@ -69,7 +67,6 @@ function TutorProfileContent() {
   const [country, setCountry] = useState("United Kingdom");
   const [avatar, setAvatar] = useState<string>("");
 
-  // Academic Credentials
   const [degrees, setDegrees] = useState<AcademicDegree[]>([]);
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [certifications, setCertifications] = useState<AcademicCertification[]>([]);
@@ -77,7 +74,6 @@ function TutorProfileContent() {
   const [researchGate, setResearchGate] = useState("");
   const [website, setWebsite] = useState("");
 
-  // Sub-forms for adding items
   const [newDegreeTitle, setNewDegreeTitle] = useState("");
   const [newDegreeInst, setNewDegreeInst] = useState("");
   const [newDegreeYear, setNewDegreeYear] = useState(new Date().getFullYear().toString());
@@ -87,7 +83,6 @@ function TutorProfileContent() {
   const [newCertAuth, setNewCertAuth] = useState("");
   const [newCertYear, setNewCertYear] = useState(new Date().getFullYear().toString());
 
-  // Delete Account State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -161,7 +156,6 @@ function TutorProfileContent() {
     fetchProfile();
   }, []);
 
-  // Handle avatar upload via /api/upload with auto-save to profile
   const handleAvatarFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -198,7 +192,6 @@ function TutorProfileContent() {
       const uploadedUrl = data.file.fileUrl;
       setAvatar(uploadedUrl);
 
-      // Auto-save the new avatar to the tutor profile
       await fetch("/api/tutor/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -215,7 +208,6 @@ function TutorProfileContent() {
     }
   };
 
-  // Remove profile picture with immediate auto-save
   const handleRemoveAvatar = async () => {
     try {
       setUploadingAvatar(true);
@@ -236,7 +228,6 @@ function TutorProfileContent() {
     }
   };
 
-  // Helper to compile bio JSON
   const buildBioPayload = () => {
     return JSON.stringify({
       about: about.trim(),
@@ -249,7 +240,6 @@ function TutorProfileContent() {
     });
   };
 
-  // Save profile information
   const handleSaveProfile = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (!name.trim()) {
@@ -289,7 +279,6 @@ function TutorProfileContent() {
     }
   };
 
-  // Degrees Management
   const handleAddDegree = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDegreeTitle.trim() || !newDegreeInst.trim()) return;
@@ -312,7 +301,6 @@ function TutorProfileContent() {
     setDegrees((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Specializations Management
   const handleAddSpec = (valToAdd?: string) => {
     const val = (valToAdd || newSpecTag).trim();
     if (!val) return;
@@ -326,7 +314,6 @@ function TutorProfileContent() {
     setSpecializations((prev) => prev.filter((s) => s !== spec));
   };
 
-  // Certifications Management
   const handleAddCert = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCertTitle.trim()) return;
@@ -347,7 +334,6 @@ function TutorProfileContent() {
     setCertifications((prev) => prev.filter((c) => c.id !== id));
   };
 
-  // Delete Account
   const handleDeleteAccount = async (e: FormEvent) => {
     e.preventDefault();
     if (!deletePassword) {
@@ -384,7 +370,6 @@ function TutorProfileContent() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 pb-20">
-      {/* Top Header Navigation */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -410,9 +395,7 @@ function TutorProfileContent() {
         </div>
       </header>
 
-      {/* Main Content Container */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-6">
-        {/* Toast / Notification Banner */}
         {statusMsg && (
           <div
             className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs font-medium animate-in fade-in ${
@@ -438,7 +421,6 @@ function TutorProfileContent() {
           </div>
         )}
 
-        {/* Academic Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
@@ -474,7 +456,6 @@ function TutorProfileContent() {
           </div>
         </div>
 
-        {/* Section 1: Profile Photo & Visual Identity */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
@@ -539,7 +520,6 @@ function TutorProfileContent() {
                 )}
               </div>
 
-              {/* Hidden file input for strictly file-browsing image upload */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -555,7 +535,6 @@ function TutorProfileContent() {
           </div>
         </section>
 
-        {/* Section 2: General Instructor Details Form */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
@@ -568,7 +547,6 @@ function TutorProfileContent() {
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-5">
-            {/* Name & Headline */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">Full Legal / Display Name *</label>
@@ -592,7 +570,6 @@ function TutorProfileContent() {
               </div>
             </div>
 
-            {/* Email (Readonly) & Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
@@ -629,7 +606,6 @@ function TutorProfileContent() {
               </div>
             </div>
 
-            {/* Country */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Country of Residence</label>
               <div className="relative">
@@ -643,7 +619,6 @@ function TutorProfileContent() {
               </div>
             </div>
 
-            {/* Teaching Bio / Philosophy */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Comprehensive Biography &amp; Teaching Philosophy</label>
               <textarea
@@ -655,7 +630,6 @@ function TutorProfileContent() {
               />
             </div>
 
-            {/* Section: Academic Degrees */}
             <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -700,7 +674,6 @@ function TutorProfileContent() {
                 </div>
               )}
 
-              {/* Add Degree Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                 <Input
                   placeholder="Degree Title (e.g. B.Sc. Mathematics)"
@@ -743,7 +716,6 @@ function TutorProfileContent() {
               </div>
             </div>
 
-            {/* Section: Subject Specializations */}
             <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -803,7 +775,6 @@ function TutorProfileContent() {
               </div>
             </div>
 
-            {/* Section: Examiner Accreditations */}
             <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -880,7 +851,6 @@ function TutorProfileContent() {
               </div>
             </div>
 
-            {/* Section: Professional Links */}
             <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-700">
@@ -925,7 +895,6 @@ function TutorProfileContent() {
               </div>
             </div>
 
-            {/* Save Button */}
             <div className="pt-2 flex justify-end">
               <Button
                 type="submit"
@@ -943,7 +912,6 @@ function TutorProfileContent() {
           </form>
         </section>
 
-        {/* Section 3: Danger Zone */}
         <section className="bg-white rounded-3xl border border-red-200 shadow-xs p-6 sm:p-8 space-y-6">
           <div className="border-b border-red-100 pb-4">
             <h2 className="text-base font-extrabold text-red-600 flex items-center gap-2">
@@ -979,7 +947,6 @@ function TutorProfileContent() {
           </div>
         </section>
 
-        {/* Delete Confirmation Modal */}
         {showDeleteModal && (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl border border-red-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">

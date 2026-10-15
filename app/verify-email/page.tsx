@@ -31,7 +31,6 @@ function VerifyEmailContent() {
   const [isEditingEmail, setIsEditingEmail] = useState<boolean>(false);
   const [editedEmail, setEditedEmail] = useState<string>(emailParam);
 
-  // Verification states (when token is present)
   const [verificationStatus, setVerificationStatus] = useState<
     "idle" | "verifying" | "success" | "expired" | "error"
   >(tokenParam ? "verifying" : "idle");
@@ -43,13 +42,11 @@ function VerifyEmailContent() {
       : "/dashboard"
   );
 
-  // Resend states
   const [resendLoading, setResendLoading] = useState<boolean>(false);
   const [resendSuccess, setResendSuccess] = useState<string | null>(null);
   const [resendError, setResendError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState<number>(0);
 
-  // Cooldown timer effect
   useEffect(() => {
     if (cooldown <= 0) return;
     const interval = setInterval(() => {
@@ -58,7 +55,6 @@ function VerifyEmailContent() {
     return () => clearInterval(interval);
   }, [cooldown]);
 
-  // Token auto-verification effect
   useEffect(() => {
     if (!token) return;
 
@@ -109,7 +105,6 @@ function VerifyEmailContent() {
     };
   }, [token]);
 
-  // Auto-redirect to dashboard when verification is successful
   useEffect(() => {
     if (verificationStatus !== "success") return;
 
@@ -127,7 +122,6 @@ function VerifyEmailContent() {
     return () => clearInterval(timer);
   }, [verificationStatus, redirectPath, router]);
 
-  // Handle resending verification email
   const handleResend = async () => {
     const targetEmail = (isEditingEmail ? editedEmail : email).trim().toLowerCase();
     if (!targetEmail) {
@@ -158,7 +152,7 @@ function VerifyEmailContent() {
           setEmail(targetEmail);
           setIsEditingEmail(false);
           setResendSuccess(data.message || `A fresh verification link was dispatched to ${targetEmail}`);
-          setCooldown(60); // 60-second cooldown
+          setCooldown(60);
         }
       }
     } catch (err) {
@@ -178,7 +172,6 @@ function VerifyEmailContent() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 py-3 px-4 sm:px-8 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
@@ -198,10 +191,8 @@ function VerifyEmailContent() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="max-w-lg w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden p-6 sm:p-10 space-y-6 animate-in fade-in zoom-in-95 duration-300">
-          {/* SCENARIO 1: Verifying Token */}
           {verificationStatus === "verifying" && (
             <div className="text-center space-y-5 py-4">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm animate-pulse">
@@ -218,7 +209,6 @@ function VerifyEmailContent() {
             </div>
           )}
 
-          {/* SCENARIO 2: Verification Successful */}
           {verificationStatus === "success" && (
             <div className="text-center space-y-6 py-2">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm animate-bounce">
@@ -254,7 +244,6 @@ function VerifyEmailContent() {
             </div>
           )}
 
-          {/* SCENARIO 3: Expired Token */}
           {verificationStatus === "expired" && (
             <div className="text-center space-y-6 py-2">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
@@ -323,7 +312,6 @@ function VerifyEmailContent() {
             </div>
           )}
 
-          {/* SCENARIO 4: General Token Error / Invalid */}
           {verificationStatus === "error" && (
             <div className="text-center space-y-6 py-2">
               <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center mx-auto shadow-sm">
@@ -358,7 +346,6 @@ function VerifyEmailContent() {
             </div>
           )}
 
-          {/* SCENARIO 5: Landing View (No token or requesting resend) */}
           {verificationStatus === "idle" && (
             <div className="space-y-6">
               <div className="text-center space-y-3">
@@ -373,7 +360,6 @@ function VerifyEmailContent() {
                 </p>
               </div>
 
-              {/* Email display / edit box */}
               <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <ShieldCheck className="w-5 h-5 text-blue-700 shrink-0" />
@@ -417,7 +403,6 @@ function VerifyEmailContent() {
                 )}
               </div>
 
-              {/* Instructions steps */}
               <div className="space-y-3 bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 text-xs text-slate-600">
                 <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
                   Next Steps:
@@ -451,7 +436,6 @@ function VerifyEmailContent() {
                 </ul>
               </div>
 
-              {/* Alert Feedback */}
               {resendSuccess && (
                 <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2 animate-in fade-in">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-600" />
@@ -466,7 +450,6 @@ function VerifyEmailContent() {
                 </div>
               )}
 
-              {/* Action Buttons */}
               <div className="pt-1 space-y-3">
                 <Button
                   onClick={handleResend}
@@ -511,7 +494,6 @@ function VerifyEmailContent() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="py-4 text-center text-xs text-slate-400">
         &copy; {new Date().getFullYear()} EduPulse Academy London A/L &amp; O/L LMS. All rights reserved.
       </footer>

@@ -29,12 +29,10 @@ export function CountrySelector({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  // Sync external value
   useEffect(() => {
     setInputValue(value || "");
   }, [value]);
 
-  // Outside click listener
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -45,12 +43,10 @@ export function CountrySelector({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter countries by typed letters
   const filteredCountries = useMemo(() => {
     const q = inputValue.trim().toLowerCase();
     if (!q) return COUNTRIES;
 
-    // Prioritize starts-with over contains
     const startsWith = COUNTRIES.filter(
       (c) => c.name.toLowerCase().startsWith(q) || c.code.toLowerCase().startsWith(q)
     );
@@ -63,18 +59,15 @@ export function CountrySelector({
     return [...startsWith, ...contains];
   }, [inputValue]);
 
-  // Determine current active flag shown in the field
   const currentFlag = useMemo(() => {
     const q = inputValue.trim().toLowerCase();
     if (!q) return null;
 
-    // 1. Exact match
     const exact = COUNTRIES.find(
       (c) => c.name.toLowerCase() === q || c.code.toLowerCase() === q
     );
     if (exact) return exact.flag;
 
-    // 2. Best matching country from typed letters
     if (filteredCountries.length > 0) {
       return filteredCountries[0].flag;
     }
@@ -131,7 +124,6 @@ export function CountrySelector({
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
       <div className="relative flex items-center">
-        {/* Dynamic Flag Icon in field when typing letters, or Lucide Globe icon */}
         <div
           className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none select-none z-10 w-5 h-5"
           aria-hidden="true"
@@ -188,7 +180,6 @@ export function CountrySelector({
         )}
       </div>
 
-      {/* Autocomplete Dropdown */}
       {isOpen && (
         <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-60 flex flex-col">
           <div className="px-3 py-1.5 bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">

@@ -1,27 +1,18 @@
-/**
- * Regional Timezone & Conversion Utilities for PulseEDU Global (LMS)
- * Supports dynamic regional timezone selection, auto-detection,
- * dual-time display (e.g. Student Local vs Tutor/Colombo Base),
- * and ISO-accurate slot mapping across international regions.
- */
 
 export interface RegionalTimezone {
-  id: string; // IANA Timezone identifier, e.g. "Asia/Colombo"
-  region: string; // Country / Region display name, e.g. "Sri Lanka"
-  city: string; // Key reference city, e.g. "Colombo"
-  countryCode: string; // ISO 2-letter code, e.g. "LK"
-  flag: string; // Emoji flag, e.g. "🇱🇰"
-  standardOffset: string; // e.g. "UTC+05:30"
-  abbr: string; // e.g. "IST", "BST", "GST", "EST"
-  label: string; // Full dropdown label
+  id: string;
+  region: string;
+  city: string;
+  countryCode: string;
+  flag: string;
+  standardOffset: string;
+  abbr: string;
+  label: string;
 }
 
 export const DEFAULT_TIMEZONE = "Asia/Colombo";
 export const DEFAULT_REGION = "Sri Lanka";
 
-/**
- * Curated international regions aligned with London O/L & A/L student and tutor hubs
- */
 export const REGIONAL_TIMEZONES: RegionalTimezone[] = [
   {
     id: "Asia/Colombo",
@@ -225,9 +216,6 @@ export const REGIONAL_TIMEZONES: RegionalTimezone[] = [
   },
 ];
 
-/**
- * Country code to primary timezone mapping
- */
 const COUNTRY_TO_TIMEZONE: Record<string, string> = {
   LK: "Asia/Colombo",
   GB: "Europe/London",
@@ -255,9 +243,6 @@ const COUNTRY_TO_TIMEZONE: Record<string, string> = {
   ZA: "Africa/Johannesburg",
 };
 
-/**
- * Detect client browser timezone (Client side only, fallback to default)
- */
 export function getUserBrowserTimezone(): string {
   if (typeof window === "undefined") {
     return DEFAULT_TIMEZONE;
@@ -269,41 +254,33 @@ export function getUserBrowserTimezone(): string {
   return DEFAULT_TIMEZONE;
 }
 
-/**
- * Resolve regional timezone object from ID or country code
- */
 export function getRegionalTimezone(tzOrCountry?: string | null): RegionalTimezone {
   if (!tzOrCountry) {
-    return REGIONAL_TIMEZONES[0]; // Sri Lanka
+    return REGIONAL_TIMEZONES[0];
   }
 
   const clean = tzOrCountry.trim();
 
-  // 1. Direct match with ID
   const directMatch = REGIONAL_TIMEZONES.find(
     (r) => r.id.toLowerCase() === clean.toLowerCase()
   );
   if (directMatch) return directMatch;
 
-  // 2. Direct match with Country Code
   const countryCode = clean.toUpperCase();
   const byCode = REGIONAL_TIMEZONES.find((r) => r.countryCode === countryCode);
   if (byCode) return byCode;
 
-  // 3. Lookup in mapping table
   const mappedTz = COUNTRY_TO_TIMEZONE[countryCode];
   if (mappedTz) {
     const mappedObj = REGIONAL_TIMEZONES.find((r) => r.id === mappedTz);
     if (mappedObj) return mappedObj;
   }
 
-  // 4. Match by Region name (case-insensitive)
   const byRegion = REGIONAL_TIMEZONES.find(
     (r) => r.region.toLowerCase().includes(clean.toLowerCase())
   );
   if (byRegion) return byRegion;
 
-  // 5. Dynamic fallback if it's a valid IANA timezone not explicitly in curated list
   try {
     const d = new Date();
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -329,9 +306,6 @@ export function getRegionalTimezone(tzOrCountry?: string | null): RegionalTimezo
   return REGIONAL_TIMEZONES[0];
 }
 
-/**
- * Format exact UTC offset string (e.g. "UTC+05:30", "UTC-04:00")
- */
 export function getTimezoneOffsetString(date: Date = new Date(), timezone: string): string {
   try {
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -346,7 +320,6 @@ export function getTimezoneOffsetString(date: Date = new Date(), timezone: strin
     if (offsetPart) return offsetPart;
   } catch {}
 
-  // Manual fallback via offset minutes
   try {
     const dStr = date.toLocaleString("en-US", { timeZone: timezone });
     const localD = new Date(dStr);
@@ -361,9 +334,6 @@ export function getTimezoneOffsetString(date: Date = new Date(), timezone: strin
   }
 }
 
-/**
- * Get timezone abbreviation (e.g. "IST", "BST", "GST", "EDT")
- */
 export function getTimezoneAbbr(date: Date = new Date(), timezone: string): string {
   try {
     const regional = REGIONAL_TIMEZONES.find((r) => r.id === timezone);
@@ -383,10 +353,6 @@ export function getTimezoneAbbr(date: Date = new Date(), timezone: string): stri
   }
 }
 
-/**
- * Formats a Date or ISO string into a local 12-hour time string in the target timezone
- * e.g. "02:30 PM" or "9:00 AM"
- */
 export function formatTimeInTimezone(
   dateOrIso: Date | string | number,
   timezone: string = DEFAULT_TIMEZONE,
@@ -416,10 +382,6 @@ export function formatTimeInTimezone(
   }
 }
 
-/**
- * Formats a Date or ISO string into a localized Date string in the target timezone
- * e.g. "Fri, Sep 25" or "Sep 25, 2026"
- */
 export function formatDateInTimezone(
   dateOrIso: Date | string | number,
   timezone: string = DEFAULT_TIMEZONE,
@@ -438,10 +400,6 @@ export function formatDateInTimezone(
   }
 }
 
-/**
- * Extracts calendar date parts ("YYYY-MM-DD", hour, minute, dayOfWeek 0..6)
- * of a UTC Date as it appears inside the target timezone.
- */
 export function getDatePartsInTimezone(
   dateOrIso: Date | string | number,
   timezone: string = DEFAULT_TIMEZONE
@@ -451,8 +409,8 @@ export function getDatePartsInTimezone(
   day: number;
   hour: number;
   minute: number;
-  dateStr: string; // "YYYY-MM-DD"
-  dayOfWeek: number; // 0=Sun, 1=Mon, ..., 6=Sat
+  dateStr: string;
+  dayOfWeek: number;
 } {
   const d = typeof dateOrIso === "string" || typeof dateOrIso === "number" ? new Date(dateOrIso) : dateOrIso;
   if (isNaN(d.getTime())) {
@@ -484,8 +442,6 @@ export function getDatePartsInTimezone(
     const pad = (n: number) => String(n).padStart(2, "0");
     const dateStr = `${year}-${pad(month)}-${pad(day)}`;
 
-    // Determine Day of Week in target timezone
-    // Construct local midnight representation to reliably extract day of week
     const dayFormatter = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
       weekday: "short",
@@ -517,10 +473,6 @@ export function getDatePartsInTimezone(
   }
 }
 
-/**
- * Creates an exact UTC Date instance given a calendar date ("YYYY-MM-DD")
- * and time ("HH:mm") interpreted inside the specified regional timezone.
- */
 export function createDateFromTimezoneParts(
   dateStr: string,
   timeStr: string,
@@ -529,7 +481,6 @@ export function createDateFromTimezoneParts(
   const [year, month, day] = dateStr.split("-").map(Number);
   const [hour, minute] = timeStr.split(":").map(Number);
 
-  // Initial estimate in UTC
   const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0, 0));
 
   try {
@@ -560,16 +511,12 @@ export function createDateFromTimezoneParts(
     const targetAsUtc = Date.UTC(targetYear, targetMonth - 1, targetDay, targetHour, targetMinute, 0);
     const offsetMs = targetAsUtc - utcGuess.getTime();
 
-    // Actual UTC moment
     return new Date(utcGuess.getTime() - offsetMs);
   } catch {
     return new Date(year, month - 1, day, hour, minute);
   }
 }
 
-/**
- * Calculates dual-time comparison for slots (e.g. Student Region vs Tutor Base Region)
- */
 export function getDualTimeDisplay(
   dateOrIso: Date | string | number,
   viewerTz: string = DEFAULT_TIMEZONE,
@@ -622,10 +569,6 @@ export function getDualTimeDisplay(
   };
 }
 
-/**
- * Converts a 24-hour time string ("HH:mm" or "H:mm") to 12-hour AM/PM format
- * e.g. "09:30" -> "9:30 AM", "14:00" -> "2:00 PM", "00:00" -> "12:00 AM", "12:00" -> "12:00 PM"
- */
 export function format24hTo12h(time24: string): string {
   if (!time24) return "";
   const parts = time24.trim().split(":");
@@ -644,10 +587,6 @@ export function format24hTo12h(time24: string): string {
   return `${hour}:${minute} ${period}`;
 }
 
-/**
- * Converts a 12-hour AM/PM time string to 24-hour "HH:mm" format
- * e.g. "9:30 AM" -> "09:30", "2:00 PM" -> "14:00", "12:00 AM" -> "00:00"
- */
 export function format12hTo24h(time12: string): string {
   if (!time12) return "";
   const clean = time12.trim().toUpperCase();
@@ -667,11 +606,6 @@ export function format12hTo24h(time12: string): string {
   return `${String(hour).padStart(2, "0")}:${minute}`;
 }
 
-/**
- * Formats a Date/ISO string for HTML <input type="datetime-local">
- * respecting the user's regional timezone.
- * Returns "YYYY-MM-DDTHH:mm"
- */
 export function formatForDateTimeInput(
   dateOrIso: Date | string | number,
   timezone: string = DEFAULT_TIMEZONE
@@ -681,10 +615,6 @@ export function formatForDateTimeInput(
   return `${parts.dateStr}T${pad(parts.hour)}:${pad(parts.minute)}`;
 }
 
-/**
- * Parses an HTML <input type="datetime-local"> string ("YYYY-MM-DDTHH:mm")
- * interpreted inside the specified regional timezone and converts it to a UTC Date.
- */
 export function parseDateTimeInputInTimezone(
   dateTimeStr: string,
   timezone: string = DEFAULT_TIMEZONE
@@ -698,10 +628,6 @@ export function parseDateTimeInputInTimezone(
   return createDateFromTimezoneParts(datePart, timePart.slice(0, 5), timezone);
 }
 
-/**
- * Centralized formatter for rendering dates & times for a specific user timezone.
- * Example output: "Fri, Sep 25, 2026, 6:00 PM IST"
- */
 export function formatForUser(
   dateOrIso: Date | string | number,
   timezone: string = DEFAULT_TIMEZONE,
@@ -752,17 +678,11 @@ export function formatForUser(
   return parts.join(", ");
 }
 
-/**
- * Returns UTC Date representation
- */
 export function toUTC(dateOrIso: Date | string | number): Date {
   const d = typeof dateOrIso === "string" || typeof dateOrIso === "number" ? new Date(dateOrIso) : dateOrIso;
   return isNaN(d.getTime()) ? new Date() : d;
 }
 
-/**
- * Break down a timestamp into user's timezone components
- */
 export function toUserTime(
   dateOrIso: Date | string | number,
   timezone: string = DEFAULT_TIMEZONE

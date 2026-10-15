@@ -1319,7 +1319,6 @@ function TutorDashboardContent() {
               Tutor
             </Badge>
 
-
             <NotificationBell userRole="TUTOR" />
 
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
@@ -1361,7 +1360,6 @@ function TutorDashboardContent() {
 
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1">
 
-        {/* Mobile Horizontal Quick Tab Bar */}
         <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
             { id: "courses", label: "Individual Classes", icon: BookOpen, count: courses.length },
@@ -2528,7 +2526,6 @@ function TutorDashboardContent() {
             {centerTab === "trials" && (
               <div className="space-y-4 animate-in fade-in duration-300">
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-6">
-                  {/* Header & Filter Tabs */}
                   <div className="border-b border-slate-100 pb-5 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1">
@@ -2549,7 +2546,6 @@ function TutorDashboardContent() {
                       </div>
                     </div>
 
-                    {/* Filter Pills with clean flex-wrap (no horizontal scrollbar / cutoffs) */}
                     <div className="flex flex-wrap items-center gap-2 pt-1">
                       {[
                         { key: "ALL", label: "All Bookings", count: trials.length },
@@ -2624,7 +2620,6 @@ function TutorDashboardContent() {
                                   : "bg-slate-50 border-slate-200 opacity-70"
                               }`}
                             >
-                              {/* Top Row: Student Avatar, Name, Course, & Status Badge */}
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                   <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0c2461] to-[#1e3799] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
@@ -2674,7 +2669,6 @@ function TutorDashboardContent() {
                                 </div>
                               </div>
 
-                              {/* Middle Row: Confirmed / Requested Timeslot Highlight Banner */}
                               {isPending && Array.isArray(tr.preferredDates) && tr.preferredDates.length > 1 ? (
                                 <div className="p-3.5 rounded-xl border bg-blue-50/80 border-blue-200 text-blue-950 space-y-2">
                                   <div className="flex items-center justify-between">
@@ -2771,7 +2765,6 @@ function TutorDashboardContent() {
                                 </div>
                               )}
 
-                              {/* Topic & Notes (if available) */}
                               {tr.topic && (
                                 <div className="text-xs text-slate-700 bg-slate-50/90 border border-slate-200/80 rounded-xl p-3.5 space-y-1">
                                   <div>
@@ -2786,7 +2779,6 @@ function TutorDashboardContent() {
                                 </div>
                               )}
 
-                              {/* Admin Rejection Reason (if rejected) */}
                               {(tr as any).rejectionReason && (
                                 <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
                                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
@@ -2797,7 +2789,6 @@ function TutorDashboardContent() {
                                 </div>
                               )}
 
-                              {/* Action Toolbar */}
                               <div className="border-t border-slate-100 pt-3.5 flex flex-wrap items-center justify-end gap-2.5">
                                 {isPending ? (
                                   <>
@@ -2888,7 +2879,6 @@ function TutorDashboardContent() {
                                     <span>Declined / Cancelled</span>
                                   </span>
                                 )}
-
 
                               </div>
                             </div>
@@ -3780,8 +3770,6 @@ function TutorDashboardContent() {
         </div>
       )}
 
-
-
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
@@ -4222,7 +4210,6 @@ function TutorDashboardContent() {
         </div>
       )}
 
-      {/* Confirm & Set Date Trial Modal */}
       {showConfirmTrialModal && confirmingTrial && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
@@ -4285,7 +4272,6 @@ function TutorDashboardContent() {
                 )}
               </div>
 
-              {/* Select 1 Time Slot from Student's 3 Preferred Options */}
               {(() => {
                 const requestedSlots: string[] = Array.isArray(confirmingTrial.preferredDates) && confirmingTrial.preferredDates.length > 0
                   ? confirmingTrial.preferredDates
@@ -4456,7 +4442,6 @@ function TutorDashboardContent() {
         </div>
       )}
 
-      {/* Decline Trial Modal */}
       {showDeclineTrialModal && decliningTrial && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">

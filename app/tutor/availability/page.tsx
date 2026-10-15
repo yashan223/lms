@@ -90,9 +90,8 @@ function TutorAvailabilityContent() {
   const [availabilities, setAvailabilities] = useState<TutorAvailabilitySlot[]>([]);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Form State for Adding Available Times (Batch Config)
   const [scheduleMode, setScheduleMode] = useState<"RECURRING" | "SPECIFIC">("RECURRING");
-  const [selectedDays, setSelectedDays] = useState<number[]>([1, 3, 5]); // Default: Mon, Wed, Fri
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 3, 5]);
   const [specificDate, setSpecificDate] = useState("");
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -103,7 +102,6 @@ function TutorAvailabilityContent() {
   const [tutorTimezone, setTutorTimezone] = useState<string>(DEFAULT_TIMEZONE);
   const [previewTimezone, setPreviewTimezone] = useState<string>(DEFAULT_TIMEZONE);
 
-  // Load Tutor Data & Availability
   const loadData = async (tzOverride?: string) => {
     try {
       setLoading(true);
@@ -122,7 +120,6 @@ function TutorAvailabilityContent() {
         setTrials(dataTutor.trials || []);
 
         const activeTz = tzOverride || previewTimezone || dataTutor.tutor.timezone || DEFAULT_TIMEZONE;
-        // Fetch configured availability slots
         const resAvail = await fetch(
           `/api/tutor/availability?tutorId=${dataTutor.tutor.id}&timezone=${encodeURIComponent(activeTz)}&days=14`
         );
@@ -175,14 +172,12 @@ function TutorAvailabilityContent() {
     },
   });
 
-  // Toggle Day selection for multi-day batch addition
   const toggleDaySelection = (dayVal: number) => {
     setSelectedDays((prev) =>
       prev.includes(dayVal) ? prev.filter((d) => d !== dayVal) : [...prev, dayVal]
     );
   };
 
-  // Submit Multiple Available Times
   const handleAddAvailableTimes = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startTime || !endTime) {
@@ -259,7 +254,6 @@ function TutorAvailabilityContent() {
         text: `Successfully added ${slotsToCreate.length} availability slot(s) for your classes and trials.`,
       });
 
-      // Reload fresh slots
       if (tutor?.id) {
         const resAvail = await fetch(`/api/tutor/availability?tutorId=${tutor.id}&days=14`);
         if (resAvail.ok) {
@@ -278,7 +272,6 @@ function TutorAvailabilityContent() {
     }
   };
 
-  // Delete single availability slot
   const handleDeleteSlot = async (id: string) => {
     try {
       const res = await fetch("/api/tutor/availability", {
@@ -298,7 +291,6 @@ function TutorAvailabilityContent() {
     }
   };
 
-  // Apply Quick Preset
   const handleApplyPreset = async (preset: "WEEKDAYS" | "WEEKENDS" | "FULL_SCHEDULE") => {
     try {
       setSaving(true);
@@ -340,7 +332,6 @@ function TutorAvailabilityContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
-      {/* Top Navbar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -379,11 +370,8 @@ function TutorAvailabilityContent() {
         </div>
       </header>
 
-      {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
 
-
-        {/* Metrics Ribbon */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -426,7 +414,6 @@ function TutorAvailabilityContent() {
           </div>
         </div>
 
-        {/* Status Message */}
         {statusMsg && (
           <div
             className={`p-4 rounded-xl border text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
@@ -452,9 +439,7 @@ function TutorAvailabilityContent() {
           </div>
         )}
 
-        {/* 2-Column Responsive Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Set Multiple Available Times Form (5 cols) */}
           <div className="lg:col-span-5 space-y-5">
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5 sticky top-24">
               <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
@@ -476,7 +461,6 @@ function TutorAvailabilityContent() {
                 </Badge>
               </div>
 
-              {/* Quick Presets */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                   Quick Schedule Presets
@@ -504,7 +488,6 @@ function TutorAvailabilityContent() {
               </div>
 
               <form onSubmit={handleAddAvailableTimes} className="space-y-4 text-xs">
-                {/* Recurrence Switcher */}
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-700 block">Schedule Mode</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -535,7 +518,6 @@ function TutorAvailabilityContent() {
                   </div>
                 </div>
 
-                {/* Days Multi-Select (for Recurring Mode) */}
                 {scheduleMode === "RECURRING" ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -582,7 +564,6 @@ function TutorAvailabilityContent() {
                   </div>
                 )}
 
-                {/* Time Range */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label htmlFor="availability-start-time" className="font-bold text-slate-700 flex items-center justify-between cursor-pointer">
@@ -619,7 +600,6 @@ function TutorAvailabilityContent() {
                   </div>
                 </div>
 
-                {/* Title / Label */}
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-700 block">
                     Timeslot Label / Focus
@@ -632,7 +612,6 @@ function TutorAvailabilityContent() {
                   />
                 </div>
 
-                {/* Course & Slot Type */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="font-bold text-slate-700 block">Class Target</label>
@@ -686,9 +665,7 @@ function TutorAvailabilityContent() {
             </div>
           </div>
 
-          {/* Right Column: Configured Slots & Scheduled Class Cross-Reference (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Configured Slots List */}
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
@@ -771,7 +748,6 @@ function TutorAvailabilityContent() {
               )}
             </div>
 
-            {/* Scheduled Classes & Trials Cross-Reference */}
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>

@@ -150,7 +150,7 @@ function RescheduleContent() {
   const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassSummary[]>([]);
   const [studentStudySlots, setStudentStudySlots] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
-  const [selectedSlotTime, setSelectedSlotTime] = useState<string>(""); // ISO string
+  const [selectedSlotTime, setSelectedSlotTime] = useState<string>("");
   const [customDateTime, setCustomDateTime] = useState<string>("");
   const [meetingLink, setMeetingLink] = useState<string>("");
   const [rescheduleNotes, setRescheduleNotes] = useState<string>("");
@@ -166,7 +166,6 @@ function RescheduleContent() {
     }
   }, []);
 
-  // Helper to load availability for a target trial session
   const loadTrialAvailability = async (targetTrial: TrialDetail, tzOverride?: string) => {
     setTrial(targetTrial);
     setMeetingLink(targetTrial.meetingLink || "");
@@ -214,14 +213,12 @@ function RescheduleContent() {
     }
   };
 
-  // 1. Fetch Trial & Tutor Availability
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch user's trials list
         const res = await fetch("/api/trials");
         const data = await res.json();
         const trialsList: TrialDetail[] = res.ok && Array.isArray(data.trials) ? data.trials : [];
@@ -238,7 +235,6 @@ function RescheduleContent() {
             }
           }
         } else if (trialsList.length > 0) {
-          // Directly open: automatically select the trial session
           targetTrial = trialsList[0];
         }
 
@@ -265,25 +261,22 @@ function RescheduleContent() {
     },
   });
 
-  // Selected Day Slots
   const currentDayData = useMemo(() => {
     return availabilityDays.find((d) => d.date === selectedDate) || null;
   }, [availabilityDays, selectedDate]);
 
-  // Real-time conflict checker for chosen date/time
   const activeConflict = useMemo(() => {
     const targetIso = selectedSlotTime || (customDateTime ? new Date(customDateTime).toISOString() : "");
     if (!targetIso) return null;
 
     const targetStart = new Date(targetIso);
     if (isNaN(targetStart.getTime())) return null;
-    const targetEnd = new Date(targetStart.getTime() + 30 * 60 * 1000); // 30 min session
+    const targetEnd = new Date(targetStart.getTime() + 30 * 60 * 1000);
 
     for (const cls of scheduledClasses) {
       const clsStart = new Date(cls.dueDate);
       const clsEnd = new Date(clsStart.getTime() + (cls.durationMin || 60) * 60 * 1000);
 
-      // Overlap: targetStart < clsEnd && targetEnd > clsStart
       if (targetStart.getTime() < clsEnd.getTime() && targetEnd.getTime() > clsStart.getTime()) {
         return {
           id: cls.id,
@@ -297,7 +290,6 @@ function RescheduleContent() {
     return null;
   }, [selectedSlotTime, customDateTime, scheduledClasses]);
 
-  // Handle slot selection
   const handleSelectSlot = (slot: TutorAvailabilitySlot) => {
     if (!slot.isAvailable) return;
     setSelectedSlotTime(slot.startTime);
@@ -305,7 +297,6 @@ function RescheduleContent() {
     setCustomDateTime(formatForDateTimeInput(dateObj));
   };
 
-  // Handle custom date/time change
   const handleCustomDateChange = (val: string) => {
     setCustomDateTime(val);
     if (val) {
@@ -319,7 +310,6 @@ function RescheduleContent() {
     }
   };
 
-  // Handle form submission
   const handleSubmitReschedule = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalDateIso = selectedSlotTime || (customDateTime ? new Date(customDateTime).toISOString() : "");
@@ -381,7 +371,6 @@ function RescheduleContent() {
 
       setTrial(data.trial);
 
-      // Refresh availability
       const tutorId = trial?.tutorId || trial?.course?.tutor?.id || "";
       const availRes = await fetch(
         `/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&timezone=${encodeURIComponent(viewerTimezone)}&days=14`
@@ -416,7 +405,6 @@ function RescheduleContent() {
     );
   }
 
-  // Fallback: If no trial could be found on the account
   if (!trial) {
     return (
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
@@ -444,7 +432,6 @@ function RescheduleContent() {
 
   return (
     <div className="min-h-screen bg-slate-50/70 pb-16">
-      {/* Top Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs backdrop-blur-md bg-white/95">
         <div className="w-full max-w-[1560px] mx-auto px-4 sm:px-8 xl:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -480,9 +467,7 @@ function RescheduleContent() {
         </div>
       </header>
 
-      {/* Main Container */}
       <main className="w-full max-w-[1560px] mx-auto px-4 sm:px-8 xl:px-12 pt-6 space-y-6">
-        {/* Status Alerts */}
         {statusMsg && (
           <div
             className={`p-4 rounded-2xl border text-xs flex items-start gap-3 animate-in slide-in-from-top-2 duration-200 ${
@@ -535,9 +520,7 @@ function RescheduleContent() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Trial & Tutor Summary */}
           <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-5">
-            {/* Consultation Card */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -569,7 +552,6 @@ function RescheduleContent() {
                 )}
               </div>
 
-              {/* Session Switcher if multiple trials exist */}
               {allTrials.length > 1 && (
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
@@ -597,7 +579,6 @@ function RescheduleContent() {
                 </div>
               )}
 
-              {/* Current Scheduled Time Highlight */}
               <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-1">
                 <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">
                   Current Scheduled Time
@@ -622,7 +603,6 @@ function RescheduleContent() {
                 <div className="text-[10px] text-blue-700">30-Minute 1-on-1 Free Trial</div>
               </div>
 
-              {/* Student Details */}
               <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Student Details
@@ -642,7 +622,6 @@ function RescheduleContent() {
                   </div>
                 )}
 
-                {/* Student's Configured Study Hours */}
                 {studentStudySlots.length > 0 && (
                   <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-1 mt-2">
                     <div className="text-[10px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1">
@@ -676,7 +655,6 @@ function RescheduleContent() {
                 )}
               </div>
 
-              {/* Tutor Card */}
               {tutorInfo && (
                 <div className="pt-3 border-t border-slate-100 space-y-2.5">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -708,10 +686,8 @@ function RescheduleContent() {
             </div>
           </div>
 
-          {/* Right Column: Availability Picker & Reschedule Form */}
           <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 space-y-5">
             <form onSubmit={handleSubmitReschedule} className="space-y-5">
-              {/* Date & Slots Card */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
@@ -742,7 +718,6 @@ function RescheduleContent() {
                   </div>
                 </div>
 
-                {/* Horizontal Date Picker */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                     Available Dates
@@ -795,7 +770,6 @@ function RescheduleContent() {
                   </div>
                 </div>
 
-                {/* Available Slots Grid */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -928,7 +902,6 @@ function RescheduleContent() {
                   )}
                 </div>
 
-                {/* Custom Date-Time Picker Override */}
                 <div className="pt-4 border-t border-slate-100 space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -947,7 +920,6 @@ function RescheduleContent() {
                     required
                   />
 
-                  {/* Real-time Conflict Alert Banner */}
                   {activeConflict ? (
                     <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-start gap-2.5 animate-in shake">
                       <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
@@ -982,7 +954,6 @@ function RescheduleContent() {
                   ) : null}
                 </div>
 
-                {/* Submission CTA */}
                 <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="text-[11px] text-slate-500 text-center sm:text-left">
                     Notifications will be sent automatically to both student and tutor upon confirmation.

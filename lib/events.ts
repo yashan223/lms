@@ -22,7 +22,6 @@ export interface LMSEventPayload {
   data?: any;
 }
 
-// ─── In-process emitter ───────────────────────────────────────────────────
 const globalForEvents = globalThis as unknown as {
   lmsEventEmitter?: EventEmitter;
   lmsWsBroadcast?: (payload: LMSEventPayload) => void;
@@ -37,7 +36,6 @@ if (process.env.NODE_ENV !== "production") {
   globalForEvents.lmsEventEmitter = eventEmitter;
 }
 
-// ─── DB writer (Audit & cross-process persistence) ────────────────────────
 async function writeEventToDb(type: LMSEventType, data?: any): Promise<void> {
   try {
     await prisma.systemEvent.create({
@@ -47,12 +45,10 @@ async function writeEventToDb(type: LMSEventType, data?: any): Promise<void> {
       },
     });
   } catch (err) {
-    // Non-fatal — in-memory and WebSocket broadcasts are already dispatched
     console.warn("[events] Failed to record SystemEvent to DB:", err);
   }
 }
 
-// ─── Public API ─────────────────────────────────────────────────────────────
 export function broadcastLMSEvent(type: LMSEventType, data?: any) {
   const payload: LMSEventPayload = {
     type,
@@ -60,7 +56,6 @@ export function broadcastLMSEvent(type: LMSEventType, data?: any) {
     data,
   };
 
-  // 1. Direct WebSocket broadcast to all connected clients (instant 0ms dispatch)
   if (typeof globalForEvents.lmsWsBroadcast === "function") {
     try {
       globalForEvents.lmsWsBroadcast(payload);
@@ -69,9 +64,7 @@ export function broadcastLMSEvent(type: LMSEventType, data?: any) {
     }
   }
 
-  // 2. In-process EventEmitter (for local listeners / SSE routes)
   eventEmitter.emit("lms_event", payload);
 
-  // 3. Persist to DB asynchronously for history & offline clients
   writeEventToDb(type, data).catch(() => {});
 }

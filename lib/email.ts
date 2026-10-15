@@ -72,7 +72,6 @@ async function dispatchResendEmail(params: {
       },
     });
 
-    // If custom domain is not verified, auto-fallback to onboarding@resend.dev
     if (result.error && (result.error.message?.includes("not verified") || result.error.name === "validation_error")) {
       console.warn("⚠️ Resend notice: " + (result.error.message || "Domain unverified"));
       if (sender !== "EduPulse Academy <onboarding@resend.dev>") {
@@ -113,9 +112,6 @@ async function dispatchResendEmail(params: {
   }
 }
 
-/**
- * Sends an email verification link to a newly created academic account via Resend.
- */
 export async function sendVerificationEmail({
   email,
   name,
@@ -229,9 +225,6 @@ EduPulse Academy London A/L & O/L LMS
   });
 }
 
-/**
- * Sends a password reset email via Resend.
- */
 export async function sendPasswordResetEmail({
   email,
   name,

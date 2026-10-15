@@ -59,7 +59,6 @@ export function useRealtimeSync({
     let reconnectAttempts = 0;
     let useSseFallback = false;
 
-    // ─── WebSocket Connection Logic ───────────────────────────────────────────
     function connectWs() {
       if (isCleanedUp) return;
 
@@ -76,7 +75,6 @@ export function useRealtimeSync({
           reconnectAttempts = 0;
           useSseFallback = false;
 
-          // Subscribe to requested events
           const targetEvents = eventsRef.current;
           if (targetEvents && targetEvents.length > 0) {
             try {
@@ -89,7 +87,6 @@ export function useRealtimeSync({
             } catch {}
           }
 
-          // Heartbeat ping every 25 seconds to keep connection alive
           if (pingInterval) clearInterval(pingInterval);
           pingInterval = setInterval(() => {
             if (ws && ws.readyState === WebSocket.OPEN) {
@@ -110,7 +107,6 @@ export function useRealtimeSync({
               sinceRef.current = payload.timestamp;
             }
 
-            // Ignore heartbeat and system ack messages
             if (
               payload.type === "PING" ||
               (payload.type as string) === "PONG" ||
@@ -139,7 +135,6 @@ export function useRealtimeSync({
 
           if (!isCleanedUp) {
             reconnectAttempts++;
-            // If WebSocket fails 3 times in a row, temporarily switch to SSE fallback
             if (reconnectAttempts >= 3) {
               console.warn("[ws] Multiple connection failures, switching to SSE fallback");
               useSseFallback = true;
@@ -172,7 +167,6 @@ export function useRealtimeSync({
       }
     }
 
-    // ─── SSE Fallback (If WebSocket is blocked by proxy/firewall) ──────────────
     function connectSse() {
       if (isCleanedUp) return;
 
@@ -211,7 +205,6 @@ export function useRealtimeSync({
             eventSource.close();
             eventSource = null;
           }
-          // Periodically retry WebSocket to recover primary transport
           if (!isCleanedUp) {
             reconnectTimeout = setTimeout(() => {
               useSseFallback = false;
@@ -224,10 +217,8 @@ export function useRealtimeSync({
       }
     }
 
-    // Initiate primary WebSocket connection
     connectWs();
 
-    // ─── Tab Visibility Listener ──────────────────────────────────────────────
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         if (!useSseFallback) {

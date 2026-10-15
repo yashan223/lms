@@ -45,7 +45,6 @@ export function RegionalTimezoneSelector({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Resolved timezone objects
   const currentRegion = useMemo(
     () => getRegionalTimezone(selectedTimezone),
     [selectedTimezone]
@@ -70,7 +69,6 @@ export function RegionalTimezoneSelector({
     } else if (dropdownPlacement === "down") {
       setOpenUpwards(false);
     } else {
-      // Auto: flip upward if space below is too tight and there's more space above
       setOpenUpwards(spaceBelow < estimatedHeight && spaceAbove > spaceBelow);
     }
 
@@ -88,7 +86,6 @@ export function RegionalTimezoneSelector({
     setIsOpen(!isOpen);
   };
 
-  // Click outside to close
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -102,7 +99,6 @@ export function RegionalTimezoneSelector({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Update placement on window resize or scroll when open
   useEffect(() => {
     if (!isOpen) return;
     calculatePlacement();
@@ -114,7 +110,6 @@ export function RegionalTimezoneSelector({
     };
   }, [isOpen, dropdownPlacement, compact]);
 
-  // Focus search input when opening
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -125,7 +120,6 @@ export function RegionalTimezoneSelector({
     }
   }, [isOpen]);
 
-  // Filter regional timezones by query
   const filteredRegions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return REGIONAL_TIMEZONES;
@@ -159,7 +153,6 @@ export function RegionalTimezoneSelector({
 
   return (
     <div className={`relative ${compact ? "" : "w-full"} ${className}`} ref={dropdownRef}>
-      {/* Trigger Button */}
       <button
         type="button"
         onClick={handleToggle}
@@ -194,7 +187,6 @@ export function RegionalTimezoneSelector({
         />
       </button>
 
-      {/* Dual Region Notice if viewer is outside tutor base region */}
       {showDualNotice && isDifferentFromBase && !isOpen && (
         <div className="mt-1.5 flex items-center gap-1.5 px-1 text-[11px] text-amber-800">
           <Globe className="h-3.5 w-3.5 text-amber-600 shrink-0" />
@@ -207,7 +199,6 @@ export function RegionalTimezoneSelector({
         </div>
       )}
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div
           className={`absolute z-50 ${
@@ -218,7 +209,6 @@ export function RegionalTimezoneSelector({
               : "w-full left-0 right-0 min-w-[280px]"
           } max-h-[min(26rem,calc(100vh-120px))] flex flex-col rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95`}
         >
-          {/* Header & Auto-Detect */}
           <div className="shrink-0 mb-2 flex items-center justify-between border-b border-slate-100 pb-2 px-1">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <Globe className="h-3.5 w-3.5 text-sky-600" />
@@ -236,7 +226,6 @@ export function RegionalTimezoneSelector({
             </button>
           </div>
 
-          {/* Search Input */}
           <div className="shrink-0 relative mb-2">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <input
@@ -258,7 +247,6 @@ export function RegionalTimezoneSelector({
             )}
           </div>
 
-          {/* Quick-Pick Popular Badges */}
           {!searchQuery && (
             <div className="shrink-0 mb-2 border-b border-slate-100 pb-2 px-1">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
@@ -284,7 +272,6 @@ export function RegionalTimezoneSelector({
             </div>
           )}
 
-          {/* Regions List */}
           <div className="flex-1 min-h-[120px] max-h-52 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
             {filteredRegions.length === 0 ? (
               <div className="py-6 text-center text-xs text-slate-400">

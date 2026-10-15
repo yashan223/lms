@@ -11,7 +11,6 @@ async function main() {
   console.log("Connecting to PostgreSQL database...");
 
   try {
-    // 1. Add TUTOR to enum Role if not exists
     await pool.query(`ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'TUTOR';`);
     console.log("✅ Ensured 'TUTOR' value exists in Role enum");
   } catch (e: any) {
@@ -19,7 +18,6 @@ async function main() {
   }
 
   try {
-    // 2. Rename instructorId to tutorId in courses table if instructorId exists
     const res = await pool.query(`
       SELECT column_name 
       FROM information_schema.columns 
@@ -37,7 +35,6 @@ async function main() {
   }
 
   try {
-    // 3. Update any users with role 'INSTRUCTOR' to 'TUTOR'
     await pool.query(`UPDATE "users" SET "role" = 'TUTOR' WHERE "role"::text = 'INSTRUCTOR';`);
     console.log("✅ Migrated existing INSTRUCTOR users to TUTOR");
   } catch (e: any) {
@@ -45,7 +42,6 @@ async function main() {
   }
 
   try {
-    // 4. Create TransactionType enum
     await pool.query(`
       DO $$ BEGIN
         CREATE TYPE "TransactionType" AS ENUM ('PURCHASE', 'SPEND', 'REFUND', 'BONUS');
@@ -59,7 +55,6 @@ async function main() {
   }
 
   try {
-    // 5. Create token_wallets table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "token_wallets" (
         "id" TEXT PRIMARY KEY,
@@ -76,7 +71,6 @@ async function main() {
   }
 
   try {
-    // 6. Create token_transactions table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "token_transactions" (
         "id" TEXT PRIMARY KEY,
@@ -94,7 +88,6 @@ async function main() {
   }
 
   try {
-    // 7. Update any events with type ASSIGNMENT to DEADLINE
     await pool.query(`UPDATE "events" SET "type" = 'DEADLINE' WHERE "type"::text = 'ASSIGNMENT';`);
     console.log("✅ Migrated ASSIGNMENT events to DEADLINE");
   } catch (e: any) {

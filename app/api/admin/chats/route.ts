@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const conversationId = searchParams.get("conversationId");
 
-    // Fetch messages for a specific conversation
     if (conversationId) {
       const conversation = await prisma.conversation.findUnique({
         where: { id: conversationId },
@@ -51,7 +50,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Otherwise, fetch all conversations with summary stats
     const search = searchParams.get("search")?.trim().toLowerCase() || "";
 
     const [allConversations, totalMessagesCount] = await Promise.all([
@@ -84,7 +82,6 @@ export async function GET(req: NextRequest) {
       prisma.message.count(),
     ]);
 
-    // Apply search filter in memory for participant names / emails
     let filteredConversations = allConversations;
     if (search) {
       filteredConversations = allConversations.filter((c) => {

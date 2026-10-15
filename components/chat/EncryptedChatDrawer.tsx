@@ -162,7 +162,6 @@ export function EncryptedChatDrawer({
         const rawMessages = data.messages || [];
         setMessages(rawMessages);
 
-        // Always prefer the authoritative otherUser from the API response to avoid key mismatch
         const resolvedOtherUser = data.conversation?.otherUser ?? otherUserHint;
         const myId = currentUser?.id;
         const theirId = resolvedOtherUser?.id;

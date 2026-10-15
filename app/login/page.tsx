@@ -55,7 +55,6 @@ function LoginContent() {
         return;
       }
 
-      // Safe redirect check
       const safeRedirect =
         redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
           ? redirectParam

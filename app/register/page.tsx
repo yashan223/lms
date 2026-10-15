@@ -50,7 +50,6 @@ function RegisterContent() {
     }
   }, []);
 
-  // Parent / Guardian Details
   const [guardianName, setGuardianName] = useState("");
   const [guardianRelationship, setGuardianRelationship] = useState("Father");
   const [guardianPhone, setGuardianPhone] = useState("");
@@ -344,7 +343,6 @@ function RegisterContent() {
                 </div>
               </div>
 
-              {/* Parent / Guardian Information Section */}
               <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-700">
@@ -454,7 +452,6 @@ function RegisterContent() {
                 </div>
               </div>
 
-              {/* Terms & Conditions and No-Refund Policy Checkbox */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
                 <div className="flex items-start gap-3">
                   <input

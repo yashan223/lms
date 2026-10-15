@@ -77,7 +77,6 @@ export async function POST(
         ? Number((course as any).olPrice)
         : Number(course.price) || 0;
 
-    // Check student token wallet
     let wallet = await prisma.tokenWallet.findUnique({
       where: { userId: user.id },
     });

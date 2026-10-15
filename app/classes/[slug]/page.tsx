@@ -668,7 +668,6 @@ export default function CourseDetailPage({
               </div>
             </div>
 
-            {/* Locked Gate Banner for Unenrolled Students */}
             {!isEnrolled && !isStaff && (
               <div className="p-4 rounded-2xl bg-blue-50/90 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-3">

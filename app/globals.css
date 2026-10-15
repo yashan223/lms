@@ -1,32 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  /* Dedicated Pure Light Theme (White & Blue) */
-  --background: 210 40% 98%;      /* Soft clean light mist #f8fafc */
-  --foreground: 222.2 84% 4.9%;   /* Deep slate #020817 */
   
-  --card: 0 0% 100%;             /* Pure White #ffffff */
+  --background: 210 40% 98%;      
+  --foreground: 222.2 84% 4.9%;   
+  
+  --card: 0 0% 100%;             
   --card-foreground: 222.2 84% 4.9%;
   
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
   
-  --primary: 221.2 83.2% 53.3%;   /* Royal Blue #2563eb */
+  --primary: 221.2 83.2% 53.3%;   
   --primary-foreground: 210 40% 98%;
   
-  --secondary: 214 95% 93%;      /* Ice Blue #dbeafe */
+  --secondary: 214 95% 93%;      
   --secondary-foreground: 222.2 47.4% 11.2%;
   
-  --muted: 210 40% 96.1%;        /* Slate 100 #f1f5f9 */
-  --muted-foreground: 215.4 16.3% 46.9%; /* Slate 500 #64748b */
+  --muted: 210 40% 96.1%;        
+  --muted-foreground: 215.4 16.3% 46.9%; 
   
-  --accent: 213 94% 95%;         /* Soft Sky Accent #eff6ff */
+  --accent: 213 94% 95%;         
   --accent-foreground: 221.2 83.2% 43.3%;
   
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
   
-  --border: 214.3 31.8% 91.4%;    /* Clean subtle border #e2e8f0 */
+  --border: 214.3 31.8% 91.4%;    
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
   
@@ -61,7 +61,6 @@
   --font-mono: var(--font-geist-mono), monospace;
 }
 
-/* Base styling locked to light mode */
 html, body {
   background-color: #ffffff;
   color: #0f172a;
@@ -69,12 +68,10 @@ html, body {
   scroll-behavior: smooth;
 }
 
-/* Header navy gradient with slanted angle accent */
 .navy-header-bg {
   background: linear-gradient(135deg, #0d2346 0%, #102e5c 60%, #133a75 100%);
 }
 
-/* Diamond badge animations & shadows */
 .diamond-card {
   transform: rotate(45deg);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -89,7 +86,6 @@ html, body {
   transform: rotate(-45deg);
 }
 
-/* Brush / Jagged mask blend */
 .brush-edge-mask {
   mask-image: linear-gradient(to right, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
@@ -100,7 +96,6 @@ html, body {
   -webkit-mask-image: linear-gradient(to left, black 80%, transparent 100%);
 }
 
-/* Custom glowing blue gradients and glass backgrounds */
 .bg-grid-blue-pattern {
   background-size: 32px 32px;
   background-image: 
@@ -128,7 +123,6 @@ html, body {
   box-shadow: 0 0 16px -2px rgba(56, 189, 248, 0.4);
 }
 
-/* Custom smooth scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -144,7 +138,6 @@ html, body {
   background: #94a3b8;
 }
 
-/* Remove numeric input up/down stepper arrows (spinners) across all browsers */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -156,7 +149,6 @@ input[type="number"] {
   appearance: textfield;
 }
 
-/* Utility to completely hide scrollbars */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

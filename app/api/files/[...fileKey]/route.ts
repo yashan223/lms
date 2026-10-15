@@ -57,7 +57,6 @@ export async function GET(
         return new NextResponse("Unauthorized to access private file", { status: 401 });
       }
 
-      // Enforce ownership: only file owner, assigned Tutor, or Admin can access private files
       if (auth.user.role !== Role.ADMIN) {
         const storedFile = await prisma.privateFile.findFirst({
           where: {

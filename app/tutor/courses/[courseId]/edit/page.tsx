@@ -184,7 +184,6 @@ export function TutorCourseWorkspaceContent({
   const courseId = params?.courseId;
   const isNewCourse = Boolean(isNewCourseProp || courseId === "new" || !courseId);
 
-  // Tabs
   const tabParam = searchParams.get("tab") as Tab | null;
   const [activeTab, setActiveTab] = useState<Tab>(
     tabParam && ["overview", "curriculum", "materials", "students", "live_classes", "reviews"].includes(tabParam)
@@ -192,7 +191,6 @@ export function TutorCourseWorkspaceContent({
       : "overview"
   );
 
-  // Core data states
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingDetails, setSavingDetails] = useState(false);
@@ -210,7 +208,6 @@ export function TutorCourseWorkspaceContent({
       .catch(() => {});
   }, []);
 
-  // Course Details Form state
   const [detailsForm, setDetailsForm] = useState({
     title: "",
     subjectCode: "",
@@ -224,10 +221,8 @@ export function TutorCourseWorkspaceContent({
     thumbnail: "",
   });
 
-  // Thumbnail upload state
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
 
-  // Curriculum Builder state
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [addingModule, setAddingModule] = useState(false);
   const [editingModule, setEditingModule] = useState<{ id: string; title: string } | null>(null);
@@ -247,7 +242,6 @@ export function TutorCourseWorkspaceContent({
     isFreePreview: boolean;
   } | null>(null);
 
-  // Study Materials state
   const [matTitle, setMatTitle] = useState("");
   const [matDesc, setMatDesc] = useState("");
   const [matCategory, setMatCategory] = useState("HANDOUT");
@@ -256,10 +250,8 @@ export function TutorCourseWorkspaceContent({
   const [matSearch, setMatSearch] = useState("");
   const [matCategoryFilter, setMatCategoryFilter] = useState("ALL");
 
-  // Students & Enrollment state
   const [studentSearch, setStudentSearch] = useState("");
 
-  // Live Classes state
   const [classTitle, setClassTitle] = useState("");
   const [classDate, setClassDate] = useState("");
   const [classMeetLink, setClassMeetLink] = useState("");
@@ -268,7 +260,6 @@ export function TutorCourseWorkspaceContent({
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
-  // Confirmation Modal state
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -285,7 +276,6 @@ export function TutorCourseWorkspaceContent({
     onConfirm: () => {},
   });
 
-  // Fetch full course data and tutor context
   const loadData = async (silent = false) => {
     if (isNewCourse) {
       setLoading(false);
@@ -300,7 +290,6 @@ export function TutorCourseWorkspaceContent({
       const found = (data.courses || []).find((c: Course) => c.id === courseId);
       if (!found) throw new Error("Course not found in tutor curriculum.");
 
-      // Also attach events linked to this course from data.events
       const courseEvents = found.events || (data.events || []).filter((e: any) => e.courseId === courseId);
       const enrichedCourse = { ...found, events: courseEvents };
 
@@ -329,7 +318,6 @@ export function TutorCourseWorkspaceContent({
     loadData();
   }, [courseId]);
 
-  // Realtime synchronization across LMS actions
   useRealtimeSync({
     events: ["COURSES_CHANGED", "MATERIALS_CHANGED", "ENROLLMENTS_CHANGED", "EVENTS_CHANGED"],
     onSync: () => {
@@ -344,9 +332,6 @@ export function TutorCourseWorkspaceContent({
     }, 5000);
   };
 
-  // -------------------------------------------------------------
-  // Course Details Handlers
-  // -------------------------------------------------------------
   const handleSaveDetails = async (e: FormEvent) => {
     e.preventDefault();
     setSavingDetails(true);
@@ -483,9 +468,6 @@ export function TutorCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Curriculum Handlers
-  // -------------------------------------------------------------
   const handleAddModule = async (e: FormEvent) => {
     e.preventDefault();
     if (!newModuleTitle.trim()) return;
@@ -606,9 +588,6 @@ export function TutorCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Study Materials Handlers
-  // -------------------------------------------------------------
   const handleUploadMaterial = async (e: FormEvent) => {
     e.preventDefault();
     if (!matFile) {
@@ -689,9 +668,6 @@ export function TutorCourseWorkspaceContent({
     });
   }, [course?.materials, matSearch, matCategoryFilter]);
 
-  // -------------------------------------------------------------
-  // Students & Enrollment Handlers
-  // -------------------------------------------------------------
   const filteredEnrollments = useMemo(() => {
     const enrollments = course?.enrollments || [];
     const q = studentSearch.trim().toLowerCase();
@@ -728,9 +704,6 @@ export function TutorCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Live Classes Handlers
-  // -------------------------------------------------------------
   const handleScheduleClass = async (e: FormEvent) => {
     e.preventDefault();
     if (!classTitle.trim() || !classDate) {
@@ -816,9 +789,6 @@ export function TutorCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Render States
-  // -------------------------------------------------------------
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-slate-600">
@@ -884,7 +854,6 @@ export function TutorCourseWorkspaceContent({
 
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-900 pb-16">
-      {/* ── Top Navigation Bar ────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
         <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -924,7 +893,6 @@ export function TutorCourseWorkspaceContent({
               </Button>
             ) : (
               <>
-                {/* Quick Status Selector */}
                 <select
                   value={course?.status || "PUBLISHED"}
                   onChange={(e) => handleQuickStatusChange(e.target.value)}
@@ -936,7 +904,6 @@ export function TutorCourseWorkspaceContent({
                   <option value="DRAFT">Draft</option>
                 </select>
 
-                {/* Public Course Preview */}
                 {course && (
                   <Link
                     href={`/classes/${course.slug}`}
@@ -949,7 +916,6 @@ export function TutorCourseWorkspaceContent({
                   </Link>
                 )}
 
-                {/* Delete Course Button */}
                 <button
                   onClick={handleDeleteCourse}
                   className="h-9 w-9 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
@@ -963,9 +929,7 @@ export function TutorCourseWorkspaceContent({
         </div>
       </header>
 
-      {/* ── Main Container ─────────────────────────────────────────────── */}
       <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
-        {/* Banner Alert Message */}
         {bannerMsg && (
           <div
             className={`rounded-2xl border px-4 py-3 text-xs font-semibold flex items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 ${
@@ -992,7 +956,6 @@ export function TutorCourseWorkspaceContent({
           </div>
         )}
 
-        {/* ── Top Summary KPI Bar ───────────────────────────────────────── */}
         <section className={`grid grid-cols-2 sm:grid-cols-2 ${isNewCourse ? "lg:grid-cols-4" : "sm:grid-cols-3 lg:grid-cols-5"} gap-3`}>
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
@@ -1044,9 +1007,7 @@ export function TutorCourseWorkspaceContent({
           )}
         </section>
 
-        {/* ── Main Tabbed Section ────────────────────────────────────────── */}
         <div className="bg-white border border-slate-200 rounded-3xl shadow-xs overflow-hidden">
-          {/* Tab Navigation Header */}
           {!isNewCourse && tabList.length > 0 && (
             <div className="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 pt-3 flex items-center overflow-x-auto gap-1 scrollbar-none">
             {tabList.map((tab) => {
@@ -1079,7 +1040,6 @@ export function TutorCourseWorkspaceContent({
           </div>
           )}
 
-          {/* Tab 1: Individual Class Details & Settings */}
           {activeTab === "overview" && (
             <form onSubmit={handleSaveDetails} className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1094,7 +1054,6 @@ export function TutorCourseWorkspaceContent({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {/* Class Title */}
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
                     Individual Class Title <span className="text-red-500">*</span>
@@ -1108,7 +1067,6 @@ export function TutorCourseWorkspaceContent({
                   />
                 </div>
 
-                {/* Subject Code */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
                     Subject Code <span className="text-red-500">*</span>
@@ -1122,7 +1080,6 @@ export function TutorCourseWorkspaceContent({
                   />
                 </div>
 
-                {/* Academic Category */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Academic Subject / Category</label>
                   <select
@@ -1138,7 +1095,6 @@ export function TutorCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Read-only Token Display for existing classes (Set by Admin only) */}
                 {!isNewCourse && (
                   <div className="md:col-span-2 lg:col-span-3 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
@@ -1175,7 +1131,6 @@ export function TutorCourseWorkspaceContent({
                   </div>
                 )}
 
-                {/* Academic Level */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Academic Level</label>
                   <select
@@ -1189,7 +1144,6 @@ export function TutorCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Status */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Publishing Status</label>
                   <select
@@ -1203,7 +1157,6 @@ export function TutorCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Short Subtitle */}
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Course Tagline / Short Summary</label>
                   <Input
@@ -1214,7 +1167,6 @@ export function TutorCourseWorkspaceContent({
                   />
                 </div>
 
-                {/* Course Cover / Thumbnail */}
                 <div className="md:col-span-3 space-y-2">
                   <label className="text-xs font-bold text-slate-700 block">Course Cover Thumbnail</label>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-slate-200 rounded-2xl bg-slate-50/40">
@@ -1264,7 +1216,6 @@ export function TutorCourseWorkspaceContent({
                   </div>
                 </div>
 
-                {/* Full Course Description */}
                 <div className="md:col-span-3 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Comprehensive Class Syllabus Description</label>
                   <textarea
@@ -1292,7 +1243,6 @@ export function TutorCourseWorkspaceContent({
             </form>
           )}
 
-          {/* If new course, show guidance on other tabs */}
           {isNewCourse && activeTab !== "overview" && (
             <div className="p-12 text-center space-y-4 max-w-md mx-auto">
               <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
@@ -1316,7 +1266,6 @@ export function TutorCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 2: Curriculum & Syllabus Builder */}
           {!isNewCourse && activeTab === "curriculum" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1328,7 +1277,6 @@ export function TutorCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Add New Module Form */}
               <form
                 onSubmit={handleAddModule}
                 className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex flex-col sm:flex-row items-center gap-3"
@@ -1353,7 +1301,6 @@ export function TutorCourseWorkspaceContent({
                 </Button>
               </form>
 
-              {/* Modules List */}
               {(course?.modules?.length || 0) === 0 ? (
                 <div className="text-center py-16 px-4 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 space-y-2">
                   <Layers3 className="w-10 h-10 text-slate-300 mx-auto" />
@@ -1374,7 +1321,6 @@ export function TutorCourseWorkspaceContent({
                         key={mod.id}
                         className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-2xs transition-shadow hover:shadow-xs"
                       >
-                        {/* Module Header Bar */}
                         <div className="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <span className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
@@ -1426,7 +1372,6 @@ export function TutorCourseWorkspaceContent({
                           </div>
                         </div>
 
-                        {/* Inline Module Rename Form */}
                         {editingModule?.id === mod.id && (
                           <form
                             onSubmit={handleUpdateModule}
@@ -1453,7 +1398,6 @@ export function TutorCourseWorkspaceContent({
                           </form>
                         )}
 
-                        {/* Add Lesson Form for this Module */}
                         {isAddingLessonHere && (
                           <div className="p-4 bg-blue-50/40 border-b border-blue-100 space-y-3 animate-in fade-in">
                             <div className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
@@ -1524,7 +1468,6 @@ export function TutorCourseWorkspaceContent({
                           </div>
                         )}
 
-                        {/* Lessons List in Module */}
                         <div className="p-4 space-y-2">
                           {modLessons.length === 0 ? (
                             <div className="text-center py-6 text-xs text-slate-400 font-medium">
@@ -1605,7 +1548,6 @@ export function TutorCourseWorkspaceContent({
                 </div>
               )}
 
-              {/* Edit Lesson Modal */}
               {editingLesson && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
                   <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -1687,7 +1629,6 @@ export function TutorCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 3: Study Materials & Vaults */}
           {!isNewCourse && activeTab === "materials" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1699,7 +1640,6 @@ export function TutorCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Upload Material Card */}
               <form
                 onSubmit={handleUploadMaterial}
                 className="bg-slate-50 border border-slate-200 rounded-3xl p-5 sm:p-6 space-y-4"
@@ -1785,7 +1725,6 @@ export function TutorCourseWorkspaceContent({
                 </div>
               </form>
 
-              {/* Published Materials List & Filter Header */}
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <h3 className="font-black text-sm text-slate-900">
@@ -1875,7 +1814,6 @@ export function TutorCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 4: Enrolled Scholars & Students */}
           {!isNewCourse && activeTab === "students" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1887,7 +1825,6 @@ export function TutorCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Enrolled Students Table */}
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <h3 className="font-black text-sm text-slate-900">
@@ -1974,7 +1911,6 @@ export function TutorCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 5: Live Classes & Google Meet Hub */}
           {!isNewCourse && activeTab === "live_classes" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1986,7 +1922,6 @@ export function TutorCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Schedule New Live Class Form */}
               <form
                 onSubmit={handleScheduleClass}
                 className="p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4"
@@ -2056,7 +1991,6 @@ export function TutorCourseWorkspaceContent({
                 </div>
               </form>
 
-              {/* Sessions List */}
               <div className="space-y-4">
                 <h3 className="font-black text-sm text-slate-900">
                   Scheduled & Past Live Sessions ({course?.events?.length || 0})
@@ -2188,7 +2122,6 @@ export function TutorCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 6: Course Reviews & Student Feedback */}
           {!isNewCourse && activeTab === "reviews" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -2268,7 +2201,6 @@ export function TutorCourseWorkspaceContent({
         </div>
       </div>
 
-      {/* ── Global Confirmation Modal ─────────────────────────────────── */}
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}

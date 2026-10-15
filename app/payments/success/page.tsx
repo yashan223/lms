@@ -50,7 +50,6 @@ function PaymentSuccessContent() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50/40 flex items-center justify-center p-4">
       <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl border border-blue-100 p-8 sm:p-10 text-center relative overflow-hidden">
-        {/* Top Celebration Glow */}
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-60 bg-blue-400/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-blue-50/60">

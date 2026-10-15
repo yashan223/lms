@@ -41,10 +41,8 @@ export default function StudentProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Student Profile Data
   const [student, setStudent] = useState<any>(null);
 
-  // Form Fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [headline, setHeadline] = useState("");
@@ -57,7 +55,6 @@ export default function StudentProfilePage() {
   const [guardianRelationship, setGuardianRelationship] = useState("Father");
   const [guardianPhone, setGuardianPhone] = useState("");
 
-  // Delete Account
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -101,7 +98,6 @@ export default function StudentProfilePage() {
     fetchProfile();
   }, []);
 
-  // Handle avatar file upload via /api/upload
   const handleAvatarFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -137,7 +133,6 @@ export default function StudentProfilePage() {
 
       setAvatar(data.file.fileUrl);
 
-      // Auto-save the new avatar to the student profile
       await fetch("/api/student/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -154,7 +149,6 @@ export default function StudentProfilePage() {
     }
   };
 
-  // Remove profile picture
   const handleRemoveAvatar = async () => {
     try {
       setUploadingAvatar(true);
@@ -175,7 +169,6 @@ export default function StudentProfilePage() {
     }
   };
 
-  // Save profile information
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -218,7 +211,6 @@ export default function StudentProfilePage() {
     }
   };
 
-  // Delete Account
   const handleDeleteAccount = async (e: FormEvent) => {
     e.preventDefault();
     if (!deletePassword) {
@@ -255,7 +247,6 @@ export default function StudentProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 pb-20">
-      {/* Top Header Navigation */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -281,9 +272,7 @@ export default function StudentProfilePage() {
         </div>
       </header>
 
-      {/* Main Content Container */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-6">
-        {/* Toast / Notification Banner */}
         {statusMsg && (
           <div
             className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs font-medium animate-in fade-in ${
@@ -309,7 +298,6 @@ export default function StudentProfilePage() {
           </div>
         )}
 
-        {/* Academic Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
@@ -345,7 +333,6 @@ export default function StudentProfilePage() {
           </div>
         </div>
 
-        {/* Section 1: Profile Photo & Visual Identity */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
@@ -410,7 +397,6 @@ export default function StudentProfilePage() {
                 )}
               </div>
 
-              {/* Hidden file input for strictly file-browsing image upload */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -426,7 +412,6 @@ export default function StudentProfilePage() {
           </div>
         </section>
 
-        {/* Section 2: General Student Details Form */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
@@ -439,7 +424,6 @@ export default function StudentProfilePage() {
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-5">
-            {/* Name & Headline */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">Full Name *</label>
@@ -462,7 +446,6 @@ export default function StudentProfilePage() {
               </div>
             </div>
 
-            {/* Email (Readonly) & Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
@@ -499,7 +482,6 @@ export default function StudentProfilePage() {
               </div>
             </div>
 
-            {/* Country */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Country of Residence</label>
               <div className="relative">
@@ -513,7 +495,6 @@ export default function StudentProfilePage() {
               </div>
             </div>
 
-            {/* Parent / Guardian Information */}
             <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-4">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-700">
@@ -571,7 +552,6 @@ export default function StudentProfilePage() {
               </div>
             </div>
 
-            {/* Academic Bio / Goals */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Academic Goals &amp; Exam Targets</label>
               <textarea
@@ -583,7 +563,6 @@ export default function StudentProfilePage() {
               />
             </div>
 
-            {/* Save Button */}
             <div className="pt-2 flex justify-end">
               <Button
                 type="submit"
@@ -601,7 +580,6 @@ export default function StudentProfilePage() {
           </form>
         </section>
 
-        {/* Section 3: Danger Zone */}
         <section className="bg-white rounded-3xl border border-red-200 shadow-xs p-6 sm:p-8 space-y-6">
           <div className="border-b border-red-100 pb-4">
             <h2 className="text-base font-extrabold text-red-600 flex items-center gap-2">
@@ -637,7 +615,6 @@ export default function StudentProfilePage() {
           </div>
         </section>
 
-        {/* Delete Confirmation Modal */}
         {showDeleteModal && (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl border border-red-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">

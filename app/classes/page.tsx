@@ -127,7 +127,6 @@ export default function CoursesPage() {
         }
       }
 
-      // Fetch student trial stats
       fetch("/api/trials")
         .then((r) => r.json())
         .then((d) => {
@@ -218,7 +217,6 @@ export default function CoursesPage() {
       <main className="flex-1 py-8 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           
-          {/* Main View Switcher: Masterclasses vs Tutors */}
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
               <button
@@ -272,7 +270,6 @@ export default function CoursesPage() {
             </div>
           </div>
 
-          {/* Level Filter (Shown for both Masterclasses and Tutors) */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
@@ -314,7 +311,6 @@ export default function CoursesPage() {
             )}
           </div>
 
-          {/* Academic Categories Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => (
               <button
@@ -331,7 +327,6 @@ export default function CoursesPage() {
             ))}
           </div>
 
-          {/* VIEW 1: MASTERCLASSES GRID */}
           {viewMode === "masterclasses" && (
             <>
               {filteredCourses.length > 0 ? (
@@ -392,7 +387,6 @@ export default function CoursesPage() {
                             </span>
                           </div>
 
-                          {/* Tutor Details on Card */}
                           <div className="flex items-center justify-between pt-1">
                             <div className="flex items-center gap-2.5 min-w-0">
                               <Avatar className="w-8 h-8 shrink-0">
@@ -538,7 +532,6 @@ export default function CoursesPage() {
             </>
           )}
 
-          {/* VIEW 2: TUTORS CONDUCTING CLASSES */}
           {viewMode === "tutors" && (
             <>
               {trialStats && (
@@ -570,7 +563,6 @@ export default function CoursesPage() {
                       className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
                     >
                       <div className="space-y-4">
-                        {/* Tutor Header Info */}
                         <div className="flex items-start gap-4">
                           <Avatar className="w-16 h-16 rounded-2xl border-2 border-blue-100 shadow-xs shrink-0">
                             <AvatarImage src={tutor.avatar} alt={tutor.name} />
@@ -601,7 +593,6 @@ export default function CoursesPage() {
                           </div>
                         </div>
 
-                        {/* Tutor Bio */}
                         {Boolean(parseTutorBio(tutor.bio)) && (
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                             <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
@@ -610,7 +601,6 @@ export default function CoursesPage() {
                           </div>
                         )}
 
-                        {/* Masterclasses & Classes Conducted */}
                         <div className="space-y-2 pt-2 border-t border-slate-100">
                           <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
                             <span className="flex items-center gap-1.5">
@@ -623,7 +613,6 @@ export default function CoursesPage() {
                             </span>
                           </div>
 
-                          {/* Subjects & Specifications */}
                           {tutor.subjects && tutor.subjects.length > 0 && (
                             <div className="space-y-1.5 pt-1">
                               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -676,7 +665,6 @@ export default function CoursesPage() {
                         </div>
                       </div>
 
-                      {/* Action CTAs */}
                       <div className="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                         {trialStats?.bookedTutorIds?.includes(tutor.id) ? (
                           <button

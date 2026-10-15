@@ -3,10 +3,10 @@ export interface TokenBundle {
   name: string;
   hours: number;
   tokens: number;
-  price: number; // A/L USD Price
-  lkrPrice: number; // A/L LKR Price
-  olPrice?: number; // O/L USD Price
-  olLkrPrice?: number; // O/L LKR Price
+  price: number;
+  lkrPrice: number;
+  olPrice?: number;
+  olLkrPrice?: number;
   popular: boolean;
   badge: string;
   description: string;

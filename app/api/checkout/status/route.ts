@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
           ...(reference ? [{ reference }] : []),
           ...(checkoutId ? [{ checkoutId }] : []),
         ],
-        // Allow admins to view any payment, students view only their own
         ...(auth.user.role === "ADMIN" ? {} : { userId: auth.user.id }),
       },
     });
@@ -39,7 +38,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    // If payment is pending and Payments.lk is configured and checkoutId is present, query Payments.lk API
     if (
       payment.checkoutId &&
       isPaymentsLkConfigured() &&
@@ -48,7 +46,6 @@ export async function GET(request: NextRequest) {
       try {
         const checkoutInfo = await getPaymentsLkCheckout(payment.checkoutId);
         if (checkoutInfo.payment?.status === "succeeded") {
-          // Fulfill payment (credits wallet and creates transaction ledger row)
           await fulfillPayment(
             payment.id,
             checkoutInfo.payment.card?.scheme || "CARD",
@@ -60,7 +57,6 @@ export async function GET(request: NextRequest) {
         console.warn("Could not query Payments.lk checkout status:", err);
       }
     } else if (payment.status === "SUCCEEDED") {
-      // Ensure fulfillment was completed even if status was updated elsewhere
       await fulfillPayment(payment.id);
     }
 

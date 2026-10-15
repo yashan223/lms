@@ -3,7 +3,6 @@ import { promises as fsPromises } from "fs";
 import path from "path";
 import crypto from "crypto";
 
-// On a VPS, storage directory is configurable via STORAGE_DIR or defaults to ./storage/uploads
 export const STORAGE_ROOT =
   process.env.STORAGE_DIR ||
   path.join(process.cwd(), "storage", "uploads");
@@ -83,14 +82,14 @@ export function formatBytes(bytes: number, decimals = 1): string {
 }
 
 export async function ensureStorageDirectories(): Promise<void> {
-  const publicDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, "public");
-  const privateDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, "private");
+  const publicDir = path.join( STORAGE_ROOT, "public");
+  const privateDir = path.join( STORAGE_ROOT, "private");
   try {
-    if (fs.existsSync(/*turbopackIgnore: true*/ publicDir) === false) {
-      await fsPromises.mkdir(/*turbopackIgnore: true*/ publicDir, { recursive: true });
+    if (fs.existsSync( publicDir) === false) {
+      await fsPromises.mkdir( publicDir, { recursive: true });
     }
-    if (fs.existsSync(/*turbopackIgnore: true*/ privateDir) === false) {
-      await fsPromises.mkdir(/*turbopackIgnore: true*/ privateDir, { recursive: true });
+    if (fs.existsSync( privateDir) === false) {
+      await fsPromises.mkdir( privateDir, { recursive: true });
     }
   } catch (err) {
     console.warn("[storage] Storage directory initialization notice:", err);
@@ -104,8 +103,8 @@ export function resolveSafeStoragePath(fileKey: string): string | null {
   if (sanitizedKey.startsWith("api/files/")) {
     sanitizedKey = sanitizedKey.replace(/^api\/files\//, "");
   }
-  const normalizedRoot = path.resolve(/*turbopackIgnore: true*/ STORAGE_ROOT);
-  const resolvedPath = path.resolve(/*turbopackIgnore: true*/ STORAGE_ROOT, sanitizedKey);
+  const normalizedRoot = path.resolve( STORAGE_ROOT);
+  const resolvedPath = path.resolve( STORAGE_ROOT, sanitizedKey);
 
   if (!resolvedPath.startsWith(normalizedRoot + path.sep) && resolvedPath !== normalizedRoot) {
     return null;
@@ -144,7 +143,6 @@ export function validateFileSafety(buffer: Buffer, originalFileName: string, mim
     throw new Error(`Security Violation: Uploading ${ext} executable or script files is prohibited.`);
   }
 
-  // Magic bytes inspection
   if (buffer.length >= 4) {
     if ((ext === ".pdf" || mimeType === "application/pdf") && buffer.slice(0, 4).toString("ascii") !== "%PDF") {
       throw new Error("Invalid PDF file format: header signature mismatch.");
@@ -196,14 +194,13 @@ export async function saveUploadedFile(
   const folder = isPrivate ? "private" : "public";
   const contentType = mimeType || EXTENSION_TO_MIME[detectedExt] || "application/octet-stream";
 
-  // VPS local filesystem storage
   await ensureStorageDirectories();
 
-  const targetDir = path.join(/*turbopackIgnore: true*/ STORAGE_ROOT, folder);
-  await fsPromises.mkdir(/*turbopackIgnore: true*/ targetDir, { recursive: true });
+  const targetDir = path.join( STORAGE_ROOT, folder);
+  await fsPromises.mkdir( targetDir, { recursive: true });
 
-  const finalPath = path.join(/*turbopackIgnore: true*/ targetDir, storedFileName);
-  await fsPromises.writeFile(/*turbopackIgnore: true*/ finalPath, fileBuffer);
+  const finalPath = path.join( targetDir, storedFileName);
+  await fsPromises.writeFile( finalPath, fileBuffer);
 
   const fileKey = `${folder}/${storedFileName}`;
   const fileUrl = `/api/files/${fileKey}`;
@@ -223,13 +220,12 @@ export async function saveUploadedFile(
 export async function deleteStorageFile(fileKey: string): Promise<boolean> {
   if (!fileKey || typeof fileKey !== "string") return false;
 
-  // VPS local disk storage deletion
   const safePath = resolveSafeStoragePath(fileKey);
   if (!safePath) return false;
 
   try {
-    if (fs.existsSync(/*turbopackIgnore: true*/ safePath)) {
-      await fsPromises.unlink(/*turbopackIgnore: true*/ safePath);
+    if (fs.existsSync( safePath)) {
+      await fsPromises.unlink( safePath);
       return true;
     }
     return false;
@@ -241,11 +237,11 @@ export async function deleteStorageFile(fileKey: string): Promise<boolean> {
 
 export function getFileStream(fileKey: string, rangeHeader: string | null = null) {
   const safePath = resolveSafeStoragePath(fileKey);
-  if (!safePath || !fs.existsSync(/*turbopackIgnore: true*/ safePath)) {
+  if (!safePath || !fs.existsSync( safePath)) {
     return null;
   }
 
-  const stat = fs.statSync(/*turbopackIgnore: true*/ safePath);
+  const stat = fs.statSync( safePath);
   if (!stat.isFile()) {
     return null;
   }
@@ -267,7 +263,7 @@ export function getFileStream(fileKey: string, rangeHeader: string | null = null
     }
 
     const chunkSize = end - start + 1;
-    const stream = fs.createReadStream(/*turbopackIgnore: true*/ safePath, { start, end });
+    const stream = fs.createReadStream( safePath, { start, end });
 
     return {
       stream,
@@ -281,7 +277,7 @@ export function getFileStream(fileKey: string, rangeHeader: string | null = null
     };
   }
 
-  const stream = fs.createReadStream(/*turbopackIgnore: true*/ safePath);
+  const stream = fs.createReadStream( safePath);
   return {
     stream,
     isPartial: false,

@@ -19,9 +19,6 @@ declare global {
   var lmsWsBroadcast: ((payload: LMSEventPayload) => void) | undefined;
 }
 
-/**
- * Parses cookies from HTTP cookie header string
- */
 function parseCookieHeader(header: string | undefined): Record<string, string> {
   if (!header) return {};
   const cookies: Record<string, string> = {};
@@ -35,9 +32,6 @@ function parseCookieHeader(header: string | undefined): Record<string, string> {
   return cookies;
 }
 
-/**
- * Broadcast an LMS event to all connected WebSocket clients matching subscription
- */
 export function broadcastToWsClients(payload: LMSEventPayload): void {
   const clients = globalThis.lmsWsClients;
   if (!clients || clients.size === 0) return;
@@ -45,7 +39,6 @@ export function broadcastToWsClients(payload: LMSEventPayload): void {
   const data = JSON.stringify(payload);
   for (const client of clients) {
     if (client.readyState === WebSocket.OPEN) {
-      // If client has subscribed to specific events, respect filter
       if (
         !client.subscribedEvents ||
         client.subscribedEvents.size === 0 ||
@@ -61,25 +54,16 @@ export function broadcastToWsClients(payload: LMSEventPayload): void {
   }
 }
 
-// Register global broadcast function for lib/events.ts
 globalThis.lmsWsBroadcast = broadcastToWsClients;
 
-// Also listen to the in-process EventEmitter
 eventEmitter.on("lms_event", (payload: LMSEventPayload) => {
   broadcastToWsClients(payload);
 });
 
-/**
- * Returns number of currently active WebSocket connections
- */
 export function getActiveWsClientCount(): number {
   return globalThis.lmsWsClients ? globalThis.lmsWsClients.size : 0;
 }
 
-/**
- * Initializes and attaches WebSocketServer to an existing Node.js HTTP server.
- * Handles upgrades for `/ws` and `/api/ws`.
- */
 export function initWebSocketServer(server: HttpServer): WebSocketServer {
   if (globalThis.lmsWsServer) {
     return globalThis.lmsWsServer;
@@ -91,7 +75,6 @@ export function initWebSocketServer(server: HttpServer): WebSocketServer {
   const wss = new WebSocketServer({ noServer: true });
   globalThis.lmsWsServer = wss;
 
-  // Heartbeat interval to prune dead connections
   const heartbeatInterval = setInterval(() => {
     for (const ws of clients) {
       if (!ws.isAlive) {
@@ -118,7 +101,6 @@ export function initWebSocketServer(server: HttpServer): WebSocketServer {
     ws.isAlive = true;
     clients.add(ws);
 
-    // Extract authentication if session cookie exists
     try {
       const cookies = parseCookieHeader(req.headers.cookie);
       const sessionToken = cookies[SESSION_COOKIE_NAME];
@@ -131,10 +113,8 @@ export function initWebSocketServer(server: HttpServer): WebSocketServer {
         }
       }
     } catch {
-      // Non-fatal, unauthenticated public real-time connection
     }
 
-    // Send connection handshake acknowledgment
     try {
       ws.send(
         JSON.stringify({
@@ -173,7 +153,6 @@ export function initWebSocketServer(server: HttpServer): WebSocketServer {
           return;
         }
       } catch {
-        // Ignore malformed messages
       }
     });
 
@@ -187,7 +166,6 @@ export function initWebSocketServer(server: HttpServer): WebSocketServer {
     });
   });
 
-  // Attach upgrade handler to the HTTP server
   server.on("upgrade", (req: IncomingMessage, socket: Socket, head: Buffer) => {
     try {
       const { pathname } = parse(req.url || "", true);
@@ -196,7 +174,6 @@ export function initWebSocketServer(server: HttpServer): WebSocketServer {
           wss.emit("connection", ws, req);
         });
       }
-      // If not /ws, we let other upgrade handlers (e.g. Next.js HMR) handle it
     } catch (err) {
       console.error("[ws] HTTP upgrade error:", err);
       socket.destroy();

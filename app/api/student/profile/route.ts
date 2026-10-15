@@ -15,10 +15,6 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-/**
- * GET /api/student/profile
- * Returns the authenticated student's full profile details
- */
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
@@ -90,11 +86,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * PUT /api/student/profile
- * Updates the student's profile information (name, headline, bio, phone, country, academicLevel, avatar)
- * or updates their password securely.
- */
 export async function PUT(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
@@ -117,7 +108,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
-    // Sub-action: Change Password
     if (action === "change_password") {
       const { currentPassword, newPassword, confirmPassword } = body;
 
@@ -178,7 +168,6 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // Default action: Update profile info
     const { name, headline, bio, phone, country, academicLevel, avatar, guardianName, guardianRelationship, guardianPhone } = body;
 
     if (name !== undefined) {
@@ -251,10 +240,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-/**
- * DELETE /api/student/profile
- * Permanently deletes the authenticated student's account and all associated data.
- */
 export async function DELETE(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
@@ -299,7 +284,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete student account (cascades to enrollments, progress, wallet, notifications, etc.)
     await prisma.user.delete({
       where: { id: user.id },
     });

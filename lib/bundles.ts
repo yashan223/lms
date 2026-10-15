@@ -3,7 +3,6 @@ import { TokenBundle, DEFAULT_BUNDLES } from "./bundle-types";
 
 export * from "./bundle-types";
 
-/** Read bundles from the database. Falls back to DEFAULT_BUNDLES if the table is empty or errors. */
 export async function getBundles(): Promise<TokenBundle[]> {
   try {
     const rows = await prisma.tokenBundle.findMany({
@@ -46,7 +45,6 @@ export async function getBundles(): Promise<TokenBundle[]> {
   return DEFAULT_BUNDLES;
 }
 
-/** Persist bundles to the database (replaces all existing rows atomically). */
 export async function saveBundles(bundles: TokenBundle[]): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await tx.tokenBundle.deleteMany({});

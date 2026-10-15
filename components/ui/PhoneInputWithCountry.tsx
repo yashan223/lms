@@ -33,7 +33,6 @@ export function PhoneInputWithCountry({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Active country matching the dial code
   const selectedCountry = useMemo(() => {
     if (!countryCode) return null;
     return (
@@ -43,7 +42,6 @@ export function PhoneInputWithCountry({
     );
   }, [countryCode]);
 
-  // Outside click handler
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -56,7 +54,6 @@ export function PhoneInputWithCountry({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // Focus search input when dropdown opens
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       setTimeout(() => {
@@ -67,7 +64,6 @@ export function PhoneInputWithCountry({
     }
   }, [isOpen]);
 
-  // Filter countries for the dial code dropdown
   const filteredCountries = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return COUNTRIES;
@@ -88,7 +84,6 @@ export function PhoneInputWithCountry({
   const handleNumberInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     let raw = e.target.value;
 
-    // If user pastes or types a full number starting with +, parse dial code
     if (raw.startsWith("+")) {
       const match = COUNTRIES.find((c) => raw.startsWith(c.dialCode));
       if (match) {
@@ -102,7 +97,6 @@ export function PhoneInputWithCountry({
 
   return (
     <div className={`relative flex items-center ${className}`} ref={dropdownRef}>
-      {/* Dial Code Dropdown Trigger */}
       <button
         type="button"
         disabled={disabled}
@@ -125,7 +119,6 @@ export function PhoneInputWithCountry({
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {/* Main Phone Input Field */}
       <div className="relative flex-1">
         <Input
           id={id}
@@ -139,10 +132,8 @@ export function PhoneInputWithCountry({
         />
       </div>
 
-      {/* Dropdown Menu for Dial Codes */}
       {isOpen && (
         <div className="absolute left-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 w-72 sm:w-80 max-h-72 flex flex-col">
-          {/* Search Bar */}
           <div className="p-2 border-b border-slate-100 bg-slate-50/60 shrink-0">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -157,7 +148,6 @@ export function PhoneInputWithCountry({
             </div>
           </div>
 
-          {/* List of Countries with Dial Codes */}
           <ul role="listbox" className="overflow-y-auto flex-1 p-1 space-y-0.5 text-xs">
             {filteredCountries.length > 0 ? (
               filteredCountries.map((c) => {

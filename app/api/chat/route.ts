@@ -6,12 +6,6 @@ import { Role, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Checks whether userA and userB are permitted to communicate via direct message.
- * Rule: Students and tutors can only message if the student has requested a 1-on-1 trial
- * with the tutor OR has enrolled in / purchased a course taught by the tutor.
- * Admin users are permitted full communication oversight.
- */
 async function canUsersChat(
   userA: { id: string; role: Role | string; email?: string | null },
   userB: { id: string; role: Role | string; email?: string | null }
@@ -24,7 +18,6 @@ async function canUsersChat(
   const isATutor = userA.role === Role.TUTOR || (userA.role as any) === "INSTRUCTOR";
   const isBTutor = userB.role === Role.TUTOR || (userB.role as any) === "INSTRUCTOR";
 
-  // Messaging is only permitted between a student and a tutor/instructor
   if (!((isAStudent && isBTutor) || (isBStudent && isATutor))) {
     return false;
   }
@@ -32,7 +25,6 @@ async function canUsersChat(
   const student = isAStudent ? userA : userB;
   const tutor = isATutor ? userA : userB;
 
-  // 1. Check if the student has purchased / enrolled in any course taught by this tutor
   const enrollment = await prisma.enrollment.findFirst({
     where: {
       userId: student.id,
@@ -47,7 +39,6 @@ async function canUsersChat(
     return true;
   }
 
-  // 2. Check if the student has requested a 1-on-1 trial with this tutor (direct or course-linked)
   const studentOrConditions: any[] = [{ studentId: student.id }];
   if (student.email) {
     const sEmail = student.email.trim();
@@ -112,7 +103,6 @@ export async function GET(req: NextRequest) {
         orderBy: { lastMessageAt: "desc" },
       });
 
-      // Filter conversations: only keep those where participants are authorized to chat
       const authorizedConversations = await Promise.all(
         conversations.map(async (conv) => {
           const otherUser = conv.participantAId === currentUserId ? conv.participantB : conv.participantA;
@@ -218,7 +208,6 @@ export async function GET(req: NextRequest) {
       let contacts: any[] = [];
 
       if (userRole === Role.STUDENT) {
-        // Students can only see tutors whose courses they enrolled in / purchased OR with whom they requested a 1-on-1 trial
         const [enrolledCourses, trials] = await Promise.all([
           prisma.enrollment.findMany({
             where: { userId: currentUserId },
@@ -289,7 +278,6 @@ export async function GET(req: NextRequest) {
 
         contacts = Array.from(contactsMap.values());
       } else if (userRole === Role.TUTOR || (userRole as any) === "INSTRUCTOR") {
-        // Tutors can only see students who enrolled in their courses or requested a 1-on-1 trial with them
         const [enrollments, trials] = await Promise.all([
           prisma.enrollment.findMany({
             where: {

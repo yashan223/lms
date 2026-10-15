@@ -1,18 +1,14 @@
-/**
- * IP and Country Geolocation Utilities for EduPulse LMS
- */
 
 export interface GeoLocationResult {
   ip: string;
-  country: string; // e.g. "Sri Lanka", "United States", etc.
-  countryCode: string; // e.g. "LK", "US", etc.
+  country: string;
+  countryCode: string;
   isSriLanka: boolean;
   currency: "LKR" | "USD";
 }
 
-// In-memory cache for resolved IPs (1 hour TTL)
 const ipCache = new Map<string, { country: string; countryCode: string; timestamp: number }>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 let serverExternalCountryCache: { country: string; countryCode: string; timestamp: number } | null = null;
 
@@ -57,7 +53,6 @@ export function extractCountryFromHeaders(headers: Headers | Record<string, stri
     return val || null;
   };
 
-  // Direct country headers provided by CDNs & reverse proxies
   const headerKeys = [
     "cf-ipcountry",
     "x-country-code",
@@ -113,7 +108,6 @@ export async function lookupIpCountry(ip: string): Promise<{ country: string; co
       }
     }
   } catch {
-    // Fallback to api.country.is
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 1800);
@@ -141,10 +135,6 @@ export async function lookupIpCountry(ip: string): Promise<{ country: string; co
   return null;
 }
 
-/**
- * For local development or when the incoming IP is private/loopback,
- * this fetches the public IP of the current internet connection.
- */
 export async function getLocalOrServerFallbackCountry(): Promise<{ country: string; countryCode: string }> {
   if (serverExternalCountryCache && Date.now() - serverExternalCountryCache.timestamp < CACHE_TTL_MS) {
     return serverExternalCountryCache;
@@ -198,10 +188,6 @@ export async function getLocalOrServerFallbackCountry(): Promise<{ country: stri
   return { country: "United States", countryCode: "US" };
 }
 
-/**
- * Resolves user geolocation based on request headers and IP.
- * Supports manual override via mockCountry parameter (e.g. for testing / debugging).
- */
 export async function resolveGeoLocation(
   headers: Headers | Record<string, string | string[] | undefined>,
   mockCountryOverride?: string | null

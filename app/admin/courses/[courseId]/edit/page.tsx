@@ -204,7 +204,6 @@ export function AdminCourseWorkspaceContent({
   const courseId = params?.courseId;
   const isNewCourse = Boolean(isNewCourseProp || courseId === "new" || !courseId);
 
-  // Tabs
   const tabParam = searchParams.get("tab") as Tab | null;
   const [activeTab, setActiveTab] = useState<Tab>(
     tabParam && ["overview", "curriculum", "materials", "students", "live_classes", "reviews"].includes(tabParam)
@@ -212,7 +211,6 @@ export function AdminCourseWorkspaceContent({
       : "overview"
   );
 
-  // Core data states
   const [course, setCourse] = useState<Course | null>(null);
   const [tutorList, setTutorList] = useState<TutorMember[]>([]);
   const [allUsers, setAllUsers] = useState<UserOption[]>([]);
@@ -232,7 +230,6 @@ export function AdminCourseWorkspaceContent({
       .catch(() => {});
   }, []);
 
-  // Course Details Form state
   const [detailsForm, setDetailsForm] = useState({
     title: "",
     subjectCode: "",
@@ -248,10 +245,8 @@ export function AdminCourseWorkspaceContent({
     featured: false,
   });
 
-  // Thumbnail upload state
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
 
-  // Curriculum Builder state
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [addingModule, setAddingModule] = useState(false);
   const [editingModule, setEditingModule] = useState<{ id: string; title: string } | null>(null);
@@ -271,7 +266,6 @@ export function AdminCourseWorkspaceContent({
     isFreePreview: boolean;
   } | null>(null);
 
-  // Study Materials state
   const [matTitle, setMatTitle] = useState("");
   const [matDesc, setMatDesc] = useState("");
   const [matCategory, setMatCategory] = useState("HANDOUT");
@@ -280,12 +274,10 @@ export function AdminCourseWorkspaceContent({
   const [matSearch, setMatSearch] = useState("");
   const [matCategoryFilter, setMatCategoryFilter] = useState("ALL");
 
-  // Students & Enrollment state
   const [studentSearch, setStudentSearch] = useState("");
   const [selectedStudentToEnroll, setSelectedStudentToEnroll] = useState("");
   const [isEnrollingStudent, setIsEnrollingStudent] = useState(false);
 
-  // Live Classes state
   const [classTitle, setClassTitle] = useState("");
   const [classDate, setClassDate] = useState("");
   const [classMeetLink, setClassMeetLink] = useState("");
@@ -294,7 +286,6 @@ export function AdminCourseWorkspaceContent({
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
-  // Confirmation Modal state
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -311,7 +302,6 @@ export function AdminCourseWorkspaceContent({
     onConfirm: () => {},
   });
 
-  // Fetch full course data and platform context
   const loadData = async (silent = false) => {
     if (isNewCourse) {
       if (!silent) setLoading(true);
@@ -345,7 +335,6 @@ export function AdminCourseWorkspaceContent({
       const found = (data.courses || []).find((c: Course) => c.id === courseId);
       if (!found) throw new Error("Individual class not found in system database.");
 
-      // Also grab events linked to this course from data.events if course.events isn't loaded
       const courseEvents = found.events || (data.events || []).filter((e: any) => e.courseId === courseId);
       const enrichedCourse = { ...found, events: courseEvents };
 
@@ -378,7 +367,6 @@ export function AdminCourseWorkspaceContent({
     loadData();
   }, [courseId]);
 
-  // Realtime synchronization across LMS actions
   useRealtimeSync({
     events: ["COURSES_CHANGED", "MATERIALS_CHANGED", "USERS_CHANGED", "EVENTS_CHANGED"],
     onSync: () => {
@@ -393,9 +381,6 @@ export function AdminCourseWorkspaceContent({
     }, 5000);
   };
 
-  // -------------------------------------------------------------
-  // Course Details Handlers
-  // -------------------------------------------------------------
   const handleSaveDetails = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     setSavingDetails(true);
@@ -540,9 +525,6 @@ export function AdminCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Curriculum Handlers
-  // -------------------------------------------------------------
   const handleAddModule = async (e: FormEvent) => {
     e.preventDefault();
     if (!newModuleTitle.trim()) return;
@@ -663,9 +645,6 @@ export function AdminCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Study Materials Handlers
-  // -------------------------------------------------------------
   const handleUploadMaterial = async (e: FormEvent) => {
     e.preventDefault();
     if (!matFile) {
@@ -746,9 +725,6 @@ export function AdminCourseWorkspaceContent({
     });
   }, [course?.materials, matSearch, matCategoryFilter]);
 
-  // -------------------------------------------------------------
-  // Students & Enrollment Handlers
-  // -------------------------------------------------------------
   const enrolledUserIds = useMemo(() => {
     return new Set(course?.enrollments?.map((e) => e.user?.id).filter(Boolean) as string[]);
   }, [course?.enrollments]);
@@ -817,9 +793,6 @@ export function AdminCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Live Classes Handlers
-  // -------------------------------------------------------------
   const handleScheduleClass = async (e: FormEvent) => {
     e.preventDefault();
     if (!classTitle.trim() || !classDate) {
@@ -904,9 +877,6 @@ export function AdminCourseWorkspaceContent({
     });
   };
 
-  // -------------------------------------------------------------
-  // Render States
-  // -------------------------------------------------------------
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-600">
@@ -968,7 +938,6 @@ export function AdminCourseWorkspaceContent({
 
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-900 pb-16">
-      {/* ── Top Navigation Bar ────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
         <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -1008,7 +977,6 @@ export function AdminCourseWorkspaceContent({
               </Button>
             ) : (
               <>
-                {/* Quick Status Picker */}
                 <select
                   value={course?.status || "PUBLISHED"}
                   onChange={(e) => handleQuickStatusChange(e.target.value)}
@@ -1021,7 +989,6 @@ export function AdminCourseWorkspaceContent({
                   <option value="ARCHIVED">Archived</option>
                 </select>
 
-                {/* Public Student-Facing Preview */}
                 {course && (
                   <Link
                     href={`/classes/${course.slug}`}
@@ -1034,7 +1001,6 @@ export function AdminCourseWorkspaceContent({
                   </Link>
                 )}
 
-                {/* Delete Individual Class Button */}
                 <button
                   onClick={handleDeleteCourse}
                   className="h-9 w-9 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
@@ -1048,9 +1014,7 @@ export function AdminCourseWorkspaceContent({
         </div>
       </header>
 
-      {/* ── Main Container ─────────────────────────────────────────────── */}
       <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
-        {/* Banner Alert Message */}
         {bannerMsg && (
           <div
             className={`rounded-2xl border px-4 py-3 text-xs font-semibold flex items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 ${
@@ -1077,7 +1041,6 @@ export function AdminCourseWorkspaceContent({
           </div>
         )}
 
-        {/* ── Top Summary KPI Bar ───────────────────────────────────────── */}
         <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-1">
             <div className="flex items-center justify-between text-slate-400">
@@ -1140,9 +1103,7 @@ export function AdminCourseWorkspaceContent({
           </div>
         </section>
 
-        {/* ── Main Tabbed Section ────────────────────────────────────────── */}
         <div className="bg-white border border-slate-200 rounded-3xl shadow-xs overflow-hidden">
-          {/* Tab Navigation Header */}
           <div className="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 pt-3 flex items-center overflow-x-auto gap-1 scrollbar-none">
             {tabList.map((tab) => {
               const Icon = tab.icon;
@@ -1173,7 +1134,6 @@ export function AdminCourseWorkspaceContent({
             })}
           </div>
 
-          {/* Tab 1: Individual Class Details & Settings */}
           {activeTab === "overview" && (
             <form onSubmit={handleSaveDetails} className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1186,7 +1146,6 @@ export function AdminCourseWorkspaceContent({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {/* Individual Class Title */}
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
                     Individual Class Title <span className="text-red-500">*</span>
@@ -1200,7 +1159,6 @@ export function AdminCourseWorkspaceContent({
                   />
                 </div>
 
-                {/* Subject Code */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
                     Subject Code <span className="text-red-500">*</span>
@@ -1214,7 +1172,6 @@ export function AdminCourseWorkspaceContent({
                   />
                 </div>
 
-                {/* Academic Category */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Academic Subject / Category</label>
                   <select
@@ -1230,7 +1187,6 @@ export function AdminCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Enrollment Price - A/L */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>A/L Student Tokens <span className="text-red-500">*</span></span>
@@ -1251,7 +1207,6 @@ export function AdminCourseWorkspaceContent({
                   </div>
                 </div>
 
-                {/* Enrollment Price - O/L */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>O/L Student Tokens</span>
@@ -1271,7 +1226,6 @@ export function AdminCourseWorkspaceContent({
                   </div>
                 </div>
 
-                {/* Academic Level */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Academic Level</label>
                   <select
@@ -1285,7 +1239,6 @@ export function AdminCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Lead Tutor */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700">Lead Tutor</label>
                   <select
@@ -1302,7 +1255,6 @@ export function AdminCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Status */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Publishing Status</label>
                   <select
@@ -1317,7 +1269,6 @@ export function AdminCourseWorkspaceContent({
                   </select>
                 </div>
 
-                {/* Featured Class Checkbox */}
                 <div className="space-y-1.5 flex flex-col justify-end">
                   <label className="flex items-center gap-2.5 p-2.5 border border-slate-200 rounded-xl bg-slate-50/50 cursor-pointer hover:bg-slate-100/50 transition-colors">
                     <input
@@ -1336,7 +1287,6 @@ export function AdminCourseWorkspaceContent({
                   </label>
                 </div>
 
-                {/* Short Subtitle */}
                 <div className="md:col-span-3 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Class Tagline / Short Summary</label>
                   <Input
@@ -1347,7 +1297,6 @@ export function AdminCourseWorkspaceContent({
                   />
                 </div>
 
-                {/* Class Cover / Thumbnail */}
                 <div className="md:col-span-3 space-y-2">
                   <label className="text-xs font-bold text-slate-700 block">Class Cover Thumbnail</label>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-slate-200 rounded-2xl bg-slate-50/40">
@@ -1397,7 +1346,6 @@ export function AdminCourseWorkspaceContent({
                   </div>
                 </div>
 
-                {/* Full Class Description */}
                 <div className="md:col-span-3 space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Comprehensive Class Syllabus Description</label>
                   <textarea
@@ -1423,7 +1371,6 @@ export function AdminCourseWorkspaceContent({
             </form>
           )}
 
-          {/* If new course, show guidance on other tabs */}
           {isNewCourse && activeTab !== "overview" && (
             <div className="p-12 text-center space-y-4 max-w-md mx-auto">
               <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
@@ -1447,7 +1394,6 @@ export function AdminCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 2: Curriculum & Syllabus Builder */}
           {!isNewCourse && activeTab === "curriculum" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1459,7 +1405,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Add New Module Form */}
               <form
                 onSubmit={handleAddModule}
                 className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex flex-col sm:flex-row items-center gap-3"
@@ -1484,7 +1429,6 @@ export function AdminCourseWorkspaceContent({
                 </Button>
               </form>
 
-              {/* Modules List */}
               {course.modules?.length === 0 ? (
                 <div className="text-center py-16 px-4 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 space-y-2">
                   <Layers3 className="w-10 h-10 text-slate-300 mx-auto" />
@@ -1505,7 +1449,6 @@ export function AdminCourseWorkspaceContent({
                         key={mod.id}
                         className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-2xs transition-shadow hover:shadow-xs"
                       >
-                        {/* Module Header Bar */}
                         <div className="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <span className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
@@ -1557,7 +1500,6 @@ export function AdminCourseWorkspaceContent({
                           </div>
                         </div>
 
-                        {/* Inline Module Rename Form */}
                         {editingModule?.id === mod.id && (
                           <form
                             onSubmit={handleUpdateModule}
@@ -1584,7 +1526,6 @@ export function AdminCourseWorkspaceContent({
                           </form>
                         )}
 
-                        {/* Add Lesson Form for this Module */}
                         {isAddingLessonHere && (
                           <div className="p-4 bg-blue-50/40 border-b border-blue-100 space-y-3 animate-in fade-in">
                             <div className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
@@ -1655,7 +1596,6 @@ export function AdminCourseWorkspaceContent({
                           </div>
                         )}
 
-                        {/* Lessons List in Module */}
                         <div className="p-4 space-y-2">
                           {modLessons.length === 0 ? (
                             <div className="text-center py-6 text-xs text-slate-400 font-medium">
@@ -1736,7 +1676,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               )}
 
-              {/* Edit Lesson Modal */}
               {editingLesson && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
                   <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95">
@@ -1818,7 +1757,6 @@ export function AdminCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 3: Study Materials & Files */}
           {!isNewCourse && activeTab === "materials" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -1830,7 +1768,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Upload Material Card */}
               <form
                 onSubmit={handleUploadMaterial}
                 className="bg-slate-50 border border-slate-200 rounded-3xl p-5 sm:p-6 space-y-4"
@@ -1916,7 +1853,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               </form>
 
-              {/* Published Materials List & Filter Header */}
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <h3 className="font-black text-sm text-slate-900">
@@ -2006,7 +1942,6 @@ export function AdminCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 4: Student Roster & Direct Enrolling */}
           {!isNewCourse && activeTab === "students" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -2018,7 +1953,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Quick Enroll Bar */}
               <div className="p-5 rounded-3xl bg-blue-50/70 border border-blue-200/80 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-black text-xs text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -2055,7 +1989,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Enrolled Students Table */}
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <h3 className="font-black text-sm text-slate-900">
@@ -2139,7 +2072,6 @@ export function AdminCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 5: Live Classes & Google Meets */}
           {!isNewCourse && activeTab === "live_classes" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -2151,7 +2083,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               </div>
 
-              {/* Schedule New Live Class Form */}
               <form
                 onSubmit={handleScheduleClass}
                 className="p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4"
@@ -2221,7 +2152,6 @@ export function AdminCourseWorkspaceContent({
                 </div>
               </form>
 
-              {/* Sessions List */}
               <div className="space-y-4">
                 <h3 className="font-black text-sm text-slate-900">
                   Scheduled & Past Live Sessions ({course.events?.length || 0})
@@ -2353,7 +2283,6 @@ export function AdminCourseWorkspaceContent({
             </div>
           )}
 
-          {/* Tab 6: Course Feedback & Student Reviews */}
           {!isNewCourse && activeTab === "reviews" && course && (
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -2432,7 +2361,6 @@ export function AdminCourseWorkspaceContent({
         </div>
       </div>
 
-      {/* ── Global Confirmation Modal ─────────────────────────────────── */}
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}

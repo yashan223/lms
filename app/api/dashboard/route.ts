@@ -111,7 +111,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (user) {
-      // Auto-reconcile: ensure any successful payments have credited the wallet and created transaction rows
       const unfulfilled = await prisma.payment.findMany({
         where: {
           userId: user.id,
@@ -125,7 +124,6 @@ export async function GET(request: NextRequest) {
         if (res.fulfilled) reloaded = true;
       }
 
-      // Also check recent PENDING payments in Payments.lk in case webhook was blocked/delayed
       if (isPaymentsLkConfigured()) {
         const pendingPayments = await prisma.payment.findMany({
           where: {
@@ -252,7 +250,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // For students, ensure all confirmed 1-on-1 trials are included in timeline events
     if (user?.role === "STUDENT") {
       const confirmedTrials = await prisma.trialRequest.findMany({
         where: {
@@ -287,7 +284,6 @@ export async function GET(request: NextRequest) {
       });
 
       for (const trial of confirmedTrials) {
-        // Link studentId on trial if missing
         if (!trial.studentId) {
           await prisma.trialRequest.update({
             where: { id: trial.id },
@@ -365,7 +361,6 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Attach trialId, tutorTimezone, and studentTimezone to timeline events
       timelineEvents = timelineEvents.map((ev: any) => {
         const matchingTrial = confirmedTrials.find(
           (t) =>
@@ -386,7 +381,6 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      // Re-sort timelineEvents by dueDate ascending
       timelineEvents.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     }
 

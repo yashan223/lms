@@ -14,10 +14,6 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-/**
- * GET /api/tutor/profile
- * Returns the authenticated tutor's full profile details and stats
- */
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request, [Role.TUTOR, Role.ADMIN]);
@@ -50,7 +46,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Tutor profile not found." }, { status: 404 });
     }
 
-    // Aggregate teaching metrics
     const coursesCount = await prisma.course.count({
       where: { tutorId: tutor.id },
     });
@@ -94,10 +89,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * PUT /api/tutor/profile
- * Updates the tutor's profile information (name, headline, bio, phone, country, avatar)
- */
 export async function PUT(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request, [Role.TUTOR, Role.ADMIN]);
@@ -129,7 +120,6 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Preserve admin-set hourly rates inside the bio JSON structure
     const existingTutor = await prisma.user.findUnique({
       where: { id: auth.user.id },
       select: { bio: true },
@@ -210,10 +200,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-/**
- * DELETE /api/tutor/profile
- * Permanently deletes the authenticated tutor's account and associated data.
- */
 export async function DELETE(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request, [Role.TUTOR]);
@@ -251,7 +237,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete tutor account (cascades to courses, schedules, availability, etc.)
     await prisma.user.delete({
       where: { id: user.id },
     });

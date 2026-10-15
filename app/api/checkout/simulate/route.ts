@@ -6,10 +6,6 @@ import { getPaymentsLkWebhookSecret } from "@/lib/payments-lk";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Sandbox Simulator Action:
- * Simulates Payments.lk gateway processing and signed webhook dispatch
- */
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
@@ -58,7 +54,7 @@ export async function POST(request: NextRequest) {
         reference: payment.reference,
         checkoutId: payment.checkoutId || `chk_test_${payment.reference}`,
         amountCents: payment.amountCents,
-        feeCents: Math.round(payment.amountCents * 0.0229), // 2.29% Payments.lk tier
+        feeCents: Math.round(payment.amountCents * 0.0229),
         status: outcome === "APPROVED" ? "succeeded" : "declined",
         card: {
           scheme: cardScheme || "visa",
@@ -70,14 +66,12 @@ export async function POST(request: NextRequest) {
     const rawPayload = JSON.stringify(webhookPayload);
     const webhookSecret = getPaymentsLkWebhookSecret() || "sandbox_secret";
 
-    // Generate valid Payments.lk HMAC-SHA256 signature header: t=<timestamp>,v1=<hex>
     const signatureDigest = crypto
       .createHmac("sha256", webhookSecret)
       .update(`${now}.${rawPayload}`)
       .digest("hex");
     const signatureHeader = `t=${now},v1=${signatureDigest}`;
 
-    // Dispatch webhook to internal endpoint
     const webhookRes = await fetch(webhookUrl, {
       method: "POST",
       headers: {

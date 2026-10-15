@@ -31,7 +31,6 @@ export function TermsAndPolicyModal({
 }: TermsAndPolicyModalProps) {
   const [activeTab, setActiveTab] = useState<"terms" | "refund">(initialTab);
 
-  // Sync initial tab when modal opens
   React.useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
@@ -47,7 +46,6 @@ export function TermsAndPolicyModal({
         role="dialog"
         aria-modal="true"
       >
-        {/* Modal Header */}
         <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
             <div
@@ -84,7 +82,6 @@ export function TermsAndPolicyModal({
           </button>
         </div>
 
-        {/* Tab Switcher */}
         <div className="px-6 pt-3 pb-1 border-b border-slate-100 bg-white flex items-center gap-2">
           <button
             type="button"
@@ -113,7 +110,6 @@ export function TermsAndPolicyModal({
           </button>
         </div>
 
-        {/* Modal Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-600 leading-relaxed">
           {activeTab === "terms" && (
             <div className="space-y-4">
@@ -270,7 +266,6 @@ export function TermsAndPolicyModal({
           )}
         </div>
 
-        {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-3">
           <a
             href="/terms"

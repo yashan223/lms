@@ -36,7 +36,6 @@ export function Navbar() {
       }
     }
 
-    // Automatically clean up malformed/duplicate hashes like #about#about in the URL
     if (typeof window !== "undefined") {
       const sanitizeHash = () => {
         const rawHash = window.location.hash;
@@ -79,7 +78,6 @@ export function Navbar() {
     } catch (err) {
       console.error("Sign out error:", err);
     }
-    // Delete all client-accessible cookies with past expiration date
     document.cookie = "edupulse_user_role=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     document.cookie = "edupulse_user_email=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     document.cookie = "edupulse_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -166,11 +164,9 @@ export function Navbar() {
           </Link>
         </nav>
 
-        {/* Right Navigation & Authenticated Profile Hub */}
         <div className="hidden lg:flex items-center gap-3">
           {userRole ? (
             <div className="flex items-center gap-2.5">
-              {/* Fast Direct Dashboard Link based on Role */}
               {userRole === "ADMIN" ? (
                 <Link
                   href="/admin"

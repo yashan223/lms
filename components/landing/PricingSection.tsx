@@ -79,7 +79,6 @@ export function PricingSection({
     loadBundles();
   }, []);
 
-  // Do not render pricing section for users who are not logged in
   if (!isLoggedIn) {
     return null;
   }
@@ -100,7 +99,6 @@ export function PricingSection({
             Purchase token packs based on your study goals. <strong>1 Token = 1 Hour</strong> of learning credit. You decide how to spend your hours across 1-on-1 private tutoring, interactive individual classes, and past paper clinics.
           </p>
 
-          {/* Academic Track Switcher */}
           <div className="inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner max-w-md mx-auto">
             <button
               type="button"

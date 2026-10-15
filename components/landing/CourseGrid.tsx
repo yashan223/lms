@@ -188,7 +188,6 @@ export function CourseGrid() {
     <section id="courses" className="py-20 bg-white border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#0c2461] tracking-tight mb-3">
@@ -220,7 +219,6 @@ export function CourseGrid() {
           </div>
         </div>
 
-        {/* Main View Switcher & Level Filter */}
         <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 shadow-2xs">
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <button
@@ -262,7 +260,6 @@ export function CourseGrid() {
             </button>
           </div>
 
-          {/* Level Filter Tabs */}
           <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden md:inline">
               Level:
@@ -287,7 +284,6 @@ export function CourseGrid() {
           </div>
         </div>
 
-        {/* Subject / Category Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-8 scrollbar-none">
           {categories.map((cat) => (
             <button
@@ -304,7 +300,6 @@ export function CourseGrid() {
           ))}
         </div>
 
-        {/* VIEW 1: O/L & A/L TUTORS WITH SUBJECTS */}
         {viewMode === "tutors" && (
           <>
             {filteredTutors.length > 0 ? (
@@ -315,7 +310,6 @@ export function CourseGrid() {
                     className="group rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
                   >
                     <div className="space-y-4">
-                      {/* Tutor Header Info */}
                       <div className="flex items-start gap-4">
                         <div className="relative shrink-0">
                           <Avatar className="w-16 h-16 rounded-2xl border-2 border-blue-100 shadow-xs">
@@ -359,7 +353,6 @@ export function CourseGrid() {
                         </div>
                       </div>
 
-                      {/* Bio */}
                       {Boolean(parseTutorBio(tutor.bio)) && (
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                           <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
@@ -368,7 +361,6 @@ export function CourseGrid() {
                         </div>
                       )}
 
-                      {/* Subjects & Specifications */}
                       {tutor.subjects && tutor.subjects.length > 0 && (
                         <div className="space-y-2 pt-2 border-t border-slate-100">
                           <div className="flex items-center justify-between">
@@ -406,7 +398,6 @@ export function CourseGrid() {
                       )}
                     </div>
 
-                    {/* Footer Action CTAs */}
                     <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                       <button
                         onClick={() => {
@@ -452,7 +443,6 @@ export function CourseGrid() {
           </>
         )}
 
-        {/* VIEW 2: INDIVIDUAL CLASSES */}
         {viewMode === "classes" && (
           <>
             {filteredCourses.length > 0 ? (
@@ -617,7 +607,6 @@ export function CourseGrid() {
           </>
         )}
 
-        {/* Free 1-on-1 Trial Modal */}
         <TrialRequestModal
           isOpen={showTrialModal}
           onClose={() => {

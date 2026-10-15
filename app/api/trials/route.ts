@@ -261,7 +261,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Resolve student user if ID was not directly provided
       if (!resolvedStudentId && resolvedStudentEmail) {
         const studentUser = await prisma.user.findUnique({
           where: { email: resolvedStudentEmail },
@@ -272,7 +271,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Gating: Require student to have configured study availability
       if (resolvedStudentId) {
         const studentAvailCount = await prisma.studentAvailability.count({
           where: {
@@ -293,7 +291,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Process up to 3 preferred dates selected by the student
       let validPreferredDates: string[] = [];
       if (Array.isArray(preferredDates) && preferredDates.length > 0) {
         for (const item of preferredDates) {
@@ -357,11 +354,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // ----------------------------------------------------
-      // TRIAL LIMIT VALIDATIONS:
-      // 1) Student can request up to 5 trials in total
-      // 2) Not from the same tutor (1 trial per tutor)
-      // ----------------------------------------------------
       const studentWhereClause = resolvedStudentId
         ? {
             OR: [
@@ -380,7 +372,6 @@ export async function POST(request: NextRequest) {
         ],
       };
 
-      // Rule 1: Max 5 trials per student
       const activeTrialsCount = await prisma.trialRequest.count({
         where: {
           ...studentWhereClause,
@@ -400,7 +391,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Rule 2: Cannot request from the same tutor twice
       const existingTutorTrial = await prisma.trialRequest.findFirst({
         where: {
           ...studentWhereClause,
@@ -454,7 +444,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Send in-app notification to tutor
       if (resolvedTutorId) {
         await prisma.notification.create({
           data: {
@@ -467,7 +456,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Send in-app notification to student
       if (resolvedStudentId) {
         await prisma.notification.create({
           data: {
@@ -534,7 +522,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // If confirming, create or update the calendar event
       if (targetStatus === TrialStatus.CONFIRMED) {
         const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Individual Class";
         const courseCode = updatedTrial.course?.subjectCode || "";
@@ -565,7 +552,6 @@ export async function POST(request: NextRequest) {
 
         const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;
 
-        // Remove old trial event if any to prevent duplicates
         await prisma.event.deleteMany({
           where: {
             OR: [
@@ -590,7 +576,6 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Notify student about confirmation
         if (updatedTrial.studentId) {
           const dateStr = targetDate.toLocaleDateString("en-US", {
             weekday: "short",
@@ -709,7 +694,6 @@ export async function POST(request: NextRequest) {
       const effectiveTutorId = existing.tutorId || existing.course?.tutorId;
       const effectiveStudentId = existing.studentId;
 
-      // Gating: Require student to have configured study availability
       if (effectiveStudentId && !body.force) {
         const studentAvailCount = await prisma.studentAvailability.count({
           where: { studentId: effectiveStudentId, isActive: true },
@@ -726,7 +710,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Check conflict with scheduled classes if tutor is known
       if (effectiveTutorId && !body.force) {
         const slotStart = targetDate;
         const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
@@ -740,7 +723,7 @@ export async function POST(request: NextRequest) {
               ...(tutorCourseIds.length > 0 ? [{ courseId: { in: tutorCourseIds } }] : []),
             ],
             dueDate: {
-              gte: new Date(slotStart.getTime() - 2 * 60 * 60 * 1000), // Within 2 hours before
+              gte: new Date(slotStart.getTime() - 2 * 60 * 60 * 1000),
               lte: slotEnd,
             },
             status: { notIn: ["CANCELLED", "REJECTED"] as any },

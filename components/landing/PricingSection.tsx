@@ -28,6 +28,7 @@ export function PricingSection({
   );
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(Boolean(initialIsLoggedIn));
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
+  const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(null);
 
   useEffect(() => {
     async function loadBundles() {
@@ -50,7 +51,9 @@ export function PricingSection({
             if (dashboardData.user.country) {
               setStudentCountry(dashboardData.user.country);
             }
-            setStudentLevel(getStudentAcademicLevel(dashboardData.user));
+            const lvl = getStudentAcademicLevel(dashboardData.user);
+            setStudentLevel(lvl);
+            setUserAcademicLevel(lvl);
           }
         }
 
@@ -66,7 +69,9 @@ export function PricingSection({
             setStudentCountry(data.country);
           }
           if (data.academicLevel) {
-            setStudentLevel(data.academicLevel);
+            const lvl = data.academicLevel === "OL" ? "OL" : "AL";
+            setStudentLevel(lvl);
+            setUserAcademicLevel(lvl);
           }
         }
 
@@ -99,37 +104,50 @@ export function PricingSection({
             Purchase token packs based on your study goals. <strong>1 Token = 1 Hour</strong> of learning credit. You decide how to spend your hours across 1-on-1 private tutoring, interactive individual classes, and past paper clinics.
           </p>
 
-          <div className="inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner max-w-md mx-auto">
-            <button
-              type="button"
-              onClick={() => setStudentLevel("AL")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                studentLevel === "AL"
-                  ? "bg-white text-blue-700 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <GraduationCap className={`w-4 h-4 ${studentLevel === "AL" ? "text-blue-600" : "text-slate-500"}`} />
-              <span>London A/L (IAL)</span>
-              {studentLevel === "AL" && (
-                <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Selected</span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setStudentLevel("OL")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                studentLevel === "OL"
-                  ? "bg-white text-blue-800 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <BookOpen className={`w-4 h-4 ${studentLevel === "OL" ? "text-blue-600" : "text-slate-500"}`} />
-              <span>London O/L (IGCSE)</span>
-              {studentLevel === "OL" && (
-                <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Tailored</span>
-              )}
-            </button>
+          <div className="w-full max-w-md mx-auto space-y-2">
+            <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner w-full gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!userAcademicLevel) setStudentLevel("AL");
+                }}
+                disabled={Boolean(userAcademicLevel && userAcademicLevel !== "AL")}
+                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
+                  userAcademicLevel && userAcademicLevel !== "AL"
+                    ? "opacity-40 cursor-not-allowed text-slate-400"
+                    : studentLevel === "AL"
+                    ? "bg-white text-blue-700 shadow-sm cursor-pointer"
+                    : "text-slate-600 hover:text-slate-900 cursor-pointer"
+                }`}
+                title={userAcademicLevel && userAcademicLevel !== "AL" ? "Locked to your registered curriculum" : undefined}
+              >
+                <GraduationCap className={`w-4 h-4 shrink-0 ${studentLevel === "AL" ? "text-blue-600" : "text-slate-500"}`} />
+                <span className="truncate">London A/L (IAL)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!userAcademicLevel) setStudentLevel("OL");
+                }}
+                disabled={Boolean(userAcademicLevel && userAcademicLevel !== "OL")}
+                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
+                  userAcademicLevel && userAcademicLevel !== "OL"
+                    ? "opacity-40 cursor-not-allowed text-slate-400"
+                    : studentLevel === "OL"
+                    ? "bg-white text-blue-800 shadow-sm cursor-pointer"
+                    : "text-slate-600 hover:text-slate-900 cursor-pointer"
+                }`}
+                title={userAcademicLevel && userAcademicLevel !== "OL" ? "Locked to your registered curriculum" : undefined}
+              >
+                <BookOpen className={`w-4 h-4 shrink-0 ${studentLevel === "OL" ? "text-blue-600" : "text-slate-500"}`} />
+                <span className="truncate">London O/L (IGCSE)</span>
+              </button>
+            </div>
+            {userAcademicLevel && (
+              <p className="text-[11px] text-slate-500 text-center font-medium">
+                🔒 Displaying packages for your registered <strong className="text-slate-700">{userAcademicLevel === "AL" ? "London A/L (IAL)" : "London O/L (IGCSE)"}</strong> track
+              </p>
+            )}
           </div>
         </div>
 

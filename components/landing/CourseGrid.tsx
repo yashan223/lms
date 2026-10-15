@@ -26,6 +26,7 @@ import {
 } from "@/lib/faculty-tutors";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { getStudentAcademicLevel } from "@/lib/currency";
 
 export function CourseGrid() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -36,6 +37,7 @@ export function CourseGrid() {
   const [selectedLevel, setSelectedLevel] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(null);
 
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialTutorId, setSelectedTrialTutorId] = useState<string | undefined>(undefined);
@@ -68,6 +70,9 @@ export function CourseGrid() {
           const dashData = await dashRes.json();
           if (dashData.user) {
             setIsLoggedIn(true);
+            const lvl = getStudentAcademicLevel(dashData.user);
+            setUserAcademicLevel(lvl);
+            setSelectedLevel(lvl);
           }
         }
         if (res.ok) {
@@ -137,12 +142,13 @@ export function CourseGrid() {
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
+      const effectiveLevel = userAcademicLevel || selectedLevel;
       const matchesCategory =
         selectedCategory === "All" || course.category === selectedCategory;
       const matchesLevel =
-        selectedLevel === "ALL" ||
-        (selectedLevel === "AL" && course.level.includes("A/L")) ||
-        (selectedLevel === "OL" && course.level.includes("O/L"));
+        effectiveLevel === "ALL" ||
+        (effectiveLevel === "AL" && (course.level.includes("A/L") || course.title.includes("A/L") || course.title.includes("IAL"))) ||
+        (effectiveLevel === "OL" && (course.level.includes("O/L") || course.title.includes("O/L") || course.title.includes("IGCSE")));
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -153,18 +159,19 @@ export function CourseGrid() {
         (course.tags && course.tags.some((t: string) => t.toLowerCase().includes(q)));
       return matchesCategory && matchesLevel && matchesSearch;
     });
-  }, [courses, selectedCategory, selectedLevel, searchQuery]);
+  }, [courses, selectedCategory, selectedLevel, searchQuery, userAcademicLevel]);
 
   const filteredTutors = useMemo(() => {
     return tutors.filter((tutor) => {
+      const effectiveLevel = userAcademicLevel || selectedLevel;
       const matchesCategory =
         selectedCategory === "All" || tutor.category === selectedCategory;
 
       const matchesLevel =
-        selectedLevel === "ALL" ||
+        effectiveLevel === "ALL" ||
         tutor.level === "BOTH" ||
-        (selectedLevel === "AL" && (tutor.level === "AL" || tutor.subjects.some((s) => s.level === "AL"))) ||
-        (selectedLevel === "OL" && (tutor.level === "OL" || tutor.subjects.some((s) => s.level === "OL")));
+        (effectiveLevel === "AL" && (tutor.level === "AL" || tutor.subjects.some((s) => s.level === "AL"))) ||
+        (effectiveLevel === "OL" && (tutor.level === "OL" || tutor.subjects.some((s) => s.level === "OL")));
 
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
@@ -182,7 +189,7 @@ export function CourseGrid() {
 
       return matchesCategory && matchesLevel && matchesSearch;
     });
-  }, [tutors, selectedCategory, selectedLevel, searchQuery]);
+  }, [tutors, selectedCategory, selectedLevel, searchQuery, userAcademicLevel]);
 
   return (
     <section id="courses" className="py-20 bg-white border-b border-slate-200">
@@ -260,28 +267,52 @@ export function CourseGrid() {
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden md:inline">
-              Level:
-            </span>
-            {[
-              { id: "ALL", label: "All Qualifications" },
-              { id: "AL", label: "London A/L (IAL)" },
-              { id: "OL", label: "London O/L (IGCSE)" },
-            ].map((lvl) => (
-              <button
-                key={lvl.id}
-                onClick={() => setSelectedLevel(lvl.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLevel === lvl.id
-                    ? "bg-blue-600 text-white shadow-2xs"
-                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-                }`}
-              >
-                {lvl.label}
-              </button>
-            ))}
-          </div>
+          {userAcademicLevel ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">
+                Curriculum:
+              </span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0c2461] text-white shadow-2xs">
+                {userAcademicLevel === "OL" ? (
+                  <>
+                    <BookOpen className="w-3.5 h-3.5 text-blue-200" />
+                    <span>London O/L (IGCSE)</span>
+                  </>
+                ) : (
+                  <>
+                    <GraduationCap className="w-3.5 h-3.5 text-blue-200" />
+                    <span>London A/L (IAL)</span>
+                  </>
+                )}
+                <span className="text-[9px] bg-white/20 text-white px-1.5 py-0.2 rounded font-extrabold uppercase">
+                  Your Track
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden md:inline">
+                Level:
+              </span>
+              {[
+                { id: "ALL", label: "All Qualifications" },
+                { id: "AL", label: "London A/L (IAL)" },
+                { id: "OL", label: "London O/L (IGCSE)" },
+              ].map((lvl) => (
+                <button
+                  key={lvl.id}
+                  onClick={() => setSelectedLevel(lvl.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    selectedLevel === lvl.id
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  {lvl.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-8 scrollbar-none">

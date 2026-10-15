@@ -44,6 +44,7 @@ export default function CoursesPage() {
   const [selectedPurchaseCourse, setSelectedPurchaseCourse] = useState<any | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
+  const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(null);
 
   const [subjectsList, setSubjectsList] = useState<string[]>([
     "Mathematics & Computing",
@@ -74,8 +75,10 @@ export default function CoursesPage() {
         const dashData = await dashRes.json();
         if (dashData.user) {
           setIsLoggedIn(true);
-          const lvl = dashData.user.academicLevel === "OL" || dashData.user.headline?.includes("O/L") || dashData.user.headline?.includes("IGCSE") ? "OL" : "AL";
+          const lvl: "OL" | "AL" = dashData.user.academicLevel === "OL" || dashData.user.headline?.includes("O/L") || dashData.user.headline?.includes("IGCSE") ? "OL" : "AL";
           setStudentLevel(lvl);
+          setUserAcademicLevel(lvl);
+          setSelectedLevel(lvl);
         }
       }
       if (res.ok) {
@@ -155,12 +158,13 @@ export default function CoursesPage() {
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
+      const effectiveLevel = userAcademicLevel || selectedLevel;
       const matchCat =
         selectedCategory === "All" || course.category === selectedCategory;
       const matchLevel =
-        selectedLevel === "ALL" ||
-        (selectedLevel === "AL" && course.level.includes("A/L")) ||
-        (selectedLevel === "OL" && course.level.includes("O/L"));
+        effectiveLevel === "ALL" ||
+        (effectiveLevel === "AL" && (course.level.includes("A/L") || course.title.includes("A/L") || course.title.includes("IAL"))) ||
+        (effectiveLevel === "OL" && (course.level.includes("O/L") || course.title.includes("O/L") || course.title.includes("IGCSE")));
       const matchSearch =
         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -168,9 +172,10 @@ export default function CoursesPage() {
         (course.subjectCode && course.subjectCode.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchCat && matchLevel && matchSearch;
     });
-  }, [courses, selectedCategory, selectedLevel, searchQuery]);
+  }, [courses, selectedCategory, selectedLevel, searchQuery, userAcademicLevel]);
 
   const filteredTutors = useMemo(() => {
+    const effectiveLevel = userAcademicLevel || selectedLevel;
     return tutors.filter((tutor) => {
       const q = searchQuery.toLowerCase().trim();
       const matchSearch =
@@ -201,14 +206,14 @@ export default function CoursesPage() {
         (tutor.headline && tutor.headline.toLowerCase().includes(selectedCategory.toLowerCase()));
 
       const matchLevel =
-        selectedLevel === "ALL" ||
+        effectiveLevel === "ALL" ||
         tutor.level === "BOTH" ||
-        (selectedLevel === "AL" && (tutor.level === "AL" || tutor.subjects?.some((s: any) => s.level === "AL"))) ||
-        (selectedLevel === "OL" && (tutor.level === "OL" || tutor.subjects?.some((s: any) => s.level === "OL")));
+        (effectiveLevel === "AL" && (tutor.level === "AL" || tutor.subjects?.some((s: any) => s.level === "AL" || s.level === "BOTH"))) ||
+        (effectiveLevel === "OL" && (tutor.level === "OL" || tutor.subjects?.some((s: any) => s.level === "OL" || s.level === "BOTH")));
 
       return matchSearch && matchCat && matchLevel;
     });
-  }, [tutors, searchQuery, selectedCategory, selectedLevel]);
+  }, [tutors, searchQuery, selectedCategory, selectedLevel, userAcademicLevel]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900">
@@ -271,26 +276,48 @@ export default function CoursesPage() {
           </div>
 
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
-              {[
-                { id: "ALL", label: "All Qualifications" },
-                { id: "AL", label: "London A/L (IAL)" },
-                { id: "OL", label: "London O/L (IGCSE)" },
-              ].map((lvl) => (
-                <button
-                  key={lvl.id}
-                  onClick={() => setSelectedLevel(lvl.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    selectedLevel === lvl.id
-                      ? "bg-[#0c2461] text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {lvl.label}
-                </button>
-              ))}
-            </div>
+            {userAcademicLevel ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Enrolled Curriculum:</span>
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-[#0c2461] text-white shadow-xs">
+                  {userAcademicLevel === "OL" ? (
+                    <>
+                      <BookOpen className="w-3.5 h-3.5 text-blue-200" />
+                      <span>London O/L (IGCSE) Individual Classes</span>
+                    </>
+                  ) : (
+                    <>
+                      <GraduationCap className="w-3.5 h-3.5 text-blue-200" />
+                      <span>London A/L (IAL) Individual Classes</span>
+                    </>
+                  )}
+                  <span className="text-[10px] bg-white/20 text-white px-1.5 py-0.5 rounded font-bold">
+                    Your Track
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
+                {[
+                  { id: "ALL", label: "All Qualifications" },
+                  { id: "AL", label: "London A/L (IAL)" },
+                  { id: "OL", label: "London O/L (IGCSE)" },
+                ].map((lvl) => (
+                  <button
+                    key={lvl.id}
+                    onClick={() => setSelectedLevel(lvl.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      selectedLevel === lvl.id
+                        ? "bg-[#0c2461] text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {lvl.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {viewMode === "masterclasses" ? (
               <button

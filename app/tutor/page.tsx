@@ -73,6 +73,7 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
 import { getSafeMeetingLink, normalizeGoogleMeetLink } from "@/lib/utils";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
   getUserBrowserTimezone,
   formatTimeInTimezone,
@@ -82,6 +83,7 @@ import {
   parseDateTimeInputInTimezone,
   getDualTimeDisplay,
   getTimezoneAbbr,
+  getTimezoneCountryCode,
   DEFAULT_TIMEZONE,
 } from "@/lib/timezones";
 
@@ -4153,231 +4155,292 @@ function TutorDashboardContent() {
       )}
 
       {showConfirmTrialModal && confirmingTrial && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
-                  <CheckCircle2 className="w-5 h-5" />
+        <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-xs flex">
+          <div className="bg-slate-50 w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-200">
+            {/* Sticky Header */}
+            <div className="bg-white border-b border-slate-200 px-6 sm:px-8 py-4.5 flex items-center justify-between shrink-0 shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-[#0c2461] text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                  <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">
-                    Set Date &amp; Confirm Trial Session
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Set the confirmed date and Google Meet link for this student's free trial
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-lg text-slate-900">
+                      Set Date &amp; Confirm Trial Session
+                    </h3>
+                    <Badge className="bg-blue-100 text-blue-800 text-[10px] font-extrabold border-blue-200">
+                      1-on-1 Trial
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Select the student&apos;s preferred time slot, confirm Google Meet details, and schedule the session
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowConfirmTrialModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {confirmTrialStatusMsg && (
-              <div
-                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
-                  confirmTrialStatusMsg.type === "success"
-                    ? "bg-blue-50 text-blue-800 border border-blue-200"
-                    : "bg-red-50 text-red-800 border border-red-200"
-                }`}
-              >
-                {confirmTrialStatusMsg.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                )}
-                <span>{confirmTrialStatusMsg.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleConfirmTrialSubmit} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-blue-950 text-xs">
-                    {confirmingTrial.studentName}
-                  </span>
-                  <span className="text-[11px] text-blue-700 font-semibold font-mono">
-                    {confirmingTrial.studentEmail}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-600">
-                  Course: <strong>{confirmingTrial.course?.title || "London A/L Individual Class"}</strong>
-                </div>
-                {confirmingTrial.topic && (
-                  <div className="text-[11px] text-slate-600">
-                    Topic: {confirmingTrial.topic}
-                  </div>
-                )}
-              </div>
-
-              {(() => {
-                const requestedSlots: string[] = Array.isArray(confirmingTrial.preferredDates) && confirmingTrial.preferredDates.length > 0
-                  ? confirmingTrial.preferredDates
-                  : [confirmingTrial.preferredDate];
-
-                return (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="font-bold text-slate-800 block text-xs flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                        <span>Confirm 1 Time Slot (From Student&apos;s Choices):</span>
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                        Pick 1 of {requestedSlots.length}
-                      </span>
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleConfirmTrialSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 custom-scrollbar">
+                <div className="max-w-4xl mx-auto space-y-6">
+                  {confirmTrialStatusMsg && (
+                    <div
+                      className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-3 border shadow-xs ${
+                        confirmTrialStatusMsg.type === "success"
+                          ? "bg-blue-50 text-blue-900 border-blue-200"
+                          : "bg-red-50 text-red-900 border-red-200"
+                      }`}
+                    >
+                      {confirmTrialStatusMsg.type === "success" ? (
+                        <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                      )}
+                      <span>{confirmTrialStatusMsg.text}</span>
                     </div>
+                  )}
 
-                    <div className="space-y-1.5">
-                      {requestedSlots.map((slotStr: string, idx: number) => {
-                        const isSelected = selectedSlotIndex === idx;
-                        const dateFormatted = formatDateInTimezone(slotStr, tutorTimezone, {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        });
-                        const timeFormatted = formatTimeInTimezone(slotStr, tutorTimezone, {
-                          includeAbbr: true,
-                        });
-                        const studentTz = confirmingTrial.timezone || confirmingTrial.student?.timezone;
+                  {/* Student & Course Summary Card */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-sm shrink-0">
+                        {confirmingTrial.studentName?.charAt(0)?.toUpperCase() || "S"}
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-base text-slate-900">
+                            {confirmingTrial.studentName}
+                          </h4>
+                          <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">
+                            Student
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 font-mono flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{confirmingTrial.studentEmail}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="sm:text-right space-y-1 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                      <div className="text-xs text-slate-500">
+                        Course: <span className="font-bold text-slate-800">{confirmingTrial.course?.title || "London A/L Individual Class"}</span>
+                      </div>
+                      {confirmingTrial.topic && (
+                        <div className="text-xs text-slate-500">
+                          Topic: <span className="font-medium text-slate-700">{confirmingTrial.topic}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setSelectedSlotIndex(idx);
-                              setConfirmDate(formatForDateTimeInput(new Date(slotStr)));
-                            }}
-                            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                              isSelected
-                                ? "bg-blue-50/90 border-blue-600 ring-2 ring-blue-600/20 shadow-xs"
-                                : "bg-white border-slate-200 hover:border-blue-200 hover:bg-slate-50/60"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5">
+                  {/* Preferred Time Slots Picker */}
+                  {(() => {
+                    const requestedSlots: string[] =
+                      Array.isArray(confirmingTrial.preferredDates) && confirmingTrial.preferredDates.length > 0
+                        ? confirmingTrial.preferredDates
+                        : [confirmingTrial.preferredDate];
+
+                    return (
+                      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CalendarCheck className="w-5 h-5 text-blue-600" />
+                            <h4 className="font-extrabold text-sm sm:text-base text-slate-900">
+                              Confirm 1 Time Slot (From Student&apos;s Choices)
+                            </h4>
+                            <span className="text-red-500 font-bold">*</span>
+                          </div>
+                          <span className="text-xs font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full border border-blue-200">
+                            Pick 1 of {requestedSlots.length}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3">
+                          {requestedSlots.map((slotStr: string, idx: number) => {
+                            const isSelected = selectedSlotIndex === idx;
+                            const dateFormatted = formatDateInTimezone(slotStr, tutorTimezone, {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            });
+                            const timeFormatted = formatTimeInTimezone(slotStr, tutorTimezone, {
+                              includeAbbr: false,
+                            });
+                            const tutorFlag = getTimezoneCountryCode(tutorTimezone);
+                            const studentTz = confirmingTrial.timezone || confirmingTrial.student?.timezone;
+                            const studentFlag = studentTz ? getTimezoneCountryCode(studentTz) : undefined;
+
+                            return (
                               <div
-                                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                                key={idx}
+                                onClick={() => {
+                                  setSelectedSlotIndex(idx);
+                                  setConfirmDate(formatForDateTimeInput(new Date(slotStr)));
+                                }}
+                                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                                   isSelected
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-slate-100 text-slate-500 border border-slate-200"
+                                    ? "bg-blue-50/70 border-blue-600 ring-2 ring-blue-600/20 shadow-sm"
+                                    : "bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50/60"
                                 }`}
                               >
-                                {isSelected ? "✓" : idx + 1}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[11px] font-bold text-slate-900">
-                                    Choice {idx + 1} {idx === 0 ? "(Student 1st Preference)" : ""}
-                                  </span>
-                                  {isSelected && (
-                                    <span className="text-[9px] font-extrabold uppercase bg-blue-600 text-white px-1.5 py-0.2 rounded">
-                                      Confirmed Selection
-                                    </span>
-                                  )}
+                                <div className="flex items-center gap-3.5">
+                                  <div
+                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 transition-colors shadow-xs ${
+                                      isSelected
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-slate-100 text-slate-500 border border-slate-200"
+                                    }`}
+                                  >
+                                    {isSelected ? "✓" : idx + 1}
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-extrabold text-slate-900">
+                                        Choice {idx + 1} {idx === 0 ? "(Student 1st Preference)" : ""}
+                                      </span>
+                                      {isSelected && (
+                                        <Badge className="bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider">
+                                          Confirmed Selection
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="text-sm font-bold text-slate-900 flex flex-wrap items-center gap-2 mt-1">
+                                      <span>{dateFormatted}</span>
+                                      <span className="text-slate-300">•</span>
+                                      <div className="inline-flex items-center gap-1.5 bg-blue-50/80 px-2.5 py-0.5 rounded-lg border border-blue-100">
+                                        <CountryFlag countryCode={tutorFlag} size="xs" />
+                                        <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
+                                      </div>
+                                      <span className="text-xs text-slate-400 font-normal">(30 mins)</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
-                                  <span>{dateFormatted}</span>
-                                  <span className="text-slate-300">•</span>
-                                  <span className="font-mono text-blue-700 font-extrabold">{timeFormatted}</span>
-                                  <span className="text-[10px] text-slate-400 font-normal">(30 mins)</span>
-                                </div>
-                              </div>
-                            </div>
 
-                            {studentTz && studentTz !== tutorTimezone && (
-                              <div className="text-right text-[10px] text-slate-500 shrink-0 hidden sm:block">
-                                <span className="text-slate-400 block">Student time:</span>
-                                <span className="font-mono font-bold text-slate-700">
-                                  {formatTimeInTimezone(slotStr, studentTz, { includeAbbr: true })}
-                                </span>
+                                {studentTz && studentTz !== tutorTimezone && (
+                                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center text-xs text-slate-500 shrink-0 bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-xl border border-slate-100 sm:border-0">
+                                    <span className="text-slate-400 block text-[11px]">Student time:</span>
+                                    <div className="inline-flex items-center gap-1.5 mt-0.5">
+                                      <CountryFlag countryCode={studentFlag} size="xs" />
+                                      <span className="font-mono font-bold text-slate-800">
+                                        {formatTimeInTimezone(slotStr, studentTz, { includeAbbr: false })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Active Date / Custom override */}
+                        <div className="pt-2 border-t border-slate-100 space-y-2">
+                          <div className="flex items-center justify-between text-xs text-slate-600">
+                            <span className="font-bold flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Active Session Time (Tutor Local Time):</span>
+                            </span>
+                            {confirmDate && (
+                              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                                <CountryFlag countryCode={getTimezoneCountryCode(tutorTimezone)} size="xs" />
+                                <span>{formatTimeInTimezone(new Date(confirmDate), tutorTimezone, { includeAbbr: false })}</span>
                               </div>
                             )}
                           </div>
-                        );
-                      })}
+                          <input
+                            type="datetime-local"
+                            required
+                            value={confirmDate}
+                            onChange={(e) => {
+                              setConfirmDate(e.target.value);
+                              setSelectedSlotIndex(-1);
+                            }}
+                            className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs"
+                          />
+                          <p className="text-[11px] text-slate-400">
+                            Select one of the student&apos;s preferred options above to auto-fill, or manually adjust date/time if needed.
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* 2-Column Grid for Google Meet Link and Notes */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                          <Video className="w-4 h-4 text-blue-600" />
+                          <span>Google Meet Classroom Link</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer hover:underline"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Create on Meet</span>
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                        value={confirmMeetLink}
+                        onChange={(e) => setConfirmMeetLink(e.target.value)}
+                        className="rounded-xl h-11 text-xs font-mono bg-white border-slate-300"
+                      />
+                      <p className="text-[11px] text-slate-400">
+                        Paste the Google Meet link for this session. It will be emailed to the student automatically.
+                      </p>
                     </div>
 
-                    <div className="pt-1">
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                        <span className="font-medium">Active Session Time:</span>
-                        <span className="font-mono text-blue-700 font-bold">
-                          {confirmDate ? formatTimeInTimezone(new Date(confirmDate), tutorTimezone, { includeAbbr: true }) : ""}
-                        </span>
-                      </div>
-                      <input
-                        type="datetime-local"
-                        required
-                        value={confirmDate}
-                        onChange={(e) => {
-                          setConfirmDate(e.target.value);
-                          setSelectedSlotIndex(-1);
-                        }}
-                        className="w-full h-9 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+                      <label className="font-bold text-slate-800 text-xs flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span>Tutor Preparation Notes (Optional)</span>
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="Notes or instructions for student (e.g. please bring past papers or syllabus notes)..."
+                        value={confirmNotes}
+                        onChange={(e) => setConfirmNotes(e.target.value)}
+                        className="w-full p-3 rounded-xl border border-slate-300 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        Select one of the student&apos;s 3 preferred options above, or adjust the date/time if needed.
+                      <p className="text-[11px] text-slate-400">
+                        These notes will be displayed to the student on their dashboard and confirmation email.
                       </p>
                     </div>
                   </div>
-                );
-              })()}
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 block">
-                    Google Meet Classroom Link (Optional)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    <span>Create on Google Meet</span>
-                  </button>
                 </div>
-                <Input
-                  placeholder="https://meet.google.com/xxx-yyyy-zzz"
-                  value={confirmMeetLink}
-                  onChange={(e) => setConfirmMeetLink(e.target.value)}
-                  className="rounded-xl h-10 text-xs font-mono"
-                />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">
-                  Tutor Preparation Notes (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Notes or instructions for student..."
-                  value={confirmNotes}
-                  onChange={(e) => setConfirmNotes(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowConfirmTrialModal(false)}
-                  className="rounded-xl text-xs"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmittingConfirmTrial}
-                  className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
-                >
-                  {isSubmittingConfirmTrial ? "Confirming..." : "✓ Confirm & Schedule Session"}
-                </Button>
+              {/* Fixed Footer */}
+              <div className="bg-white border-t border-slate-200 px-6 sm:px-8 py-4 flex items-center justify-between shrink-0 shadow-xs">
+                <div className="text-xs text-slate-500 hidden sm:block">
+                  Trial session duration is set to <strong className="text-slate-800">30 minutes</strong>.
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowConfirmTrialModal(false)}
+                    className="rounded-xl text-xs h-10 px-5 cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmittingConfirmTrial}
+                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl h-10 px-6 gap-2 cursor-pointer shadow-md"
+                  >
+                    {isSubmittingConfirmTrial ? "Confirming..." : "✓ Confirm & Schedule Session"}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>

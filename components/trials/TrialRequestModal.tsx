@@ -657,38 +657,6 @@ export function TrialRequestModal({
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 shadow-xs">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs font-bold text-slate-700">
-                        Your Study Availability is Set
-                      </span>
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
-                        {studentAvailabilities.length} active window{studentAvailabilities.length > 1 ? "s" : ""}
-                      </Badge>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setStep("SETUP_AVAILABILITY")}
-                      className="text-[11px] text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
-                    >
-                      Edit Hours
-                    </button>
-                  </div>
-
-                  {trialStats && (
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 shadow-xs text-xs text-blue-900">
-                      <span className="font-medium flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-blue-600" />
-                        Free Trial <strong>{trialStats.totalUsed + 1} of 5</strong>
-                      </span>
-                      <span className="text-[11px] text-blue-700 font-bold">
-                        {trialStats.remaining} remaining • 1 per tutor
-                      </span>
-                    </div>
-                  )}
-                </div>
 
                 {error && (
                   <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">

@@ -27,6 +27,7 @@ interface RegionalTimezoneSelectorProps {
   compact?: boolean;
   className?: string;
   showDualNotice?: boolean;
+  dropdownPlacement?: "auto" | "up" | "down";
 }
 
 export function RegionalTimezoneSelector({
@@ -36,8 +37,11 @@ export function RegionalTimezoneSelector({
   compact = false,
   className = "",
   showDualNotice = true,
+  dropdownPlacement = "auto",
 }: RegionalTimezoneSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpwards, setOpenUpwards] = useState(false);
+  const [alignRight, setAlignRight] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +59,36 @@ export function RegionalTimezoneSelector({
 
   const isDifferentFromBase = currentRegion.id !== baseRegion.id;
 
+  const calculatePlacement = () => {
+    if (!dropdownRef.current) return;
+    const rect = dropdownRef.current.getBoundingClientRect();
+    const estimatedHeight = 360;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (dropdownPlacement === "up") {
+      setOpenUpwards(true);
+    } else if (dropdownPlacement === "down") {
+      setOpenUpwards(false);
+    } else {
+      // Auto: flip upward if space below is too tight and there's more space above
+      setOpenUpwards(spaceBelow < estimatedHeight && spaceAbove > spaceBelow);
+    }
+
+    if (compact) {
+      const estimatedWidth = 360;
+      const spaceRight = window.innerWidth - rect.left;
+      setAlignRight(spaceRight < estimatedWidth);
+    }
+  };
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      calculatePlacement();
+    }
+    setIsOpen(!isOpen);
+  };
+
   // Click outside to close
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -68,6 +102,18 @@ export function RegionalTimezoneSelector({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Update placement on window resize or scroll when open
+  useEffect(() => {
+    if (!isOpen) return;
+    calculatePlacement();
+    window.addEventListener("resize", calculatePlacement);
+    window.addEventListener("scroll", calculatePlacement, true);
+    return () => {
+      window.removeEventListener("resize", calculatePlacement);
+      window.removeEventListener("scroll", calculatePlacement, true);
+    };
+  }, [isOpen, dropdownPlacement, compact]);
 
   // Focus search input when opening
   useEffect(() => {
@@ -113,13 +159,13 @@ export function RegionalTimezoneSelector({
   );
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${compact ? "" : "w-full"} ${className}`} ref={dropdownRef}>
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className={`flex items-center justify-between gap-2.5 rounded-xl border border-sky-200 bg-white/95 px-3.5 py-2 text-left shadow-sm transition-all hover:border-sky-400 hover:bg-sky-50/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 ${
-          compact ? "text-xs py-1.5 px-3" : "text-sm"
+          compact ? "text-xs py-1.5 px-3" : "text-sm w-full"
         }`}
         title={`Current Region: ${currentRegion.region} (${currentRegion.id})`}
       >
@@ -164,9 +210,17 @@ export function RegionalTimezoneSelector({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-1.5 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95">
+        <div
+          className={`absolute z-50 ${
+            openUpwards ? "bottom-full mb-1.5" : "top-full mt-1.5"
+          } ${
+            compact
+              ? `w-80 sm:w-96 ${alignRight ? "right-0" : "left-0"}`
+              : "w-full left-0 right-0 min-w-[280px]"
+          } max-h-[min(26rem,calc(100vh-120px))] flex flex-col rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95`}
+        >
           {/* Header & Auto-Detect */}
-          <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2 px-1">
+          <div className="shrink-0 mb-2 flex items-center justify-between border-b border-slate-100 pb-2 px-1">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <Globe className="h-3.5 w-3.5 text-sky-600" />
               <span>Select Your Region / Timezone</span>
@@ -184,7 +238,7 @@ export function RegionalTimezoneSelector({
           </div>
 
           {/* Search Input */}
-          <div className="relative mb-2">
+          <div className="shrink-0 relative mb-2">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <input
               ref={searchInputRef}
@@ -207,7 +261,7 @@ export function RegionalTimezoneSelector({
 
           {/* Quick-Pick Popular Badges */}
           {!searchQuery && (
-            <div className="mb-2 border-b border-slate-100 pb-2 px-1">
+            <div className="shrink-0 mb-2 border-b border-slate-100 pb-2 px-1">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                 Popular Student & Tutor Hubs
               </div>
@@ -232,7 +286,7 @@ export function RegionalTimezoneSelector({
           )}
 
           {/* Regions List */}
-          <div className="max-h-60 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
+          <div className="flex-1 min-h-[120px] max-h-52 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
             {filteredRegions.length === 0 ? (
               <div className="py-6 text-center text-xs text-slate-400">
                 No matching regions found for &quot;{searchQuery}&quot;

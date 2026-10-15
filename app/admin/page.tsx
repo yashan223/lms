@@ -40,6 +40,8 @@ import {
   Sliders,
   Menu,
   X,
+  Maximize2,
+  Minimize2,
   LogOut,
   UserCheck,
   KeyRound,
@@ -214,6 +216,8 @@ export default function AdminDashboardPage() {
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [isAddUserFullScreen, setIsAddUserFullScreen] = useState(true);
+  const [isEditUserFullScreen, setIsEditUserFullScreen] = useState(true);
   const [showEnrollUserModal, setShowEnrollUserModal] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
 
@@ -227,6 +231,8 @@ export default function AdminDashboardPage() {
   const [formUserHourlyRate, setFormUserHourlyRate] = useState("5000");
   const [formUserHourlyRateAL, setFormUserHourlyRateAL] = useState("5000");
   const [formUserHourlyRateOL, setFormUserHourlyRateOL] = useState("3500");
+  const [formUserIsALTutor, setFormUserIsALTutor] = useState(true);
+  const [formUserIsOLTutor, setFormUserIsOLTutor] = useState(true);
   const [formUserTimezone, setFormUserTimezone] = useState(DEFAULT_TIMEZONE);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
@@ -710,16 +716,18 @@ export default function AdminDashboardPage() {
     }, 0);
   }, [coursesList]);
 
-  const getUserRates = (user: any): { alRate: string; olRate: string } => {
-    if (!user?.bio) return { alRate: "5000", olRate: "3500" };
+  const getUserRates = (user: any): { alRate: string; olRate: string; isAL: boolean; isOL: boolean } => {
+    if (!user?.bio) return { alRate: "5000", olRate: "3500", isAL: true, isOL: true };
     try {
       const parsed = typeof user.bio === "string" && user.bio.trim().startsWith("{") ? JSON.parse(user.bio) : null;
       const base = parsed?.hourlyRate ? String(parsed.hourlyRate) : "5000";
       const al = parsed?.hourlyRateAL ? String(parsed.hourlyRateAL) : base;
       const ol = parsed?.hourlyRateOL ? String(parsed.hourlyRateOL) : (Number(base) > 0 ? String(Math.round(Number(base) * 0.75)) : "3500");
-      return { alRate: al, olRate: ol };
+      const isAL = parsed?.isALTutor !== undefined ? Boolean(parsed.isALTutor) : true;
+      const isOL = parsed?.isOLTutor !== undefined ? Boolean(parsed.isOLTutor) : true;
+      return { alRate: al, olRate: ol, isAL, isOL };
     } catch {
-      return { alRate: "5000", olRate: "3500" };
+      return { alRate: "5000", olRate: "3500", isAL: true, isOL: true };
     }
   };
 
@@ -738,7 +746,10 @@ export default function AdminDashboardPage() {
     setFormUserHourlyRate("5000");
     setFormUserHourlyRateAL("5000");
     setFormUserHourlyRateOL("3500");
+    setFormUserIsALTutor(true);
+    setFormUserIsOLTutor(true);
     setFormUserTimezone(DEFAULT_TIMEZONE);
+    setIsAddUserFullScreen(true);
     setShowAddUserModal(true);
   };
 
@@ -760,6 +771,8 @@ export default function AdminDashboardPage() {
           hourlyRate: formUserHourlyRateAL,
           hourlyRateAL: formUserHourlyRateAL,
           hourlyRateOL: formUserHourlyRateOL,
+          isALTutor: formUserIsALTutor,
+          isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,
         }),
       });
@@ -789,6 +802,9 @@ export default function AdminDashboardPage() {
     setFormUserHourlyRate(rates.alRate);
     setFormUserHourlyRateAL(rates.alRate);
     setFormUserHourlyRateOL(rates.olRate);
+    setFormUserIsALTutor(rates.isAL);
+    setFormUserIsOLTutor(rates.isOL);
+    setIsEditUserFullScreen(true);
     setShowEditUserModal(true);
   };
 
@@ -811,6 +827,8 @@ export default function AdminDashboardPage() {
           hourlyRate: formUserHourlyRateAL,
           hourlyRateAL: formUserHourlyRateAL,
           hourlyRateOL: formUserHourlyRateOL,
+          isALTutor: formUserIsALTutor,
+          isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,
         }),
       });
@@ -2751,20 +2769,27 @@ export default function AdminDashboardPage() {
                               </button>
                             ) : u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR" ? (
                               <div className="flex flex-col gap-1 text-[11px] font-mono whitespace-nowrap">
-                                <span
-                                  className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200"
-                                  title="London A/L Hourly Rate"
-                                >
-                                  <span className="font-sans text-[10px] text-blue-900 font-extrabold uppercase">A/L:</span>
-                                  LKR {Number(getUserRates(u).alRate).toLocaleString()}/hr
-                                </span>
-                                <span
-                                  className="inline-flex items-center gap-1 font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200"
-                                  title="London O/L Hourly Rate"
-                                >
-                                  <span className="font-sans text-[10px] text-slate-600 font-extrabold uppercase">O/L:</span>
-                                  LKR {Number(getUserRates(u).olRate).toLocaleString()}/hr
-                                </span>
+                                {getUserRates(u).isAL && (
+                                  <span
+                                    className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200"
+                                    title="London A/L Hourly Rate"
+                                  >
+                                    <span className="font-sans text-[10px] text-blue-900 font-extrabold uppercase">A/L:</span>
+                                    LKR {Number(getUserRates(u).alRate).toLocaleString()}/hr
+                                  </span>
+                                )}
+                                {getUserRates(u).isOL && (
+                                  <span
+                                    className="inline-flex items-center gap-1 font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200"
+                                    title="London O/L Hourly Rate"
+                                  >
+                                    <span className="font-sans text-[10px] text-slate-600 font-extrabold uppercase">O/L:</span>
+                                    LKR {Number(getUserRates(u).olRate).toLocaleString()}/hr
+                                  </span>
+                                )}
+                                {!getUserRates(u).isAL && !getUserRates(u).isOL && (
+                                  <span className="text-slate-400 text-[10px] font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-200">Rates Inactive</span>
+                                )}
                               </div>
                             ) : (
                               <span className="text-slate-400 text-xs font-mono">—</span>
@@ -5181,48 +5206,85 @@ export default function AdminDashboardPage() {
       </div>
 
       {showAddUserModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-base text-slate-900">Add New User</h3>
-              <button onClick={() => setShowAddUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+          <div
+            className={`bg-white rounded-3xl shadow-2xl flex flex-col transition-all duration-200 overflow-hidden ${
+              isAddUserFullScreen
+                ? "fixed inset-0 sm:inset-3 md:inset-5 rounded-2xl md:rounded-3xl"
+                : "max-w-3xl w-full my-auto max-h-[92vh]"
+            }`}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
+              <div>
+                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-blue-600" />
+                  <span>Add New User</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Create a student, tutor, or administrator account with custom regional settings and hourly rates.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserFullScreen(!isAddUserFullScreen)}
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  title={isAddUserFullScreen ? "Exit Full Screen" : "Full Screen"}
+                  aria-label={isAddUserFullScreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  {isAddUserFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddUserModal(false)}
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleCreateUser} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold block mb-1">Full Name</label>
-                <Input required placeholder="Enter full name" value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleCreateUser} className="flex-1 overflow-y-auto p-6 space-y-5 text-xs flex flex-col">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold block mb-1">Email Address</label>
-                  <Input required type="email" placeholder="Enter email address" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <label className="font-bold block mb-1.5 text-slate-700">Full Name</label>
+                  <Input required placeholder="Enter full name" value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Contact Number</label>
-                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <label className="font-bold block mb-1.5 text-slate-700">Email Address</label>
+                  <Input required type="email" placeholder="Enter email address" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="font-bold block mb-1">Role</label>
-                  <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
+                  <label className="font-bold block mb-1.5 text-slate-700">Role</label>
+                  <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-400">
                     <option value="STUDENT">Student</option>
                     <option value="TUTOR">Tutor</option>
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Initial Password</label>
-                  <Input required type="password" placeholder="Enter initial password" value={formUserPassword} onChange={(e) => setFormUserPassword(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <label className="font-bold block mb-1.5 text-slate-700">Contact Number</label>
+                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                </div>
+                <div>
+                  <label className="font-bold block mb-1.5 text-slate-700">Initial Password</label>
+                  <Input required type="password" placeholder="Enter initial password" value={formUserPassword} onChange={(e) => setFormUserPassword(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
                 </div>
               </div>
+
               <div>
-                <label className="font-bold block mb-1">Academic Title / Headline</label>
-                <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                <label className="font-bold block mb-1.5 text-slate-700">Academic Title / Headline</label>
+                <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
               </div>
-              <div className="space-y-1">
-                <label className="font-bold block mb-1">
+
+              <div className="space-y-1.5">
+                <label className="font-bold block text-slate-700">
                   Operating Regional Timezone
                   {formUserRole === "TUTOR" && (
                     <span className="text-blue-600 font-normal ml-1">
@@ -5237,50 +5299,160 @@ export default function AdminDashboardPage() {
                   showDualNotice={false}
                 />
               </div>
+
+              {/* Tutor Teaching Levels & Official Hourly Rates */}
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
-                <div className="space-y-3 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-800 text-xs block">Official Hourly Rates (LKR / hr)</label>
-                    <span className="text-[10px] text-blue-700 font-bold bg-blue-100 px-2 py-0.5 rounded-md">Admin Only</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-slate-50 to-indigo-50/50 border border-blue-200/80 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-blue-100">
                     <div>
-                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London A/L Rate (LKR)</label>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="5000"
-                          value={formUserHourlyRateAL}
-                          onChange={(e) => setFormUserHourlyRateAL(e.target.value)}
-                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
-                        />
+                      <label className="font-bold text-slate-900 text-sm block">
+                        Tutor Teaching Levels & Official Hourly Rates
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Tick the syllabus level(s) this tutor is approved to teach. Only ticked levels will enable configuring their official hourly rate.
+                      </p>
+                    </div>
+                    <span className="self-start sm:self-center text-[10px] text-blue-700 font-extrabold bg-blue-100/90 border border-blue-200 px-2.5 py-1 rounded-md shrink-0">
+                      Admin Only
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* London A/L Tutor Card */}
+                    <div className={`p-4 rounded-xl border transition-all ${
+                      formUserIsALTutor
+                        ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
+                        : "bg-slate-50/80 border-slate-200 opacity-75"
+                    }`}>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formUserIsALTutor}
+                            onChange={(e) => setFormUserIsALTutor(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 text-xs block">
+                              London A/L Tutor
+                            </span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Approved for London Advanced Level classes
+                            </span>
+                          </div>
+                        </label>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          formUserIsALTutor ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
+                        }`}>
+                          {formUserIsALTutor ? "Active A/L" : "Disabled"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold block mb-1 text-[11px] text-slate-700">
+                          London A/L Hourly Rate (LKR / hr)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">
+                            LKR
+                          </span>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            disabled={!formUserIsALTutor}
+                            placeholder={formUserIsALTutor ? "5000" : "A/L Tutoring Inactive"}
+                            value={formUserHourlyRateAL}
+                            onChange={(e) => setFormUserHourlyRateAL(e.target.value)}
+                            className={`rounded-xl pl-11 font-mono text-xs ${
+                              formUserIsALTutor
+                                ? "bg-white focus-visible:ring-blue-400 text-slate-900"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
+                            }`}
+                          />
+                        </div>
+                        {!formUserIsALTutor && (
+                          <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                            Tick the box above to enable setting the London A/L hourly rate.
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London O/L Rate (LKR)</label>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="3500"
-                          value={formUserHourlyRateOL}
-                          onChange={(e) => setFormUserHourlyRateOL(e.target.value)}
-                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
-                        />
+
+                    {/* London O/L Tutor Card */}
+                    <div className={`p-4 rounded-xl border transition-all ${
+                      formUserIsOLTutor
+                        ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
+                        : "bg-slate-50/80 border-slate-200 opacity-75"
+                    }`}>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formUserIsOLTutor}
+                            onChange={(e) => setFormUserIsOLTutor(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 text-xs block">
+                              London O/L (IGCSE) Tutor
+                            </span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Approved for London Ordinary Level classes
+                            </span>
+                          </div>
+                        </label>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          formUserIsOLTutor ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
+                        }`}>
+                          {formUserIsOLTutor ? "Active O/L" : "Disabled"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold block mb-1 text-[11px] text-slate-700">
+                          London O/L Hourly Rate (LKR / hr)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">
+                            LKR
+                          </span>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            disabled={!formUserIsOLTutor}
+                            placeholder={formUserIsOLTutor ? "3500" : "O/L Tutoring Inactive"}
+                            value={formUserHourlyRateOL}
+                            onChange={(e) => setFormUserHourlyRateOL(e.target.value)}
+                            className={`rounded-xl pl-11 font-mono text-xs ${
+                              formUserIsOLTutor
+                                ? "bg-white focus-visible:ring-blue-400 text-slate-900"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
+                            }`}
+                          />
+                        </div>
+                        {!formUserIsOLTutor && (
+                          <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                            Tick the box above to enable setting the London O/L hourly rate.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-500">
-                    Tutors conducting both A/L and O/L classes will be credited according to the respective syllabus level.
+
+                  <p className="text-[11px] text-slate-500">
+                    💡 Tutors conducting both A/L and O/L classes will be credited according to the respective syllabus level.
                   </p>
                 </div>
               )}
-              <div className="pt-2 flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowAddUserModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
-                <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Create User</Button>
+
+              {/* Sticky Bottom Actions */}
+              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowAddUserModal(false)} className="rounded-xl h-9 px-4 cursor-pointer">
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl h-9 px-5 cursor-pointer shadow-sm">
+                  Create User
+                </Button>
               </div>
             </form>
           </div>
@@ -5288,42 +5460,81 @@ export default function AdminDashboardPage() {
       )}
 
       {showEditUserModal && selectedUserForEdit && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-base text-slate-900">Edit User Details</h3>
-              <button onClick={() => setShowEditUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+          <div
+            className={`bg-white rounded-3xl shadow-2xl flex flex-col transition-all duration-200 overflow-hidden ${
+              isEditUserFullScreen
+                ? "fixed inset-0 sm:inset-3 md:inset-5 rounded-2xl md:rounded-3xl"
+                : "max-w-3xl w-full my-auto max-h-[92vh]"
+            }`}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
+              <div>
+                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5 text-blue-600" />
+                  <span>Edit User Details</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Update personal profile, operating timezone, and teaching levels / rate limits for {selectedUserForEdit.name}.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditUserFullScreen(!isEditUserFullScreen)}
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  title={isEditUserFullScreen ? "Exit Full Screen" : "Full Screen"}
+                  aria-label={isEditUserFullScreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  {isEditUserFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEditUserModal(false)}
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleUpdateUser} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold block mb-1">Full Name</label>
-                <Input required value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleUpdateUser} className="flex-1 overflow-y-auto p-6 space-y-5 text-xs flex flex-col">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold block mb-1">Email Address</label>
-                  <Input required type="email" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <label className="font-bold block mb-1.5 text-slate-700">Full Name</label>
+                  <Input required placeholder="Enter full name" value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Contact Number</label>
-                  <Input placeholder="+44 7911 123456" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                  <label className="font-bold block mb-1.5 text-slate-700">Email Address</label>
+                  <Input required type="email" placeholder="Enter email address" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
                 </div>
               </div>
-              <div>
-                <label className="font-bold block mb-1">Role</label>
-                <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                  <option value="STUDENT">Student</option>
-                  <option value="TUTOR">Tutor</option>
-                  <option value="ADMIN">Administrator</option>
-                </select>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold block mb-1.5 text-slate-700">Role</label>
+                  <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-400">
+                    <option value="STUDENT">Student</option>
+                    <option value="TUTOR">Tutor</option>
+                    <option value="ADMIN">Administrator</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold block mb-1.5 text-slate-700">Contact Number</label>
+                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                </div>
               </div>
+
               <div>
-                <label className="font-bold block mb-1">Academic Title</label>
-                <Input value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400" />
+                <label className="font-bold block mb-1.5 text-slate-700">Academic Title</label>
+                <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
               </div>
-              <div className="space-y-1">
-                <label className="font-bold block mb-1">
+
+              <div className="space-y-1.5">
+                <label className="font-bold block text-slate-700">
                   Operating Regional Timezone
                   {formUserRole === "TUTOR" && (
                     <span className="text-blue-600 font-normal ml-1">
@@ -5338,50 +5549,160 @@ export default function AdminDashboardPage() {
                   showDualNotice={false}
                 />
               </div>
+
+              {/* Tutor Teaching Levels & Official Hourly Rates */}
               {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
-                <div className="space-y-3 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-800 text-xs block">Official Hourly Rates (LKR / hr)</label>
-                    <span className="text-[10px] text-blue-700 font-bold bg-blue-100 px-2 py-0.5 rounded-md">Admin Only</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-slate-50 to-indigo-50/50 border border-blue-200/80 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-blue-100">
                     <div>
-                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London A/L Rate (LKR)</label>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="5000"
-                          value={formUserHourlyRateAL}
-                          onChange={(e) => setFormUserHourlyRateAL(e.target.value)}
-                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
-                        />
+                      <label className="font-bold text-slate-900 text-sm block">
+                        Tutor Teaching Levels & Official Hourly Rates
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Tick the syllabus level(s) this tutor is approved to teach. Only ticked levels will enable configuring their official hourly rate.
+                      </p>
+                    </div>
+                    <span className="self-start sm:self-center text-[10px] text-blue-700 font-extrabold bg-blue-100/90 border border-blue-200 px-2.5 py-1 rounded-md shrink-0">
+                      Admin Only
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* London A/L Tutor Card */}
+                    <div className={`p-4 rounded-xl border transition-all ${
+                      formUserIsALTutor
+                        ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
+                        : "bg-slate-50/80 border-slate-200 opacity-75"
+                    }`}>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formUserIsALTutor}
+                            onChange={(e) => setFormUserIsALTutor(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 text-xs block">
+                              London A/L Tutor
+                            </span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Approved for London Advanced Level classes
+                            </span>
+                          </div>
+                        </label>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          formUserIsALTutor ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
+                        }`}>
+                          {formUserIsALTutor ? "Active A/L" : "Disabled"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold block mb-1 text-[11px] text-slate-700">
+                          London A/L Hourly Rate (LKR / hr)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">
+                            LKR
+                          </span>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            disabled={!formUserIsALTutor}
+                            placeholder={formUserIsALTutor ? "5000" : "A/L Tutoring Inactive"}
+                            value={formUserHourlyRateAL}
+                            onChange={(e) => setFormUserHourlyRateAL(e.target.value)}
+                            className={`rounded-xl pl-11 font-mono text-xs ${
+                              formUserIsALTutor
+                                ? "bg-white focus-visible:ring-blue-400 text-slate-900"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
+                            }`}
+                          />
+                        </div>
+                        {!formUserIsALTutor && (
+                          <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                            Tick the box above to enable setting the London A/L hourly rate.
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      <label className="font-bold block mb-1 text-[11px] text-slate-700">London O/L Rate (LKR)</label>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">LKR</span>
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="3500"
-                          value={formUserHourlyRateOL}
-                          onChange={(e) => setFormUserHourlyRateOL(e.target.value)}
-                          className="rounded-xl pl-11 bg-white focus-visible:ring-blue-400 font-mono text-xs"
-                        />
+
+                    {/* London O/L Tutor Card */}
+                    <div className={`p-4 rounded-xl border transition-all ${
+                      formUserIsOLTutor
+                        ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-400/20"
+                        : "bg-slate-50/80 border-slate-200 opacity-75"
+                    }`}>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formUserIsOLTutor}
+                            onChange={(e) => setFormUserIsOLTutor(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 text-xs block">
+                              London O/L (IGCSE) Tutor
+                            </span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Approved for London Ordinary Level classes
+                            </span>
+                          </div>
+                        </label>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          formUserIsOLTutor ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
+                        }`}>
+                          {formUserIsOLTutor ? "Active O/L" : "Disabled"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold block mb-1 text-[11px] text-slate-700">
+                          London O/L Hourly Rate (LKR / hr)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">
+                            LKR
+                          </span>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            disabled={!formUserIsOLTutor}
+                            placeholder={formUserIsOLTutor ? "3500" : "O/L Tutoring Inactive"}
+                            value={formUserHourlyRateOL}
+                            onChange={(e) => setFormUserHourlyRateOL(e.target.value)}
+                            className={`rounded-xl pl-11 font-mono text-xs ${
+                              formUserIsOLTutor
+                                ? "bg-white focus-visible:ring-blue-400 text-slate-900"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
+                            }`}
+                          />
+                        </div>
+                        {!formUserIsOLTutor && (
+                          <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                            Tick the box above to enable setting the London O/L hourly rate.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-500">
-                    Tutors conducting both A/L and O/L classes will be credited according to the respective syllabus level.
+
+                  <p className="text-[11px] text-slate-500">
+                    💡 Tutors conducting both A/L and O/L classes will be credited according to the respective syllabus level.
                   </p>
                 </div>
               )}
-              <div className="pt-2 flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowEditUserModal(false)} className="rounded-xl cursor-pointer">Cancel</Button>
-                <Button type="submit" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl cursor-pointer">Save Changes</Button>
+
+              {/* Sticky Bottom Actions */}
+              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowEditUserModal(false)} className="rounded-xl h-9 px-4 cursor-pointer">
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl h-9 px-5 cursor-pointer shadow-sm">
+                  Save Changes
+                </Button>
               </div>
             </form>
           </div>

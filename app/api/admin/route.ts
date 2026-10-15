@@ -7,7 +7,6 @@ import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
-import { sendVerificationEmail } from "@/lib/email";
 import { getBundles, saveBundles, DEFAULT_BUNDLES } from "@/lib/bundles";
 import {
   getSubjects as getSchools,
@@ -358,7 +357,7 @@ export async function POST(request: NextRequest) {
     // ──────────────────────────────────────────────────────────────────────
 
     if (action === "create_user" || action === "create_candidate") {
-      const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate, hourlyRateAL, hourlyRateOL, timezone, country } = body;
+      const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate, hourlyRateAL, hourlyRateOL, isALTutor, isOLTutor, timezone, country } = body;
       const assignedRole = (role as Role) || Role.STUDENT;
 
       if (!email || typeof email !== "string" || !email.trim()) {
@@ -383,11 +382,20 @@ export async function POST(request: NextRequest) {
           parsed.hourlyRate = resolvedAL;
           parsed.hourlyRateAL = resolvedAL;
           parsed.hourlyRateOL = resolvedOL;
+          parsed.isALTutor = isALTutor !== undefined ? Boolean(isALTutor) : true;
+          parsed.isOLTutor = isOLTutor !== undefined ? Boolean(isOLTutor) : true;
           initialBio = JSON.stringify(parsed);
         } catch {
           const resolvedAL = String(hourlyRateAL || hourlyRate || "5000").trim();
           const resolvedOL = String(hourlyRateOL || "3500").trim();
-          initialBio = JSON.stringify({ about: initialBio, hourlyRate: resolvedAL, hourlyRateAL: resolvedAL, hourlyRateOL: resolvedOL });
+          initialBio = JSON.stringify({
+            about: initialBio,
+            hourlyRate: resolvedAL,
+            hourlyRateAL: resolvedAL,
+            hourlyRateOL: resolvedOL,
+            isALTutor: isALTutor !== undefined ? Boolean(isALTutor) : true,
+            isOLTutor: isOLTutor !== undefined ? Boolean(isOLTutor) : true,
+          });
         }
       }
 
@@ -416,25 +424,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      let verificationEmailSent = false;
-      if (assignedRole === Role.TUTOR) {
-        const verificationToken = crypto.randomBytes(32).toString("hex");
-        await prisma.emailVerificationToken.create({
-          data: {
-            token: verificationToken,
-            userId: newUser.id,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          },
-        });
-
-        const emailResult = await sendVerificationEmail({
-          email: newUser.email,
-          name: newUser.name,
-          token: verificationToken,
-        });
-        verificationEmailSent = emailResult.success;
-      }
-
       broadcastLMSEvent("USERS_CHANGED");
       if (initialCourseId && assignedRole === Role.STUDENT) {
         broadcastLMSEvent("ENROLLMENTS_CHANGED");
@@ -446,18 +435,16 @@ export async function POST(request: NextRequest) {
         user: safeNewUser,
         requiresVerification: assignedRole === Role.TUTOR,
         message: assignedRole === Role.TUTOR
-          ? verificationEmailSent
-            ? "Tutor account created. A verification link was sent to the tutor's email address."
-            : "Tutor account created, but the verification email could not be sent."
+          ? "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time."
           : "User account created successfully.",
       });
     }
 
     if (action === "update_user") {
-      const { userId, name, email, phone, role, headline, bio, password, hourlyRate, hourlyRateAL, hourlyRateOL, timezone, country } = body;
+      const { userId, name, email, phone, role, headline, bio, password, hourlyRate, hourlyRateAL, hourlyRateOL, isALTutor, isOLTutor, timezone, country } = body;
 
       let finalBio = bio;
-      if (hourlyRate !== undefined || hourlyRateAL !== undefined || hourlyRateOL !== undefined) {
+      if (hourlyRate !== undefined || hourlyRateAL !== undefined || hourlyRateOL !== undefined || isALTutor !== undefined || isOLTutor !== undefined) {
         let parsedBio: any = {};
         try {
           if (finalBio && typeof finalBio === "string" && finalBio.trim().startsWith("{")) {
@@ -478,6 +465,8 @@ export async function POST(request: NextRequest) {
         parsedBio.hourlyRate = resolvedAL;
         parsedBio.hourlyRateAL = resolvedAL;
         parsedBio.hourlyRateOL = resolvedOL;
+        if (isALTutor !== undefined) parsedBio.isALTutor = Boolean(isALTutor);
+        if (isOLTutor !== undefined) parsedBio.isOLTutor = Boolean(isOLTutor);
         finalBio = JSON.stringify(parsedBio);
       }
 

@@ -133,7 +133,7 @@ export function RoleTabsShowcase() {
                 <div className="lg:col-span-6 bg-slate-50 rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-inner">
                   <div className="relative aspect-video rounded-xl bg-slate-900 overflow-hidden shadow-md flex items-center justify-center group cursor-pointer">
                     <img
-                      src="https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=800&auto=format&fit=crop&q=80"
+                      src="/images/campus_library_study.jpg"
                       alt="Class Preview"
                       className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-300"
                     />

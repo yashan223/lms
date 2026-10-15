@@ -703,7 +703,7 @@ function TutorProfileContent() {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Dr. Arthur Pendelton"
+                      placeholder="Enter full legal / display name"
                       className="rounded-xl h-9 text-xs"
                     />
                   </div>
@@ -715,7 +715,7 @@ function TutorProfileContent() {
                     <Input
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="e.g. +44 7911 123456"
+                      placeholder="Enter phone number"
                       className="rounded-xl h-9 text-xs"
                     />
                   </div>
@@ -729,7 +729,7 @@ function TutorProfileContent() {
                     required
                     value={headline}
                     onChange={(e) => setHeadline(e.target.value)}
-                    placeholder="e.g. Lead Tutor & Certified Examiner (London A/L Pure Mathematics)"
+                    placeholder="Enter academic headline or title"
                     className="rounded-xl h-9 text-xs"
                   />
                   <p className="text-[10px] text-slate-400">

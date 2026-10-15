@@ -8,6 +8,8 @@ import {
   syncDefaultAdminFromEnv,
 } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { sendVerificationEmail } from "@/lib/email";
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
@@ -82,10 +84,65 @@ export async function POST(request: Request) {
     }
 
     // Require email verification before students or tutors can access the LMS.
-    if ((user.role === "STUDENT" || user.role === "TUTOR") && !user.emailVerified) {
+    if ((user.role === "STUDENT" || user.role === "TUTOR" || (user.role as any) === "INSTRUCTOR") && !user.emailVerified) {
+      let emailDispatched = false;
+
+      try {
+        // Prevent spamming Resend if user clicks login repeatedly within 60 seconds
+        const recentToken = await prisma.emailVerificationToken.findFirst({
+          where: {
+            userId: user.id,
+            used: false,
+            createdAt: {
+              gte: new Date(Date.now() - 60 * 1000),
+            },
+          },
+        });
+
+        if (!recentToken) {
+          // Invalidate old unused tokens for this user
+          await prisma.emailVerificationToken.deleteMany({
+            where: { userId: user.id, used: false },
+          });
+
+          // Generate a secure 24-hour verification token
+          const verificationToken = crypto.randomBytes(32).toString("hex");
+          const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+          await prisma.emailVerificationToken.create({
+            data: {
+              token: verificationToken,
+              userId: user.id,
+              expiresAt,
+            },
+          });
+
+          // Dispatch verification email (e.g., when tutor logs in for the 1st time)
+          const emailResult = await sendVerificationEmail({
+            email: user.email,
+            name: user.name,
+            token: verificationToken,
+          });
+          emailDispatched = emailResult.success;
+        } else {
+          emailDispatched = true;
+        }
+      } catch (emailErr) {
+        console.error("Error dispatching verification email during login:", emailErr);
+      }
+
+      const isTutorRole = user.role === "TUTOR" || (user.role as any) === "INSTRUCTOR";
+      const message = isTutorRole
+        ? (emailDispatched
+            ? "A verification link has been sent to your email address. Please verify your email before accessing your tutor portal."
+            : "Your tutor account requires email verification. We encountered an issue sending the verification link; please check your spam folder or request a new link.")
+        : (emailDispatched
+            ? "Your academic email address has not been verified yet. A verification link has been sent to your email."
+            : "Your academic email address has not been verified yet. Please check your inbox or request a new verification link.");
+
       return NextResponse.json(
         {
-          error: "Your academic email address has not been verified yet. Please check your inbox or request a new verification link.",
+          error: message,
           requiresVerification: true,
           email: user.email,
         },

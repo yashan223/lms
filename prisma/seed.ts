@@ -36,7 +36,7 @@ async function main() {
       emailVerified: now,
       headline: "System Administrator",
       bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      avatar: null,
     },
     create: {
       email: adminEmail,
@@ -46,7 +46,7 @@ async function main() {
       emailVerified: now,
       headline: "System Administrator",
       bio: "Managing EduPulse platform curriculum, courses, users, and operations.",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      avatar: null,
     },
   });
 
@@ -60,7 +60,7 @@ async function main() {
       emailVerified: now,
       headline: "Senior Tutor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      avatar: null,
     },
     create: {
       email: "tutor@edupulse.uk",
@@ -70,7 +70,7 @@ async function main() {
       emailVerified: now,
       headline: "Senior Tutor in Pure Mathematics & Sciences",
       bio: "Subject Lead for IAL Pure Mathematics (P1-P4), Mechanics, and Sciences with 18+ years of academic teaching experience.",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      avatar: null,
     },
   });
 

@@ -116,8 +116,8 @@ export async function POST(request: Request) {
         role: Role.STUDENT,
         academicLevel: qualification?.includes("O/L") || qualification?.includes("IGCSE") ? "OL" : "AL",
         emailVerified: null, // Student must verify via email!
-        headline: `${qualification || "London A/L"} Student${country ? ` • ${country}` : ""} (${targetSeries || "Spring / Summer 2026"})`,
-        bio: `Enrolled student ${country ? `from ${country} ` : ""}studying ${examBoard || "London A/L & O/L"} curriculum. Agreed to Terms & Conditions and No-Refund Policy.`,
+        headline: null,
+        bio: null,
         avatar: null,
         tokenWallet: {
           create: {

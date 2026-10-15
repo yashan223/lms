@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { getAuthenticatedUser, hashPassword, verifyPassword } from "@/lib/auth";
+import {
+  getAuthenticatedUser,
+  hashPassword,
+  verifyPassword,
+  clearSessionCookies,
+  SESSION_COOKIE_NAME,
+} from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -59,15 +66,6 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        badges: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            icon: true,
-            awardedAt: true,
-          },
-        },
       },
     });
 
@@ -81,7 +79,6 @@ export async function GET(request: NextRequest) {
         ...student,
         walletBalance: student.tokenWallet?.balance || 0,
         enrollmentsCount: student.enrollments.length,
-        badgesCount: student.badges.length,
       },
     });
   } catch (error: any) {
@@ -199,9 +196,6 @@ export async function PUT(request: NextRequest) {
     if (bio !== undefined) updateData.bio = bio?.trim() || null;
     if (phone !== undefined) updateData.phone = phone?.trim() || null;
     if (country !== undefined) updateData.country = country?.trim() || null;
-    if (academicLevel !== undefined) {
-      updateData.academicLevel = academicLevel === "OL" ? "OL" : "AL";
-    }
     if (guardianName !== undefined) updateData.guardianName = guardianName?.trim() || null;
     if (guardianRelationship !== undefined) updateData.guardianRelationship = guardianRelationship?.trim() || null;
     if (guardianPhone !== undefined) updateData.guardianPhone = guardianPhone?.trim() || null;
@@ -252,6 +246,87 @@ export async function PUT(request: NextRequest) {
     console.error("Student profile PUT error:", error);
     return NextResponse.json(
       { error: error?.message || "Failed to update student profile" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/student/profile
+ * Permanently deletes the authenticated student's account and all associated data.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await getAuthenticatedUser(request);
+    if (!auth.user) {
+      return NextResponse.json(
+        { error: auth.error || "Unauthorized" },
+        { status: auth.status || 401 }
+      );
+    }
+
+    if (auth.user.role !== Role.STUDENT) {
+      return NextResponse.json(
+        { error: "Only student accounts can be self-deleted." },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { password } = body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: auth.user.id },
+      select: { id: true, email: true, passwordHash: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "Student account not found." }, { status: 404 });
+    }
+
+    if (!password || typeof password !== "string") {
+      return NextResponse.json(
+        { error: "Please enter your current account password to confirm account deletion." },
+        { status: 400 }
+      );
+    }
+
+    const isMatch = verifyPassword(password, user.passwordHash);
+    if (!isMatch) {
+      return NextResponse.json(
+        { error: "Incorrect password. Account deletion aborted." },
+        { status: 400 }
+      );
+    }
+
+    // Delete student account (cascades to enrollments, progress, wallet, notifications, etc.)
+    await prisma.user.delete({
+      where: { id: user.id },
+    });
+
+    broadcastLMSEvent("USERS_CHANGED");
+    broadcastLMSEvent("ENROLLMENTS_CHANGED");
+
+    try {
+      const cookieStore = await cookies();
+      cookieStore.delete(SESSION_COOKIE_NAME);
+      cookieStore.delete("edupulse_user_role");
+      cookieStore.delete("edupulse_user_email");
+    } catch (cookieErr) {
+      console.error("Failed to delete cookies directly:", cookieErr);
+    }
+
+    const response = NextResponse.json({
+      success: true,
+      message: "Your student account has been permanently deleted.",
+    });
+
+    clearSessionCookies(response);
+    return response;
+  } catch (error: any) {
+    console.error("Student profile DELETE error:", error);
+    return NextResponse.json(
+      { error: error?.message || "Failed to delete student account." },
       { status: 500 }
     );
   }

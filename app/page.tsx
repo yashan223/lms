@@ -4,7 +4,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Hero } from "@/components/landing/Hero";
 import { AboutSection } from "@/components/landing/AboutSection";
 import { CourseGrid } from "@/components/landing/CourseGrid";
-import { BentoFeatures } from "@/components/landing/BentoFeatures";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { Footer } from "@/components/layout/Footer";
@@ -36,8 +35,6 @@ export default async function HomePage() {
         <AboutSection />
 
         <CourseGrid />
-
-        <BentoFeatures />
 
         {hasSession && (
           <PricingSection

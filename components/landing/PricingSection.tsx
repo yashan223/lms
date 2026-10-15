@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TokenBundle, DEFAULT_BUNDLES } from "@/lib/bundle-types";
 import { formatStudentPrice, isSriLankanStudent, getStudentAcademicLevel } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ArrowRight, Award, Lock } from "lucide-react";
+import { CheckCircle2, ArrowRight, Award, Lock, GraduationCap, BookOpen } from "lucide-react";
 
 interface PricingSectionProps {
   initialBundles?: TokenBundle[];
@@ -105,13 +105,14 @@ export function PricingSection({
             <button
               type="button"
               onClick={() => setStudentLevel("AL")}
-              className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 studentLevel === "AL"
                   ? "bg-white text-blue-700 shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>🎓 London A/L (IAL)</span>
+              <GraduationCap className={`w-4 h-4 ${studentLevel === "AL" ? "text-blue-600" : "text-slate-500"}`} />
+              <span>London A/L (IAL)</span>
               {studentLevel === "AL" && (
                 <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Selected</span>
               )}
@@ -119,13 +120,14 @@ export function PricingSection({
             <button
               type="button"
               onClick={() => setStudentLevel("OL")}
-              className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 studentLevel === "OL"
                   ? "bg-white text-blue-800 shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>📘 London O/L (IGCSE)</span>
+              <BookOpen className={`w-4 h-4 ${studentLevel === "OL" ? "text-blue-600" : "text-slate-500"}`} />
+              <span>London O/L (IGCSE)</span>
               {studentLevel === "OL" && (
                 <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-extrabold hidden sm:inline">Tailored</span>
               )}
@@ -212,13 +214,23 @@ export function PricingSection({
                       </div>
                       <div className="mt-1.5 flex items-center gap-1.5">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border inline-flex items-center gap-1.5 ${
                             studentLevel === "OL"
                               ? "bg-blue-100 text-blue-800 border-blue-200"
                               : "bg-blue-50 text-blue-700 border-blue-200"
                           }`}
                         >
-                          {studentLevel === "OL" ? "📘 London O/L (IGCSE) Rate" : "🎓 London A/L (IAL) Rate"}
+                          {studentLevel === "OL" ? (
+                            <>
+                              <BookOpen className="w-3 h-3 text-blue-700" />
+                              <span>London O/L (IGCSE) Rate</span>
+                            </>
+                          ) : (
+                            <>
+                              <GraduationCap className="w-3 h-3 text-blue-700" />
+                              <span>London A/L (IAL) Rate</span>
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>

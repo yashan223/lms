@@ -20,13 +20,13 @@ import {
   Mail,
   Clock,
   Lock,
-  Eye,
-  EyeOff,
   Sparkles,
   Users,
   Save,
   Check,
   Coins,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,14 +57,11 @@ export default function StudentProfilePage() {
   const [guardianRelationship, setGuardianRelationship] = useState("Father");
   const [guardianPhone, setGuardianPhone] = useState("");
 
-  // Password Update Form
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPass, setShowCurrentPass] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
-  const [passMsg, setPassMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  // Delete Account
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchProfile = async () => {
     try {
@@ -199,7 +196,6 @@ export default function StudentProfilePage() {
           bio: bio.trim(),
           phone: phone.trim(),
           country: country.trim(),
-          academicLevel,
           avatar: avatar || null,
           guardianName: guardianName.trim(),
           guardianRelationship: guardianRelationship.trim(),
@@ -222,52 +218,29 @@ export default function StudentProfilePage() {
     }
   };
 
-  // Update password
-  const handleChangePassword = async (e: FormEvent) => {
+  // Delete Account
+  const handleDeleteAccount = async (e: FormEvent) => {
     e.preventDefault();
-    setPassMsg(null);
-
-    if (!currentPassword) {
-      setPassMsg({ type: "error", text: "Please enter your current password." });
+    if (!deletePassword) {
+      setDeleteError("Please enter your current password to confirm deletion.");
       return;
     }
-
-    if (newPassword.length < 8) {
-      setPassMsg({ type: "error", text: "New password must be at least 8 characters long." });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPassMsg({ type: "error", text: "New passwords do not match." });
-      return;
-    }
-
+    setDeletingAccount(true);
+    setDeleteError(null);
     try {
-      setSavingPassword(true);
       const res = await fetch("/api/student/profile", {
-        method: "PUT",
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "change_password",
-          currentPassword,
-          newPassword,
-          confirmPassword,
-        }),
+        body: JSON.stringify({ password: deletePassword }),
       });
-
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Password update failed.");
+        throw new Error(data.error || "Failed to delete account.");
       }
-
-      setPassMsg({ type: "success", text: "Password changed successfully!" });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      window.location.href = "/login?deleted=true";
     } catch (err: any) {
-      setPassMsg({ type: "error", text: err.message || "Failed to change password." });
-    } finally {
-      setSavingPassword(false);
+      setDeleteError(err.message || "An unexpected error occurred.");
+      setDeletingAccount(false);
     }
   };
 
@@ -337,7 +310,7 @@ export default function StudentProfilePage() {
         )}
 
         {/* Academic Overview Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
               <Coins className="w-5 h-5" />
@@ -355,16 +328,6 @@ export default function StudentProfilePage() {
             <div>
               <div className="text-xs text-slate-500 font-semibold">Enrolled Classes</div>
               <div className="text-lg font-black text-slate-900">{student?.enrollmentsCount || 0}</div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs text-slate-500 font-semibold">Badges Awarded</div>
-              <div className="text-lg font-black text-slate-900">{student?.badgesCount || 0}</div>
             </div>
           </div>
 
@@ -476,60 +439,6 @@ export default function StudentProfilePage() {
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-5">
-            {/* Qualification Level Selector */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700 block">Current Qualification Track</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAcademicLevel("AL")}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
-                    academicLevel === "AL"
-                      ? "border-blue-600 bg-blue-50/50 shadow-xs ring-2 ring-blue-500/20"
-                      : "border-slate-200 bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
-                      academicLevel === "AL" ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300"
-                    }`}
-                  >
-                    {academicLevel === "AL" && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                  <div>
-                    <div className="text-xs font-extrabold text-slate-900">London A/L (International Advanced Level)</div>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Edexcel / Cambridge IAL Units P1–P4, S1–S2, M1–M2, Chemistry, Biology, Physics, and Business.
-                    </p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAcademicLevel("OL")}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
-                    academicLevel === "OL"
-                      ? "border-blue-600 bg-blue-50/50 shadow-xs ring-2 ring-blue-500/20"
-                      : "border-slate-200 bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
-                      academicLevel === "OL" ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300"
-                    }`}
-                  >
-                    {academicLevel === "OL" && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                  <div>
-                    <div className="text-xs font-extrabold text-slate-900">London O/L (IGCSE / Ordinary Level)</div>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Edexcel &amp; Cambridge IGCSE foundation curricula, past paper walkthroughs, and exam mastery.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
             {/* Name & Headline */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -692,111 +601,127 @@ export default function StudentProfilePage() {
           </form>
         </section>
 
-        {/* Section 3: Security & Password Update */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-              <Lock className="w-5 h-5 text-blue-600" />
-              <span>Security &amp; Password</span>
+        {/* Section 3: Danger Zone */}
+        <section className="bg-white rounded-3xl border border-red-200 shadow-xs p-6 sm:p-8 space-y-6">
+          <div className="border-b border-red-100 pb-4">
+            <h2 className="text-base font-extrabold text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <span>Danger Zone</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Ensure your account is protected with a secure password of at least 8 characters.
+              Irreversible account actions. Please proceed with caution.
             </p>
           </div>
 
-          {passMsg && (
-            <div
-              className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2 ${
-                passMsg.type === "success"
-                  ? "bg-blue-50 border-blue-200 text-blue-800"
-                  : "bg-red-50 border-red-200 text-red-800"
-              }`}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-red-50/50 border border-red-100">
+            <div className="space-y-1 max-w-xl">
+              <h3 className="text-xs font-bold text-red-950">Delete Student Account</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Permanently delete your student profile, enrolled classes, study progress, certificates, tutoring session history, and token balances. This cannot be undone.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(true);
+                setDeleteError(null);
+                setDeletePassword("");
+              }}
+              variant="outline"
+              className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs px-4 py-2 rounded-xl shrink-0 cursor-pointer flex items-center gap-1.5"
             >
-              {passMsg.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-              )}
-              <span>{passMsg.text}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleChangePassword} className="space-y-4 max-w-lg">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Current Password *</label>
-              <div className="relative">
-                <Input
-                  type={showCurrentPass ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter your current password"
-                  className="rounded-xl border-slate-200 text-xs h-10 pr-10 bg-white"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPass(!showCurrentPass)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">New Password (Min 8 Characters) *</label>
-              <div className="relative">
-                <Input
-                  type={showNewPass ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Create a strong password"
-                  className="rounded-xl border-slate-200 text-xs h-10 pr-10 bg-white"
-                  minLength={8}
-                  maxLength={128}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPass(!showNewPass)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Confirm New Password *</label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your new password"
-                className="rounded-xl border-slate-200 text-xs h-10 bg-white"
-                minLength={8}
-                maxLength={128}
-                required
-              />
-            </div>
-
-            <div className="pt-2">
-              <Button
-                type="submit"
-                disabled={savingPassword}
-                variant="outline"
-                className="border-slate-300 text-slate-800 hover:bg-slate-50 font-bold text-xs px-5 py-2 rounded-xl cursor-pointer flex items-center gap-2"
-              >
-                {savingPassword ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
-                ) : (
-                  <Lock className="w-4 h-4" />
-                )}
-                <span>{savingPassword ? "Updating Password..." : "Update Password"}</span>
-              </Button>
-            </div>
-          </form>
+              <Trash2 className="w-4 h-4" />
+              <span>Delete Account</span>
+            </Button>
+          </div>
         </section>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-red-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5 text-red-600">
+                  <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center">
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">Delete Account</h3>
+                    <p className="text-[11px] text-slate-500">Permanent and irreversible</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deletingAccount}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs text-slate-600">
+                <p>
+                  Are you absolutely sure you want to delete your account? All your class enrollments, lesson progress, uploaded study files, and token balances will be permanently destroyed.
+                </p>
+
+                {deleteError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{deleteError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleDeleteAccount} className="space-y-4 pt-2">
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-700 text-xs block">
+                      Confirm your password to proceed *
+                    </label>
+                    <Input
+                      type="password"
+                      required
+                      placeholder="Enter your current password"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      className="rounded-xl border-slate-200 text-xs h-10 bg-white"
+                      disabled={deletingAccount}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowDeleteModal(false)}
+                      disabled={deletingAccount}
+                      className="rounded-xl text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={deletingAccount || !deletePassword}
+                      className="rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {deletingAccount ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Deleting Account...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          <span>Permanently Delete</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

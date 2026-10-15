@@ -57,9 +57,6 @@ export async function GET(request: NextRequest) {
         privateFiles: {
           orderBy: { createdAt: "desc" },
         },
-        badges: {
-          orderBy: { awardedAt: "desc" },
-        },
         events: {
           orderBy: { dueDate: "asc" },
         },
@@ -105,9 +102,6 @@ export async function GET(request: NextRequest) {
           },
           privateFiles: {
             orderBy: { createdAt: "desc" },
-          },
-          badges: {
-            orderBy: { awardedAt: "desc" },
           },
           events: {
             orderBy: { dueDate: "asc" },

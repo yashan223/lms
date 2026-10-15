@@ -258,7 +258,7 @@ export function StudentAvailabilityModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex">
+    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex">
       <div className="bg-white w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-200">
         <div className="flex items-start justify-between border-b border-slate-200 px-8 py-5 shrink-0">
           <div className="flex items-center gap-3">

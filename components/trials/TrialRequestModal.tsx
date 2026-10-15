@@ -412,7 +412,7 @@ export function TrialRequestModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex">
+    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex">
       <div className="bg-slate-50 w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-200">
         <div className="bg-white border-b border-slate-200 px-6 sm:px-8 py-4 flex items-center justify-between shrink-0 shadow-xs">
           <div className="flex items-center gap-3">

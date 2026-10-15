@@ -288,7 +288,7 @@ export function EncryptedChatDrawer({
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-3">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-3">
         <button
           onClick={handleToggleOpen}
           aria-label={isOpen ? "Close Messages" : "Open Messages"}
@@ -320,7 +320,7 @@ export function EncryptedChatDrawer({
       </div>
 
       {isOpen && (
-        <div className="fixed inset-x-2 bottom-18 sm:inset-x-auto sm:bottom-22 sm:right-6 z-50 w-auto sm:w-[420px] max-w-[440px] h-[580px] max-h-[calc(100dvh-5.5rem)] bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed inset-x-2 bottom-18 sm:inset-x-auto sm:bottom-22 sm:right-6 z-40 w-auto sm:w-[420px] max-w-[440px] h-[580px] max-h-[calc(100dvh-5.5rem)] bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
 
           <div className="px-4 py-3.5 bg-[#0c2461] text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5 min-w-0">

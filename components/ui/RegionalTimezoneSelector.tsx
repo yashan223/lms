@@ -174,7 +174,7 @@ export function RegionalTimezoneSelector({
             </div>
             {!compact && (
               <span className="text-[11px] text-slate-500 truncate">
-                {currentRegion.city} ({currentRegion.abbr})
+                {currentRegion.city} • {currentRegion.id}
               </span>
             )}
           </div>
@@ -193,7 +193,7 @@ export function RegionalTimezoneSelector({
           <span>
             Slots converted to your local time. Tutor base:{" "}
             <strong className="font-medium text-slate-800">
-              {baseRegion.flag} {baseRegion.region} ({baseRegion.abbr})
+              {baseRegion.flag} {baseRegion.region}
             </strong>
           </span>
         </div>
@@ -253,7 +253,7 @@ export function RegionalTimezoneSelector({
                 Popular Student & Tutor Hubs
               </div>
               <div className="flex flex-wrap gap-1">
-                {REGIONAL_TIMEZONES.slice(0, 6).map((pop) => (
+                {REGIONAL_TIMEZONES.slice(0, 8).map((pop) => (
                   <button
                     key={pop.id}
                     type="button"
@@ -265,7 +265,7 @@ export function RegionalTimezoneSelector({
                     }`}
                   >
                     <span>{pop.flag}</span>
-                    <span>{pop.region.split(" ")[0]}</span>
+                    <span>{pop.city}</span>
                   </button>
                 ))}
               </div>
@@ -307,7 +307,7 @@ export function RegionalTimezoneSelector({
                           </span>
                         </div>
                         <span className="text-[10px] text-slate-500 truncate">
-                          {region.id} ({region.abbr})
+                          {region.id}
                         </span>
                       </div>
                     </div>

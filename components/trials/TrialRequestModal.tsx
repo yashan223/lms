@@ -807,7 +807,7 @@ export function TrialRequestModal({
                             <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
                             {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
                               <span className="text-[10px] text-slate-500 font-medium">
-                                ({s.tutorTimeDisplay} LK)
+                                ({s.tutorTimeDisplay} 🇱🇰)
                               </span>
                             )}
                             {s.matchesStudent && <span className="text-[10px] text-blue-800 font-extrabold bg-blue-200/60 px-1 py-0.2 rounded">★ Match</span>}

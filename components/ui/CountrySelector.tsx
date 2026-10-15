@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { COUNTRIES, Country } from "@/lib/countries";
 import { ChevronDown, X, Globe } from "lucide-react";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 
 interface CountrySelectorProps {
   value: string;
@@ -59,17 +60,17 @@ export function CountrySelector({
     return [...startsWith, ...contains];
   }, [inputValue]);
 
-  const currentFlag = useMemo(() => {
+  const currentCountry = useMemo(() => {
     const q = inputValue.trim().toLowerCase();
     if (!q) return null;
 
     const exact = COUNTRIES.find(
       (c) => c.name.toLowerCase() === q || c.code.toLowerCase() === q
     );
-    if (exact) return exact.flag;
+    if (exact) return exact;
 
     if (filteredCountries.length > 0) {
-      return filteredCountries[0].flag;
+      return filteredCountries[0];
     }
 
     return null;
@@ -128,10 +129,8 @@ export function CountrySelector({
           className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none select-none z-10 w-5 h-5"
           aria-hidden="true"
         >
-          {currentFlag ? (
-            <span className="text-lg leading-none transition-transform duration-150 scale-105">
-              {currentFlag}
-            </span>
+          {currentCountry ? (
+            <CountryFlag countryCode={currentCountry.code} flagEmoji={currentCountry.flag} size="sm" />
           ) : (
             <Globe className="w-4 h-4 text-slate-400" />
           )}
@@ -215,9 +214,7 @@ export function CountrySelector({
                     } ${isSelected ? "font-bold text-blue-700 bg-blue-50" : ""}`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-base select-none shrink-0 leading-none">
-                        {c.flag}
-                      </span>
+                      <CountryFlag countryCode={c.code} flagEmoji={c.flag} size="sm" />
                       <span className="truncate">{c.name}</span>
                     </div>
                     <span className="text-[10px] font-mono text-slate-400 font-bold shrink-0 ml-2">

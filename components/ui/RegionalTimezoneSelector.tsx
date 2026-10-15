@@ -18,6 +18,7 @@ import {
   getTimezoneOffsetString,
   DEFAULT_TIMEZONE,
 } from "@/lib/timezones";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 
 interface RegionalTimezoneSelectorProps {
   selectedTimezone: string;
@@ -161,8 +162,8 @@ export function RegionalTimezoneSelector({
         }`}
         title={`Current Region: ${currentRegion.region} (${currentRegion.id})`}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-base leading-none select-none">{currentRegion.flag}</span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <CountryFlag countryCode={currentRegion.countryCode} flagEmoji={currentRegion.flag} size={compact ? "sm" : "md"} />
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-semibold text-slate-800 truncate">
@@ -190,10 +191,11 @@ export function RegionalTimezoneSelector({
       {showDualNotice && isDifferentFromBase && !isOpen && (
         <div className="mt-1.5 flex items-center gap-1.5 px-1 text-[11px] text-amber-800">
           <Globe className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-          <span>
-            Slots converted to your local time. Tutor base:{" "}
-            <strong className="font-medium text-slate-800">
-              {baseRegion.flag} {baseRegion.region}
+          <span className="inline-flex items-center gap-1.5 flex-wrap">
+            <span>Slots converted to your local time. Tutor base:</span>
+            <strong className="font-medium text-slate-800 inline-flex items-center gap-1">
+              <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+              <span>{baseRegion.region}</span>
             </strong>
           </span>
         </div>
@@ -258,13 +260,13 @@ export function RegionalTimezoneSelector({
                     key={pop.id}
                     type="button"
                     onClick={() => handleSelect(pop)}
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition ${
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition ${
                       currentRegion.id === pop.id
                         ? "bg-sky-600 text-white font-medium"
                         : "bg-slate-100 text-slate-700 hover:bg-sky-50 hover:text-sky-700"
                     }`}
                   >
-                    <span>{pop.flag}</span>
+                    <CountryFlag countryCode={pop.countryCode} flagEmoji={pop.flag} size="xs" />
                     <span>{pop.city}</span>
                   </button>
                 ))}
@@ -294,9 +296,7 @@ export function RegionalTimezoneSelector({
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-lg leading-none select-none shrink-0">
-                        {region.flag}
-                      </span>
+                      <CountryFlag countryCode={region.countryCode} flagEmoji={region.flag} size="md" />
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="font-semibold text-slate-800 truncate">

@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
   getUserBrowserTimezone,
   getRegionalTimezone,
@@ -884,14 +885,15 @@ function RescheduleContent() {
                               </span>
                               {slot.tutorTimeDisplay && slot.tutorTimeDisplay !== slot.timeDisplay && (
                                 <span
-                                  className={`text-[9px] font-semibold shrink-0 ${
+                                  className={`text-[9px] font-semibold shrink-0 inline-flex items-center gap-1 ${
                                     isSelected
                                       ? "text-blue-200"
-                                      : "text-amber-800 bg-amber-50 px-1 py-0.5 rounded border border-amber-200/60"
+                                      : "text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60"
                                   }`}
                                   title={`Tutor base time: ${slot.tutorTimeDisplay} Sri Lanka`}
                                 >
-                                  🇱🇰 {slot.tutorTimeDisplay}
+                                  <CountryFlag countryCode="LK" flagEmoji="🇱🇰" size="xs" />
+                                  <span>{slot.tutorTimeDisplay}</span>
                                 </span>
                               )}
                             </div>

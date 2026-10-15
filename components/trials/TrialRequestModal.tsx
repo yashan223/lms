@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
   getUserBrowserTimezone,
   getRegionalTimezone,
@@ -598,12 +599,15 @@ export function TrialRequestModal({
                           <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold inline-flex items-center justify-center">{idx + 1}</span>
                           <span>Choice {idx + 1}</span>
                         </span>
-                        <span className="font-mono text-blue-800 font-bold text-xs">
-                          {formatForUser(dStr, selectedTimezone, {
-                            includeDate: true,
-                            includeTime: true,
-                            includeAbbr: true,
-                          })}
+                        <span className="font-mono text-blue-800 font-bold text-xs inline-flex items-center gap-1.5">
+                          <span>
+                            {formatForUser(dStr, selectedTimezone, {
+                              includeDate: true,
+                              includeTime: true,
+                              includeAbbr: false,
+                            })}
+                          </span>
+                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
                         </span>
                       </div>
                     ))}
@@ -806,8 +810,10 @@ export function TrialRequestModal({
                             <Clock className={`w-3 h-3 ${s.matchesStudent ? "text-blue-700" : "text-blue-600"}`} />
                             <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
                             {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
-                              <span className="text-[10px] text-slate-500 font-medium">
-                                ({s.tutorTimeDisplay} 🇱🇰)
+                              <span className="text-[10px] text-slate-500 font-medium inline-flex items-center gap-1">
+                                <span>({s.tutorTimeDisplay}</span>
+                                <CountryFlag countryCode="LK" flagEmoji="🇱🇰" size="xs" />
+                                <span>)</span>
                               </span>
                             )}
                             {s.matchesStudent && <span className="text-[10px] text-blue-800 font-extrabold bg-blue-200/60 px-1 py-0.2 rounded">★ Match</span>}
@@ -831,8 +837,9 @@ export function TrialRequestModal({
                         </span>
                       </div>
                       {preferredDate1 && (
-                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate">
-                          {formatTimeInTimezone(new Date(preferredDate1), selectedTimezone, { includeAbbr: true })}
+                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate inline-flex items-center gap-1.5">
+                          <span>{formatTimeInTimezone(new Date(preferredDate1), selectedTimezone, { includeAbbr: false })}</span>
+                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
                         </div>
                       )}
                       <input
@@ -858,8 +865,9 @@ export function TrialRequestModal({
                         </span>
                       </div>
                       {preferredDate2 && (
-                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate">
-                          {formatTimeInTimezone(new Date(preferredDate2), selectedTimezone, { includeAbbr: true })}
+                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate inline-flex items-center gap-1.5">
+                          <span>{formatTimeInTimezone(new Date(preferredDate2), selectedTimezone, { includeAbbr: false })}</span>
+                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
                         </div>
                       )}
                       <input
@@ -885,8 +893,9 @@ export function TrialRequestModal({
                         </span>
                       </div>
                       {preferredDate3 && (
-                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate">
-                          {formatTimeInTimezone(new Date(preferredDate3), selectedTimezone, { includeAbbr: true })}
+                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate inline-flex items-center gap-1.5">
+                          <span>{formatTimeInTimezone(new Date(preferredDate3), selectedTimezone, { includeAbbr: false })}</span>
+                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
                         </div>
                       )}
                       <input

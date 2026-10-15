@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { COUNTRIES, Country, findCountry, findCountryByDialCode } from "@/lib/countries";
 import { ChevronDown, Search, Phone, Check, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 
 interface PhoneInputWithCountryProps {
   value: string;
@@ -107,7 +108,7 @@ export function PhoneInputWithCountry({
       >
         {selectedCountry ? (
           <>
-            <span className="text-base leading-none">{selectedCountry.flag}</span>
+            <CountryFlag countryCode={selectedCountry.code} flagEmoji={selectedCountry.flag} size="sm" />
             <span className="font-mono text-slate-700">{selectedCountry.dialCode}</span>
           </>
         ) : (
@@ -164,7 +165,7 @@ export function PhoneInputWithCountry({
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0 truncate">
-                        <span className="text-base leading-none shrink-0">{c.flag}</span>
+                        <CountryFlag countryCode={c.code} flagEmoji={c.flag} size="sm" />
                         <span className="truncate">{c.name}</span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">

@@ -667,6 +667,17 @@ export function getTimezoneFlag(timezone?: string | null): string {
   return "🌐";
 }
 
+export function getTimezoneCountryCode(timezone?: string | null): string {
+  if (!timezone) return "LK";
+  const directCountry = TZ_TO_COUNTRY[timezone];
+  if (directCountry) return directCountry.toUpperCase();
+  const mapped = COUNTRY_TO_TIMEZONE[timezone.toUpperCase()];
+  if (mapped && TZ_TO_COUNTRY[mapped]) return TZ_TO_COUNTRY[mapped].toUpperCase();
+  const regional = REGIONAL_TIMEZONES.find((r) => r.id.toLowerCase() === timezone.toLowerCase());
+  if (regional?.countryCode) return regional.countryCode.toUpperCase();
+  return "LK";
+}
+
 export function getRegionalTimezone(tzOrCountry?: string | null): RegionalTimezone {
   if (!tzOrCountry) {
     return REGIONAL_TIMEZONES[0];

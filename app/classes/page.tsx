@@ -76,10 +76,15 @@ export default function CoursesPage() {
         const dashData = await dashRes.json();
         if (dashData.user) {
           setIsLoggedIn(true);
-          const lvl = getStudentAcademicLevel(dashData.user);
-          setStudentLevel(lvl);
-          setUserAcademicLevel(lvl);
-          setSelectedLevel(lvl);
+          if (dashData.user.role === "STUDENT") {
+            const lvl = getStudentAcademicLevel(dashData.user);
+            setStudentLevel(lvl || "AL");
+            setUserAcademicLevel(lvl);
+            setSelectedLevel(lvl || "ALL");
+          } else {
+            setUserAcademicLevel(null);
+            setSelectedLevel("ALL");
+          }
         }
       }
       if (res.ok) {

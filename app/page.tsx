@@ -29,13 +29,14 @@ export default async function HomePage() {
       ? prisma.user
           .findUnique({
             where: { id: sessionPayload.userId },
-            select: { academicLevel: true, headline: true },
+            select: { academicLevel: true, headline: true, role: true },
           })
           .catch(() => null)
       : Promise.resolve(null),
   ]);
 
   const userAcademicLevel = dbUser ? getStudentAcademicLevel(dbUser) : null;
+  const isTutor = dbUser ? (dbUser.role === "TUTOR" || dbUser.role === "INSTRUCTOR" || dbUser.role === "ADMIN") : false;
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900">
@@ -55,6 +56,7 @@ export default async function HomePage() {
             initialIsSriLanka={geo.isSriLanka}
             initialIsLoggedIn={true}
             initialAcademicLevel={userAcademicLevel}
+            isTutor={isTutor}
           />
         )}
 

@@ -71,7 +71,7 @@ export async function GET(
 
     let isEnrolled = false;
     let isLoggedIn = false;
-    let academicLevel = "AL";
+    let academicLevel: string | null = "AL";
     try {
       const auth = await getAuthenticatedUser(request);
       if (auth.user) {

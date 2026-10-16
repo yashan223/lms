@@ -13,6 +13,7 @@ interface PricingSectionProps {
   initialIsSriLanka?: boolean;
   initialIsLoggedIn?: boolean;
   initialAcademicLevel?: "OL" | "AL" | null;
+  isTutor?: boolean;
 }
 
 export function PricingSection({
@@ -21,6 +22,7 @@ export function PricingSection({
   initialIsSriLanka,
   initialIsLoggedIn,
   initialAcademicLevel,
+  isTutor,
 }: PricingSectionProps) {
   const [bundles, setBundles] = useState<TokenBundle[]>(
     initialBundles && initialBundles.length > 0 ? initialBundles : DEFAULT_BUNDLES
@@ -33,6 +35,7 @@ export function PricingSection({
   const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(
     initialAcademicLevel || null
   );
+  const [isTutorUser, setIsTutorUser] = useState<boolean>(Boolean(isTutor));
 
   useEffect(() => {
     async function loadBundles() {
@@ -55,9 +58,20 @@ export function PricingSection({
             if (dashboardData.user.country) {
               setStudentCountry(dashboardData.user.country);
             }
-            const lvl = getStudentAcademicLevel(dashboardData.user);
-            setStudentLevel(lvl);
-            setUserAcademicLevel(lvl);
+            const isFaculty =
+              dashboardData.user.role === "TUTOR" ||
+              dashboardData.user.role === "INSTRUCTOR" ||
+              dashboardData.user.role === "ADMIN";
+            setIsTutorUser(isFaculty);
+            if (dashboardData.user.role === "STUDENT") {
+              const lvl = getStudentAcademicLevel(dashboardData.user);
+              if (lvl) {
+                setStudentLevel(lvl);
+                setUserAcademicLevel(lvl);
+              }
+            } else {
+              setUserAcademicLevel(null);
+            }
           }
         }
 
@@ -109,7 +123,7 @@ export function PricingSection({
           </p>
 
           <div className="w-full max-w-md mx-auto space-y-2">
-            {userAcademicLevel ? (
+            {userAcademicLevel && !isTutorUser ? (
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-50 border border-blue-200/80 shadow-2xs">
                 {userAcademicLevel === "AL" ? (
                   <>
@@ -134,31 +148,39 @@ export function PricingSection({
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner w-full gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setStudentLevel("AL")}
-                  className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
-                    studentLevel === "AL"
-                      ? "bg-white text-blue-700 shadow-sm cursor-pointer"
-                      : "text-slate-600 hover:text-slate-900 cursor-pointer"
-                  }`}
-                >
-                  <GraduationCap className={`w-4 h-4 shrink-0 ${studentLevel === "AL" ? "text-blue-600" : "text-slate-500"}`} />
-                  <span className="truncate">London A/L (IAL)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudentLevel("OL")}
-                  className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
-                    studentLevel === "OL"
-                      ? "bg-white text-blue-800 shadow-sm cursor-pointer"
-                      : "text-slate-600 hover:text-slate-900 cursor-pointer"
-                  }`}
-                >
-                  <BookOpen className={`w-4 h-4 shrink-0 ${studentLevel === "OL" ? "text-blue-600" : "text-slate-500"}`} />
-                  <span className="truncate">London O/L (IGCSE)</span>
-                </button>
+              <div className="space-y-2">
+                {isTutorUser && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold shadow-2xs">
+                    <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Faculty View: Showing Both London A/L &amp; O/L Packages</span>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner w-full gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setStudentLevel("AL")}
+                    className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
+                      studentLevel === "AL"
+                        ? "bg-white text-blue-700 shadow-sm cursor-pointer"
+                        : "text-slate-600 hover:text-slate-900 cursor-pointer"
+                    }`}
+                  >
+                    <GraduationCap className={`w-4 h-4 shrink-0 ${studentLevel === "AL" ? "text-blue-600" : "text-slate-500"}`} />
+                    <span className="truncate">London A/L (IAL)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStudentLevel("OL")}
+                    className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all w-full text-center h-11 ${
+                      studentLevel === "OL"
+                        ? "bg-white text-blue-800 shadow-sm cursor-pointer"
+                        : "text-slate-600 hover:text-slate-900 cursor-pointer"
+                    }`}
+                  >
+                    <BookOpen className={`w-4 h-4 shrink-0 ${studentLevel === "OL" ? "text-blue-600" : "text-slate-500"}`} />
+                    <span className="truncate">London O/L (IGCSE)</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -262,6 +284,17 @@ export function PricingSection({
                           )}
                         </span>
                       </div>
+                      {isTutorUser && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                          <span className="font-semibold text-slate-500">Other Track:</span>
+                          <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
+                            {studentLevel === "OL"
+                              ? `London A/L: ${formatStudentPrice(price, studentCountry, plan.lkrPrice, "AL", plan.olPrice, plan.olLkrPrice)}`
+                              : `London O/L: ${formatStudentPrice(price, studentCountry, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}`
+                            }
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 

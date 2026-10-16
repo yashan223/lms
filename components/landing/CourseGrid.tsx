@@ -76,9 +76,14 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
           const dashData = await dashRes.json();
           if (dashData.user) {
             setIsLoggedIn(true);
-            const lvl = getStudentAcademicLevel(dashData.user);
-            setUserAcademicLevel(lvl);
-            setSelectedLevel(lvl);
+            if (dashData.user.role === "STUDENT") {
+              const lvl = getStudentAcademicLevel(dashData.user);
+              setUserAcademicLevel(lvl);
+              setSelectedLevel(lvl || "ALL");
+            } else {
+              setUserAcademicLevel(null);
+              setSelectedLevel("ALL");
+            }
           }
         }
         if (res.ok) {
@@ -211,20 +216,10 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative w-full md:w-72">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <Input
-                type="text"
-                placeholder="Search P1-P4, Units 1-6, IGCSE, tutor..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 border-slate-200 focus-visible:ring-blue-500 rounded-xl text-xs"
-              />
-            </div>
+          <div className="flex items-center gap-3">
             <Link
               href="/classes"
-              className="hidden sm:flex px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold whitespace-nowrap transition-colors items-center gap-1 shrink-0"
+              className="flex px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold whitespace-nowrap transition-colors items-center gap-1 shrink-0"
             >
               <span>Full Directory</span>
               <ArrowRight className="w-3.5 h-3.5" />

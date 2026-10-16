@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
     const auth = await getAuthenticatedUser(req);
 
     const isLoggedIn = !!auth.user;
-    const academicLevel = auth.user ? getStudentAcademicLevel(auth.user) : "AL";
+    const academicLevel = auth.user && auth.user.role === "STUDENT" ? getStudentAcademicLevel(auth.user) : null;
+    const role = auth.user?.role || null;
 
     return NextResponse.json({
       success: true,
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
       currency: geo.currency,
       clientIp: geo.ip,
       isLoggedIn,
+      role,
       academicLevel,
     });
   } catch (error: any) {

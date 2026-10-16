@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { fulfillPayment } from "@/lib/payment-fulfillment";
 import { getPaymentsLkCheckout, isPaymentsLkConfigured } from "@/lib/payments-lk";
 import { EventType, EventStatus, TrialStatus, Role } from "@prisma/client";
+import { formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -558,7 +559,11 @@ export async function POST(request: NextRequest) {
 
     if (action === "reschedule_event") {
       const auth = await getAuthenticatedUser(request);
-      if (auth.user && auth.user.role === "STUDENT") {
+      if (!auth.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      if (auth.user.role === "STUDENT") {
         const studentAvailCount = await prisma.studentAvailability.count({
           where: { studentId: auth.user.id, isActive: true },
         });
@@ -574,7 +579,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const { eventId, scheduledDate, reason } = body;
+      const { eventId, scheduledDate, reason, meetingLink, force } = body;
       if (!eventId || !scheduledDate) {
         return NextResponse.json(
           { error: "Event ID and new scheduled date & time are required." },
@@ -590,14 +595,78 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const existing = await prisma.event.findUnique({ where: { id: eventId } });
+      const existing = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+          course: {
+            include: {
+              tutor: {
+                select: { id: true, name: true, email: true, timezone: true },
+              },
+            },
+          },
+          user: {
+            select: { id: true, name: true, email: true, timezone: true },
+          },
+        },
+      });
+
       if (!existing) {
         return NextResponse.json({ error: "Session event not found." }, { status: 404 });
       }
 
+      const effectiveTutorId = existing.course?.tutorId || existing.requestedBy;
+      const tutorTimezone = existing.course?.tutor?.timezone || "Asia/Colombo";
+      const studentTimezone = existing.user?.timezone || auth.user.timezone || "Asia/Colombo";
+
+      // Conflict check for tutor if not forced
+      if (effectiveTutorId && !force) {
+        const slotStart = parsedDate;
+        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000);
+
+        const tutorCourseIds = existing.courseId ? [existing.courseId] : [];
+        const conflictingClass = await prisma.event.findFirst({
+          where: {
+            id: { not: eventId },
+            OR: [
+              { userId: effectiveTutorId },
+              { requestedBy: effectiveTutorId },
+              ...(tutorCourseIds.length > 0 ? [{ courseId: { in: tutorCourseIds } }] : []),
+            ],
+            dueDate: {
+              gte: new Date(slotStart.getTime() - 90 * 60 * 1000),
+              lte: slotEnd,
+            },
+            status: { notIn: ["CANCELLED", "REJECTED"] as any },
+          },
+        });
+
+        if (conflictingClass) {
+          const classStart = new Date(conflictingClass.dueDate);
+          const duration = conflictingClass.title.toLowerCase().includes("2h") ? 120 : 60;
+          const classEnd = new Date(classStart.getTime() + duration * 60 * 1000);
+
+          if (slotStart.getTime() < classEnd.getTime() && slotEnd.getTime() > classStart.getTime()) {
+            return NextResponse.json(
+              {
+                error: `Schedule conflict: Tutor already has a class scheduled ("${conflictingClass.title}") from ${formatTimeInTimezone(classStart, studentTimezone)} to ${formatTimeInTimezone(classEnd, studentTimezone)}. Please select another time slot.`,
+                conflict: {
+                  id: conflictingClass.id,
+                  title: conflictingClass.title,
+                  start: classStart.toISOString(),
+                  end: classEnd.toISOString(),
+                },
+              },
+              { status: 409 }
+            );
+          }
+        }
+      }
+
       let updatedDesc = existing.description || "";
       if (reason && reason.trim()) {
-        updatedDesc = `${updatedDesc}\n\n[Rescheduled by Student: ${reason.trim()}]`.trim();
+        const prefix = auth.user.role === "STUDENT" ? "Rescheduled by Student" : "Rescheduled by Tutor";
+        updatedDesc = `${updatedDesc}\n\n[${prefix}: ${reason.trim()}]`.trim();
       }
 
       const updatedEvent = await prisma.event.update({
@@ -605,20 +674,104 @@ export async function POST(request: NextRequest) {
         data: {
           dueDate: parsedDate,
           description: updatedDesc,
-          status: "SCHEDULED",
+          status: EventStatus.SCHEDULED,
+          approvalStatus: "APPROVED",
+          rejectionReason: null,
           endedAt: null,
+          ...(meetingLink ? { meetingLink: meetingLink.trim() } : {}),
         },
         include: {
-          course: true,
+          course: {
+            include: {
+              tutor: true,
+              enrollments: { select: { userId: true } },
+            },
+          },
           user: true,
         },
       });
 
-      broadcastLMSEvent("EVENTS_CHANGED");
+      // Synchronize linked trial request if exists
+      const trialMatch = existing.description?.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/i);
+      const linkedTrialId = trialMatch?.[1];
+      if (linkedTrialId) {
+        await prisma.trialRequest.update({
+          where: { id: linkedTrialId },
+          data: {
+            preferredDate: parsedDate,
+            status: TrialStatus.CONFIRMED,
+            ...(meetingLink ? { meetingLink: meetingLink.trim() } : {}),
+          },
+        }).catch(() => {});
+        broadcastLMSEvent("TRIALS_CHANGED", { trialId: linkedTrialId });
+      }
+
+      const dateStrTutor = `${formatDateInTimezone(parsedDate, tutorTimezone, { weekday: "short", month: "short", day: "numeric" })} at ${formatTimeInTimezone(parsedDate, tutorTimezone)}`;
+      const dateStrStudent = `${formatDateInTimezone(parsedDate, studentTimezone, { weekday: "short", month: "short", day: "numeric" })} at ${formatTimeInTimezone(parsedDate, studentTimezone)}`;
+
+      // Dispatch notifications
+      if (auth.user.role === "STUDENT") {
+        if (effectiveTutorId) {
+          await prisma.notification.create({
+            data: {
+              userId: effectiveTutorId,
+              title: "🔄 Online Class Rescheduled by Student",
+              message: `${auth.user.name || "Student"} has rescheduled "${existing.title}" to ${dateStrTutor}.${reason?.trim() ? ` Reason: "${reason.trim()}"` : ""}`,
+              type: "INFO",
+              link: "/tutor",
+            },
+          });
+          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: effectiveTutorId });
+        }
+
+        await prisma.notification.create({
+          data: {
+            userId: auth.user.id,
+            title: "📅 Online Class Schedule Updated",
+            message: `Your class "${existing.title}" has been successfully rescheduled to ${dateStrStudent}.`,
+            type: "SUCCESS",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: auth.user.id });
+      } else {
+        // Rescheduled by Tutor / Admin
+        const targetStudentId = existing.userId;
+        if (targetStudentId) {
+          await prisma.notification.create({
+            data: {
+              userId: targetStudentId,
+              title: "📅 Online Class Rescheduled by Tutor",
+              message: `Your tutor has rescheduled "${existing.title}" to ${dateStrStudent}.${reason?.trim() ? ` Tutor note: "${reason.trim()}"` : ""}`,
+              type: "INFO",
+              link: "/dashboard",
+            },
+          });
+          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: targetStudentId });
+        } else if (existing.courseId) {
+          const enrollments = updatedEvent.course?.enrollments || [];
+          if (enrollments.length > 0) {
+            await prisma.notification.createMany({
+              data: enrollments.map((en: any) => ({
+                userId: en.userId,
+                title: "📅 Online Class Rescheduled by Tutor",
+                message: `"${existing.title}" has been rescheduled to ${dateStrTutor}.`,
+                type: "INFO",
+                link: "/dashboard",
+              })),
+            });
+            enrollments.forEach((en: any) => {
+              broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: en.userId });
+            });
+          }
+        }
+      }
+
+      broadcastLMSEvent("EVENTS_CHANGED", { eventId, rescheduled: true });
 
       return NextResponse.json({
         success: true,
-        message: "Class session rescheduled successfully.",
+        message: "Class session rescheduled successfully and all participants notified.",
         event: updatedEvent,
       });
     }

@@ -6,7 +6,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
 import { syncClassMeetingSession, createGoogleMeetingSpace } from "@/lib/google-meet";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
-import { parseDateTimeInputInTimezone } from "@/lib/timezones";
+import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -704,14 +704,68 @@ export async function POST(request: NextRequest) {
           rejectionReason: null,
           endedAt: null,
         },
-        include: { course: true, user: true },
+        include: {
+          course: {
+            include: {
+              enrollments: { select: { userId: true } },
+            },
+          },
+          user: true,
+        },
       });
 
-      broadcastLMSEvent("EVENTS_CHANGED");
+      // Synchronize linked trial request if exists
+      const trialMatch = existing.description?.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/i);
+      const linkedTrialId = trialMatch?.[1];
+      if (linkedTrialId) {
+        await prisma.trialRequest.update({
+          where: { id: linkedTrialId },
+          data: {
+            preferredDate: parsedDate,
+            status: TrialStatus.CONFIRMED,
+            ...(meetingLink ? { meetingLink: meetingLink.trim() } : {}),
+          },
+        }).catch(() => {});
+        broadcastLMSEvent("TRIALS_CHANGED", { trialId: linkedTrialId });
+      }
+
+      const formattedDate = `${formatDateInTimezone(parsedDate, operatingTimezone, { weekday: "short", month: "short", day: "numeric" })} at ${formatTimeInTimezone(parsedDate, operatingTimezone)}`;
+
+      // Notify assigned student
+      if (updated.userId) {
+        await prisma.notification.create({
+          data: {
+            userId: updated.userId,
+            title: "📅 Online Class Rescheduled by Tutor",
+            message: `Your tutor has rescheduled "${updated.title}" to ${formattedDate}. Check your dashboard for details.`,
+            type: "INFO",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.userId });
+      } else if (updated.courseId) {
+        const enrollments = updated.course?.enrollments || [];
+        if (enrollments.length > 0) {
+          await prisma.notification.createMany({
+            data: enrollments.map((en: any) => ({
+              userId: en.userId,
+              title: "📅 Online Class Rescheduled by Tutor",
+              message: `"${updated.title}" has been rescheduled to ${formattedDate}.`,
+              type: "INFO",
+              link: "/dashboard",
+            })),
+          });
+          enrollments.forEach((en: any) => {
+            broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: en.userId });
+          });
+        }
+      }
+
+      broadcastLMSEvent("EVENTS_CHANGED", { eventId, rescheduled: true });
 
       return NextResponse.json({
         success: true,
-        message: "Class session rescheduled successfully.",
+        message: "Class session rescheduled successfully and students notified.",
         event: updated,
       });
     }
@@ -770,6 +824,7 @@ export async function POST(request: NextRequest) {
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
         `Classroom Link: ${link}`,
         updatedTrial.notes ? `Tutor Notes: ${updatedTrial.notes}` : "",
+        `Trial ID: ${updatedTrial.id}`,
       ].filter(Boolean).join("\n\n");
 
       const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;

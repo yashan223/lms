@@ -141,11 +141,13 @@ function RescheduleContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const trialId = searchParams.get("trialId") || searchParams.get("id");
+  const eventId = searchParams.get("eventId");
 
   const [viewerTimezone, setViewerTimezone] = useState<string>(DEFAULT_TIMEZONE);
   const [tutorTimezone, setTutorTimezone] = useState<string>(DEFAULT_TIMEZONE);
   const [loading, setLoading] = useState(true);
   const [trial, setTrial] = useState<TrialDetail | null>(null);
+  const [classEvent, setClassEvent] = useState<any | null>(null);
   const [allTrials, setAllTrials] = useState<TrialDetail[]>([]);
   const [availabilityDays, setAvailabilityDays] = useState<DayAvailability[]>([]);
   const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassSummary[]>([]);
@@ -167,33 +169,59 @@ function RescheduleContent() {
     }
   }, []);
 
-  const loadTrialAvailability = async (targetTrial: TrialDetail, tzOverride?: string) => {
-    setTrial(targetTrial);
-    setMeetingLink(targetTrial.meetingLink || "");
-    setRescheduleNotes(targetTrial.notes || "");
-
+  const loadSessionAvailability = async (targetSession: any, isEvent: boolean, tzOverride?: string) => {
     const activeTz = tzOverride || viewerTimezone;
-    const tutorId = targetTrial.tutorId || targetTrial.course?.tutor?.id || "";
-    const availUrl = `/api/tutor/availability?trialId=${encodeURIComponent(targetTrial.id)}${
-      tutorId ? `&tutorId=${encodeURIComponent(tutorId)}` : ""
-    }&timezone=${encodeURIComponent(activeTz)}&days=14`;
+    if (isEvent) {
+      setClassEvent(targetSession);
+      setMeetingLink(targetSession.meetingLink || "");
+      setRescheduleNotes(targetSession.description || "");
 
-    const availRes = await fetch(availUrl);
-    const availData = await availRes.json();
-    if (availRes.ok && availData.days) {
-      if (availData.tutorTimezone) {
-        setTutorTimezone(availData.tutorTimezone);
+      const availUrl = `/api/tutor/availability?eventId=${encodeURIComponent(targetSession.id)}&timezone=${encodeURIComponent(activeTz)}&days=14`;
+      const availRes = await fetch(availUrl);
+      const availData = await availRes.json();
+      if (availRes.ok && availData.days) {
+        if (availData.tutorTimezone) {
+          setTutorTimezone(availData.tutorTimezone);
+        }
+        setAvailabilityDays(availData.days);
+        setScheduledClasses(availData.scheduledClasses || []);
+        if (availData.student?.availabilities) {
+          setStudentStudySlots(availData.student.availabilities);
+        }
+        const firstWithSlots = availData.days.find((d: DayAvailability) => d.hasAvailableSlots);
+        if (firstWithSlots) {
+          setSelectedDate(firstWithSlots.date);
+        } else if (availData.days.length > 0) {
+          setSelectedDate(availData.days[0].date);
+        }
       }
-      setAvailabilityDays(availData.days);
-      setScheduledClasses(availData.scheduledClasses || []);
-      if (availData.student?.availabilities) {
-        setStudentStudySlots(availData.student.availabilities);
-      }
-      const firstWithSlots = availData.days.find((d: DayAvailability) => d.hasAvailableSlots);
-      if (firstWithSlots) {
-        setSelectedDate(firstWithSlots.date);
-      } else if (availData.days.length > 0) {
-        setSelectedDate(availData.days[0].date);
+    } else {
+      setTrial(targetSession);
+      setMeetingLink(targetSession.meetingLink || "");
+      setRescheduleNotes(targetSession.notes || "");
+
+      const tutorId = targetSession.tutorId || targetSession.course?.tutor?.id || "";
+      const availUrl = `/api/tutor/availability?trialId=${encodeURIComponent(targetSession.id)}${
+        tutorId ? `&tutorId=${encodeURIComponent(tutorId)}` : ""
+      }&timezone=${encodeURIComponent(activeTz)}&days=14`;
+
+      const availRes = await fetch(availUrl);
+      const availData = await availRes.json();
+      if (availRes.ok && availData.days) {
+        if (availData.tutorTimezone) {
+          setTutorTimezone(availData.tutorTimezone);
+        }
+        setAvailabilityDays(availData.days);
+        setScheduledClasses(availData.scheduledClasses || []);
+        if (availData.student?.availabilities) {
+          setStudentStudySlots(availData.student.availabilities);
+        }
+        const firstWithSlots = availData.days.find((d: DayAvailability) => d.hasAvailableSlots);
+        if (firstWithSlots) {
+          setSelectedDate(firstWithSlots.date);
+        } else if (availData.days.length > 0) {
+          setSelectedDate(availData.days[0].date);
+        }
       }
     }
   };
@@ -205,7 +233,7 @@ function RescheduleContent() {
       setLoading(true);
       setError(null);
       setStatusMsg(null);
-      await loadTrialAvailability(chosen);
+      await loadSessionAvailability(chosen, false);
       router.replace(`/trials/reschedule?trialId=${encodeURIComponent(targetId)}`);
     } catch (e: any) {
       setError(e.message || "Failed to switch trial session.");
@@ -219,6 +247,18 @@ function RescheduleContent() {
       try {
         setLoading(true);
         setError(null);
+
+        if (eventId) {
+          const availUrl = `/api/tutor/availability?eventId=${encodeURIComponent(eventId)}&timezone=${encodeURIComponent(viewerTimezone)}&days=14`;
+          const availRes = await fetch(availUrl);
+          const availData = await availRes.json();
+          if (availRes.ok && availData.event) {
+            await loadSessionAvailability(availData.event, true);
+            return;
+          } else {
+            throw new Error(availData.error || "Failed to load class session.");
+          }
+        }
 
         const res = await fetch("/api/trials");
         const data = await res.json();
@@ -240,7 +280,7 @@ function RescheduleContent() {
         }
 
         if (targetTrial) {
-          await loadTrialAvailability(targetTrial);
+          await loadSessionAvailability(targetTrial, false);
         }
       } catch (err: any) {
         console.error("Failed to load reschedule data:", err);
@@ -251,13 +291,15 @@ function RescheduleContent() {
     }
 
     fetchData();
-  }, [trialId]);
+  }, [trialId, eventId]);
 
   useRealtimeSync({
     events: ["TRIALS_CHANGED", "EVENTS_CHANGED", "TUTOR_AVAILABILITY_CHANGED"],
     onSync: () => {
-      if (trial) {
-        loadTrialAvailability(trial);
+      if (eventId && classEvent) {
+        loadSessionAvailability(classEvent, true);
+      } else if (trial) {
+        loadSessionAvailability(trial, false);
       }
     },
   });
@@ -344,41 +386,70 @@ function RescheduleContent() {
       setSubmitting(true);
       setStatusMsg(null);
 
-      const res = await fetch("/api/trials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "reschedule_trial",
-          trialId: trial?.id,
-          scheduledDate: finalDateIso,
-          timezone: viewerTimezone,
-          meetingLink: meetingLink.trim(),
-          notes: rescheduleNotes.trim(),
-        }),
-      });
+      let res: Response;
+      if (classEvent || eventId) {
+        res = await fetch("/api/dashboard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reschedule_event",
+            eventId: classEvent?.id || eventId,
+            scheduledDate: finalDateIso,
+            timezone: viewerTimezone,
+            meetingLink: meetingLink.trim(),
+            reason: rescheduleNotes.trim(),
+          }),
+        });
+      } else {
+        res = await fetch("/api/trials", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reschedule_trial",
+            trialId: trial?.id,
+            scheduledDate: finalDateIso,
+            timezone: viewerTimezone,
+            meetingLink: meetingLink.trim(),
+            notes: rescheduleNotes.trim(),
+          }),
+        });
+      }
 
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 428 || data.code === "STUDY_AVAILABILITY_REQUIRED") {
           setShowAvailabilityModal(true);
         }
-        throw new Error(data.error || "Failed to reschedule trial session.");
+        throw new Error(data.error || "Failed to reschedule session.");
       }
 
       setStatusMsg({
         type: "success",
-        text: "🎉 Free trial session has been successfully rescheduled and updated on the calendar!",
+        text: classEvent || eventId
+          ? "🎉 Online class session has been successfully rescheduled and all participants notified!"
+          : "🎉 Free trial session has been successfully rescheduled and updated on the calendar!",
       });
 
-      setTrial(data.trial);
-
-      const tutorId = trial?.tutorId || trial?.course?.tutor?.id || "";
-      const availRes = await fetch(
-        `/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&timezone=${encodeURIComponent(viewerTimezone)}&days=14`
-      );
-      const availData = await availRes.json();
-      if (availRes.ok && availData.days) {
-        setAvailabilityDays(availData.days);
+      if (classEvent || eventId) {
+        if (data.event) {
+          setClassEvent(data.event);
+        }
+        const availUrl = `/api/tutor/availability?eventId=${encodeURIComponent(classEvent?.id || eventId)}&timezone=${encodeURIComponent(viewerTimezone)}&days=14`;
+        const availRes = await fetch(availUrl);
+        const availData = await availRes.json();
+        if (availRes.ok && availData.days) {
+          setAvailabilityDays(availData.days);
+        }
+      } else if (data.trial) {
+        setTrial(data.trial);
+        const tutorId = trial?.tutorId || trial?.course?.tutor?.id || "";
+        const availRes = await fetch(
+          `/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&timezone=${encodeURIComponent(viewerTimezone)}&days=14`
+        );
+        const availData = await availRes.json();
+        if (availRes.ok && availData.days) {
+          setAvailabilityDays(availData.days);
+        }
       }
     } catch (err: any) {
       console.error("Reschedule submit error:", err);
@@ -397,7 +468,9 @@ function RescheduleContent() {
         <div className="w-12 h-12 rounded-2xl bg-[#0c2461] text-white flex items-center justify-center shadow-lg shadow-blue-950/20 mb-4 animate-bounce">
           <CalendarCheck className="w-6 h-6" />
         </div>
-        <h3 className="font-bold text-slate-800 text-base mb-1">Loading Consultation Details...</h3>
+        <h3 className="font-bold text-slate-800 text-base mb-1">
+          {eventId ? "Loading Class Session Details..." : "Loading Consultation Details..."}
+        </h3>
         <p className="text-xs text-slate-500 flex items-center justify-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
           <span>Synchronizing tutor calendar &amp; scheduled classes...</span>
@@ -406,16 +479,16 @@ function RescheduleContent() {
     );
   }
 
-  if (!trial) {
+  if (!trial && !classEvent) {
     return (
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-xs space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center mx-auto">
             <Calendar className="w-6 h-6" />
           </div>
-          <h3 className="font-bold text-base text-slate-900">No Active Trial Requests Found</h3>
+          <h3 className="font-bold text-base text-slate-900">No Active Sessions Found</h3>
           <p className="text-xs text-slate-500 leading-relaxed">
-            There are currently no free trial sessions awaiting rescheduling on your account.
+            There are currently no accepted class sessions or trial requests awaiting rescheduling for this link.
           </p>
           <div className="pt-2 flex justify-center gap-2">
             <Link href="/dashboard">
@@ -429,7 +502,20 @@ function RescheduleContent() {
     );
   }
 
-  const tutorInfo = trial.tutor || trial.course?.tutor;
+  const isOnlineClass = Boolean(classEvent);
+  const tutorInfo = isOnlineClass
+    ? classEvent.course?.tutor || classEvent.tutor
+    : trial?.tutor || trial?.course?.tutor;
+  const studentInfo = isOnlineClass
+    ? classEvent.user
+    : trial?.student || {
+        name: trial?.studentName,
+        email: trial?.studentEmail,
+        phone: trial?.studentPhone,
+      };
+  const courseInfo = isOnlineClass ? classEvent.course : trial?.course;
+  const currentScheduledDate = isOnlineClass ? classEvent.dueDate : trial?.preferredDate;
+  const sessionStatus = isOnlineClass ? classEvent.status || "CONFIRMED" : trial?.status;
 
   return (
     <div className="min-h-screen bg-slate-50/70 pb-16">
@@ -446,10 +532,12 @@ function RescheduleContent() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-extrabold text-base sm:text-lg text-slate-900">
-                  Reschedule Free Trial Consultation
+                  {isOnlineClass
+                    ? "Reschedule Online Class Session"
+                    : "Reschedule Free Trial Consultation"}
                 </h1>
                 <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-extrabold">
-                  Dedicated Reschedule Desk
+                  {isOnlineClass ? "Online Class Desk" : "Dedicated Reschedule Desk"}
                 </Badge>
               </div>
               <p className="text-[11px] text-slate-500 hidden sm:block">
@@ -525,41 +613,41 @@ function RescheduleContent() {
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Target Consultation
+                  {isOnlineClass ? "Target Online Class" : "Target Consultation"}
                 </span>
                 <Badge
                   className={`text-[10px] font-bold ${
-                    trial.status === "CONFIRMED"
+                    sessionStatus === "CONFIRMED" || sessionStatus === "SCHEDULED"
                       ? "bg-blue-100 text-blue-800 border-blue-200"
                       : "bg-slate-100 text-slate-800 border-slate-200"
                   }`}
                 >
-                  {trial.status}
+                  {sessionStatus === "SCHEDULED" ? "CONFIRMED & SCHEDULED" : sessionStatus}
                 </Badge>
               </div>
 
               <div className="space-y-1">
                 <div className="text-xs font-bold text-blue-600 flex items-center gap-1">
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>{trial.course?.subjectCode || "LONDON A/L"}</span>
+                  <span>{courseInfo?.subjectCode || "LONDON A/L"}</span>
                 </div>
                 <h3 className="font-extrabold text-sm text-slate-900 leading-snug">
-                  {trial.course?.title || "London A/L Individual Class"}
+                  {courseInfo?.title || "London A/L Individual Class"}
                 </h3>
-                {trial.topic && (
-                  <p className="text-xs text-slate-500 italic pt-1">
-                    &ldquo;{trial.topic}&rdquo;
+                {(isOnlineClass ? classEvent?.title : trial?.topic) && (
+                  <p className="text-xs text-slate-600 font-medium italic pt-1">
+                    &ldquo;{isOnlineClass ? classEvent?.title : trial?.topic}&rdquo;
                   </p>
                 )}
               </div>
 
-              {allTrials.length > 1 && (
+              {!isOnlineClass && allTrials.length > 1 && (
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
                     Switch Session ({allTrials.length} active)
                   </label>
                   <select
-                    value={trial.id}
+                    value={trial?.id}
                     onChange={(e) => handleSwitchTrial(e.target.value)}
                     aria-label="Switch trial session"
                     className="w-full text-xs font-bold bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
@@ -587,21 +675,25 @@ function RescheduleContent() {
                 <div className="font-extrabold text-xs text-blue-950 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>
-                    {new Date(trial.preferredDate).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}{" "}
+                    {currentScheduledDate &&
+                      new Date(currentScheduledDate).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}{" "}
                     at{" "}
-                    {new Date(trial.preferredDate).toLocaleTimeString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {currentScheduledDate &&
+                      new Date(currentScheduledDate).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
                   </span>
                 </div>
-                <div className="text-[10px] text-blue-700">30-Minute 1-on-1 Free Trial</div>
+                <div className="text-[10px] text-blue-700 font-semibold">
+                  {isOnlineClass ? "Online Curriculum Class Session" : "30-Minute 1-on-1 Free Trial"}
+                </div>
               </div>
 
               <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
@@ -610,16 +702,18 @@ function RescheduleContent() {
                 </div>
                 <div className="font-semibold text-slate-800 flex items-center gap-2">
                   <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>{trial.studentName}</span>
+                  <span>{studentInfo?.name || "Student"}</span>
                 </div>
-                <div className="text-slate-500 flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate">{trial.studentEmail}</span>
-                </div>
-                {trial.studentPhone && (
+                {studentInfo?.email && (
+                  <div className="text-slate-500 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate">{studentInfo.email}</span>
+                  </div>
+                )}
+                {studentInfo?.phone && (
                   <div className="text-slate-500 flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{trial.studentPhone}</span>
+                    <span>{studentInfo.phone}</span>
                   </div>
                 )}
 
@@ -647,7 +741,9 @@ function RescheduleContent() {
                         return (
                           <div key={idx} className="flex items-center justify-between font-semibold">
                             <span>{dayLabel}:</span>
-                            <span className="font-mono text-blue-800">{format24hTo12h(av.startTime)} – {format24hTo12h(av.endTime)}</span>
+                            <span className="font-mono text-blue-800">
+                              {format24hTo12h(av.startTime)} – {format24hTo12h(av.endTime)}
+                            </span>
                           </div>
                         );
                       })}
@@ -670,7 +766,7 @@ function RescheduleContent() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        tutorInfo.name.charAt(0)
+                        tutorInfo.name?.charAt(0) || "T"
                       )}
                     </div>
                     <div className="min-w-0">
@@ -678,7 +774,7 @@ function RescheduleContent() {
                         {tutorInfo.name}
                       </div>
                       <div className="text-[11px] text-slate-500 truncate">
-                        {tutorInfo.headline || "Senior Tutor Lead"}
+                        {tutorInfo.headline || "Senior Academic Tutor"}
                       </div>
                     </div>
                   </div>
@@ -706,8 +802,10 @@ function RescheduleContent() {
                       selectedTimezone={viewerTimezone}
                       onChange={(tz) => {
                         setViewerTimezone(tz);
-                        if (trial) {
-                          loadTrialAvailability(trial, tz);
+                        if (classEvent) {
+                          loadSessionAvailability(classEvent, true, tz);
+                        } else if (trial) {
+                          loadSessionAvailability(trial, false, tz);
                         }
                       }}
                       tutorBaseTimezone={tutorTimezone}
@@ -978,12 +1076,12 @@ function RescheduleContent() {
                       {submitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Rescheduling Session...</span>
+                          <span>{isOnlineClass ? "Rescheduling Class..." : "Rescheduling Session..."}</span>
                         </>
                       ) : (
                         <>
                           <CalendarCheck className="w-4 h-4" />
-                          <span>Confirm &amp; Lock New Session Time</span>
+                          <span>{isOnlineClass ? "Confirm & Lock New Class Schedule" : "Confirm & Lock New Session Time"}</span>
                         </>
                       )}
                     </Button>
@@ -997,16 +1095,26 @@ function RescheduleContent() {
         <StudentAvailabilityModal
           isOpen={showAvailabilityModal}
           onClose={() => setShowAvailabilityModal(false)}
-          currentUser={trial?.student || (trial?.studentId ? { id: trial.studentId } : undefined)}
+          currentUser={studentInfo || (trial?.student || (trial?.studentId ? { id: trial.studentId } : undefined))}
           onUpdated={() => {
-            const tutorId = trial?.tutorId || trial?.course?.tutor?.id || "";
-            fetch(`/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&days=14`)
-              .then((r) => r.json())
-              .then((d) => {
-                if (d.days) setAvailabilityDays(d.days);
-                if (d.student?.availabilities) setStudentStudySlots(d.student.availabilities);
-              })
-              .catch(() => {});
+            if (isOnlineClass) {
+              fetch(`/api/tutor/availability?eventId=${encodeURIComponent(classEvent?.id || eventId)}&days=14`)
+                .then((r) => r.json())
+                .then((d) => {
+                  if (d.days) setAvailabilityDays(d.days);
+                  if (d.student?.availabilities) setStudentStudySlots(d.student.availabilities);
+                })
+                .catch(() => {});
+            } else {
+              const tutorId = trial?.tutorId || trial?.course?.tutor?.id || "";
+              fetch(`/api/tutor/availability?trialId=${encodeURIComponent(trial?.id || "")}&tutorId=${encodeURIComponent(tutorId)}&days=14`)
+                .then((r) => r.json())
+                .then((d) => {
+                  if (d.days) setAvailabilityDays(d.days);
+                  if (d.student?.availabilities) setStudentStudySlots(d.student.availabilities);
+                })
+                .catch(() => {});
+            }
           }}
         />
       </main>

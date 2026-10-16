@@ -533,6 +533,7 @@ export async function POST(request: NextRequest) {
           `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
           `Classroom Link: ${link}`,
           updatedTrial.notes ? `Tutor Notes: ${updatedTrial.notes}` : "",
+          `Trial ID: ${updatedTrial.id}`,
         ].filter(Boolean).join("\n\n");
 
         let resolvedStudentId = updatedTrial.studentId;
@@ -797,6 +798,7 @@ export async function POST(request: NextRequest) {
         `Student: ${updatedTrial.studentName} (${updatedTrial.studentEmail})`,
         `Classroom Link: ${link}`,
         updatedTrial.notes ? `Tutor Notes: ${updatedTrial.notes}` : "",
+        `Trial ID: ${updatedTrial.id}`,
       ].filter(Boolean).join("\n\n");
 
       const studentIdToMatch = resolvedStudentId || updatedTrial.studentId;
@@ -805,6 +807,7 @@ export async function POST(request: NextRequest) {
           OR: [
             ...(updatedTrial.courseId ? [{ courseId: updatedTrial.courseId, title: { contains: updatedTrial.studentName } }] : []),
             ...(studentIdToMatch ? [{ userId: studentIdToMatch, title: { contains: "Trial" } }] : []),
+            { description: { contains: updatedTrial.id } },
           ],
         },
       });
@@ -819,6 +822,8 @@ export async function POST(request: NextRequest) {
             meetingLink: link,
             description: eventDescription,
             status: EventStatus.SCHEDULED,
+            approvalStatus: "APPROVED",
+            rejectionReason: null,
             endedAt: null,
           },
         });
@@ -839,8 +844,43 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      broadcastLMSEvent("TRIALS_CHANGED");
-      broadcastLMSEvent("EVENTS_CHANGED");
+      const formattedDate = targetDate.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      // Dispatch notifications
+      if (studentIdToMatch) {
+        await prisma.notification.create({
+          data: {
+            userId: studentIdToMatch,
+            title: "🔄 Consultation Session Rescheduled",
+            message: `Your 1-on-1 session for "${courseTitle}" has been rescheduled to ${formattedDate}.`,
+            type: "SUCCESS",
+            link: "/dashboard",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: studentIdToMatch });
+      }
+
+      if (updatedTrial.tutorId) {
+        await prisma.notification.create({
+          data: {
+            userId: updatedTrial.tutorId,
+            title: "🔄 1-on-1 Consultation Rescheduled",
+            message: `Session with ${updatedTrial.studentName} has been rescheduled to ${formattedDate}.`,
+            type: "INFO",
+            link: "/tutor",
+          },
+        });
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updatedTrial.tutorId });
+      }
+
+      broadcastLMSEvent("TRIALS_CHANGED", { trialId: updatedTrial.id, rescheduled: true });
+      broadcastLMSEvent("EVENTS_CHANGED", { rescheduled: true });
 
       return NextResponse.json({
         success: true,

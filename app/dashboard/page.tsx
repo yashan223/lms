@@ -249,13 +249,14 @@ function DashboardContent() {
   }, [user?.id, user?.role, showStudentAvailabilityModal]);
 
   const openStudentReschedule = (event: any) => {
-    if (event?.title?.toLowerCase().includes("trial") || event?.title?.toLowerCase().includes("consultation") || event?.trialId) {
-      const trialId = event?.trialId || (event?.description && event.description.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/i)?.[1]);
-      if (trialId) {
-        router.push(`/trials/reschedule?trialId=${encodeURIComponent(trialId)}`);
-      } else {
-        router.push("/trials/reschedule");
-      }
+    const trialId = event?.trialId || (event?.description && event.description.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/i)?.[1]);
+    if (trialId) {
+      router.push(`/trials/reschedule?trialId=${encodeURIComponent(trialId)}`);
+      return;
+    }
+
+    if (event?.id) {
+      router.push(`/classes/reschedule?eventId=${encodeURIComponent(event.id)}`);
       return;
     }
 
@@ -1416,6 +1417,12 @@ function DashboardContent() {
                                 <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-50 text-blue-700 border-blue-200">
                                   Online Session
                                 </span>
+                              )}
+                              {ev.approvalStatus === "APPROVED" && (ev.status === "SCHEDULED" || ev.status === "LIVE") && (
+                                <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
+                                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                                  <span>Tutor Accepted</span>
+                                </Badge>
                               )}
                             </div>
                             {ev.description && (

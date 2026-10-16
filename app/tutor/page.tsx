@@ -26,6 +26,7 @@ import {
   Trash2,
   FolderOpen,
   CalendarCheck,
+  CalendarClock,
   ShieldCheck,
   Edit3,
   Video,
@@ -4039,15 +4040,31 @@ function TutorDashboardContent() {
                 />
               </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowRescheduleModal(false)}
-                >
-                  Cancel
-                </Button>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                {rescheduleTargetEvent && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowRescheduleModal(false);
+                      router.push(`/classes/reschedule?eventId=${encodeURIComponent(rescheduleTargetEvent.id)}`);
+                    }}
+                    className="text-xs text-blue-700 hover:text-blue-800 flex items-center gap-1.5"
+                  >
+                    <CalendarClock className="w-3.5 h-3.5" />
+                    <span>Open Availability Studio</span>
+                  </Button>
+                )}
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRescheduleModal(false)}
+                  >
+                    Cancel
+                  </Button>
                 <Button
                   type="submit"
                   disabled={rescheduling || !rescheduleDate}
@@ -4065,6 +4082,7 @@ function TutorDashboardContent() {
                     </>
                   )}
                 </Button>
+                </div>
               </div>
             </form>
           </div>

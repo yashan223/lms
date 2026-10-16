@@ -43,11 +43,35 @@ export async function GET(request: NextRequest) {
     const reqCourseId = searchParams.get("courseId");
     let reqStudentId = searchParams.get("studentId");
     const trialId = searchParams.get("trialId");
+    const eventId = searchParams.get("eventId");
     const requestedTimezone = searchParams.get("timezone") || searchParams.get("targetTimezone");
     const daysCount = Math.min(Math.max(parseInt(searchParams.get("days") || "14", 10), 1), 30);
 
     let resolvedTutorId = reqTutorId;
     let resolvedStudentId = reqStudentId;
+    let resolvedEvent: any = null;
+
+    if (eventId) {
+      resolvedEvent = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+          course: {
+            include: {
+              tutor: {
+                select: { id: true, name: true, email: true, timezone: true, avatar: true },
+              },
+            },
+          },
+          user: {
+            select: { id: true, name: true, email: true, timezone: true, avatar: true, phone: true },
+          },
+        },
+      });
+      if (resolvedEvent) {
+        if (!resolvedTutorId) resolvedTutorId = resolvedEvent.course?.tutorId || resolvedEvent.requestedBy || null;
+        if (!resolvedStudentId) resolvedStudentId = resolvedEvent.userId || null;
+      }
+    }
 
     if (trialId) {
       const trial = await prisma.trialRequest.findUnique({
@@ -183,6 +207,7 @@ export async function GET(request: NextRequest) {
           lte: rangeEnd,
         },
         status: { notIn: ["CANCELLED", "REJECTED"] as any },
+        ...(eventId ? { id: { not: eventId } } : {}),
       },
       include: {
         course: {
@@ -460,6 +485,7 @@ export async function GET(request: NextRequest) {
       })),
       scheduledTrialsCount: scheduledTrials.length,
       days: daysData,
+      event: resolvedEvent,
     });
   } catch (error: any) {
     console.error("Tutor Availability GET error:", error);

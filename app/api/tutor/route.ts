@@ -598,7 +598,15 @@ export async function POST(request: NextRequest) {
 
       // Ensure a real, valid Google Meet room
       const rawCandidate = meetingLink || existingEvent?.meetingLink || existingTrial?.meetingLink;
-      const meetLink = normalizeGoogleMeetLink(rawCandidate);
+      let meetLink = normalizeGoogleMeetLink(rawCandidate);
+
+      if (!meetLink) {
+        meetLink = await ensureValidGoogleMeetingLink(null, {
+          title: existingEvent?.title || existingTrial?.topic || "PulseEDU Live Session",
+          eventId: existingEvent?.id,
+          startTime: existingEvent?.dueDate || existingTrial?.preferredDate,
+        });
+      }
 
       if (!meetLink) {
         return NextResponse.json(

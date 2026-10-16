@@ -33,6 +33,26 @@ export async function createGoogleMeetingSpace(opts?: {
     };
   }
 
+  if (isGoogleWorkspaceConfigured()) {
+    try {
+      const cal = await createGoogleCalendarEventWithMeet({
+        title: opts?.title || "PulseEDU Live Session",
+        startTime: new Date(),
+        durationMinutes: 60,
+      });
+      if (cal.meetingUri && !isGenericGoogleMeetNewLink(cal.meetingUri)) {
+        return {
+          meetingUri: cal.meetingUri,
+          spaceName: cal.spaceName,
+          meetingCode: cal.meetingCode,
+          mode: "WORKSPACE_API",
+        };
+      }
+    } catch (err: any) {
+      console.warn("[Google Meet] Google Calendar auto-creation failed:", err?.message || err);
+    }
+  }
+
   return {
     meetingUri: "",
     spaceName: null,
@@ -52,6 +72,21 @@ export async function ensureValidGoogleMeetingLink(
 ): Promise<string> {
   if (currentLink?.trim() && !isGenericGoogleMeetNewLink(currentLink)) {
     return getSafeMeetingLink(currentLink);
+  }
+
+  if (isGoogleWorkspaceConfigured()) {
+    try {
+      const cal = await createGoogleCalendarEventWithMeet({
+        title: opts?.title || "PulseEDU Live Session",
+        startTime: opts?.startTime || new Date(),
+        durationMinutes: opts?.durationMinutes ?? 60,
+      });
+      if (cal.meetingUri && !isGenericGoogleMeetNewLink(cal.meetingUri)) {
+        return cal.meetingUri;
+      }
+    } catch (err: any) {
+      console.warn("[Google Meet] Google Calendar auto-creation failed:", err?.message || err);
+    }
   }
 
   return "";

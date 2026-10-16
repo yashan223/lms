@@ -12,7 +12,6 @@ export function getStudentAcademicLevel(
   user?: { academicLevel?: string | null; headline?: string | null; role?: string | null } | null
 ): "OL" | "AL" | null {
   if (!user) return null;
-  // Tutors, instructors, and admins are faculty/staff, NOT restricted to a single student track
   if (user.role && user.role !== "STUDENT") return null;
   if (user.academicLevel === "OL" || user.academicLevel === "O/L") return "OL";
   if (

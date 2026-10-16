@@ -61,7 +61,7 @@ import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
-import { getSafeMeetingLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 import {
@@ -1418,10 +1418,16 @@ function DashboardContent() {
                                   Online Session
                                 </span>
                               )}
-                              {ev.approvalStatus === "APPROVED" && (ev.status === "SCHEDULED" || ev.status === "LIVE") && (
-                                <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
-                                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
-                                  <span>Tutor Accepted</span>
+                              {ev.approvalStatus === "APPROVED" && ev.status === "SCHEDULED" && (
+                                <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
+                                  <Clock className="w-2.5 h-2.5 text-amber-600" />
+                                  <span>Tutor Accepted (Not Started)</span>
+                                </Badge>
+                              )}
+                              {ev.approvalStatus === "APPROVED" && ev.status === "LIVE" && (
+                                <Badge className="bg-red-50 text-red-800 border-red-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
+                                  <Radio className="w-2.5 h-2.5 text-red-600 animate-pulse" />
+                                  <span>Session Started</span>
                                 </Badge>
                               )}
                             </div>
@@ -1499,13 +1505,27 @@ function DashboardContent() {
                               </span>
                             )
                           ) : userRole === "STUDENT" ? (
-                            <span
-                              className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap cursor-default select-none"
-                              title="The meeting room will automatically unlock when your tutor starts the session"
-                            >
-                              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span>Waiting for Tutor</span>
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className="h-8.5 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none"
+                                title="Your tutor will start the session shortly. Once started, this button turns into 'Join Live Meet'."
+                              >
+                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span>Waiting for Tutor to Start</span>
+                              </span>
+                              {ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) && (
+                                <a
+                                  href={getSafeMeetingLink(ev.meetingLink)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="h-8.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all shadow-2xs"
+                                  title="Google Meet room is ready - click to preview or enter"
+                                >
+                                  <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                  <span>Google Meet Room</span>
+                                </a>
+                              )}
+                            </div>
                           ) : (ev.description?.includes("http") || ev.meetingLink) ? (
                             <a
                               href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}

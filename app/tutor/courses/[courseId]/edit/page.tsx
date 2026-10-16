@@ -718,7 +718,7 @@ export function TutorCourseWorkspaceContent({
         title: classTitle.trim(),
         description: classDescription.trim() || null,
         dueDate: classDate,
-        meetingLink: classMeetLink.trim() || "https://meet.google.com/new",
+        meetingLink: classMeetLink.trim() || undefined,
         type: "LIVE_SEMINAR",
       });
       setClassTitle("");
@@ -1961,7 +1961,7 @@ export function TutorCourseWorkspaceContent({
                   <div className="sm:col-span-2 space-y-1.5">
                     <label className="font-bold text-slate-700">Google Meet / Video Link</label>
                     <Input
-                      placeholder="https://meet.google.com/new or custom room link"
+                      placeholder="Leave empty to auto-generate or paste custom room link"
                       value={classMeetLink}
                       onChange={(e) => setClassMeetLink(e.target.value)}
                       className="bg-white rounded-xl h-10"

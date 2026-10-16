@@ -7,6 +7,7 @@ import { fulfillPayment } from "@/lib/payment-fulfillment";
 import { getPaymentsLkCheckout, isPaymentsLkConfigured } from "@/lib/payments-lk";
 import { EventType, EventStatus, TrialStatus, Role } from "@prisma/client";
 import { formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
+import { ensureValidGoogleMeetingLink } from "@/lib/google-meet";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -304,7 +305,19 @@ export async function GET(request: NextRequest) {
           const courseTitle = trial.course?.title || "London A/L Tutorial Individual Class";
           const courseCode = trial.course?.subjectCode || "";
           const eventTitle = `1-on-1 Trial: ${courseTitle} (${trial.studentName || user.name})`;
-          const link = trial.meetingLink || "https://meet.google.com/new";
+          const link = await ensureValidGoogleMeetingLink(trial.meetingLink, {
+            title: eventTitle,
+            startTime: trial.preferredDate,
+            durationMinutes: 30,
+          });
+
+          if (link && link !== trial.meetingLink) {
+            await prisma.trialRequest.update({
+              where: { id: trial.id },
+              data: { meetingLink: link },
+            });
+          }
+
           const eventDesc = [
             `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
             `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,

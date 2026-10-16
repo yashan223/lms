@@ -4753,7 +4753,9 @@ export default function AdminDashboardPage() {
                           </div>
                           <div>
                             <span className="text-[11px] font-medium text-slate-400 block">Meeting Room:</span>
-                            <span className="text-blue-600 font-mono text-[11px] truncate block">{trial.meetingLink || "meet.google.com/new"}</span>
+                            <span className="text-blue-600 font-mono text-[11px] truncate block">
+                              {trial.meetingLink && !trial.meetingLink.includes("/new") ? trial.meetingLink : "✨ Auto-generated on approval"}
+                            </span>
                           </div>
                           {trial.notes && (
                             <div className="sm:col-span-3 pt-1 border-t border-slate-200/50">

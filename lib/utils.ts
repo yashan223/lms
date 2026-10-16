@@ -6,8 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function normalizeGoogleMeetLink(link?: string | null): string {
-  if (!link || typeof link !== "string" || !link.trim()) {
-    return "https://meet.google.com/new";
+  if (!link || typeof link !== "string" || !link.trim() || isGenericGoogleMeetNewLink(link)) {
+    return "";
   }
   const trimmed = link.trim();
   if (trimmed.startsWith("https://meet.google.com/") || trimmed.startsWith("http://meet.google.com/")) {
@@ -20,6 +20,28 @@ export function normalizeGoogleMeetLink(link?: string | null): string {
     return trimmed;
   }
   return `https://meet.google.com/${trimmed}`;
+}
+
+export function isGenericGoogleMeetNewLink(link?: string | null): boolean {
+  if (!link || typeof link !== "string") return true;
+  const trimmed = link.trim().toLowerCase();
+  return (
+    !trimmed ||
+    trimmed === "https://meet.google.com/new" ||
+    trimmed === "http://meet.google.com/new" ||
+    trimmed === "https://meet.google.com/new/" ||
+    trimmed === "meet.google.com/new" ||
+    trimmed === "/new"
+  );
+}
+
+export function isValidGoogleMeetRoom(link?: string | null): boolean {
+  if (!link || typeof link !== "string" || isGenericGoogleMeetNewLink(link)) return false;
+  const trimmed = link.trim();
+  return (
+    /meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/i.test(trimmed) ||
+    /meet\.google\.com\/[a-z0-9_-]{8,}/i.test(trimmed)
+  );
 }
 
 export function getSafeMeetingLink(link?: string | null): string {

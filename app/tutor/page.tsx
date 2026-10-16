@@ -72,7 +72,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
-import { getSafeMeetingLink, normalizeGoogleMeetLink } from "@/lib/utils";
+import { getSafeMeetingLink, normalizeGoogleMeetLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
@@ -813,14 +813,17 @@ function TutorDashboardContent() {
     }
   };
 
+  const [startingTrialId, setStartingTrialId] = useState<string | null>(null);
+  const [endingTrialId, setEndingTrialId] = useState<string | null>(null);
+
   const triggerStartClassFlow = (ev: ScheduledClassEvent) => {
     const rawLink = ev.meetingLink?.trim() || "";
-    if (rawLink && rawLink.startsWith("https://meet.google.com/") && !rawLink.endsWith("/new") && !rawLink.includes("edp-")) {
+    // If the event already has a real link, start it directly
+    if (rawLink && !isGenericGoogleMeetNewLink(rawLink)) {
       handleStartClass(ev.id, rawLink);
     } else {
-      setStartClassTargetEvent(ev);
-      setStartClassMeetLink(rawLink && !rawLink.endsWith("/new") && !rawLink.includes("edp-") ? rawLink : "https://meet.google.com/new");
-      setShowStartClassModal(true);
+      // Auto-generate the unique Google Meet space on the backend and open it immediately
+      handleStartClass(ev.id);
     }
   };
 
@@ -841,15 +844,17 @@ function TutorDashboardContent() {
         body: JSON.stringify({
           action: "start_class",
           eventId,
-          meetingLink: existingMeetingLink,
+          meetingLink: existingMeetingLink && !isGenericGoogleMeetNewLink(existingMeetingLink) ? existingMeetingLink : undefined,
         }),
       });
       const data = await res.json();
       if (res.ok) {
         fetchTutorData();
-        if (data.meetingLink) {
+        if (data.meetingLink && !isGenericGoogleMeetNewLink(data.meetingLink)) {
           window.open(data.meetingLink, "_blank", "noopener,noreferrer");
         }
+      } else {
+        alert(data.error || "Failed to start class session.");
       }
     } catch (error) {
       console.error("Failed to start class:", error);
@@ -876,6 +881,55 @@ function TutorDashboardContent() {
       console.error("Failed to end class:", error);
     } finally {
       setEndingClassId(null);
+    }
+  };
+
+  const handleStartTrial = async (trialId: string, currentMeetingLink?: string | null) => {
+    try {
+      setStartingTrialId(trialId);
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "start_class",
+          trialId,
+          meetingLink: currentMeetingLink && !isGenericGoogleMeetNewLink(currentMeetingLink) ? currentMeetingLink : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchTutorData();
+        if (data.meetingLink && !isGenericGoogleMeetNewLink(data.meetingLink)) {
+          window.open(data.meetingLink, "_blank", "noopener,noreferrer");
+        }
+      } else {
+        alert(data.error || "Failed to start consultation session.");
+      }
+    } catch (error) {
+      console.error("Failed to start consultation session:", error);
+    } finally {
+      setStartingTrialId(null);
+    }
+  };
+
+  const handleEndTrial = async (trialId: string) => {
+    try {
+      setEndingTrialId(trialId);
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "end_class",
+          trialId,
+        }),
+      });
+      if (res.ok) {
+        fetchTutorData();
+      }
+    } catch (error) {
+      console.error("Failed to end consultation session:", error);
+    } finally {
+      setEndingTrialId(null);
     }
   };
 
@@ -1215,7 +1269,8 @@ function TutorDashboardContent() {
       : [trial.preferredDate];
     setSelectedSlotIndex(0);
     setConfirmDate(formatForDateTimeInput(new Date(slots[0])));
-    setConfirmMeetLink(trial.meetingLink || "https://meet.google.com/new");
+    const rawLink = trial.meetingLink?.trim();
+    setConfirmMeetLink(rawLink && !isGenericGoogleMeetNewLink(rawLink) ? rawLink : "");
     setConfirmNotes(trial.notes || "");
     setConfirmTrialStatusMsg(null);
     setShowConfirmTrialModal(true);
@@ -1234,7 +1289,9 @@ function TutorDashboardContent() {
           action: "confirm_trial",
           trialId: confirmingTrial.id,
           confirmedDate: new Date(confirmDate).toISOString(),
-          meetingLink: normalizeGoogleMeetLink(confirmMeetLink),
+          meetingLink: confirmMeetLink.trim() && !isGenericGoogleMeetNewLink(confirmMeetLink)
+            ? normalizeGoogleMeetLink(confirmMeetLink)
+            : undefined,
           notes: confirmNotes,
         }),
       });
@@ -2602,6 +2659,12 @@ function TutorDashboardContent() {
                           const isPending = tr.status === "PENDING";
                           const isConfirmed = tr.status === "CONFIRMED";
                           const isCancelled = tr.status === "CANCELLED" || tr.status === "REJECTED";
+                          const isCompleted = tr.status === "COMPLETED" || Boolean(tr.actualEndTime);
+
+                          const isTrialLive = events.some(
+                            (e) => (e.status === "LIVE" && !e.endedAt) &&
+                            (e.description?.includes(tr.id) || (tr.studentId && e.userId === tr.studentId && e.title?.toLowerCase().includes("trial")))
+                          ) || (Boolean(tr.actualStartTime) && !tr.actualEndTime && tr.status !== "COMPLETED");
 
                           const dateFormatted = formatDateInTimezone(tr.preferredDate, tutorTimezone, {
                             weekday: "short",
@@ -2626,7 +2689,9 @@ function TutorDashboardContent() {
                             <div
                               key={tr.id}
                               className={`rounded-2xl border transition-all p-5 sm:p-6 space-y-4 shadow-xs hover:shadow-sm ${
-                                isPending
+                                isTrialLive
+                                  ? "bg-red-50/40 border-red-300 ring-2 ring-red-400/20"
+                                  : isPending
                                   ? "bg-blue-50/30 border-blue-200"
                                   : isConfirmed
                                   ? "bg-white border-slate-200 hover:border-blue-300"
@@ -2665,10 +2730,21 @@ function TutorDashboardContent() {
                                     </Badge>
                                   )}
                                   {isConfirmed && (
-                                    <Badge className="bg-blue-600 text-white font-bold text-xs px-3 py-1 flex items-center gap-1.5 shadow-2xs">
-                                      <CheckCircle2 className="w-3.5 h-3.5" />
-                                      <span>Confirmed &amp; Scheduled</span>
-                                    </Badge>
+                                    isTrialLive ? (
+                                      <Badge className="bg-red-600 text-white font-extrabold text-xs px-3 py-1 flex items-center gap-1.5 shadow-xs animate-pulse">
+                                        <Radio className="w-3.5 h-3.5 text-white" />
+                                        <span>● LIVE NOW</span>
+                                      </Badge>
+                                    ) : isCompleted ? (
+                                      <Badge className="bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs px-3 py-1">
+                                        ✓ Completed
+                                      </Badge>
+                                    ) : (
+                                      <Badge className="bg-blue-50 text-blue-800 border border-blue-200 font-bold text-xs px-3 py-1 flex items-center gap-1.5">
+                                        <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                        <span>Scheduled (Not Started)</span>
+                                      </Badge>
+                                    )
                                   )}
                                   {isCancelled && (
                                     <Badge className="bg-slate-200 text-slate-700 font-bold text-xs px-3 py-1">
@@ -2843,16 +2919,53 @@ function TutorDashboardContent() {
                                   </>
                                 ) : isConfirmed ? (
                                   <>
-                                    {tr.meetingLink && (
-                                      <a
-                                        href={tr.meetingLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs"
-                                      >
-                                        <Video className="w-3.5 h-3.5" />
-                                        <span>Google Meet</span>
-                                      </a>
+                                    {isTrialLive ? (
+                                      <>
+                                        <a
+                                          href={getSafeMeetingLink(tr.meetingLink)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs animate-pulse cursor-pointer"
+                                        >
+                                          <Video className="w-4 h-4" />
+                                          <span>Join Live Room</span>
+                                        </a>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEndTrial(tr.id)}
+                                          disabled={endingTrialId === tr.id}
+                                          className="h-9 px-3.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                          <span>{endingTrialId === tr.id ? "Ending..." : "End Session"}</span>
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStartTrial(tr.id, tr.meetingLink)}
+                                          disabled={startingTrialId === tr.id}
+                                          className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                                          title="Manually start the consultation session and open Google Meet room"
+                                        >
+                                          <Play className="w-3.5 h-3.5 fill-current" />
+                                          <span>{startingTrialId === tr.id ? "Starting..." : "Start Session"}</span>
+                                        </button>
+
+                                        {tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) && (
+                                          <a
+                                            href={getSafeMeetingLink(tr.meetingLink)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
+                                            title="Open Google Meet room directly"
+                                          >
+                                            <Video className="w-3.5 h-3.5 text-blue-600" />
+                                            <span>Room Link</span>
+                                          </a>
+                                        )}
+                                      </>
                                     )}
 
                                     <button
@@ -3666,18 +3779,10 @@ function TutorDashboardContent() {
             </div>
 
             <div className="space-y-3.5 text-xs text-slate-600">
-              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 space-y-2">
-                <span className="font-bold text-blue-950 block">Step 1: Open Google Meet to create room</span>
-                <button
-                  type="button"
-                  onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
-                  className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Open meet.google.com/new</span>
-                </button>
+              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 space-y-1.5">
+                <span className="font-bold text-blue-950 block">Dedicated Google Meet Room</span>
                 <p className="text-[11px] text-blue-800 leading-snug">
-                  Google will create your meeting room. Copy the room link from your browser address bar.
+                  Leave the field below blank to automatically generate a dedicated Google Meet room for you and all enrolled students, or enter a specific room link if you already have one.
                 </p>
               </div>
 
@@ -3685,25 +3790,20 @@ function TutorDashboardContent() {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="font-bold text-slate-800 block">
-                      Step 2: Paste Google Meet Link
+                      Google Meet Link (Optional)
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
-                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>Create on Google Meet</span>
-                    </button>
+                    <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                      ✨ Auto-Generated if blank
+                    </span>
                   </div>
                   <Input
-                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    placeholder="Auto-generated or enter meet.google.com/xxx-yyyy-zzz"
                     value={startClassMeetLink}
                     onChange={(e) => setStartClassMeetLink(e.target.value)}
                     className="rounded-xl h-9 text-xs font-mono"
                   />
                   <p className="text-[10px] text-slate-400">
-                    All students will immediately receive this exact Google Meet link to join together.
+                    All enrolled students will immediately be notified with this exact meeting room to join together.
                   </p>
                 </div>
 
@@ -3906,17 +4006,12 @@ function TutorDashboardContent() {
                   <label className="font-bold text-slate-700 block">
                     Google Meet URL (Optional)
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    <span>Open meet.google.com/new</span>
-                  </button>
+                  <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                    ✨ Auto-Generated if blank
+                  </span>
                 </div>
                 <Input
-                  placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                  placeholder="Leave empty to auto-generate or paste meet.google.com/xxx-yyyy-zzz"
                   value={newClassMeetingLink}
                   onChange={(e) => setNewClassMeetingLink(e.target.value)}
                   className="rounded-xl h-9 text-xs font-mono"
@@ -4410,23 +4505,18 @@ function TutorDashboardContent() {
                           <Video className="w-4 h-4 text-blue-600" />
                           <span>Google Meet Classroom Link</span>
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
-                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer hover:underline"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          <span>Create on Meet</span>
-                        </button>
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          ✨ Auto-Generated
+                        </span>
                       </div>
                       <Input
-                        placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                        placeholder="Auto-generated unique room (or paste https://meet.google.com/...)"
                         value={confirmMeetLink}
                         onChange={(e) => setConfirmMeetLink(e.target.value)}
                         className="rounded-xl h-11 text-xs font-mono bg-white border-slate-300"
                       />
-                      <p className="text-[11px] text-slate-400">
-                        Paste the Google Meet link for this session. It will be emailed to the student automatically.
+                      <p className="text-[11px] text-slate-500">
+                        Leave blank to automatically generate a dedicated Google Meet room for this session, or paste a custom link.
                       </p>
                     </div>
 

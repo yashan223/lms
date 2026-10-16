@@ -1,10 +1,14 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
-import { syncClassMeetingSession, createGoogleMeetingSpace } from "@/lib/google-meet";
+import {
+  syncClassMeetingSession,
+  createGoogleMeetingSpace,
+  ensureValidGoogleMeetingLink,
+} from "@/lib/google-meet";
 import { createGoogleCalendarEventWithMeet, isGoogleWorkspaceConfigured } from "@/lib/google-workspace";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
@@ -503,50 +507,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid scheduled date format." }, { status: 400 });
       }
 
-      // If tutor provided a manual link, use it directly
-      let meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
+      // If tutor provided a valid custom room link (not meet.google.com/new), use it directly
+      let meetLink =
+        meetingLink?.trim() && !isGenericGoogleMeetNewLink(meetingLink)
+          ? getSafeMeetingLink(meetingLink)
+          : null;
       let meetingSpaceId: string | null = null;
 
       if (!meetLink) {
-        if (isGoogleWorkspaceConfigured()) {
-          // Preferred: Calendar event with Meet attached — gives Meet the correct scheduled time
-          try {
-            const calResult = await createGoogleCalendarEventWithMeet({
-              title: title.trim(),
-              description: description?.trim() || "Live PulseEDU Global class session.",
-              startTime: parsedDueDate,
-              durationMinutes: durationMinutes ?? 90,
-            });
-            if (calResult.meetingUri) {
-              meetLink = calResult.meetingUri;
-              meetingSpaceId = calResult.spaceName || null;
-              console.log(`[schedule_class] Calendar+Meet created: ${meetLink} (space: ${meetingSpaceId})`);
-            }
-          } catch (calErr) {
-            console.warn("[schedule_class] Calendar+Meet failed, falling back to plain Meet space:", calErr);
-            // Fallback: plain Meet space (no scheduled time context)
-            try {
-              const spaceResult = await createGoogleMeetingSpace({ title: title.trim() });
-              if (spaceResult.meetingUri) {
-                meetLink = spaceResult.meetingUri;
-                meetingSpaceId = spaceResult.spaceName || null;
-              }
-            } catch (meetErr) {
-              console.warn("[schedule_class] Plain Meet space also failed:", meetErr);
-            }
-          }
-        } else {
-          // No Workspace configured — try plain Meet space
-          try {
-            const spaceResult = await createGoogleMeetingSpace({ title: title.trim() });
-            if (spaceResult.meetingUri) {
-              meetLink = spaceResult.meetingUri;
-              meetingSpaceId = spaceResult.spaceName || null;
-            }
-          } catch (err) {
-            console.warn("[schedule_class] Error generating meeting space:", err);
-          }
-        }
+        meetLink = await ensureValidGoogleMeetingLink(null, {
+          title: title.trim(),
+          startTime: parsedDueDate,
+          durationMinutes: durationMinutes ?? 90,
+        });
       }
 
       const fullDescription = [
@@ -583,121 +556,199 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (action === "start_class") {
-      const { eventId, meetingLink } = body;
-      if (!eventId) {
-        return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
+    if (action === "start_class" || action === "start_session") {
+      const { eventId, trialId, meetingLink } = body;
+      if (!eventId && !trialId) {
+        return NextResponse.json({ error: "Event ID or Trial ID is required." }, { status: 400 });
       }
 
-      const existing = await prisma.event.findUnique({ where: { id: eventId } });
-      if (!existing) {
-        return NextResponse.json({ error: "Class event not found" }, { status: 404 });
+      let existingEvent: any = null;
+      let existingTrial: any = null;
+
+      if (trialId) {
+        existingTrial = await prisma.trialRequest.findUnique({
+          where: { id: trialId },
+          include: { course: true, student: true },
+        });
+        if (!existingTrial) {
+          return NextResponse.json({ error: "Trial consultation not found." }, { status: 404 });
+        }
+        existingEvent = await prisma.event.findFirst({
+          where: {
+            OR: [
+              { description: { contains: trialId } },
+              ...(existingTrial.studentId ? [{ userId: existingTrial.studentId, title: { contains: "Trial" } }] : []),
+              ...(existingTrial.courseId ? [{ courseId: existingTrial.courseId, title: { contains: existingTrial.studentName } }] : []),
+            ],
+          },
+        });
+      } else if (eventId) {
+        existingEvent = await prisma.event.findUnique({
+          where: { id: eventId },
+          include: { course: true, user: true },
+        });
+        if (!existingEvent) {
+          return NextResponse.json({ error: "Class event not found" }, { status: 404 });
+        }
+        const match = existingEvent.description?.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/);
+        if (match?.[1]) {
+          existingTrial = await prisma.trialRequest.findUnique({ where: { id: match[1] } });
+        }
       }
 
-      const meetLink = getSafeMeetingLink(meetingLink || existing.meetingLink);
-
-      const updated = await prisma.event.update({
-        where: { id: eventId },
-        data: {
-          status: "LIVE",
-          startedAt: new Date(),
-          meetingLink: meetLink,
-        },
-        include: { course: true, user: true },
+      // Ensure a real, dedicated Google Meet room (never meet.google.com/new)
+      const rawCandidate = meetingLink || existingEvent?.meetingLink || existingTrial?.meetingLink;
+      const meetLink = await ensureValidGoogleMeetingLink(rawCandidate, {
+        title: existingEvent?.title || existingTrial?.topic || "PulseEDU Live Session",
+        eventId: existingEvent?.id,
+        startTime: existingEvent?.dueDate || existingTrial?.preferredDate,
       });
 
-      broadcastLMSEvent("EVENTS_CHANGED");
+      const now = new Date();
 
-      if (updated.courseId) {
+      if (existingEvent) {
+        existingEvent = await prisma.event.update({
+          where: { id: existingEvent.id },
+          data: {
+            status: "LIVE",
+            startedAt: now,
+            meetingLink: meetLink,
+          },
+          include: { course: true, user: true },
+        });
+      } else if (existingTrial) {
+        existingEvent = await prisma.event.create({
+          data: {
+            title: `1-on-1 Trial: ${existingTrial.course?.title || "Class"} (${existingTrial.studentName})`,
+            description: `Live 1-on-1 Consultation Session with Tutor.\nTrial ID: ${existingTrial.id}`,
+            dueDate: existingTrial.preferredDate || now,
+            type: EventType.LIVE_SEMINAR,
+            status: EventStatus.LIVE,
+            startedAt: now,
+            approvalStatus: "APPROVED",
+            meetingLink: meetLink,
+            courseId: existingTrial.courseId || null,
+            userId: existingTrial.studentId || null,
+            requestedBy: tutor.id,
+          },
+          include: { course: true, user: true },
+        });
+      }
+
+      if (existingTrial) {
+        existingTrial = await prisma.trialRequest.update({
+          where: { id: existingTrial.id },
+          data: {
+            status: TrialStatus.CONFIRMED,
+            actualStartTime: now,
+            meetingLink: meetLink,
+          },
+        });
+        broadcastLMSEvent("TRIALS_CHANGED", { trialId: existingTrial.id, live: true, meetingLink: meetLink });
+      }
+
+      broadcastLMSEvent("EVENTS_CHANGED", {
+        classLive: true,
+        eventId: existingEvent?.id,
+        title: existingEvent?.title,
+        meetingLink: meetLink,
+      });
+
+      // Notify student(s) that session is now live
+      const studentIdsToNotify: string[] = [];
+      if (existingTrial?.studentId) {
+        studentIdsToNotify.push(existingTrial.studentId);
+      } else if (existingEvent?.userId) {
+        studentIdsToNotify.push(existingEvent.userId);
+      } else if (existingEvent?.courseId) {
         const enrollments = await prisma.enrollment.findMany({
-          where: { courseId: updated.courseId },
+          where: { courseId: existingEvent.courseId },
           select: { userId: true },
         });
+        enrollments.forEach((e) => studentIdsToNotify.push(e.userId));
+      }
 
-        if (enrollments.length > 0) {
-          await prisma.notification.createMany({
-            data: enrollments.map((e) => ({
-              userId: e.userId,
-              title: "🔴 Class is Live Now!",
-              message: `"${updated.title}" has started. Join your live session now.`,
-              type: "INFO",
-              link: meetLink,
-            })),
-          });
-
-          enrollments.forEach((e) => {
-            broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: e.userId });
-          });
-
-          broadcastLMSEvent("EVENTS_CHANGED", {
-            classLive: true,
-            eventId: updated.id,
-            title: updated.title,
-            meetingLink: meetLink,
-            courseId: updated.courseId,
-          });
-        }
-      } else {
-        broadcastLMSEvent("EVENTS_CHANGED", {
-          classLive: true,
-          eventId: updated.id,
-          title: updated.title,
-          meetingLink: meetLink,
+      if (studentIdsToNotify.length > 0) {
+        await prisma.notification.createMany({
+          data: studentIdsToNotify.map((uId) => ({
+            userId: uId,
+            title: "🔴 Your Session is Live Now!",
+            message: `"${existingEvent?.title || "Your class"}" has started! Click to join your tutor on Google Meet.`,
+            type: "SUCCESS",
+            link: meetLink,
+          })),
+        });
+        studentIdsToNotify.forEach((uId) => {
+          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: uId });
         });
       }
 
       return NextResponse.json({
         success: true,
-        message: "Live class session has been started!",
-        event: updated,
+        message: "Live session started! Google Meet room is ready.",
+        event: existingEvent,
+        trial: existingTrial,
         meetingLink: meetLink,
       });
     }
 
-    if (action === "end_class") {
-      const { eventId, recordingUrl, manualStartTime, manualEndTime } = body;
-      if (!eventId) {
-        return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
+    if (action === "end_class" || action === "end_session") {
+      const { eventId, trialId, recordingUrl, manualStartTime, manualEndTime } = body;
+      if (!eventId && !trialId) {
+        return NextResponse.json({ error: "Event ID or Trial ID is required." }, { status: 400 });
       }
 
       const now = new Date();
 
-      // Step 1: Immediately mark as COMPLETED with endedAt = now so the UI updates instantly
-      await prisma.event.update({
-        where: { id: eventId },
-        data: {
-          status: "COMPLETED",
-          endedAt: manualEndTime ? new Date(manualEndTime) : now,
-          ...(manualStartTime ? { startedAt: new Date(manualStartTime) } : {}),
-          ...(recordingUrl ? { recordingUrl: recordingUrl.trim(), recordingStatus: "AVAILABLE" } : {}),
-        },
-      });
-      broadcastLMSEvent("EVENTS_CHANGED", { eventId, ended: true });
+      if (trialId) {
+        await prisma.trialRequest.update({
+          where: { id: trialId },
+          data: {
+            status: TrialStatus.COMPLETED,
+            actualEndTime: manualEndTime ? new Date(manualEndTime) : now,
+            ...(recordingUrl ? { recordingUrl: recordingUrl.trim(), recordingStatus: "AVAILABLE" } : {}),
+          },
+        }).catch(() => {});
+        broadcastLMSEvent("TRIALS_CHANGED", { trialId, ended: true });
+      }
 
-      // Step 2: Sync with Google Workspace to get actual start/end and recording
-      const syncResult = await syncClassMeetingSession(eventId, {
-        manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
-        manualEndTime: manualEndTime ? new Date(manualEndTime) : now,
-        manualRecordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
-      });
+      let resolvedEventId = eventId;
+      if (!resolvedEventId && trialId) {
+        const linked = await prisma.event.findFirst({
+          where: { description: { contains: trialId } },
+          select: { id: true },
+        });
+        if (linked) resolvedEventId = linked.id;
+      }
 
-      // Step 3: If recording is not yet available, schedule a deferred re-sync after 3 minutes
-      // (Google Drive export typically takes 1–5 minutes after the meeting ends)
-      if (!syncResult.event?.recordingUrl && !recordingUrl) {
-        setTimeout(async () => {
-          try {
-            console.log(`[end_class] Deferred re-sync for event ${eventId} (recording check)...`);
-            await syncClassMeetingSession(eventId, {});
-          } catch (err) {
-            console.warn(`[end_class] Deferred re-sync failed for event ${eventId}:`, err);
-          }
-        }, 3 * 60 * 1000); // 3 minutes
+      if (resolvedEventId) {
+        // Step 1: Immediately mark as COMPLETED with endedAt = now so the UI updates instantly
+        await prisma.event.update({
+          where: { id: resolvedEventId },
+          data: {
+            status: "COMPLETED",
+            endedAt: manualEndTime ? new Date(manualEndTime) : now,
+            ...(manualStartTime ? { startedAt: new Date(manualStartTime) } : {}),
+            ...(recordingUrl ? { recordingUrl: recordingUrl.trim(), recordingStatus: "AVAILABLE" } : {}),
+          },
+        });
+        broadcastLMSEvent("EVENTS_CHANGED", { eventId: resolvedEventId, ended: true });
+
+        // Step 2: Sync with Google Workspace if configured
+        try {
+          await syncClassMeetingSession(resolvedEventId, {
+            manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
+            manualEndTime: manualEndTime ? new Date(manualEndTime) : now,
+            manualRecordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
+          });
+        } catch (syncErr) {
+          console.warn("[end_class] sync error:", syncErr);
+        }
       }
 
       return NextResponse.json({
         success: true,
-        message: syncResult.message || "Class session ended successfully.",
-        event: syncResult.event,
+        message: "Session ended successfully.",
       });
     }
 
@@ -848,7 +899,11 @@ export async function POST(request: NextRequest) {
 
       const rawDate = confirmedDate || scheduledDate;
       const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
-      const link = getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
+      const link = await ensureValidGoogleMeetingLink(meetingLink || existingTrial.meetingLink, {
+        title: `1-on-1 Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName || "Student"})`,
+        startTime: targetDate,
+        durationMinutes: 30,
+      });
 
       let resolvedStudentId = existingTrial.studentId;
       if (!resolvedStudentId && existingTrial.studentEmail) {
@@ -1055,7 +1110,17 @@ export async function POST(request: NextRequest) {
       const courseTitle = updatedTrial.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updatedTrial.course?.subjectCode || "";
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
-      const link = updatedTrial.meetingLink || "https://meet.google.com/new";
+      const link = await ensureValidGoogleMeetingLink(updatedTrial.meetingLink, {
+        title: `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`,
+        startTime: parsedDate,
+        durationMinutes: 30,
+      });
+      if (!updatedTrial.meetingLink || isGenericGoogleMeetNewLink(updatedTrial.meetingLink)) {
+        await prisma.trialRequest.update({
+          where: { id: trialId },
+          data: { meetingLink: link },
+        }).catch(() => {});
+      }
       const eventDescription = [
         `🎯 30-Minute 1-on-1 Online Free Trial Session with Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,

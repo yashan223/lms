@@ -5,8 +5,10 @@ import { getSafeMeetingLink } from "@/lib/utils";
 import {
   isGoogleWorkspaceConfigured,
   createGoogleWorkspaceMeetingSpace,
+  createGoogleCalendarEventWithMeet,
   syncEventFromGoogleWorkspace,
 } from "@/lib/google-workspace";
+import { isGenericGoogleMeetNewLink } from "@/lib/utils";
 
 export interface GoogleMeetSpace {
   meetingUri: string;
@@ -27,27 +29,9 @@ export async function createGoogleMeetingSpace(opts?: {
   meetingLink?: string | null;
   eventId?: string;
 }): Promise<GoogleMeetSpace> {
-  if (isGoogleWorkspaceConfigured() && !opts?.meetingLink?.trim()) {
-    try {
-      const space = await createGoogleWorkspaceMeetingSpace({
-        title: opts?.title,
-        eventId: opts?.eventId,
-      });
-      if (space.meetingUri) {
-        return {
-          meetingUri: space.meetingUri,
-          spaceName: space.spaceName,
-          meetingCode: space.meetingCode,
-          mode: "WORKSPACE_API",
-        };
-      }
-    } catch (err) {
-      console.warn("[Google Meet] Failed to create Workspace space via API, using auto-generated Meet room:", err);
-    }
-  }
-
-  const link = opts?.meetingLink?.trim() ? getSafeMeetingLink(opts.meetingLink) : "";
-  if (link) {
+  // If a valid, non-generic meeting room link is already provided, use it
+  if (opts?.meetingLink?.trim() && !isGenericGoogleMeetNewLink(opts.meetingLink)) {
+    const link = getSafeMeetingLink(opts.meetingLink);
     return {
       meetingUri: link,
       spaceName: null,
@@ -56,7 +40,26 @@ export async function createGoogleMeetingSpace(opts?: {
     };
   }
 
-  // Ensure every scheduled class always receives a dedicated, working Google Meet link
+  if (isGoogleWorkspaceConfigured()) {
+    try {
+      const space = await createGoogleWorkspaceMeetingSpace({
+        title: opts?.title,
+        eventId: opts?.eventId,
+      });
+      if (space.meetingUri && !isGenericGoogleMeetNewLink(space.meetingUri)) {
+        return {
+          meetingUri: space.meetingUri,
+          spaceName: space.spaceName,
+          meetingCode: space.meetingCode,
+          mode: "WORKSPACE_API",
+        };
+      }
+    } catch (err) {
+      console.warn("[Google Meet] Failed to create Workspace space via API, generating dedicated Meet room:", err);
+    }
+  }
+
+  // Ensure every scheduled session always receives a dedicated, unique Google Meet room (never meet.google.com/new)
   const autoCode = generateRandomMeetCode();
   const autoLink = `https://meet.google.com/${autoCode}`;
   return {
@@ -65,6 +68,41 @@ export async function createGoogleMeetingSpace(opts?: {
     meetingCode: autoCode,
     mode: "MANUAL",
   };
+}
+
+export async function ensureValidGoogleMeetingLink(
+  currentLink?: string | null,
+  opts?: {
+    title?: string;
+    eventId?: string;
+    startTime?: Date;
+    durationMinutes?: number;
+  }
+): Promise<string> {
+  if (currentLink?.trim() && !isGenericGoogleMeetNewLink(currentLink)) {
+    return getSafeMeetingLink(currentLink);
+  }
+
+  if (isGoogleWorkspaceConfigured() && opts?.startTime) {
+    try {
+      const cal = await createGoogleCalendarEventWithMeet({
+        title: opts.title || "PulseEDU Live Session",
+        startTime: opts.startTime,
+        durationMinutes: opts.durationMinutes ?? 60,
+      });
+      if (cal.meetingUri && !isGenericGoogleMeetNewLink(cal.meetingUri)) {
+        return cal.meetingUri;
+      }
+    } catch (err) {
+      console.warn("[Google Meet] Calendar with Meet failed, falling back to space:", err);
+    }
+  }
+
+  const space = await createGoogleMeetingSpace({
+    title: opts?.title,
+    eventId: opts?.eventId,
+  });
+  return space.meetingUri;
 }
 
 export async function syncClassMeetingSession(

@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
 import { getBundles, saveBundles, DEFAULT_BUNDLES } from "@/lib/bundles";
 import {
@@ -17,7 +17,7 @@ import {
   resetDefaultSubjects as resetDefaultSchools,
 } from "@/lib/subjects";
 import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
-import { syncClassMeetingSession } from "@/lib/google-meet";
+import { syncClassMeetingSession, ensureValidGoogleMeetingLink } from "@/lib/google-meet";
 import { createGoogleWorkspaceTutorAccount, isGoogleWorkspaceConfigured } from "@/lib/google-workspace";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
@@ -867,7 +867,12 @@ export async function POST(request: NextRequest) {
 
     if (action === "schedule_class" || action === "create_class") {
       const { title, description, dueDate, courseId, meetingLink } = body;
-      const meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
+      const targetDate = dueDate ? new Date(dueDate) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const meetLink = await ensureValidGoogleMeetingLink(meetingLink, {
+        title: title || "Scheduled Live Class",
+        startTime: targetDate,
+        durationMinutes: 60,
+      });
 
       const newEvent = await prisma.event.create({
         data: {
@@ -876,7 +881,7 @@ export async function POST(request: NextRequest) {
           type: "LIVE_SEMINAR",
           status: "SCHEDULED",
           meetingLink: meetLink,
-          dueDate: new Date(dueDate || Date.now() + 24 * 60 * 60 * 1000),
+          dueDate: targetDate,
           courseId: courseId || null,
           approvalStatus: "APPROVED",
         },
@@ -1123,7 +1128,19 @@ export async function POST(request: NextRequest) {
       const courseTitle = updated.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updated.course?.subjectCode || "";
       const eventTitle = `30-Min Free Trial: ${courseTitle} (${updated.studentName})`;
-      const link = updated.meetingLink || "https://meet.google.com/new";
+      const link = await ensureValidGoogleMeetingLink(updated.meetingLink, {
+        title: eventTitle,
+        startTime: updated.preferredDate,
+        durationMinutes: 30,
+      });
+
+      if (link && link !== updated.meetingLink) {
+        await prisma.trialRequest.update({
+          where: { id: trialId },
+          data: { meetingLink: link },
+        });
+      }
+
       const eventDescription = [
         `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
         `Subject / Course: ${courseTitle} ${courseCode ? `(${courseCode})` : ""}`,

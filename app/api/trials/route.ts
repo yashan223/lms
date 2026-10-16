@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
+import { ensureValidGoogleMeetingLink } from "@/lib/google-meet";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
@@ -415,7 +416,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const meetingLink = getSafeMeetingLink(null);
+      const meetingLink: string | null = null;
 
       const trial = await prisma.trialRequest.create({
         data: {
@@ -503,7 +504,14 @@ export async function POST(request: NextRequest) {
       const rawDate = confirmedDate || scheduledDate;
       const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
       const targetStatus = (status as TrialStatus) || TrialStatus.CONFIRMED;
-      const link = getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
+      const link =
+        targetStatus === TrialStatus.CONFIRMED
+          ? await ensureValidGoogleMeetingLink(meetingLink || existingTrial.meetingLink, {
+              title: `30-Min Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName})`,
+              startTime: targetDate,
+              durationMinutes: 30,
+            })
+          : getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },
@@ -753,7 +761,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const link = getSafeMeetingLink(meetingLink || existing.meetingLink);
+      const link = await ensureValidGoogleMeetingLink(meetingLink || existing.meetingLink, {
+        title: `1-on-1 Trial: ${existing.course?.title || "London A/L"} (${existing.studentName || "Student"})`,
+        startTime: new Date(scheduledDate),
+        durationMinutes: 30,
+      });
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },

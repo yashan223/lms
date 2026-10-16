@@ -352,9 +352,25 @@ function TutorDashboardContent() {
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
 
-  const [showStartClassModal, setShowStartClassModal] = useState(false);
-  const [startClassTargetEvent, setStartClassTargetEvent] = useState<ScheduledClassEvent | null>(null);
-  const [startClassMeetLink, setStartClassMeetLink] = useState("");
+  const [showStartSessionModal, setShowStartSessionModal] = useState(false);
+  const [startSessionTarget, setStartSessionTarget] = useState<{
+    eventId?: string;
+    trialId?: string;
+    title: string;
+    currentLink?: string;
+  } | null>(null);
+  const [startSessionMeetLink, setStartSessionMeetLink] = useState("");
+  const [isStartingSession, setIsStartingSession] = useState(false);
+
+  const [showEditLinkModal, setShowEditLinkModal] = useState(false);
+  const [editLinkTarget, setEditLinkTarget] = useState<{
+    eventId?: string;
+    trialId?: string;
+    title: string;
+    currentLink: string;
+  } | null>(null);
+  const [editLinkInput, setEditLinkInput] = useState("");
+  const [isSavingEditLink, setIsSavingEditLink] = useState(false);
 
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleTargetEvent, setRescheduleTargetEvent] = useState<ScheduledClassEvent | null>(null);
@@ -817,98 +833,127 @@ function TutorDashboardContent() {
   const [endingTrialId, setEndingTrialId] = useState<string | null>(null);
 
   const triggerStartClassFlow = (ev: ScheduledClassEvent) => {
-    const rawLink = ev.meetingLink?.trim() || "";
-    // If the event already has a real link, start it directly
-    if (rawLink && !isGenericGoogleMeetNewLink(rawLink)) {
-      handleStartClass(ev.id, rawLink);
-    } else {
-      // Auto-generate the unique Google Meet space on the backend and open it immediately
-      handleStartClass(ev.id);
-    }
+    setStartSessionTarget({
+      eventId: ev.id,
+      title: ev.title,
+      currentLink: ev.meetingLink || "",
+    });
+    setStartSessionMeetLink(ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? ev.meetingLink : "");
+    setShowStartSessionModal(true);
   };
 
-  const handleStartClassSubmit = async (e: React.FormEvent) => {
+  const triggerStartTrialFlow = (tr: any) => {
+    setStartSessionTarget({
+      trialId: tr.id,
+      title: `1-on-1 Trial: ${tr.course?.title || "Consultation"} (${tr.studentName})`,
+      currentLink: tr.meetingLink || "",
+    });
+    setStartSessionMeetLink(tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? tr.meetingLink : "");
+    setShowStartSessionModal(true);
+  };
+
+  const handleStartClass = (eventId: string) => {
+    const ev = events.find((e) => e.id === eventId);
+    if (ev) triggerStartClassFlow(ev);
+  };
+
+  const handleStartTrial = (trialId: string) => {
+    const tr = trials.find((t) => t.id === trialId);
+    if (tr) triggerStartTrialFlow(tr);
+  };
+
+  const handleStartLiveSession = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!startClassTargetEvent) return;
-    const finalLink = normalizeGoogleMeetLink(startClassMeetLink);
-    setShowStartClassModal(false);
-    await handleStartClass(startClassTargetEvent.id, finalLink);
-  };
+    if (!startSessionTarget) return;
 
-  const handleStartClass = async (eventId: string, existingMeetingLink?: string | null) => {
+    const normalized = normalizeGoogleMeetLink(startSessionMeetLink);
+    if (!normalized) {
+      alert("Please open Google Meet, copy your meeting room link, and paste it here before starting.");
+      return;
+    }
+
     try {
-      setStartingClassId(eventId);
+      setIsStartingSession(true);
+      if (startSessionTarget.eventId) {
+        setStartingClassId(startSessionTarget.eventId);
+      }
+      if (startSessionTarget.trialId) {
+        setStartingTrialId(startSessionTarget.trialId);
+      }
+
       const res = await fetch("/api/tutor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "start_class",
-          eventId,
-          meetingLink: existingMeetingLink && !isGenericGoogleMeetNewLink(existingMeetingLink) ? existingMeetingLink : undefined,
+          eventId: startSessionTarget.eventId,
+          trialId: startSessionTarget.trialId,
+          meetingLink: normalized,
         }),
       });
       const data = await res.json();
       if (res.ok) {
+        setShowStartSessionModal(false);
         fetchTutorData();
         if (data.meetingLink && !isGenericGoogleMeetNewLink(data.meetingLink)) {
           window.open(data.meetingLink, "_blank", "noopener,noreferrer");
         }
       } else {
-        alert(data.error || "Failed to start class session.");
+        alert(data.error || "Failed to start live session.");
       }
-    } catch (error) {
-      console.error("Failed to start class:", error);
+    } catch (err) {
+      console.error("Failed to start session:", err);
+      alert("Failed to start live session. Please try again.");
     } finally {
+      setIsStartingSession(false);
       setStartingClassId(null);
+      setStartingTrialId(null);
     }
   };
 
-  const handleEndClass = async (eventId: string) => {
+  const handleOpenEditLink = (opts: { eventId?: string; trialId?: string; title: string; currentLink?: string | null }) => {
+    setEditLinkTarget({
+      eventId: opts.eventId,
+      trialId: opts.trialId,
+      title: opts.title,
+      currentLink: opts.currentLink || "",
+    });
+    setEditLinkInput(opts.currentLink && !isGenericGoogleMeetNewLink(opts.currentLink) ? opts.currentLink : "");
+    setShowEditLinkModal(true);
+  };
+
+  const handleSaveEditLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editLinkTarget) return;
+    const normalized = normalizeGoogleMeetLink(editLinkInput);
+    if (!normalized) {
+      alert("Please enter a valid Google Meet link (e.g. https://meet.google.com/xxx-yyyy-zzz).");
+      return;
+    }
+
     try {
-      setEndingClassId(eventId);
+      setIsSavingEditLink(true);
       const res = await fetch("/api/tutor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "end_class",
-          eventId,
-        }),
-      });
-      if (res.ok) {
-        fetchTutorData();
-      }
-    } catch (error) {
-      console.error("Failed to end class:", error);
-    } finally {
-      setEndingClassId(null);
-    }
-  };
-
-  const handleStartTrial = async (trialId: string, currentMeetingLink?: string | null) => {
-    try {
-      setStartingTrialId(trialId);
-      const res = await fetch("/api/tutor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "start_class",
-          trialId,
-          meetingLink: currentMeetingLink && !isGenericGoogleMeetNewLink(currentMeetingLink) ? currentMeetingLink : undefined,
+          action: "update_meeting_link",
+          eventId: editLinkTarget.eventId,
+          trialId: editLinkTarget.trialId,
+          meetingLink: normalized,
         }),
       });
       const data = await res.json();
       if (res.ok) {
+        setShowEditLinkModal(false);
         fetchTutorData();
-        if (data.meetingLink && !isGenericGoogleMeetNewLink(data.meetingLink)) {
-          window.open(data.meetingLink, "_blank", "noopener,noreferrer");
-        }
       } else {
-        alert(data.error || "Failed to start consultation session.");
+        alert(data.error || "Failed to update meeting link.");
       }
-    } catch (error) {
-      console.error("Failed to start consultation session:", error);
+    } catch (err) {
+      alert("Network error updating meeting link.");
     } finally {
-      setStartingTrialId(null);
+      setIsSavingEditLink(false);
     }
   };
 
@@ -930,6 +975,27 @@ function TutorDashboardContent() {
       console.error("Failed to end consultation session:", error);
     } finally {
       setEndingTrialId(null);
+    }
+  };
+
+  const handleEndClass = async (eventId: string) => {
+    try {
+      setEndingClassId(eventId);
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "end_class",
+          eventId,
+        }),
+      });
+      if (res.ok) {
+        fetchTutorData();
+      }
+    } catch (error) {
+      console.error("Failed to end class:", error);
+    } finally {
+      setEndingClassId(null);
     }
   };
 
@@ -2238,6 +2304,14 @@ function TutorDashboardContent() {
                                     Start
                                   </button>
                                   <button
+                                    onClick={() => handleOpenEditLink({ eventId: ev.id, title: ev.title, currentLink: ev.meetingLink })}
+                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                    title="Set or update Google Meet link"
+                                  >
+                                    <Video className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>{ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? "Edit Link" : "Meet Link"}</span>
+                                  </button>
+                                  <button
                                     onClick={() => openRescheduleForClass(ev)}
                                     className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                                     title="Reschedule Class"
@@ -2944,13 +3018,23 @@ function TutorDashboardContent() {
                                       <>
                                         <button
                                           type="button"
-                                          onClick={() => handleStartTrial(tr.id, tr.meetingLink)}
+                                          onClick={() => triggerStartTrialFlow(tr)}
                                           disabled={startingTrialId === tr.id}
                                           className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                                          title="Manually start the consultation session and open Google Meet room"
+                                          title="Start live consultation session and open Google Meet room"
                                         >
                                           <Play className="w-3.5 h-3.5 fill-current" />
                                           <span>{startingTrialId === tr.id ? "Starting..." : "Start Session"}</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEditLink({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName}`, currentLink: tr.meetingLink })}
+                                          className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                                          title="Set or update Google Meet link"
+                                        >
+                                          <Video className="w-3.5 h-3.5 text-blue-600" />
+                                          <span>{tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? "Edit Link" : "Set Meet Link"}</span>
                                         </button>
 
                                         {tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) && (
@@ -2961,7 +3045,7 @@ function TutorDashboardContent() {
                                             className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
                                             title="Open Google Meet room directly"
                                           >
-                                            <Video className="w-3.5 h-3.5 text-blue-600" />
+                                            <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
                                             <span>Room Link</span>
                                           </a>
                                         )}
@@ -3757,21 +3841,21 @@ function TutorDashboardContent() {
 
       </main>
 
-      {showStartClassModal && startClassTargetEvent && (
+      {showStartSessionModal && startSessionTarget && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
                   <Video className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900">Start Google Meet Session</h3>
-                  <p className="text-xs text-slate-500 truncate max-w-[240px]">{startClassTargetEvent.title}</p>
+                  <h3 className="font-bold text-sm text-slate-900">Start Live Meeting</h3>
+                  <p className="text-xs text-slate-500 truncate max-w-[240px]">{startSessionTarget.title}</p>
                 </div>
               </div>
               <button
-                onClick={() => setShowStartClassModal(false)}
+                onClick={() => setShowStartSessionModal(false)}
                 className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -3779,31 +3863,38 @@ function TutorDashboardContent() {
             </div>
 
             <div className="space-y-3.5 text-xs text-slate-600">
-              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 space-y-1.5">
-                <span className="font-bold text-blue-950 block">Dedicated Google Meet Room</span>
+              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-blue-950 block">Step 1: Open Google Meet</span>
+                  <span className="text-[10px] text-blue-700 font-semibold bg-blue-100/70 px-2 py-0.5 rounded-full">Creates Real Room</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
+                  className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Open meet.google.com/new in New Tab</span>
+                </button>
                 <p className="text-[11px] text-blue-800 leading-snug">
-                  Leave the field below blank to automatically generate a dedicated Google Meet room for you and all enrolled students, or enter a specific room link if you already have one.
+                  Google Meet will create your meeting room. Copy the URL (e.g. <code>meet.google.com/xxx-yyyy-zzz</code>) from your address bar and paste it below.
                 </p>
               </div>
 
-              <form onSubmit={handleStartClassSubmit} className="space-y-3.5">
+              <form onSubmit={handleStartLiveSession} className="space-y-3.5">
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-800 block">
-                      Google Meet Link (Optional)
-                    </label>
-                    <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                      ✨ Auto-Generated if blank
-                    </span>
-                  </div>
+                  <label className="font-bold text-slate-800 block">
+                    Step 2: Paste Google Meet Link / Code
+                  </label>
                   <Input
-                    placeholder="Auto-generated or enter meet.google.com/xxx-yyyy-zzz"
-                    value={startClassMeetLink}
-                    onChange={(e) => setStartClassMeetLink(e.target.value)}
-                    className="rounded-xl h-9 text-xs font-mono"
+                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    value={startSessionMeetLink}
+                    onChange={(e) => setStartSessionMeetLink(e.target.value)}
+                    required
+                    className="rounded-xl h-9.5 text-xs font-mono"
                   />
                   <p className="text-[10px] text-slate-400">
-                    All enrolled students will immediately be notified with this exact meeting room to join together.
+                    Students will immediately receive this exact room link to join your live session together.
                   </p>
                 </div>
 
@@ -3812,20 +3903,67 @@ function TutorDashboardContent() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowStartClassModal(false)}
+                    onClick={() => setShowStartSessionModal(false)}
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    disabled={startingClassId === startClassTargetEvent.id}
-                    className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
+                    disabled={isStartingSession}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
                   >
-                    {startingClassId === startClassTargetEvent.id ? "Starting..." : "Start & Notify Students"}
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>{isStartingSession ? "Starting..." : "Start & Notify Students"}</span>
                   </Button>
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showEditLinkModal && editLinkTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+                  <Video className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Set Meeting Link</h3>
+                  <p className="text-xs text-slate-500 truncate max-w-[200px]">{editLinkTarget.title}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditLinkModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditLink} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Google Meet Room URL</label>
+                <Input
+                  placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                  value={editLinkInput}
+                  onChange={(e) => setEditLinkInput(e.target.value)}
+                  className="rounded-xl h-9 text-xs font-mono"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowEditLinkModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSavingEditLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-4">
+                  {isSavingEditLink ? "Saving..." : "Save Link"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

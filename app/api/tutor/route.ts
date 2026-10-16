@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericGoogleMeetNewLink, normalizeGoogleMeetLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
 import {
@@ -596,13 +596,19 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Ensure a real, dedicated Google Meet room (never meet.google.com/new)
+      // Ensure a real, valid Google Meet room
       const rawCandidate = meetingLink || existingEvent?.meetingLink || existingTrial?.meetingLink;
-      const meetLink = await ensureValidGoogleMeetingLink(rawCandidate, {
-        title: existingEvent?.title || existingTrial?.topic || "PulseEDU Live Session",
-        eventId: existingEvent?.id,
-        startTime: existingEvent?.dueDate || existingTrial?.preferredDate,
-      });
+      const meetLink = normalizeGoogleMeetLink(rawCandidate);
+
+      if (!meetLink) {
+        return NextResponse.json(
+          {
+            error: "Please provide a valid Google Meet link (e.g. https://meet.google.com/xxx-yyyy-zzz) to start this live session.",
+            requiresMeetingLink: true,
+          },
+          { status: 400 }
+        );
+      }
 
       const now = new Date();
 
@@ -750,6 +756,27 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Session ended successfully.",
       });
+    }
+
+    if (action === "update_meeting_link") {
+      const { eventId, trialId, meetingLink } = body;
+      const normalized = normalizeGoogleMeetLink(meetingLink);
+      if (!normalized) {
+        return NextResponse.json({ error: "Please enter a valid Google Meet room link." }, { status: 400 });
+      }
+      if (eventId) {
+        await prisma.event.update({ where: { id: eventId }, data: { meetingLink: normalized } });
+      }
+      if (trialId) {
+        await prisma.trialRequest.update({ where: { id: trialId }, data: { meetingLink: normalized } });
+        await prisma.event.updateMany({
+          where: { description: { contains: trialId } },
+          data: { meetingLink: normalized },
+        });
+      }
+      broadcastLMSEvent("EVENTS_CHANGED");
+      broadcastLMSEvent("TRIALS_CHANGED");
+      return NextResponse.json({ success: true, meetingLink: normalized });
     }
 
     if (action === "delete_class" || action === "delete_event") {

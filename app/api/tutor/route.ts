@@ -5,6 +5,7 @@ import { getSafeMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
 import { syncClassMeetingSession, createGoogleMeetingSpace } from "@/lib/google-meet";
+import { createGoogleCalendarEventWithMeet, isGoogleWorkspaceConfigured } from "@/lib/google-workspace";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 
@@ -481,6 +482,7 @@ export async function POST(request: NextRequest) {
         tutorId,
         studentId,
         type,
+        durationMinutes,
       } = body;
 
       if (!title || !scheduledDate) {
@@ -489,28 +491,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-
-      let meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
-      let meetingSpaceId: string | null = null;
-
-      if (!meetLink) {
-        try {
-          const spaceResult = await createGoogleMeetingSpace({ title: title.trim() });
-          if (spaceResult.meetingUri) {
-            meetLink = spaceResult.meetingUri;
-            meetingSpaceId = spaceResult.spaceName || null;
-          }
-        } catch (err) {
-          console.warn("[tutor] Error generating meeting space:", err);
-        }
-      }
-
-      const fullDescription = [
-        description?.trim() || "Live curriculum individual class with Tutor.",
-        meetLink ? `\n\nGoogle Meet Classroom: ${meetLink}` : "",
-      ]
-        .join("")
-        .trim();
 
       const operatingTimezone = body.timezone || tutor.timezone || "Asia/Colombo";
       let parsedDueDate: Date;
@@ -522,6 +502,59 @@ export async function POST(request: NextRequest) {
       if (isNaN(parsedDueDate.getTime())) {
         return NextResponse.json({ error: "Invalid scheduled date format." }, { status: 400 });
       }
+
+      // If tutor provided a manual link, use it directly
+      let meetLink = meetingLink?.trim() ? getSafeMeetingLink(meetingLink) : null;
+      let meetingSpaceId: string | null = null;
+
+      if (!meetLink) {
+        if (isGoogleWorkspaceConfigured()) {
+          // Preferred: Calendar event with Meet attached — gives Meet the correct scheduled time
+          try {
+            const calResult = await createGoogleCalendarEventWithMeet({
+              title: title.trim(),
+              description: description?.trim() || "Live PulseEDU Global class session.",
+              startTime: parsedDueDate,
+              durationMinutes: durationMinutes ?? 90,
+            });
+            if (calResult.meetingUri) {
+              meetLink = calResult.meetingUri;
+              meetingSpaceId = calResult.spaceName || null;
+              console.log(`[schedule_class] Calendar+Meet created: ${meetLink} (space: ${meetingSpaceId})`);
+            }
+          } catch (calErr) {
+            console.warn("[schedule_class] Calendar+Meet failed, falling back to plain Meet space:", calErr);
+            // Fallback: plain Meet space (no scheduled time context)
+            try {
+              const spaceResult = await createGoogleMeetingSpace({ title: title.trim() });
+              if (spaceResult.meetingUri) {
+                meetLink = spaceResult.meetingUri;
+                meetingSpaceId = spaceResult.spaceName || null;
+              }
+            } catch (meetErr) {
+              console.warn("[schedule_class] Plain Meet space also failed:", meetErr);
+            }
+          }
+        } else {
+          // No Workspace configured — try plain Meet space
+          try {
+            const spaceResult = await createGoogleMeetingSpace({ title: title.trim() });
+            if (spaceResult.meetingUri) {
+              meetLink = spaceResult.meetingUri;
+              meetingSpaceId = spaceResult.spaceName || null;
+            }
+          } catch (err) {
+            console.warn("[schedule_class] Error generating meeting space:", err);
+          }
+        }
+      }
+
+      const fullDescription = [
+        description?.trim() || "Live curriculum individual class with Tutor.",
+        meetLink ? `\n\nGoogle Meet Classroom: ${meetLink}` : "",
+      ]
+        .join("")
+        .trim();
 
       const newClassEvent = await prisma.event.create({
         data: {
@@ -627,11 +660,39 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
       }
 
+      const now = new Date();
+
+      // Step 1: Immediately mark as COMPLETED with endedAt = now so the UI updates instantly
+      await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          status: "COMPLETED",
+          endedAt: manualEndTime ? new Date(manualEndTime) : now,
+          ...(manualStartTime ? { startedAt: new Date(manualStartTime) } : {}),
+          ...(recordingUrl ? { recordingUrl: recordingUrl.trim(), recordingStatus: "AVAILABLE" } : {}),
+        },
+      });
+      broadcastLMSEvent("EVENTS_CHANGED", { eventId, ended: true });
+
+      // Step 2: Sync with Google Workspace to get actual start/end and recording
       const syncResult = await syncClassMeetingSession(eventId, {
         manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
-        manualEndTime: manualEndTime ? new Date(manualEndTime) : new Date(),
+        manualEndTime: manualEndTime ? new Date(manualEndTime) : now,
         manualRecordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
       });
+
+      // Step 3: If recording is not yet available, schedule a deferred re-sync after 3 minutes
+      // (Google Drive export typically takes 1–5 minutes after the meeting ends)
+      if (!syncResult.event?.recordingUrl && !recordingUrl) {
+        setTimeout(async () => {
+          try {
+            console.log(`[end_class] Deferred re-sync for event ${eventId} (recording check)...`);
+            await syncClassMeetingSession(eventId, {});
+          } catch (err) {
+            console.warn(`[end_class] Deferred re-sync failed for event ${eventId}:`, err);
+          }
+        }, 3 * 60 * 1000); // 3 minutes
+      }
 
       return NextResponse.json({
         success: true,

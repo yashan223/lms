@@ -13,14 +13,30 @@ import { broadcastLMSEvent } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
+// GET: lightweight internal health + trigger auto-sync (called by server.js background loop)
+export async function GET(request: NextRequest) {
+  const internalHeader = request.headers.get("x-internal-sync");
+  if (internalHeader === "1") {
+    const result = await autoSyncActiveGoogleWorkspaceMeetings();
+    return NextResponse.json({ success: true, ...result });
+  }
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request, [Role.ADMIN, Role.TUTOR]);
-    if (!auth.user) {
-      return NextResponse.json(
-        { error: auth.error || "Unauthorized" },
-        { status: auth.status || 401 }
-      );
+    const internalSync = request.headers.get("x-internal-sync") === "1";
+    let authed = internalSync;
+
+    if (!authed) {
+      const auth = await getAuthenticatedUser(request, [Role.ADMIN, Role.TUTOR]);
+      if (!auth.user) {
+        return NextResponse.json(
+          { error: auth.error || "Unauthorized" },
+          { status: auth.status || 401 }
+        );
+      }
+      authed = true;
     }
 
     const body = await request.json();

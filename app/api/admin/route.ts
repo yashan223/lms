@@ -18,6 +18,7 @@ import {
 } from "@/lib/subjects";
 import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { syncClassMeetingSession } from "@/lib/google-meet";
+import { createGoogleWorkspaceTutorAccount, isGoogleWorkspaceConfigured } from "@/lib/google-workspace";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -370,6 +371,23 @@ export async function POST(request: NextRequest) {
         ? getRegionalTimezone(country).id
         : DEFAULT_TIMEZONE;
 
+      let workspaceResult: any = null;
+      if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
+        if (body.createWorkspaceAccount !== false && isGoogleWorkspaceConfigured()) {
+          try {
+            workspaceResult = await createGoogleWorkspaceTutorAccount({
+              name,
+              email: email.trim(),
+              password: rawPassword,
+              phone: phone ? phone.trim() : undefined,
+              customUsername: body.customWorkspaceUsername,
+            });
+          } catch (wsErr) {
+            console.warn("[admin] Error provisioning Workspace tutor account:", wsErr);
+          }
+        }
+      }
+
       let initialBio = bio ? bio.trim() : "";
       if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
         try {
@@ -381,6 +399,10 @@ export async function POST(request: NextRequest) {
           parsed.hourlyRateOL = resolvedOL;
           parsed.isALTutor = isALTutor !== undefined ? Boolean(isALTutor) : true;
           parsed.isOLTutor = isOLTutor !== undefined ? Boolean(isOLTutor) : true;
+          if (workspaceResult?.workspaceEmail) {
+            parsed.googleWorkspaceEmail = workspaceResult.workspaceEmail;
+            parsed.workspaceProvisioned = workspaceResult.success || workspaceResult.alreadyExisted;
+          }
           initialBio = JSON.stringify(parsed);
         } catch {
           const resolvedAL = String(hourlyRateAL || hourlyRate || "5000").trim();
@@ -392,14 +414,22 @@ export async function POST(request: NextRequest) {
             hourlyRateOL: resolvedOL,
             isALTutor: isALTutor !== undefined ? Boolean(isALTutor) : true,
             isOLTutor: isOLTutor !== undefined ? Boolean(isOLTutor) : true,
+            googleWorkspaceEmail: workspaceResult?.workspaceEmail || undefined,
+            workspaceProvisioned: workspaceResult?.success || workspaceResult?.alreadyExisted || false,
           });
         }
       }
 
+      // If requested or if tutor, use Workspace email if chosen
+      const primaryUserEmail =
+        body.useWorkspaceEmailAsLogin && workspaceResult?.workspaceEmail
+          ? workspaceResult.workspaceEmail.toLowerCase()
+          : email.trim().toLowerCase();
+
       const newUser = await prisma.user.create({
         data: {
           name,
-          email: email.trim().toLowerCase(),
+          email: primaryUserEmail,
           passwordHash: hashedPassword,
           role: assignedRole,
           emailVerified: assignedRole === Role.TUTOR ? null : new Date(),
@@ -430,10 +460,71 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         user: safeNewUser,
+        workspaceEmail: workspaceResult?.workspaceEmail,
+        workspaceProvisioned: workspaceResult?.success ?? false,
+        workspaceAlreadyExisted: workspaceResult?.alreadyExisted ?? false,
+        activationUrl: workspaceResult?.activationUrl,
         requiresVerification: assignedRole === Role.TUTOR,
         message: assignedRole === Role.TUTOR
-          ? "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time."
+          ? workspaceResult?.success
+            ? `Tutor account created and Google Workspace email (${workspaceResult.workspaceEmail}) provisioned successfully.`
+            : workspaceResult?.alreadyExisted
+            ? `Tutor account created. Google Workspace email (${workspaceResult.workspaceEmail}) is already active.`
+            : "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time."
           : "User account created successfully.",
+      });
+    }
+
+    if (action === "provision_workspace_tutor") {
+      const { userId, customUsername } = body;
+      if (!userId) {
+        return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+      }
+
+      const tutor = await prisma.user.findUnique({ where: { id: userId } });
+      if (!tutor) {
+        return NextResponse.json({ error: "Tutor not found." }, { status: 404 });
+      }
+
+      const wsResult = await createGoogleWorkspaceTutorAccount({
+        name: tutor.name,
+        email: tutor.email,
+        phone: tutor.phone || undefined,
+        customUsername,
+      });
+
+      let parsedBio: any = {};
+      try {
+        if (tutor.bio && tutor.bio.trim().startsWith("{")) {
+          parsedBio = JSON.parse(tutor.bio);
+        } else {
+          parsedBio = { about: tutor.bio || "" };
+        }
+      } catch {
+        parsedBio = { about: tutor.bio || "" };
+      }
+
+      parsedBio.googleWorkspaceEmail = wsResult.workspaceEmail;
+      parsedBio.workspaceProvisioned = wsResult.success || wsResult.alreadyExisted;
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { bio: JSON.stringify(parsedBio) },
+      });
+
+      broadcastLMSEvent("USERS_CHANGED");
+
+      return NextResponse.json({
+        success: wsResult.success || wsResult.alreadyExisted,
+        workspaceEmail: wsResult.workspaceEmail,
+        alreadyExisted: wsResult.alreadyExisted,
+        error: wsResult.error,
+        activationUrl: wsResult.activationUrl,
+        message: wsResult.success
+          ? `Successfully provisioned Google Workspace email: ${wsResult.workspaceEmail}`
+          : wsResult.alreadyExisted
+          ? `Google Workspace email ${wsResult.workspaceEmail} is already active.`
+          : `Workspace provisioning: ${wsResult.error}`,
       });
     }
 

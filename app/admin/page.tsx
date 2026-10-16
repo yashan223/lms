@@ -233,6 +233,10 @@ export default function AdminDashboardPage() {
   const [formUserIsALTutor, setFormUserIsALTutor] = useState(true);
   const [formUserIsOLTutor, setFormUserIsOLTutor] = useState(true);
   const [formUserTimezone, setFormUserTimezone] = useState(DEFAULT_TIMEZONE);
+  const [formUserWorkspaceUsername, setFormUserWorkspaceUsername] = useState("");
+  const [formUserAutoWorkspace, setFormUserAutoWorkspace] = useState(true);
+  const [formUserUseWorkspaceLogin, setFormUserUseWorkspaceLogin] = useState(true);
+  const [isProvisioningWorkspaceId, setIsProvisioningWorkspaceId] = useState<string | null>(null);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
 
   const [showGrantTokensModal, setShowGrantTokensModal] = useState(false);
@@ -741,6 +745,9 @@ export default function AdminDashboardPage() {
     setFormUserIsALTutor(true);
     setFormUserIsOLTutor(true);
     setFormUserTimezone(DEFAULT_TIMEZONE);
+    setFormUserWorkspaceUsername("");
+    setFormUserAutoWorkspace(true);
+    setFormUserUseWorkspaceLogin(true);
     setIsAddUserFullScreen(true);
     setShowAddUserModal(true);
   };
@@ -766,18 +773,47 @@ export default function AdminDashboardPage() {
           isALTutor: formUserIsALTutor,
           isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,
+          customWorkspaceUsername: formUserWorkspaceUsername.trim() || undefined,
+          createWorkspaceAccount: formUserAutoWorkspace,
+          useWorkspaceEmailAsLogin: formUserUseWorkspaceLogin,
         }),
       });
 
+      const data = await res.json();
       if (res.ok) {
         setShowAddUserModal(false);
         fetchAdminData();
+        if (data.message) {
+          alert(data.message);
+        }
       } else {
-        const data = await res.json();
         alert(data.error || "Failed to create user");
       }
     } catch (err) {
       console.error("Error creating user:", err);
+    }
+  };
+
+  const handleProvisionWorkspaceTutor = async (userId: string) => {
+    try {
+      setIsProvisioningWorkspaceId(userId);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "provision_workspace_tutor",
+          userId,
+        }),
+      });
+      const data = await res.json();
+      if (data.message) {
+        alert(data.message);
+      }
+      fetchAdminData();
+    } catch (err) {
+      console.error("Error provisioning workspace tutor:", err);
+    } finally {
+      setIsProvisioningWorkspaceId(null);
     }
   };
 
@@ -2719,6 +2755,35 @@ export default function AdminDashboardPage() {
                               <div>
                                 <div className="font-bold text-slate-900">{u.name}</div>
                                 <div className="text-[11px] text-slate-500">{u.email}</div>
+                                {(() => {
+                                  if (u.role !== "TUTOR" && (u.role as any) !== "INSTRUCTOR") return null;
+                                  let wsEmail: string | null = null;
+                                  if (u.email?.endsWith("@pulseedu.online")) {
+                                    wsEmail = u.email;
+                                  } else {
+                                    try {
+                                      if (u.bio?.startsWith("{")) {
+                                        const p = JSON.parse(u.bio);
+                                        if (p?.googleWorkspaceEmail) wsEmail = p.googleWorkspaceEmail;
+                                      }
+                                    } catch {}
+                                  }
+                                  if (wsEmail && wsEmail !== u.email) {
+                                    return (
+                                      <div className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1 font-mono mt-0.5 w-fit" title="Google Workspace Faculty Email">
+                                        <span>Workspace: {wsEmail}</span>
+                                      </div>
+                                    );
+                                  } else if (wsEmail) {
+                                    return (
+                                      <div className="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-semibold w-fit mt-0.5 flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        <span>Workspace Active</span>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                                 {u.phone && (
                                   <div className="text-[10px] text-blue-600 font-mono flex items-center gap-1 mt-0.5">
                                     <Phone className="w-3 h-3" />
@@ -2818,6 +2883,17 @@ export default function AdminDashboardPage() {
                                     <span>Enroll</span>
                                   </button>
                                 </>
+                              )}
+                              {(u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR") && (
+                                <button
+                                  onClick={() => handleProvisionWorkspaceTutor(u.id)}
+                                  disabled={isProvisioningWorkspaceId === u.id}
+                                  className="h-7 px-2 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
+                                  title="Provision or sync official Google Workspace account for this tutor"
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                  <span>{isProvisioningWorkspaceId === u.id ? "Syncing..." : "Workspace"}</span>
+                                </button>
                               )}
                               <button
                                 onClick={() => handleOpenEditUser(u)}
@@ -5368,6 +5444,93 @@ export default function AdminDashboardPage() {
                   <p className="text-[11px] text-slate-500">
                     💡 Tutors conducting both A/L and O/L classes will be credited according to the respective syllabus level.
                   </p>
+                </div>
+              )}
+
+              {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
+                <div className="space-y-3.5 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-slate-50 to-teal-50/50 border border-emerald-200/80 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-emerald-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                        G
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-900 text-sm block">
+                          Google Workspace Faculty Account
+                        </label>
+                        <p className="text-[11px] text-slate-500">
+                          Automatically provision an official Google Workspace email for this tutor
+                        </p>
+                      </div>
+                    </div>
+                    <span className="self-start sm:self-center text-[10px] text-emerald-800 font-extrabold bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-md shrink-0">
+                      @pulseedu.online
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={formUserAutoWorkspace}
+                        onChange={(e) => setFormUserAutoWorkspace(e.target.checked)}
+                        className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-800 text-xs block">
+                          Create Google Workspace account on @pulseedu.online
+                        </span>
+                        <span className="text-[11px] text-slate-500 block">
+                          Automatically grants Google Meet classroom hosting, Google Drive cloud storage, and Google Calendar.
+                        </span>
+                      </div>
+                    </label>
+
+                    {formUserAutoWorkspace && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                          <label className="font-bold block mb-1 text-[11px] text-slate-700">
+                            Custom Workspace Username (Optional)
+                          </label>
+                          <div className="flex items-center">
+                            <Input
+                              placeholder={
+                                formUserName
+                                  ? formUserName.toLowerCase().trim().replace(/\s+/g, ".")
+                                  : "firstname.lastname"
+                              }
+                              value={formUserWorkspaceUsername}
+                              onChange={(e) => setFormUserWorkspaceUsername(e.target.value)}
+                              className="rounded-l-xl rounded-r-none font-mono text-xs h-9 bg-white"
+                            />
+                            <span className="h-9 px-2.5 bg-slate-100 border border-l-0 border-slate-200 text-slate-600 text-[11px] font-mono flex items-center rounded-r-xl select-none">
+                              @pulseedu.online
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            Leave blank to auto-generate from tutor full name.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col justify-center">
+                          <label className="flex items-center gap-2 cursor-pointer select-none pt-2 sm:pt-0">
+                            <input
+                              type="checkbox"
+                              checked={formUserUseWorkspaceLogin}
+                              onChange={(e) => setFormUserUseWorkspaceLogin(e.target.checked)}
+                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                            />
+                            <span className="text-xs text-slate-700 font-medium">
+                              Use Workspace email as primary LMS login
+                            </span>
+                          </label>
+                          <p className="text-[10px] text-slate-400 mt-1 pl-6">
+                            When ticked, the tutor logs in directly using their @pulseedu.online account.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

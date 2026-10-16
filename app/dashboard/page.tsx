@@ -1446,12 +1446,22 @@ function DashboardContent() {
                                   {ev.course.title}
                                 </span>
                               )}
-                              {ev.actualStartTime && ev.actualEndTime && (
+                              {ev.actualStartTime && ev.actualEndTime ? (
                                 <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
                                   <Clock className="w-3 h-3 text-emerald-600" />
-                                  Verified: {formatTimeInTimezone(ev.actualStartTime, userTimezone)} - {formatTimeInTimezone(ev.actualEndTime, userTimezone, { includeAbbr: true })}
+                                  Google Meet: {formatTimeInTimezone(ev.actualStartTime, userTimezone)} - {formatTimeInTimezone(ev.actualEndTime, userTimezone, { includeAbbr: true })}
                                 </span>
-                              )}
+                              ) : ev.startedAt && ev.endedAt ? (
+                                <span className="text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-slate-500" />
+                                  Class: {formatTimeInTimezone(ev.startedAt, userTimezone)} - {formatTimeInTimezone(ev.endedAt, userTimezone, { includeAbbr: true })}
+                                </span>
+                              ) : ev.status === "LIVE" && (ev.actualStartTime || ev.startedAt) ? (
+                                <span className="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 animate-pulse">
+                                  <Clock className="w-3 h-3 text-red-600" />
+                                  Live since {formatTimeInTimezone((ev.actualStartTime || ev.startedAt)!, userTimezone, { includeAbbr: true })}
+                                </span>
+                              ) : null}
                             </div>
                           </div>
                         </div>

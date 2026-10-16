@@ -2063,13 +2063,23 @@ function TutorDashboardContent() {
                                     {ev.meetingLink}
                                   </a>
                                 )}
-                                {ev.actualStartTime && ev.actualEndTime && (
+                                {ev.actualStartTime && ev.actualEndTime ? (
                                   <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
                                     <Clock className="w-3 h-3 text-emerald-600" />
                                     Google Meet: {formatTimeInTimezone(ev.actualStartTime, tutorTimezone)} - {formatTimeInTimezone(ev.actualEndTime, tutorTimezone, { includeAbbr: true })}
                                     {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
                                   </span>
-                                )}
+                                ) : ev.startedAt && ev.endedAt ? (
+                                  <span className="text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-slate-500" />
+                                    Class: {formatTimeInTimezone(ev.startedAt, tutorTimezone)} - {formatTimeInTimezone(ev.endedAt, tutorTimezone, { includeAbbr: true })}
+                                  </span>
+                                ) : ev.status === "LIVE" && (ev.actualStartTime || ev.startedAt) ? (
+                                  <span className="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 animate-pulse">
+                                    <Clock className="w-3 h-3 text-red-600" />
+                                    Live since {formatTimeInTimezone((ev.actualStartTime || ev.startedAt)!, tutorTimezone, { includeAbbr: true })}
+                                  </span>
+                                ) : null}
                               </div>
                             </div>
 

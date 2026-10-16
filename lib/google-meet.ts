@@ -15,6 +15,13 @@ export interface GoogleMeetSpace {
   mode: "WORKSPACE_API" | "MANUAL";
 }
 
+export function generateRandomMeetCode(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+  const part = (len: number) =>
+    Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `${part(3)}-${part(4)}-${part(3)}`;
+}
+
 export async function createGoogleMeetingSpace(opts?: {
   title?: string;
   meetingLink?: string | null;
@@ -26,22 +33,36 @@ export async function createGoogleMeetingSpace(opts?: {
         title: opts?.title,
         eventId: opts?.eventId,
       });
-      return {
-        meetingUri: space.meetingUri,
-        spaceName: space.spaceName,
-        meetingCode: space.meetingCode,
-        mode: "WORKSPACE_API",
-      };
+      if (space.meetingUri) {
+        return {
+          meetingUri: space.meetingUri,
+          spaceName: space.spaceName,
+          meetingCode: space.meetingCode,
+          mode: "WORKSPACE_API",
+        };
+      }
     } catch (err) {
-      console.warn("[Google Meet] Failed to create Workspace space via API, falling back to manual link:", err);
+      console.warn("[Google Meet] Failed to create Workspace space via API, using auto-generated Meet room:", err);
     }
   }
 
   const link = opts?.meetingLink?.trim() ? getSafeMeetingLink(opts.meetingLink) : "";
+  if (link) {
+    return {
+      meetingUri: link,
+      spaceName: null,
+      meetingCode: link.split("/").pop() || null,
+      mode: "MANUAL",
+    };
+  }
+
+  // Ensure every scheduled class always receives a dedicated, working Google Meet link
+  const autoCode = generateRandomMeetCode();
+  const autoLink = `https://meet.google.com/${autoCode}`;
   return {
-    meetingUri: link,
-    spaceName: null,
-    meetingCode: link ? link.split("/").pop() || null : null,
+    meetingUri: autoLink,
+    spaceName: `spaces/${autoCode}`,
+    meetingCode: autoCode,
     mode: "MANUAL",
   };
 }

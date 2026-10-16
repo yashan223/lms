@@ -169,9 +169,45 @@ app.prepare().then(() => {
     console.log(`> Native WebSocket server attached at ws://${hostname}:${port}/ws`);
   });
 
+  // ─── Background: Auto-sync Google Workspace recordings every 5 minutes ───
+  // Polls all active/recent meetings for actual start time, end time, and Drive recording.
+  const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  const autoSyncGoogleWorkspace = async () => {
+    try {
+      const base = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${port}`;
+      const res = await fetch(`${base}/api/meetings/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Internal-Sync": "1" },
+        body: JSON.stringify({ action: "auto_sync_all" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.syncedEvents > 0 || data.syncedTrials > 0) {
+          console.log(`[auto-sync] Google Workspace sync: ${data.syncedEvents} class(es), ${data.syncedTrials} trial(s) updated.`);
+        }
+      }
+    } catch (err) {
+      // Non-fatal — server may still be starting up
+    }
+  };
+
+  // Delay first run by 30s to let the server fully initialise
+  const firstSyncTimeout = setTimeout(() => {
+    autoSyncGoogleWorkspace();
+  }, 30 * 1000);
+
+  const autoSyncInterval = setInterval(autoSyncGoogleWorkspace, SYNC_INTERVAL_MS);
+
+  if (firstSyncTimeout.unref) firstSyncTimeout.unref();
+  if (autoSyncInterval.unref) autoSyncInterval.unref();
+
+  console.log(`> Google Workspace auto-sync enabled (every ${SYNC_INTERVAL_MS / 60000} min)`);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const handleShutdown = (signal) => {
     console.log(`\n> Received ${signal}. Closing server gracefully...`);
     clearInterval(heartbeatInterval);
+    clearInterval(autoSyncInterval);
     for (const ws of clients) {
       try {
         ws.close(1001, "Server shutdown");

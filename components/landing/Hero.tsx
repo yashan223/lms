@@ -66,23 +66,21 @@ export function Hero() {
 
   return (
     <section className="relative w-full overflow-hidden bg-white border-b border-slate-200">
-      <div className="w-full h-[560px] lg:h-[680px] grid grid-cols-1 lg:grid-cols-12 relative items-stretch overflow-hidden">
-        <div className="lg:col-span-6 relative w-full h-full overflow-hidden bg-slate-900 self-stretch">
+      <div className="w-full h-auto lg:h-[680px] grid grid-cols-1 lg:grid-cols-12 relative items-stretch overflow-hidden">
+        <div className="hidden lg:block lg:col-span-6 relative w-full h-full overflow-hidden bg-slate-900 self-stretch">
           <img
             src="/images/campus_students_hero.jpg"
             alt="London A/L and O/L Students"
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
 
-          <div className="hidden lg:block absolute inset-y-0 right-0 w-32 bg-gradient-to-r from-transparent via-white/70 to-white pointer-events-none" />
-
-          <div className="lg:hidden absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-r from-transparent via-white/70 to-white pointer-events-none" />
         </div>
 
-        <div className="lg:col-span-6 px-6 sm:px-10 lg:px-12 xl:px-16 py-10 sm:py-14 flex flex-col justify-center items-center relative z-10 bg-white overflow-hidden">
+        <div className="col-span-1 lg:col-span-6 px-4 sm:px-10 lg:px-12 xl:px-16 py-8 sm:py-12 lg:py-14 flex flex-col justify-center items-center relative z-10 bg-white">
           <div className="max-w-xl w-full flex flex-col items-center">
-            <div className="text-center space-y-3 mb-8">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.1]">
+            <div className="text-center space-y-3 mb-6 sm:mb-8">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.1]">
                 PulseEDU Global
               </h1>
               <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
@@ -90,12 +88,12 @@ export function Hero() {
               </p>
             </div>
 
-            <div className="relative py-6 max-w-lg mx-auto w-full flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+            <div className="relative py-4 sm:py-6 max-w-lg mx-auto w-full flex items-center justify-center">
+              <div className="hidden sm:flex absolute inset-0 items-center justify-center pointer-events-none opacity-40">
                 <div className="w-72 h-40 border border-slate-300 transform rotate-45" />
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5 relative z-10">
+              <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-5 relative z-10">
                 {diamondPrograms.map((prog) => {
                   const Icon = prog.icon;
 

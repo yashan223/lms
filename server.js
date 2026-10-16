@@ -2,8 +2,25 @@ const { createServer } = require("http");
 const next = require("next");
 const { WebSocketServer, WebSocket } = require("ws");
 const { loadEnvConfig } = require("@next/env");
+const fs = require("fs");
+const path = require("path");
 
 loadEnvConfig(process.cwd());
+
+// Auto-sync Google Workspace Service Account credentials into process.env from JSON
+try {
+  const jsonPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || "pulseedu-lms-2553918dfc26.json";
+  const fullJsonPath = path.isAbsolute(jsonPath) ? jsonPath : path.join(process.cwd(), jsonPath);
+  if (fs.existsSync(fullJsonPath)) {
+    const parsed = JSON.parse(fs.readFileSync(fullJsonPath, "utf8"));
+    if (parsed.client_email) process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email;
+    if (parsed.private_key) process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = parsed.private_key;
+    if (parsed.project_id) process.env.GOOGLE_PROJECT_ID = parsed.project_id;
+    console.log(`[server] Synchronized service account env from JSON: ${jsonPath}`);
+  }
+} catch (e) {
+  console.warn("[server] Could not load service account JSON into env:", e.message);
+}
 
 const dev = process.env.NODE_ENV === "development" || process.env.npm_lifecycle_event === "dev";
 if (!process.env.NODE_ENV) {

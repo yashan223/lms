@@ -356,13 +356,20 @@ export async function POST(request: NextRequest) {
 
     if (action === "create_user" || action === "create_candidate") {
       const { name, email, password, phone, role, headline, bio, initialCourseId, hourlyRate, hourlyRateAL, hourlyRateOL, isALTutor, isOLTutor, timezone, country } = body;
-      const assignedRole = (role as Role) || Role.STUDENT;
+      const assignedRole = (role as Role) || Role.TUTOR;
+
+      if (assignedRole === Role.STUDENT) {
+        return NextResponse.json(
+          { error: "Students cannot be created manually by administrators. Students must register via the student portal." },
+          { status: 400 }
+        );
+      }
 
       if (!email || typeof email !== "string" || !email.trim()) {
         return NextResponse.json({ error: "An email address is required for every user account." }, { status: 400 });
       }
 
-      const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "TutorPass123!" : "StudentPass123!");
+      const rawPassword = password || (assignedRole === Role.ADMIN ? "AdminPass123!" : "TutorPass123!");
       const hashedPassword = hashPassword(rawPassword);
 
       const resolvedTimezone = timezone
@@ -436,26 +443,13 @@ export async function POST(request: NextRequest) {
           phone: phone ? phone.trim() : null,
           country: country ? country.trim() : null,
           timezone: resolvedTimezone,
-          headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR" ? "Senior Tutor" : "London A/L Student"),
+          headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : "Senior Tutor"),
           bio: initialBio,
           avatar: null,
         },
       });
 
-      if (initialCourseId && assignedRole === Role.STUDENT) {
-        await prisma.enrollment.create({
-          data: {
-            userId: newUser.id,
-            courseId: initialCourseId,
-          },
-        });
-      }
-
       broadcastLMSEvent("USERS_CHANGED");
-      if (initialCourseId && assignedRole === Role.STUDENT) {
-        broadcastLMSEvent("ENROLLMENTS_CHANGED");
-        broadcastLMSEvent("COURSES_CHANGED");
-      }
       const { passwordHash: _ph, ...safeNewUser } = newUser;
       return NextResponse.json({
         success: true,

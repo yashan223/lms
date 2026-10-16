@@ -1,4 +1,18 @@
 import type { NextConfig } from "next";
+import fs from "fs";
+import path from "path";
+
+// Auto-sync Google Workspace Service Account credentials into process.env from JSON
+try {
+  const jsonPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || "pulseedu-lms-2553918dfc26.json";
+  const fullJsonPath = path.isAbsolute(jsonPath) ? jsonPath : path.join(process.cwd(), jsonPath);
+  if (fs.existsSync(fullJsonPath)) {
+    const parsed = JSON.parse(fs.readFileSync(fullJsonPath, "utf8"));
+    if (parsed.client_email) process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email;
+    if (parsed.private_key) process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = parsed.private_key;
+    if (parsed.project_id) process.env.GOOGLE_PROJECT_ID = parsed.project_id;
+  }
+} catch {}
 
 const nextConfig: NextConfig = {
   env: {

@@ -1,25 +1,118 @@
+import fs from "fs";
+import path from "path";
 import { JWT } from "google-auth-library";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 
+interface ServiceAccountCredentials {
+  clientEmail: string;
+  privateKey: string;
+  projectId?: string;
+  sourceFile?: string;
+}
+
+let cachedCredentials: ServiceAccountCredentials | null = null;
+
+export function loadServiceAccountCredentials(): ServiceAccountCredentials | null {
+  if (cachedCredentials) {
+    return cachedCredentials;
+  }
+
+  // 1. Try explicit path from GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_SERVICE_ACCOUNT_KEY_PATH
+  const explicitPath =
+    process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim() ||
+    process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH?.trim();
+
+  if (explicitPath) {
+    const fullPath = path.isAbsolute(explicitPath)
+      ? explicitPath
+      : path.join(process.cwd(), explicitPath);
+
+    if (fs.existsSync(fullPath)) {
+      try {
+        const raw = fs.readFileSync(fullPath, "utf8");
+        const parsed = JSON.parse(raw);
+        if (parsed.client_email && parsed.private_key) {
+          process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email;
+          process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = parsed.private_key;
+          if (parsed.project_id) process.env.GOOGLE_PROJECT_ID = parsed.project_id;
+          console.log(`[Google Workspace] Loaded service account credentials from explicit JSON: ${explicitPath}`);
+          cachedCredentials = {
+            clientEmail: parsed.client_email,
+            privateKey: parsed.private_key.replace(/\\n/g, "\n"),
+            projectId: parsed.project_id,
+            sourceFile: explicitPath,
+          };
+          return cachedCredentials;
+        }
+      } catch (err) {
+        console.warn(`[Google Workspace] Failed to parse key file at ${fullPath}:`, err);
+      }
+    }
+  }
+
+  // 2. Auto-detect service account JSON file in project root (e.g. pulseedu-*.json)
+  try {
+    const rootDir = process.cwd();
+    const files = fs.readdirSync(rootDir);
+    const keyFile = files.find(
+      (f) =>
+        (f.startsWith("pulseedu-") || f.startsWith("service-account") || f.includes("gserviceaccount")) &&
+        f.endsWith(".json")
+    );
+
+    if (keyFile) {
+      const fullPath = path.join(rootDir, keyFile);
+      const raw = fs.readFileSync(fullPath, "utf8");
+      const parsed = JSON.parse(raw);
+      if (parsed.client_email && parsed.private_key) {
+        process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email;
+        process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = parsed.private_key;
+        if (parsed.project_id) process.env.GOOGLE_PROJECT_ID = parsed.project_id;
+        console.log(`[Google Workspace] Auto-detected service account credentials from root JSON: ${keyFile}`);
+        cachedCredentials = {
+          clientEmail: parsed.client_email,
+          privateKey: parsed.private_key.replace(/\\n/g, "\n"),
+          projectId: parsed.project_id,
+          sourceFile: keyFile,
+        };
+        return cachedCredentials;
+      }
+    }
+  } catch (err) {
+    console.warn("[Google Workspace] Error scanning for root service account JSON:", err);
+  }
+
+  // 3. Fall back to GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+  const envEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
+  const envKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim();
+  if (envEmail && envKey) {
+    cachedCredentials = {
+      clientEmail: envEmail,
+      privateKey: envKey.replace(/\\n/g, "\n"),
+    };
+    return cachedCredentials;
+  }
+
+  return null;
+}
+
 export function isGoogleWorkspaceConfigured(): boolean {
+  const creds = loadServiceAccountCredentials();
   return Boolean(
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim() &&
-    process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim() &&
-    process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim()
+    creds?.clientEmail &&
+    creds?.privateKey &&
+    (process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online")
   );
 }
 
 export function getGoogleWorkspaceAuthClient(subjectOverride?: string | null): JWT | null {
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
-  let privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim();
-  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim();
-
-  if (!clientEmail || !privateKey) {
+  const creds = loadServiceAccountCredentials();
+  if (!creds?.clientEmail || !creds?.privateKey) {
     return null;
   }
 
-  privateKey = privateKey.replace(/\\n/g, "\n");
+  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
 
   const effectiveSubject =
     subjectOverride === null
@@ -29,8 +122,8 @@ export function getGoogleWorkspaceAuthClient(subjectOverride?: string | null): J
       : adminEmail || undefined;
 
   return new JWT({
-    email: clientEmail,
-    key: privateKey,
+    email: creds.clientEmail,
+    key: creds.privateKey,
     ...(effectiveSubject ? { subject: effectiveSubject } : {}),
     scopes: [
       "https://www.googleapis.com/auth/meetings.space.created",
@@ -45,6 +138,37 @@ export function getGoogleWorkspaceAuthClient(subjectOverride?: string | null): J
   });
 }
 
+async function extractClientHeaders(client: JWT): Promise<Record<string, string>> {
+  try {
+    const tokenRes = await client.getAccessToken();
+    if (tokenRes?.token) {
+      return {
+        Authorization: `Bearer ${tokenRes.token}`,
+      };
+    }
+  } catch {
+    // Fall back to getRequestHeaders below
+  }
+
+  const raw = (await client.getRequestHeaders()) as any;
+  const result: Record<string, string> = {};
+  if (typeof raw?.forEach === "function") {
+    raw.forEach((val: string, key: string) => {
+      result[key] = val;
+    });
+  } else if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw)) {
+      if (typeof v === "string") result[k] = v;
+    }
+  }
+
+  if (result["authorization"] && !result["Authorization"]) {
+    result["Authorization"] = result["authorization"];
+  }
+
+  return result;
+}
+
 /**
  * Returns authorization headers for Google Workspace APIs.
  * Tries impersonating adminEmail first (for Workspace domain delegation).
@@ -55,14 +179,14 @@ export async function getGoogleWorkspaceHeaders(preferDirect = false): Promise<R
   if (preferDirect) {
     const directClient = getGoogleWorkspaceAuthClient(null);
     if (!directClient) throw new Error("Google Workspace credentials not configured");
-    return (await directClient.getRequestHeaders()) as unknown as Record<string, string>;
+    return extractClientHeaders(directClient);
   }
 
   const client = getGoogleWorkspaceAuthClient();
   if (!client) throw new Error("Google Workspace credentials not configured");
 
   try {
-    return (await client.getRequestHeaders()) as unknown as Record<string, string>;
+    return await extractClientHeaders(client);
   } catch (err: any) {
     const msg = String(err?.message || "");
     if (msg.includes("unauthorized_client") || err?.status === 401) {
@@ -71,7 +195,7 @@ export async function getGoogleWorkspaceHeaders(preferDirect = false): Promise<R
       );
       const directClient = getGoogleWorkspaceAuthClient(null);
       if (directClient) {
-        return (await directClient.getRequestHeaders()) as unknown as Record<string, string>;
+        return extractClientHeaders(directClient);
       }
     }
     throw err;
@@ -96,7 +220,7 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
     );
   }
 
-  const authHeaders = await auth.getRequestHeaders();
+  const authHeaders = await getGoogleWorkspaceHeaders();
 
   const response = await fetch("https://meet.googleapis.com/v2/spaces", {
     method: "POST",
@@ -141,13 +265,8 @@ export async function createGoogleCalendarEventWithMeet(opts: {
   startTime: Date;
   durationMinutes?: number;
 }): Promise<GoogleMeetSpaceResult> {
-  const auth = getGoogleWorkspaceAuthClient();
-  if (!auth) {
-    throw new Error("Google Workspace Service Account is not configured.");
-  }
-
-  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL!.trim();
-  const authHeaders = await auth.getRequestHeaders();
+  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
+  const authHeaders = await getGoogleWorkspaceHeaders();
 
   const startIso = opts.startTime.toISOString();
   const endTime = new Date(opts.startTime.getTime() + (opts.durationMinutes ?? 90) * 60 * 1000);
@@ -686,6 +805,50 @@ export interface CreateWorkspaceTutorResult {
 }
 
 /**
+ * Formats a phone number to strict E.164 format (+[country_code][number]),
+ * which is strictly required by Google Workspace Admin Directory API for recoveryPhone.
+ * If the number cannot be reliably formatted to E.164, returns undefined so Google
+ * does not reject the account creation with "Invalid recovery phone".
+ */
+export function formatToE164Phone(rawPhone?: string): string | undefined {
+  if (!rawPhone || typeof rawPhone !== "string") return undefined;
+
+  let cleaned = rawPhone.trim().replace(/[\s\-\(\)\.]/g, "");
+  if (!cleaned) return undefined;
+
+  // If starts with 00 (common international prefix like 0094...), replace with +
+  if (cleaned.startsWith("00")) {
+    cleaned = "+" + cleaned.slice(2);
+  }
+
+  // If starts with 0 followed by 9 digits (common local Sri Lankan mobile e.g. 0771234567)
+  if (/^0[1-9]\d{8}$/.test(cleaned)) {
+    cleaned = "+94" + cleaned.slice(1);
+  } else if (/^[1-9]\d{8}$/.test(cleaned)) {
+    // 771234567 without leading 0 or +94
+    cleaned = "+94" + cleaned;
+  }
+
+  // If already starts with +
+  if (cleaned.startsWith("+")) {
+    const digitsOnly = cleaned.slice(1).replace(/\D/g, "");
+    // E.164 requires 8 to 15 digits after +
+    if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+      return `+${digitsOnly}`;
+    }
+    return undefined;
+  }
+
+  // If digits only without +, but has valid country code length (e.g. 94771234567)
+  const digits = cleaned.replace(/\D/g, "");
+  if (digits.length >= 10 && digits.length <= 15) {
+    return `+${digits}`;
+  }
+
+  return undefined;
+}
+
+/**
  * Creates an official Google Workspace user account for a tutor.
  * Uses the Google Workspace Admin Directory API.
  * The created account gets an @pulseedu.online email address, with Drive, Meet, and Calendar enabled.
@@ -729,8 +892,14 @@ export async function createGoogleWorkspaceTutorAccount(params: {
 
   try {
     const authHeaders = await getGoogleWorkspaceHeaders();
+    const validatedPhone = formatToE164Phone(params.phone);
+    if (params.phone?.trim() && !validatedPhone) {
+      console.warn(
+        `[Google Workspace] Phone "${params.phone}" could not be converted to valid E.164. Omitting recoveryPhone to prevent Google Directory 400 error.`
+      );
+    }
 
-    const userBody = {
+    const userBody: any = {
       primaryEmail,
       name: {
         givenName,
@@ -739,9 +908,12 @@ export async function createGoogleWorkspaceTutorAccount(params: {
       password: initialPassword,
       changePasswordAtNextLogin: false,
       recoveryEmail: params.email.toLowerCase().trim() !== primaryEmail ? params.email.trim() : undefined,
-      recoveryPhone: params.phone?.trim() || undefined,
       orgUnitPath: "/",
     };
+
+    if (validatedPhone) {
+      userBody.recoveryPhone = validatedPhone;
+    }
 
     const res = await fetch("https://admin.googleapis.com/admin/directory/v1/users", {
       method: "POST",
@@ -772,6 +944,29 @@ export async function createGoogleWorkspaceTutorAccount(params: {
 
     const errText = await res.text();
     console.warn(`⚠️ [Google Workspace] Directory API error (${res.status}):`, errText);
+
+    // If Google rejected due to recovery phone format, retry immediately without recovery phone
+    if (res.status === 400 && (errText.includes("recovery phone") || errText.includes("recoveryPhone"))) {
+      console.warn(`[Google Workspace] Retrying user creation for ${primaryEmail} without recovery phone...`);
+      delete userBody.recoveryPhone;
+      const retryRes = await fetch("https://admin.googleapis.com/admin/directory/v1/users", {
+        method: "POST",
+        headers: {
+          ...authHeaders,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userBody),
+      });
+
+      if (retryRes.status === 200 || retryRes.status === 201) {
+        console.log(`✅ [Google Workspace] Successfully created tutor account (after removing invalid recovery phone): ${primaryEmail}`);
+        return {
+          success: true,
+          workspaceEmail: primaryEmail,
+          alreadyExisted: false,
+        };
+      }
+    }
 
     let activationUrl: string | undefined;
     if (errText.includes("SERVICE_DISABLED") || errText.includes("Admin SDK API has not been used")) {

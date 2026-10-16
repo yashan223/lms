@@ -37,6 +37,7 @@ import {
   Settings,
   Clock,
   Eye,
+  EyeOff,
   Sliders,
   Menu,
   X,
@@ -83,6 +84,7 @@ import {
   formatForUser,
   getUserBrowserTimezone,
 } from "@/lib/timezones";
+import { COUNTRY_DIAL_CODES, DEFAULT_DIAL_CODE } from "@/lib/country-codes";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -223,8 +225,10 @@ export default function AdminDashboardPage() {
   const [formUserName, setFormUserName] = useState("");
   const [formUserEmail, setFormUserEmail] = useState("");
   const [formUserPhone, setFormUserPhone] = useState("");
+  const [formUserCountryDial, setFormUserCountryDial] = useState(DEFAULT_DIAL_CODE);
   const [formUserPassword, setFormUserPassword] = useState("");
-  const [formUserRole, setFormUserRole] = useState("STUDENT");
+  const [showUserPassword, setShowUserPassword] = useState(false);
+  const [formUserRole, setFormUserRole] = useState("TUTOR");
   const [formUserHeadline, setFormUserHeadline] = useState("");
   const [formUserBio, setFormUserBio] = useState("");
   const [formUserHourlyRate, setFormUserHourlyRate] = useState("5000");
@@ -233,11 +237,23 @@ export default function AdminDashboardPage() {
   const [formUserIsALTutor, setFormUserIsALTutor] = useState(true);
   const [formUserIsOLTutor, setFormUserIsOLTutor] = useState(true);
   const [formUserTimezone, setFormUserTimezone] = useState(DEFAULT_TIMEZONE);
+  const [formUserEmailManual, setFormUserEmailManual] = useState(false);
   const [formUserWorkspaceUsername, setFormUserWorkspaceUsername] = useState("");
   const [formUserAutoWorkspace, setFormUserAutoWorkspace] = useState(true);
   const [formUserUseWorkspaceLogin, setFormUserUseWorkspaceLogin] = useState(true);
   const [isProvisioningWorkspaceId, setIsProvisioningWorkspaceId] = useState<string | null>(null);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
+  const [showUserCreatedSuccessModal, setShowUserCreatedSuccessModal] = useState(false);
+  const [createdUserSuccess, setCreatedUserSuccess] = useState<{
+    name: string;
+    email: string;
+    password?: string;
+    role: string;
+    message?: string;
+  } | null>(null);
+  const [copiedSuccessEmail, setCopiedSuccessEmail] = useState(false);
+  const [copiedSuccessPassword, setCopiedSuccessPassword] = useState(false);
+  const [showSuccessPassword, setShowSuccessPassword] = useState(false);
 
   const [showGrantTokensModal, setShowGrantTokensModal] = useState(false);
   const [selectedStudentForTokens, setSelectedStudentForTokens] = useState<any>(null);
@@ -734,9 +750,12 @@ export default function AdminDashboardPage() {
   const handleOpenAddUser = () => {
     setFormUserName("");
     setFormUserEmail("");
+    setFormUserEmailManual(false);
     setFormUserPhone("");
+    setFormUserCountryDial(DEFAULT_DIAL_CODE);
     setFormUserPassword("");
-    setFormUserRole("STUDENT");
+    setShowUserPassword(false);
+    setFormUserRole("TUTOR");
     setFormUserHeadline("");
     setFormUserBio("");
     setFormUserHourlyRate("5000");
@@ -755,14 +774,40 @@ export default function AdminDashboardPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const isTutor = formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR";
+      let resolvedEmail = formUserEmail.trim().toLowerCase();
+
+      if (isTutor) {
+        if (!resolvedEmail) {
+          alert("Please enter a username for the tutor's Google Workspace email.");
+          return;
+        }
+        if (!resolvedEmail.endsWith("@pulseedu.online")) {
+          const cleanUser = resolvedEmail.replace(/@.*$/, "").replace(/[^a-z0-9._-]/g, "");
+          if (!cleanUser) {
+            alert("Please provide a valid username for the tutor's @pulseedu.online email.");
+            return;
+          }
+          resolvedEmail = `${cleanUser}@pulseedu.online`;
+        }
+      }
+
+      let fullPhoneNumber = formUserPhone.trim();
+      if (fullPhoneNumber) {
+        if (!fullPhoneNumber.startsWith("+")) {
+          const digits = fullPhoneNumber.replace(/^0+/, "").replace(/[\s\-\(\)]/g, "");
+          fullPhoneNumber = digits ? `${formUserCountryDial}${digits}` : "";
+        }
+      }
+
       const res = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "create_user",
           name: formUserName,
-          email: formUserEmail,
-          phone: formUserPhone,
+          email: resolvedEmail,
+          phone: fullPhoneNumber || undefined,
           password: formUserPassword,
           role: formUserRole,
           headline: formUserHeadline,
@@ -773,9 +818,9 @@ export default function AdminDashboardPage() {
           isALTutor: formUserIsALTutor,
           isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,
-          customWorkspaceUsername: formUserWorkspaceUsername.trim() || undefined,
-          createWorkspaceAccount: formUserAutoWorkspace,
-          useWorkspaceEmailAsLogin: formUserUseWorkspaceLogin,
+          customWorkspaceUsername: isTutor ? resolvedEmail.replace(/@pulseedu\.online$/i, "") : undefined,
+          createWorkspaceAccount: isTutor ? true : formUserAutoWorkspace,
+          useWorkspaceEmailAsLogin: true,
         }),
       });
 
@@ -783,9 +828,17 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         setShowAddUserModal(false);
         fetchAdminData();
-        if (data.message) {
-          alert(data.message);
-        }
+        setCreatedUserSuccess({
+          name: formUserName,
+          email: resolvedEmail,
+          password: formUserPassword,
+          role: formUserRole,
+          message: data.message || "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time.",
+        });
+        setCopiedSuccessEmail(false);
+        setCopiedSuccessPassword(false);
+        setShowSuccessPassword(false);
+        setShowUserCreatedSuccessModal(true);
       } else {
         alert(data.error || "Failed to create user");
       }
@@ -2724,7 +2777,7 @@ export default function AdminDashboardPage() {
                     className="w-full sm:w-auto text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white gap-1.5 h-10 rounded-xl shadow-xs shadow-blue-500/20 cursor-pointer"
                   >
                     <UserPlus className="w-4 h-4 text-blue-100" />
-                    <span>+ Add New User</span>
+                    <span>+ Add Tutor / Admin</span>
                   </Button>
                 </div>
               </div>
@@ -5225,10 +5278,10 @@ export default function AdminDashboardPage() {
               <div>
                 <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
                   <UserPlus className="w-5 h-5 text-blue-600" />
-                  <span>Add New User</span>
+                  <span>Add New Tutor / Admin</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Create a student, tutor, or administrator account with custom regional settings and hourly rates.
+                  Create a tutor or administrator account with custom regional settings and Google Workspace provisioning.
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
@@ -5256,30 +5309,127 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Full Name</label>
-                  <Input required placeholder="Enter full name" value={formUserName} onChange={(e) => setFormUserName(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                  <Input
+                    required
+                    placeholder="Enter full name"
+                    value={formUserName}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setFormUserName(newName);
+                      if ((formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && !formUserEmailManual) {
+                        const slug = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "");
+                        setFormUserEmail(slug ? `${slug}@pulseedu.online` : "");
+                      }
+                    }}
+                    className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs"
+                  />
                 </div>
-                <div>
-                  <label className="font-bold block mb-1.5 text-slate-700">Email Address</label>
-                  <Input required type="email" placeholder="Enter email address" value={formUserEmail} onChange={(e) => setFormUserEmail(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
-                </div>
+                {formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR" ? (
+                  <div>
+                    <label className="font-bold block mb-1.5 text-slate-700">Google Workspace Email</label>
+                    <div className="flex items-center">
+                      <Input
+                        required
+                        type="text"
+                        placeholder="Enter username"
+                        value={formUserEmail.replace(/@pulseedu\.online$/i, "")}
+                        onChange={(e) => {
+                          setFormUserEmailManual(true);
+                          const clean = e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, "");
+                          setFormUserEmail(clean ? `${clean}@pulseedu.online` : "");
+                        }}
+                        className="rounded-l-xl rounded-r-none font-mono text-xs h-10 bg-white focus-visible:ring-emerald-400 border-r-0"
+                      />
+                      <span className="h-10 px-3 bg-slate-100 border border-slate-200 text-slate-700 font-bold font-mono text-xs flex items-center rounded-r-xl select-none shrink-0">
+                        @pulseedu.online
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="font-bold block mb-1.5 text-slate-700">Email Address</label>
+                    <Input
+                      required
+                      type="email"
+                      placeholder="Enter email address"
+                      value={formUserEmail}
+                      onChange={(e) => {
+                        setFormUserEmailManual(true);
+                        setFormUserEmail(e.target.value);
+                      }}
+                      className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Role</label>
-                  <select value={formUserRole} onChange={(e) => setFormUserRole(e.target.value)} className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-400">
-                    <option value="STUDENT">Student</option>
+                  <select
+                    value={formUserRole}
+                    onChange={(e) => {
+                      const newRole = e.target.value;
+                      setFormUserRole(newRole);
+                      if ((newRole === "TUTOR" || (newRole as any) === "INSTRUCTOR") && !formUserEmailManual) {
+                        const slug = formUserName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "");
+                        setFormUserEmail(slug ? `${slug}@pulseedu.online` : "");
+                      } else if (newRole === "ADMIN") {
+                        if (formUserEmail.endsWith("@pulseedu.online") && !formUserEmailManual) {
+                          setFormUserEmail("");
+                        }
+                      }
+                    }}
+                    className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-400"
+                  >
                     <option value="TUTOR">Tutor</option>
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Contact Number</label>
-                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                  <div className="flex items-center">
+                    <select
+                      value={formUserCountryDial}
+                      onChange={(e) => setFormUserCountryDial(e.target.value)}
+                      className="h-10 px-2.5 rounded-l-xl rounded-r-none border border-r-0 border-slate-200 bg-slate-50 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-400 focus:z-10 shrink-0 cursor-pointer outline-none"
+                    >
+                      {COUNTRY_DIAL_CODES.map((c) => (
+                        <option key={`${c.code}-${c.dial}`} value={c.dial}>
+                          {c.flag} {c.dial} ({c.name})
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      type="tel"
+                      placeholder="77 123 4567"
+                      value={formUserPhone}
+                      onChange={(e) => setFormUserPhone(e.target.value)}
+                      className="rounded-l-none rounded-r-xl focus-visible:ring-blue-400 h-10 text-xs flex-1"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Initial Password</label>
-                  <Input required type="password" placeholder="Enter initial password" value={formUserPassword} onChange={(e) => setFormUserPassword(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                  <div className="relative">
+                    <Input
+                      required
+                      type={showUserPassword ? "text" : "password"}
+                      placeholder="Enter initial password"
+                      value={formUserPassword}
+                      onChange={(e) => setFormUserPassword(e.target.value)}
+                      className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowUserPassword(!showUserPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer"
+                      title={showUserPassword ? "Hide password" : "Show password"}
+                      aria-label={showUserPassword ? "Hide password" : "Show password"}
+                    >
+                      {showUserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -5447,93 +5597,6 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {(formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && (
-                <div className="space-y-3.5 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-slate-50 to-teal-50/50 border border-emerald-200/80 shadow-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-emerald-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                        G
-                      </div>
-                      <div>
-                        <label className="font-bold text-slate-900 text-sm block">
-                          Google Workspace Faculty Account
-                        </label>
-                        <p className="text-[11px] text-slate-500">
-                          Automatically provision an official Google Workspace email for this tutor
-                        </p>
-                      </div>
-                    </div>
-                    <span className="self-start sm:self-center text-[10px] text-emerald-800 font-extrabold bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-md shrink-0">
-                      @pulseedu.online
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={formUserAutoWorkspace}
-                        onChange={(e) => setFormUserAutoWorkspace(e.target.checked)}
-                        className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
-                      />
-                      <div>
-                        <span className="font-bold text-slate-800 text-xs block">
-                          Create Google Workspace account on @pulseedu.online
-                        </span>
-                        <span className="text-[11px] text-slate-500 block">
-                          Automatically grants Google Meet classroom hosting, Google Drive cloud storage, and Google Calendar.
-                        </span>
-                      </div>
-                    </label>
-
-                    {formUserAutoWorkspace && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div>
-                          <label className="font-bold block mb-1 text-[11px] text-slate-700">
-                            Custom Workspace Username (Optional)
-                          </label>
-                          <div className="flex items-center">
-                            <Input
-                              placeholder={
-                                formUserName
-                                  ? formUserName.toLowerCase().trim().replace(/\s+/g, ".")
-                                  : "firstname.lastname"
-                              }
-                              value={formUserWorkspaceUsername}
-                              onChange={(e) => setFormUserWorkspaceUsername(e.target.value)}
-                              className="rounded-l-xl rounded-r-none font-mono text-xs h-9 bg-white"
-                            />
-                            <span className="h-9 px-2.5 bg-slate-100 border border-l-0 border-slate-200 text-slate-600 text-[11px] font-mono flex items-center rounded-r-xl select-none">
-                              @pulseedu.online
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            Leave blank to auto-generate from tutor full name.
-                          </p>
-                        </div>
-
-                        <div className="flex flex-col justify-center">
-                          <label className="flex items-center gap-2 cursor-pointer select-none pt-2 sm:pt-0">
-                            <input
-                              type="checkbox"
-                              checked={formUserUseWorkspaceLogin}
-                              onChange={(e) => setFormUserUseWorkspaceLogin(e.target.checked)}
-                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
-                            />
-                            <span className="text-xs text-slate-700 font-medium">
-                              Use Workspace email as primary LMS login
-                            </span>
-                          </label>
-                          <p className="text-[10px] text-slate-400 mt-1 pl-6">
-                            When ticked, the tutor logs in directly using their @pulseedu.online account.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
               <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowAddUserModal(false)} className="rounded-xl h-9 px-4 cursor-pointer">
                   Cancel
@@ -5543,6 +5606,132 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showUserCreatedSuccessModal && createdUserSuccess && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 border border-slate-100 relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowUserCreatedSuccessModal(false);
+                setCreatedUserSuccess(null);
+              }}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="text-center space-y-2 pt-1">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25 ring-4 ring-emerald-50">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-slate-900">
+                  {createdUserSuccess.role === "TUTOR"
+                    ? "Tutor Account Created Successfully"
+                    : "Account Created Successfully"}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  The account is provisioned and ready for LMS operations.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <div className="font-bold text-amber-900 text-xs">Verification Email Notice</div>
+                <div className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                  The verification email will be dispatched when the tutor logs in for the first time.
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                <span className="text-slate-500 text-[11px]">Faculty Member</span>
+                <span className="font-bold text-slate-800">{createdUserSuccess.name}</span>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
+                <span className="text-slate-500 text-[11px] shrink-0">Workspace Email</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] truncate">
+                    {createdUserSuccess.email}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdUserSuccess.email);
+                      setCopiedSuccessEmail(true);
+                      setTimeout(() => setCopiedSuccessEmail(false), 2000);
+                    }}
+                    className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors cursor-pointer shrink-0"
+                    title="Copy email"
+                  >
+                    {copiedSuccessEmail ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {createdUserSuccess.password && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-500 text-[11px] shrink-0">Initial Password</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-semibold text-slate-800 bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px]">
+                      {showSuccessPassword ? createdUserSuccess.password : "••••••••"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSuccessPassword(!showSuccessPassword)}
+                      className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors cursor-pointer"
+                      title={showSuccessPassword ? "Hide password" : "Show password"}
+                    >
+                      {showSuccessPassword ? (
+                        <EyeOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdUserSuccess.password || "");
+                        setCopiedSuccessPassword(true);
+                        setTimeout(() => setCopiedSuccessPassword(false), 2000);
+                      }}
+                      className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors cursor-pointer"
+                      title="Copy password"
+                    >
+                      {copiedSuccessPassword ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Button
+              type="button"
+              onClick={() => {
+                setShowUserCreatedSuccessModal(false);
+                setCreatedUserSuccess(null);
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl h-10 cursor-pointer shadow-md shadow-blue-500/20"
+            >
+              Done
+            </Button>
           </div>
         </div>
       )}

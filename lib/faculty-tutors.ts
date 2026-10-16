@@ -72,9 +72,9 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
 
     return {
       id: dbTutor.id,
-      name: dbTutor.name || "Faculty Tutor",
+      name: dbTutor.name || "Academic Tutor",
       avatar: dbTutor.avatar || "",
-      headline: dbTutor.headline || "Verified Academic Faculty Tutor",
+      headline: dbTutor.headline || "Verified Academic Tutor",
       bio: parseTutorBio(dbTutor.bio),
       category:
         dbTutor.createdCourses?.[0]?.category ||

@@ -2823,7 +2823,7 @@ export default function AdminDashboardPage() {
                                   }
                                   if (wsEmail && wsEmail !== u.email) {
                                     return (
-                                      <div className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1 font-mono mt-0.5 w-fit" title="Google Workspace Faculty Email">
+                                      <div className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1 font-mono mt-0.5 w-fit" title="Google Workspace Tutor Email">
                                         <span>Workspace: {wsEmail}</span>
                                       </div>
                                     );
@@ -5653,7 +5653,7 @@ export default function AdminDashboardPage() {
 
             <div className="space-y-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
-                <span className="text-slate-500 text-[11px]">Faculty Member</span>
+                <span className="text-slate-500 text-[11px]">Tutor</span>
                 <span className="font-bold text-slate-800">{createdUserSuccess.name}</span>
               </div>
 

@@ -866,7 +866,8 @@ export async function createGoogleWorkspaceTutorAccount(params: {
   // Parse name into givenName and familyName
   const nameParts = params.name.trim().split(/\s+/);
   const givenName = nameParts[0] || "Tutor";
-  const familyName = nameParts.slice(1).join(" ") || "Faculty";
+  const hasExplicitLastName = nameParts.length > 1;
+  const familyName = hasExplicitLastName ? nameParts.slice(1).join(" ") : "Tutor";
 
   // Determine official Google Workspace primary email
   let primaryEmail: string;
@@ -877,7 +878,7 @@ export async function createGoogleWorkspaceTutorAccount(params: {
     primaryEmail = params.email.toLowerCase().trim();
   } else {
     const cleanFirst = givenName.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const cleanLast = familyName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const cleanLast = hasExplicitLastName ? familyName.toLowerCase().replace(/[^a-z0-9]/g, "") : "";
     const baseSlug = cleanLast ? `${cleanFirst}.${cleanLast}` : cleanFirst;
     primaryEmail = `${baseSlug}@${domain}`;
   }

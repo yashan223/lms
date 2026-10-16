@@ -42,7 +42,20 @@ function getAppUrl(): string {
   return "https://pulseedu.online";
 }
 
+export function isResendEnabled(): boolean {
+  const flag =
+    process.env.ENABLE_RESEND?.trim().toLowerCase() ??
+    process.env.ENABLE_RESEND_FALLBACK?.trim().toLowerCase();
+
+  if (flag === "false" || flag === "0" || flag === "no" || flag === "off") {
+    return false;
+  }
+
+  return true;
+}
+
 function getResendClient(): Resend | null {
+  if (!isResendEnabled()) return null;
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) return null;
   return new Resend(apiKey);
@@ -250,6 +263,13 @@ async function dispatchGoogleWorkspaceGmailApi(
 async function dispatchResendEmail(
   params: EmailDispatchParams
 ): Promise<{ success: boolean; error?: string }> {
+  if (!isResendEnabled()) {
+    return {
+      success: false,
+      error: "Resend fallback is disabled (ENABLE_RESEND=false).",
+    };
+  }
+
   const resend = getResendClient();
   const fromEmail = getResendFromEmail();
 
@@ -329,6 +349,7 @@ export async function dispatchAcademicEmail(
 ): Promise<EmailDispatchResult> {
   const hasWorkspaceSmtp = isGoogleWorkspaceSmtpConfigured();
   const hasWorkspaceSa = isGoogleWorkspaceServiceAccountConfigured();
+  const resendEnabled = isResendEnabled();
   let googleError: string | null = null;
 
   // Step 1: Attempt Google Workspace (Primary)
@@ -357,17 +378,27 @@ export async function dispatchAcademicEmail(
     }
 
     console.warn(`⚠️ [Google Workspace Failed] Reason: ${googleError}`);
-    console.warn(`🔄 [FALLBACK TRIGGERED] Switching to Resend email delivery...\n`);
   } else {
-    console.log(`ℹ️ [EMAIL DISPATCH] Google Workspace not configured. Proceeding with Resend for: ${params.to}`);
+    console.log(`ℹ️ [EMAIL DISPATCH] Google Workspace not configured.`);
+  }
+
+  // If Resend is disabled, do not attempt fallback — operate in Google Workspace only mode
+  if (!resendEnabled) {
+    console.log(`ℹ️ [RESEND DISABLED] Resend fallback is disabled (ENABLE_RESEND=false). Operating in Google Workspace ONLY mode.\n`);
+    const failureSummary = googleError
+      ? `Google Workspace email delivery failed: ${googleError} (Resend fallback is disabled)`
+      : `Google Workspace is not configured and Resend fallback is disabled (ENABLE_RESEND=false)`;
+    console.error(`❌ [EMAIL DELIVERY FAILED] ${failureSummary}\n`);
+    return { success: false, error: failureSummary };
   }
 
   // Step 2: Attempt Resend (Secondary / Fallback)
+  console.warn(`🔄 [FALLBACK TRIGGERED] Switching to Resend email delivery (Secondary)...\n`);
   const resendResult = await dispatchResendEmail(params);
   if (resendResult.success) {
     const isFallback = Boolean(hasWorkspaceSmtp || hasWorkspaceSa);
     console.log(
-      `✅ [EMAIL SUCCESS] Delivered via Resend to: ${params.to}${isFallback ? " (Fallback from Google Workspace)" : ""}\n`
+      `✅ [EMAIL SUCCESS] Delivered via Resend to: ${params.to}${isFallback ? " (Secondary fallback from Google Workspace)" : ""}\n`
     );
     return {
       success: true,
@@ -378,7 +409,7 @@ export async function dispatchAcademicEmail(
 
   // Both engines failed or were unavailable
   const failureSummary = googleError
-    ? `Google Workspace failed (${googleError}), and Resend fallback also failed: ${resendResult.error}`
+    ? `Google Workspace failed (${googleError}), and Resend secondary fallback also failed: ${resendResult.error}`
     : `Resend email dispatch failed: ${resendResult.error}`;
 
   console.error(`❌ [EMAIL DELIVERY FAILED] ${failureSummary}\n`);
@@ -406,96 +437,31 @@ export async function sendVerificationEmail({
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Your Academic Email — PulseEDU Global</title>
+  <title>Verify Your Email — PulseEDU Global</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 40px 16px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);" cellspacing="0" cellpadding="0">
-          
-          <!-- Header Branding -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%); padding: 32px 24px; text-align: center;">
-              <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">PulseEDU Global</h1>
-              <p style="margin: 6px 0 0 0; font-size: 13px; color: #93c5fd; font-weight: 500;">London A/L &amp; O/L Academic Excellence</p>
-            </td>
-          </tr>
-
-          <!-- Main Content -->
-          <tr>
-            <td style="padding: 36px 28px;">
-              <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Verify Your Academic Email</h2>
-              <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-                Hello <strong>${name}</strong>,
-              </p>
-              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-                Welcome to PulseEDU Global! Please verify your email address to activate your academic account and access your live classes, past papers, and course study materials.
-              </p>
-
-              <!-- CTA Button -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
-                <tr>
-                  <td align="center">
-                    <a href="${verificationUrl}" style="display: inline-block; background-color: #0c2461; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 12px; box-shadow: 0 4px 12px rgba(12, 36, 97, 0.25);">
-                      Verify My Email Address &rarr;
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; line-height: 1.5;">
-                Button not working? Copy and paste this URL into your browser:
-              </p>
-              <p style="margin: 0 0 24px 0; font-size: 12px; color: #2563eb; word-break: break-all;">
-                <a href="${verificationUrl}" style="color: #2563eb; text-decoration: underline;">${verificationUrl}</a>
-              </p>
-
-              <div style="background-color: #f1f5f9; border-radius: 12px; padding: 12px 16px; margin-top: 24px; border-left: 4px solid #0c2461;">
-                <p style="margin: 0; font-size: 12px; color: #475569;">
-                  ⏰ <strong>Notice:</strong> This verification link will expire in <strong>24 hours</strong>. If you did not register on PulseEDU Global, please safely ignore this message.
-                </p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #f8fafc; padding: 20px 28px; text-align: center; border-top: 1px solid #f1f5f9;">
-              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                &copy; 2026 PulseEDU Global • London A/L &amp; O/L LMS. All rights reserved.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
+<body style="font-family: Arial, sans-serif; font-size: 15px; color: #222; padding: 32px; max-width: 520px;">
+  <p>Hi ${name},</p>
+  <p>Please verify your email address to activate your PulseEDU Global account.</p>
+  <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+  <p>This link expires in <strong>24 hours</strong>. If you did not register, ignore this email.</p>
+  <p>— PulseEDU Global</p>
 </body>
 </html>
   `.trim();
 
-  const textContent = `
-Hello ${name},
+  const textContent = `Hi ${name},
 
-Welcome to PulseEDU Global! Please verify your email address to activate your academic account.
+Please verify your email address to activate your PulseEDU Global account.
 
-Click the following link to verify your email address:
 ${verificationUrl}
 
-This verification link will expire in 24 hours.
+This link expires in 24 hours. If you did not register, ignore this email.
 
-If you did not create an account on PulseEDU Global, please safely ignore this email.
-
-—
-PulseEDU Global • London A/L & O/L LMS
-`.trim();
+— PulseEDU Global`.trim();
 
   return await dispatchAcademicEmail({
     to: email,
-    subject: "PulseEDU Global — Verify Your Academic Email",
+    subject: "Verify your email — PulseEDU Global",
     html: htmlContent,
     text: textContent,
     directUrl: verificationUrl,

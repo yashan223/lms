@@ -69,6 +69,7 @@ import {
   ArrowUp,
   ArrowDown,
   Globe,
+  RotateCcw,
 } from "lucide-react";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { AcademicSchool, DEFAULT_SCHOOLS } from "@/lib/subjects";
@@ -187,6 +188,14 @@ export default function AdminDashboardPage() {
   const adminTimezone = typeof window !== "undefined" ? getUserBrowserTimezone() : DEFAULT_TIMEZONE;
   const [pendingClassesList, setPendingClassesList] = useState<any[]>([]);
   const [pendingTrialsList, setPendingTrialsList] = useState<any[]>([]);
+  const [allTrialsList, setAllTrialsList] = useState<any[]>([]);
+  const [showStudentTrialsModal, setShowStudentTrialsModal] = useState<boolean>(false);
+  const [selectedStudentForTrials, setSelectedStudentForTrials] = useState<any | null>(null);
+  const [isResettingTrialId, setIsResettingTrialId] = useState<string | null>(null);
+  const [isResettingAllTrials, setIsResettingAllTrials] = useState<boolean>(false);
+  const [trialsSubViewMode, setTrialsSubViewMode] = useState<"PENDING" | "ALL">("PENDING");
+  const [allTrialsSearch, setAllTrialsSearch] = useState<string>("");
+  const [allTrialsStatusFilter, setAllTrialsStatusFilter] = useState<string>("ALL");
   const [pendingCoursesList, setPendingCoursesList] = useState<any[]>([]);
   const [totalPendingApprovals, setTotalPendingApprovals] = useState<number>(0);
   const [approvalSubTab, setApprovalSubTab] = useState<"ALL" | "CLASSES" | "TRIALS" | "COURSES">("ALL");
@@ -627,6 +636,7 @@ export default function AdminDashboardPage() {
         setEventsList(data.events || []);
         setPendingClassesList(data.pendingClasses || []);
         setPendingTrialsList(data.pendingTrials || []);
+        setAllTrialsList(data.allTrials || []);
         setPendingCoursesList(data.pendingCourses || []);
         setTotalPendingApprovals(data.totalPendingApprovals || 0);
         if (data.bundles && data.bundles.length > 0) {
@@ -1014,6 +1024,120 @@ export default function AdminDashboardPage() {
       });
     } finally {
       setIsGrantingTokens(false);
+    }
+  };
+
+  const trialsForSelectedStudent = useMemo(() => {
+    if (!selectedStudentForTrials) return [];
+    return allTrialsList.filter(
+      (t) =>
+        t.studentId === selectedStudentForTrials.id ||
+        (t.studentEmail && t.studentEmail.toLowerCase() === selectedStudentForTrials.email.toLowerCase())
+    );
+  }, [allTrialsList, selectedStudentForTrials]);
+
+  const filteredAllTrials = useMemo(() => {
+    return allTrialsList.filter((tr) => {
+      const tutorName = tr.tutor?.name || tr.course?.tutor?.name || "";
+      const matchesSearch =
+        !allTrialsSearch.trim() ||
+        tr.studentName?.toLowerCase().includes(allTrialsSearch.toLowerCase()) ||
+        tr.studentEmail?.toLowerCase().includes(allTrialsSearch.toLowerCase()) ||
+        tutorName.toLowerCase().includes(allTrialsSearch.toLowerCase()) ||
+        tr.course?.title?.toLowerCase().includes(allTrialsSearch.toLowerCase());
+
+      const matchesStatus =
+        allTrialsStatusFilter === "ALL" ||
+        (allTrialsStatusFilter === "PENDING" && (tr.status === "PENDING" || tr.status === "PENDING_APPROVAL")) ||
+        tr.status === allTrialsStatusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [allTrialsList, allTrialsSearch, allTrialsStatusFilter]);
+
+  const handleOpenStudentTrials = (student: any) => {
+    setSelectedStudentForTrials(student);
+    setShowStudentTrialsModal(true);
+  };
+
+  const handleResetTrial = async (trialId: string, tutorName?: string) => {
+    const confirmMsg = tutorName
+      ? `Reset this trial session with ${tutorName}? This will cancel the previous trial booking and allow the student to request a free trial with ${tutorName} again.`
+      : "Reset this trial session? This will cancel the previous booking and allow the student to request this tutor again.";
+
+    if (!confirm(confirmMsg)) return;
+
+    setIsResettingTrialId(trialId);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "reset_student_trial",
+          trialId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchAdminData(false);
+      } else {
+        alert(data.error || "Failed to reset trial session.");
+      }
+    } catch (err) {
+      console.error("Error resetting trial:", err);
+      alert("Network error while resetting trial.");
+    } finally {
+      setIsResettingTrialId(null);
+    }
+  };
+
+  const handleResetAllStudentTrials = async (studentId: string, studentName?: string) => {
+    const confirmMsg = studentName
+      ? `Are you sure you want to reset ALL trial restrictions for ${studentName}? The student will be eligible to request free trial sessions with any tutor again.`
+      : "Are you sure you want to reset all trial restrictions for this student?";
+
+    if (!confirm(confirmMsg)) return;
+
+    setIsResettingAllTrials(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "reset_student_trials",
+          studentId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchAdminData(false);
+      } else {
+        alert(data.error || "Failed to reset student trials.");
+      }
+    } catch (err) {
+      console.error("Error resetting all trials:", err);
+      alert("Network error while resetting student trials.");
+    } finally {
+      setIsResettingAllTrials(false);
+    }
+  };
+
+  const handleDeleteTrial = async (trialId: string) => {
+    if (!confirm("Permanently delete this trial record from the database?")) return;
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_trial", trialId }),
+      });
+      if (res.ok) {
+        await fetchAdminData(false);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete trial.");
+      }
+    } catch (err) {
+      console.error("Error deleting trial:", err);
     }
   };
 
@@ -2920,6 +3044,14 @@ export default function AdminDashboardPage() {
                               {u.role === "STUDENT" && (
                                 <>
                                   <button
+                                    onClick={() => handleOpenStudentTrials(u)}
+                                    className="h-7 px-2.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-bold text-[11px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
+                                    title="Manage & Reset Free Trial Sessions"
+                                  >
+                                    <RotateCcw className="w-3 h-3 text-purple-600 shrink-0" />
+                                    <span>Trials</span>
+                                  </button>
+                                  <button
                                     onClick={() => handleOpenGrantTokens(u)}
                                     className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
                                     title="Grant Free Credit / Hours"
@@ -4570,7 +4702,196 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
 
-              {totalPendingApprovals === 0 ? (
+              {approvalSubTab === "TRIALS" && (
+                <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 w-full md:w-auto">
+                    <button
+                      onClick={() => setTrialsSubViewMode("PENDING")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        trialsSubViewMode === "PENDING"
+                          ? "bg-[#0c2461] text-white shadow-xs"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      Awaiting Sign-Off ({pendingTrialsList.length})
+                    </button>
+                    <button
+                      onClick={() => setTrialsSubViewMode("ALL")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        trialsSubViewMode === "ALL"
+                          ? "bg-[#0c2461] text-white shadow-xs"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      All Academy Trials ({allTrialsList.length})
+                    </button>
+                  </div>
+
+                  {trialsSubViewMode === "ALL" && (
+                    <div className="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap">
+                      <div className="relative flex-1 sm:w-60">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                        <Input
+                          placeholder="Search student, email, tutor..."
+                          value={allTrialsSearch}
+                          onChange={(e) => setAllTrialsSearch(e.target.value)}
+                          className="pl-8 h-8.5 text-xs border-slate-200 rounded-xl"
+                        />
+                      </div>
+                      <select
+                        value={allTrialsStatusFilter}
+                        onChange={(e) => setAllTrialsStatusFilter(e.target.value)}
+                        className="h-8.5 px-2.5 text-xs border border-slate-200 rounded-xl bg-white text-slate-700 font-semibold cursor-pointer"
+                      >
+                        <option value="ALL">All Statuses</option>
+                        <option value="CONFIRMED">Confirmed</option>
+                        <option value="PENDING">Pending Review</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="CANCELLED">Reset / Cancelled</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {approvalSubTab === "TRIALS" && trialsSubViewMode === "ALL" ? (
+                <div className="space-y-4">
+                  {filteredAllTrials.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-2 shadow-2xs">
+                      <p className="text-xs text-slate-400 italic">No trial sessions match the selected filters.</p>
+                    </div>
+                  ) : (
+                    filteredAllTrials.map((tr) => {
+                      const tutorName = tr.tutor?.name || tr.course?.tutor?.name || "Assigned Tutor";
+                      const isReset = tr.status === "CANCELLED";
+                      const isRejected = tr.status === "REJECTED";
+                      const isLive = tr.status === "LIVE";
+                      const isConfirmed = tr.status === "CONFIRMED";
+                      const isPending = tr.status === "PENDING" || tr.status === "PENDING_APPROVAL";
+                      const isCompleted = tr.status === "COMPLETED";
+
+                      return (
+                        <div
+                          key={tr.id}
+                          className={`bg-white rounded-2xl border p-5 shadow-2xs space-y-4 transition-all ${
+                            isReset ? "border-slate-200 bg-slate-50/50" : isConfirmed ? "border-emerald-200" : "border-blue-200 hover:border-blue-300"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center shrink-0">
+                                <CalendarCheck className="w-5 h-5" />
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-sm text-slate-900">
+                                    30-Min Trial: {tr.studentName}
+                                  </span>
+                                  {isReset ? (
+                                    <Badge className="bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold">
+                                      ✓ Reset / Re-request Allowed
+                                    </Badge>
+                                  ) : isLive ? (
+                                    <Badge className="bg-red-600 text-white text-[10px] font-bold animate-pulse">
+                                      ● Live Now
+                                    </Badge>
+                                  ) : isConfirmed ? (
+                                    <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold">
+                                      Confirmed
+                                    </Badge>
+                                  ) : isPending ? (
+                                    <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold">
+                                      Pending Review
+                                    </Badge>
+                                  ) : isCompleted ? (
+                                    <Badge className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">
+                                      Completed
+                                    </Badge>
+                                  ) : isRejected ? (
+                                    <Badge className="bg-red-100 text-red-800 border border-red-200 text-[10px] font-bold">
+                                      Declined
+                                    </Badge>
+                                  ) : null}
+                                </div>
+                                <p className="text-xs text-slate-500">
+                                  Course: <strong>{tr.course?.title || "London A/L"}</strong> {tr.topic ? `• Topic: ${tr.topic}` : ""}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="text-right sm:shrink-0 text-xs">
+                              <span className="font-bold text-slate-700 block">
+                                {formatDateInTimezone(tr.preferredDate, adminTimezone, {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </span>
+                              <span className="text-purple-700 font-mono font-bold">
+                                {formatTimeInTimezone(tr.preferredDate, adminTimezone, { includeAbbr: true })}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                            <div>
+                              <span className="text-[11px] font-medium text-slate-400 block">Student:</span>
+                              <span className="font-bold text-slate-800">{tr.studentName}</span>
+                              <span className="text-[10px] text-slate-500 font-mono block">{tr.studentEmail}</span>
+                            </div>
+                            <div>
+                              <span className="text-[11px] font-medium text-slate-400 block">Tutor:</span>
+                              <span className="font-bold text-slate-800">{tutorName}</span>
+                            </div>
+                            <div>
+                              <span className="text-[11px] font-medium text-slate-400 block">Meeting Room:</span>
+                              <span className="text-blue-600 font-mono text-[11px] truncate block">
+                                {tr.meetingLink ? tr.meetingLink : "—"}
+                              </span>
+                            </div>
+                            {tr.notes && (
+                              <div className="sm:col-span-3 pt-1 border-t border-slate-200/50">
+                                <span className="text-[11px] font-medium text-slate-400 block">Notes:</span>
+                                <p className="text-slate-600 mt-0.5">{tr.notes}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2.5 pt-1">
+                            {!isReset && !isRejected ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={isResettingTrialId === tr.id}
+                                onClick={() => handleResetTrial(tr.id, tutorName)}
+                                className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl h-8.5 px-3.5 gap-1.5 cursor-pointer shadow-xs"
+                                title="Reset this trial so the student can request this tutor again"
+                              >
+                                <RotateCcw className={`w-3.5 h-3.5 ${isResettingTrialId === tr.id ? "animate-spin" : ""}`} />
+                                <span>Reset Trial (Allow Re-request)</span>
+                              </Button>
+                            ) : isReset ? (
+                              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl">
+                                ✓ Unlocked: Student can book this tutor
+                              </span>
+                            ) : null}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTrial(tr.id)}
+                              className="h-8.5 w-8.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 inline-flex items-center justify-center cursor-pointer transition-colors"
+                              title="Permanently Delete Trial Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : totalPendingApprovals === 0 ? (
                 <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 shadow-2xs">
                   <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
                     <ShieldCheck className="w-8 h-8" />
@@ -4776,6 +5097,18 @@ export default function AdminDashboardPage() {
                           >
                             <X className="w-3.5 h-3.5" />
                             <span>Decline</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isProcessing || isResettingTrialId === trial.id}
+                            onClick={() => handleResetTrial(trial.id, tutorName)}
+                            className="text-purple-700 border-purple-200 hover:bg-purple-50 hover:text-purple-800 text-xs font-bold rounded-xl h-8.5 px-3.5 cursor-pointer gap-1"
+                            title="Reset this trial so the student can request this tutor again"
+                          >
+                            <RotateCcw className={`w-3.5 h-3.5 ${isResettingTrialId === trial.id ? "animate-spin" : ""}`} />
+                            <span>Reset &amp; Unlock</span>
                           </Button>
                           <Button
                             type="button"
@@ -7790,6 +8123,214 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showStudentTrialsModal && selectedStudentForTrials && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center shadow-xs shrink-0">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                    <span>Manage Free Trials: {selectedStudentForTrials.name}</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    {selectedStudentForTrials.email} • Reset trial bookings so the student can re-request the same tutor
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowStudentTrialsModal(false);
+                  setSelectedStudentForTrials(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quota & Reset All Bar */}
+            {(() => {
+              const activeTrials = trialsForSelectedStudent.filter(
+                (t: any) => t.status !== "CANCELLED" && t.status !== "REJECTED"
+              );
+              return (
+                <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-purple-950 flex items-center gap-2">
+                      <span>Active Free Trials: {activeTrials.length} / 5 Max</span>
+                      <span className="text-slate-400 font-normal">•</span>
+                      <span className="text-purple-700 font-normal">
+                        {Math.max(0, 5 - activeTrials.length)} slot{5 - activeTrials.length === 1 ? "" : "s"} remaining
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-purple-800/80">
+                      Resetting a trial cancels the previous booking lock, immediately allowing the student to request that same tutor again.
+                    </p>
+                  </div>
+                  {activeTrials.length > 0 && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleResetAllStudentTrials(selectedStudentForTrials.id, selectedStudentForTrials.name)}
+                      disabled={isResettingAllTrials}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl h-8.5 px-3.5 gap-1.5 shrink-0 cursor-pointer shadow-xs"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 ${isResettingAllTrials ? "animate-spin" : ""}`} />
+                      <span>{isResettingAllTrials ? "Resetting All..." : "Reset All Trials"}</span>
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Trials List */}
+            <div className="space-y-3">
+              {trialsForSelectedStudent.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs italic">
+                  No trial session bookings found for this student.
+                </div>
+              ) : (
+                trialsForSelectedStudent.map((tr: any) => {
+                  const tutorName = tr.tutor?.name || tr.course?.tutor?.name || "Assigned Tutor";
+                  const isReset = tr.status === "CANCELLED";
+                  const isRejected = tr.status === "REJECTED";
+                  const isLive = tr.status === "LIVE";
+                  const isConfirmed = tr.status === "CONFIRMED";
+                  const isPending = tr.status === "PENDING" || tr.status === "PENDING_APPROVAL";
+                  const isCompleted = tr.status === "COMPLETED";
+
+                  return (
+                    <div
+                      key={tr.id}
+                      className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                        isReset
+                          ? "bg-slate-50/70 border-slate-200 opacity-80"
+                          : isLive
+                          ? "bg-red-50/40 border-red-200"
+                          : isConfirmed
+                          ? "bg-emerald-50/40 border-emerald-200"
+                          : "bg-white border-slate-200 hover:border-purple-200"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-10 h-10 rounded-xl ring-1 ring-slate-200 shrink-0">
+                            <AvatarImage src={tr.tutor?.avatar} />
+                            <AvatarFallback>{tutorName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-sm text-slate-900">{tutorName}</span>
+                              {tr.course?.subjectCode && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-100 text-blue-800">
+                                  {tr.course.subjectCode}
+                                </span>
+                              )}
+                              {isReset ? (
+                                <Badge className="bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold">
+                                  ✓ Reset / Re-request Allowed
+                                </Badge>
+                              ) : isLive ? (
+                                <Badge className="bg-red-600 text-white text-[10px] font-bold animate-pulse">
+                                  ● Live Now
+                                </Badge>
+                              ) : isConfirmed ? (
+                                <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold">
+                                  Confirmed
+                                </Badge>
+                              ) : isPending ? (
+                                <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold">
+                                  Pending Review
+                                </Badge>
+                              ) : isCompleted ? (
+                                <Badge className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">
+                                  Completed
+                                </Badge>
+                              ) : isRejected ? (
+                                <Badge className="bg-red-100 text-red-800 border border-red-200 text-[10px] font-bold">
+                                  Declined
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <p className="text-xs text-slate-600">
+                              Course: <strong>{tr.course?.title || "London A/L"}</strong>
+                              {tr.topic ? ` • Topic: ${tr.topic}` : ""}
+                            </p>
+                            <div className="text-[11px] text-slate-500 flex items-center gap-2 pt-0.5">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span>
+                                {formatDateInTimezone(tr.preferredDate, adminTimezone, {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })} • {formatTimeInTimezone(tr.preferredDate, adminTimezone, { includeAbbr: true })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          {!isReset && !isRejected ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleResetTrial(tr.id, tutorName)}
+                              disabled={isResettingTrialId === tr.id}
+                              className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl h-8 px-3 gap-1.5 cursor-pointer shadow-2xs"
+                              title="Reset this trial so the student can request this tutor again"
+                            >
+                              <RotateCcw className={`w-3 h-3 ${isResettingTrialId === tr.id ? "animate-spin" : ""}`} />
+                              <span>{isResettingTrialId === tr.id ? "Resetting..." : "Reset Trial (Allow Re-request)"}</span>
+                            </Button>
+                          ) : isReset ? (
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl">
+                              ✓ Unlocked: Can Re-book
+                            </span>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTrial(tr.id)}
+                            className="h-8 w-8 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 inline-flex items-center justify-center cursor-pointer transition-colors"
+                            title="Permanently Delete Trial Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {tr.notes && (
+                        <div className="text-[11px] text-slate-500 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                          <strong>Notes:</strong> {tr.notes}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 pt-3 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowStudentTrialsModal(false);
+                  setSelectedStudentForTrials(null);
+                }}
+                className="text-xs font-bold rounded-xl h-9 px-4 cursor-pointer"
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

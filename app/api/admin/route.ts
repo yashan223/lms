@@ -41,7 +41,7 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
   start_class: "CLASS", end_class: "CLASS",
   approve_class: "CLASS", reject_class: "CLASS",
   delete_assessment: "CLASS", delete_event: "CLASS", create_mock_paper: "CLASS",
-  approve_trial: "TRIAL", reject_trial: "TRIAL",
+  approve_trial: "TRIAL", reject_trial: "TRIAL", reset_trial: "TRIAL", reset_student_trial: "TRIAL", reset_student_trials: "TRIAL", delete_trial: "TRIAL",
   update_bundles: "PRICING",
   clear_all_data: "GENERAL",
 };
@@ -130,6 +130,13 @@ export async function GET(request: NextRequest) {
           createdCourses: true,
           events: true,
           badges: true,
+          studentTrials: {
+            include: {
+              tutor: { select: { id: true, name: true, email: true, avatar: true } },
+              course: { select: { id: true, title: true, subjectCode: true } },
+            },
+            orderBy: { preferredDate: "desc" },
+          },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -255,6 +262,27 @@ export async function GET(request: NextRequest) {
       pendingTrials = [];
     }
 
+    let allTrials: any[] = [];
+    try {
+      allTrials = await prisma.trialRequest.findMany({
+        include: {
+          course: {
+            include: { tutor: true },
+          },
+          tutor: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
+          student: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
+        },
+        orderBy: { preferredDate: "desc" },
+      });
+    } catch (atErr) {
+      console.error("Error fetching all trials in admin:", atErr);
+      allTrials = [];
+    }
+
     try {
       pendingCourses = await prisma.course.findMany({
         where: { status: CourseStatus.PENDING_REVIEW },
@@ -311,6 +339,7 @@ export async function GET(request: NextRequest) {
       privateFiles,
       pendingClasses,
       pendingTrials,
+      allTrials,
       pendingCourses,
       totalPendingApprovals,
       bundles: await getBundles(),
@@ -1248,14 +1277,165 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Trial request declined.", trial: updated });
     }
 
+    if (action === "reset_student_trial" || action === "reset_trial") {
+      const { trialId } = body;
+      if (!trialId) {
+        return NextResponse.json({ error: "Trial ID is required." }, { status: 400 });
+      }
+
+      const trial = await prisma.trialRequest.findUnique({
+        where: { id: trialId },
+        include: { tutor: true, student: true, course: { include: { tutor: true } } },
+      });
+
+      if (!trial) {
+        return NextResponse.json({ error: "Trial request not found." }, { status: 404 });
+      }
+
+      const tutorName = trial.tutor?.name || trial.course?.tutor?.name || "Assigned Tutor";
+
+      // 1. Delete any linked calendar event
+      await prisma.event.deleteMany({
+        where: {
+          description: { contains: trialId },
+        },
+      }).catch(() => {});
+
+      // 2. Set status to CANCELLED and update notes so it's excluded from active trials filter
+      const updated = await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: {
+          status: TrialStatus.CANCELLED,
+          approvalStatus: "RESET",
+          rejectionReason: null,
+          meetingLink: null,
+          notes: trial.notes
+            ? `${trial.notes} | [Admin Reset] Reset by Admin on ${new Date().toLocaleDateString()} to allow re-booking with ${tutorName}.`
+            : `[Admin Reset] Reset by Admin on ${new Date().toLocaleDateString()} to allow re-booking with ${tutorName}.`,
+        },
+      });
+
+      // 3. Notify student if studentId is present
+      if (trial.studentId) {
+        await prisma.notification.create({
+          data: {
+            userId: trial.studentId,
+            title: "✨ Free Trial Reset by Administrator",
+            message: `Your trial consultation with ${tutorName} has been reset. You are now free to request a new trial session with ${tutorName}!`,
+            type: "SUCCESS",
+            link: "/classes",
+          },
+        }).catch(() => {});
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: trial.studentId });
+      }
+
+      // 4. Audit Log
+      await writeAuditLog({
+        adminId: auth.user.id,
+        adminEmail: auth.user.email,
+        action: "reset_trial",
+        targetId: trialId,
+        targetLabel: `Trial for ${trial.studentName} with ${tutorName}`,
+        details: { trialId, studentId: trial.studentId, tutorId: trial.tutorId, studentEmail: trial.studentEmail },
+      });
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: `Trial session reset successfully. ${trial.studentName} can now request a trial with ${tutorName} again.`,
+        trial: updated,
+      });
+    }
+
+    if (action === "reset_student_trials") {
+      const { studentId } = body;
+      if (!studentId) {
+        return NextResponse.json({ error: "Student ID is required." }, { status: 400 });
+      }
+
+      const student = await prisma.user.findUnique({
+        where: { id: studentId },
+        select: { id: true, name: true, email: true },
+      });
+
+      if (!student) {
+        return NextResponse.json({ error: "Student not found." }, { status: 404 });
+      }
+
+      const studentTrials = await prisma.trialRequest.findMany({
+        where: {
+          OR: [
+            { studentId },
+            { studentEmail: student.email },
+          ],
+        },
+      });
+
+      for (const t of studentTrials) {
+        await prisma.event.deleteMany({
+          where: { description: { contains: t.id } },
+        }).catch(() => {});
+      }
+
+      await prisma.trialRequest.updateMany({
+        where: {
+          OR: [
+            { studentId },
+            { studentEmail: student.email },
+          ],
+        },
+        data: {
+          status: TrialStatus.CANCELLED,
+          approvalStatus: "RESET",
+          rejectionReason: null,
+          meetingLink: null,
+        },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: student.id,
+          title: "✨ All Free Trials Reset by Administrator",
+          message: "All your free trial consultation limits have been reset by the administrator. You can now request new free trials with your preferred tutors!",
+          type: "SUCCESS",
+          link: "/classes",
+        },
+      }).catch(() => {});
+
+      broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: student.id });
+
+      await writeAuditLog({
+        adminId: auth.user.id,
+        adminEmail: auth.user.email,
+        action: "reset_student_trials",
+        targetId: studentId,
+        targetLabel: `All trials for student ${student.name}`,
+        details: { studentId, studentEmail: student.email, count: studentTrials.length },
+      });
+
+      broadcastLMSEvent("TRIALS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: `All trials for ${student.name} have been reset successfully. The student can now request free trials with any tutor again.`,
+      });
+    }
+
     if (action === "delete_trial") {
       const { trialId } = body;
       if (!trialId) {
         return NextResponse.json({ error: "Trial ID is required." }, { status: 400 });
       }
+      await prisma.event.deleteMany({
+        where: { description: { contains: trialId } },
+      }).catch(() => {});
       await prisma.trialRequest.delete({ where: { id: trialId } });
       broadcastLMSEvent("TRIALS_CHANGED");
-      return NextResponse.json({ success: true, message: "Trial request deleted." });
+      broadcastLMSEvent("EVENTS_CHANGED");
+      return NextResponse.json({ success: true, message: "Trial request permanently deleted." });
     }
 
     if (action === "approve_course") {

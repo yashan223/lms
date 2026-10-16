@@ -148,14 +148,7 @@ export function PricingSection({
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
-                {isTutorUser && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold shadow-2xs">
-                    <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Faculty View: Showing Both London A/L &amp; O/L Packages</span>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner w-full gap-1.5">
+              <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner w-full gap-1.5">
                   <button
                     type="button"
                     onClick={() => setStudentLevel("AL")}
@@ -181,7 +174,6 @@ export function PricingSection({
                     <span className="truncate">London O/L (IGCSE)</span>
                   </button>
                 </div>
-              </div>
             )}
           </div>
         </div>

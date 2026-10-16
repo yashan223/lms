@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       const result = await syncClassMeetingSession(eventId, {
         manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
         manualEndTime: manualEndTime ? new Date(manualEndTime) : undefined,
-        manualRecordingUrl: manualRecordingUrl ? manualRecordingUrl.trim() : undefined,
+        manualRecordingUrl: manualRecordingUrl !== undefined ? manualRecordingUrl : undefined,
       });
 
       return NextResponse.json({
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         isGoogleWorkspaceConfigured() &&
         !manualStartTime &&
         !manualEndTime &&
-        !manualRecordingUrl
+        manualRecordingUrl === undefined
       ) {
         const wsResult = await syncTrialFromGoogleWorkspace(trialId);
         if (wsResult.syncedWithGoogle) {
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
 
       const actualStart = manualStartTime ? new Date(manualStartTime) : trial.actualStartTime || trial.preferredDate;
       const actualEnd = manualEndTime ? new Date(manualEndTime) : trial.actualEndTime || new Date(actualStart.getTime() + 30 * 60 * 1000);
-      const recordingUrl = manualRecordingUrl ? manualRecordingUrl.trim() : trial.recordingUrl;
+      const recordingUrl = manualRecordingUrl !== undefined ? (manualRecordingUrl.trim() || null) : trial.recordingUrl;
       const recordingStatus = recordingUrl ? "AVAILABLE" : "NONE";
 
       const updatedTrial = await prisma.trialRequest.update({
@@ -115,6 +115,18 @@ export async function POST(request: NextRequest) {
           recordingStatus,
         },
       });
+
+      // Also update linked Event in calendar if present
+      await prisma.event.updateMany({
+        where: { description: { contains: trialId } },
+        data: {
+          status: "COMPLETED",
+          actualStartTime: actualStart,
+          actualEndTime: actualEnd,
+          recordingUrl,
+          recordingStatus,
+        },
+      }).catch(() => {});
 
       if (recordingUrl && trial.studentId) {
         await prisma.notification.create({
@@ -130,6 +142,7 @@ export async function POST(request: NextRequest) {
       }
 
       broadcastLMSEvent("TRIALS_CHANGED", { trialId });
+      broadcastLMSEvent("EVENTS_CHANGED");
 
       return NextResponse.json({
         success: true,

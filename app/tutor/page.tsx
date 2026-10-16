@@ -372,6 +372,18 @@ function TutorDashboardContent() {
   const [editLinkInput, setEditLinkInput] = useState("");
   const [isSavingEditLink, setIsSavingEditLink] = useState(false);
 
+  const [showRecordingModal, setShowRecordingModal] = useState(false);
+  const [recordingModalTarget, setRecordingModalTarget] = useState<{
+    eventId?: string;
+    trialId?: string;
+    title: string;
+    currentUrl?: string | null;
+  } | null>(null);
+  const [recordingInputUrl, setRecordingInputUrl] = useState("");
+  const [isSavingRecording, setIsSavingRecording] = useState(false);
+  const [isAutoSyncingInModal, setIsAutoSyncingInModal] = useState(false);
+  const [syncingTrialId, setSyncingTrialId] = useState<string | null>(null);
+
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleTargetEvent, setRescheduleTargetEvent] = useState<ScheduledClassEvent | null>(null);
   const [rescheduleTargetTrial, setRescheduleTargetTrial] = useState<any | null>(null);
@@ -388,7 +400,7 @@ function TutorDashboardContent() {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [activeChatRecipientId, setActiveChatRecipientId] = useState<string | undefined>(undefined);
 
-  const [trialFilter, setTrialFilter] = useState<"ALL" | "PENDING" | "CONFIRMED" | "CANCELLED">("ALL");
+  const [trialFilter, setTrialFilter] = useState<"ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED">("ALL");
   const [showConfirmTrialModal, setShowConfirmTrialModal] = useState(false);
   const [confirmingTrial, setConfirmingTrial] = useState<any | null>(null);
   const [confirmDate, setConfirmDate] = useState("");
@@ -1001,21 +1013,133 @@ function TutorDashboardContent() {
 
   const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
 
-  const handleSyncMeeting = async (eventId: string) => {
+  const handleSyncMeeting = async (eventId?: string, trialId?: string) => {
     try {
-      setSyncingEventId(eventId);
+      if (eventId) setSyncingEventId(eventId);
+      if (trialId) setSyncingTrialId(trialId);
       const res = await fetch("/api/meetings/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId }),
+        body: JSON.stringify({ eventId, trialId }),
       });
+      const data = await res.json();
       if (res.ok) {
         await fetchTutorData();
+        const found = data?.event?.recordingUrl || data?.trial?.recordingUrl;
+        if (found) {
+          alert("✅ Google Meet recording found & synced successfully!");
+        } else {
+          alert("Synced session status with Google. No recording file found yet (Google takes 15-30 mins to process). You can also click 'Attach Recording' to paste the link manually.");
+        }
+      } else {
+        alert(data.error || "Failed to sync with Google Meet.");
       }
     } catch (error) {
       console.error("Failed to sync meeting:", error);
     } finally {
       setSyncingEventId(null);
+      setSyncingTrialId(null);
+    }
+  };
+
+  const handleOpenRecordingModal = (opts: {
+    eventId?: string;
+    trialId?: string;
+    title: string;
+    currentUrl?: string | null;
+  }) => {
+    setRecordingModalTarget(opts);
+    setRecordingInputUrl(opts.currentUrl || "");
+    setShowRecordingModal(true);
+  };
+
+  const handleSaveRecording = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!recordingModalTarget) return;
+
+    try {
+      setIsSavingRecording(true);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: recordingModalTarget.eventId,
+          trialId: recordingModalTarget.trialId,
+          manualRecordingUrl: recordingInputUrl.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setShowRecordingModal(false);
+        await fetchTutorData();
+      } else {
+        alert(data.error || "Failed to save recording link.");
+      }
+    } catch {
+      alert("Network error updating recording.");
+    } finally {
+      setIsSavingRecording(false);
+    }
+  };
+
+  const handleRemoveRecording = async () => {
+    if (!recordingModalTarget) return;
+    if (!confirm("Are you sure you want to remove the recording link from this session?")) return;
+
+    try {
+      setIsSavingRecording(true);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: recordingModalTarget.eventId,
+          trialId: recordingModalTarget.trialId,
+          manualRecordingUrl: "",
+        }),
+      });
+
+      if (res.ok) {
+        setShowRecordingModal(false);
+        await fetchTutorData();
+      }
+    } catch {
+      alert("Network error removing recording.");
+    } finally {
+      setIsSavingRecording(false);
+    }
+  };
+
+  const handleAutoSyncInModal = async () => {
+    if (!recordingModalTarget) return;
+    try {
+      setIsAutoSyncingInModal(true);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: recordingModalTarget.eventId,
+          trialId: recordingModalTarget.trialId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const foundUrl = data?.event?.recordingUrl || data?.trial?.recordingUrl;
+        if (foundUrl) {
+          setRecordingInputUrl(foundUrl);
+          await fetchTutorData();
+          alert("Recording successfully found and synced from Google Drive!");
+          setShowRecordingModal(false);
+        } else {
+          alert("Auto-sync completed, but no MP4 recording file was detected yet in Google Drive. If you recorded with Google Meet, note that Google takes 15-30 minutes to render the video. You can also paste the share link manually above.");
+        }
+      } else {
+        alert(data.error || "Sync attempt failed.");
+      }
+    } catch {
+      alert("Network error attempting sync.");
+    } finally {
+      setIsAutoSyncingInModal(false);
     }
   };
 
@@ -2280,6 +2404,14 @@ function TutorDashboardContent() {
                                     </a>
                                   )}
                                   <button
+                                    onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
+                                    className="px-2.5 py-1.5 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all"
+                                    title="Add or edit video recording link"
+                                  >
+                                    <Video className="w-3 h-3 text-purple-600" />
+                                    <span>{ev.recordingUrl ? "Edit Recording" : "Attach Recording"}</span>
+                                  </button>
+                                  <button
                                     onClick={() => handleSyncMeeting(ev.id)}
                                     disabled={syncingEventId === ev.id}
                                     className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
@@ -2509,6 +2641,14 @@ function TutorDashboardContent() {
                                   <span>Watch Recording</span>
                                 </a>
                               )}
+                              <button
+                                onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
+                                className="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-all"
+                                title="Add or edit video recording link"
+                              >
+                                <Video className="w-3 h-3 text-purple-600" />
+                                <span>{ev.recordingUrl ? "Edit Recording" : "Attach Recording"}</span>
+                              </button>
                               <button
                                 onClick={() => handleSyncMeeting(ev.id)}
                                 disabled={syncingEventId === ev.id}
@@ -2742,7 +2882,8 @@ function TutorDashboardContent() {
                       {[
                         { key: "ALL", label: "All Bookings", count: trials.length },
                         { key: "PENDING", label: "⏳ Needs Date", count: trials.filter((t) => t.status === "PENDING").length },
-                        { key: "CONFIRMED", label: "✓ Confirmed", count: trials.filter((t) => t.status === "CONFIRMED").length },
+                        { key: "CONFIRMED", label: "✓ Scheduled", count: trials.filter((t) => t.status === "CONFIRMED" && !t.actualEndTime).length },
+                        { key: "COMPLETED", label: "✓ Completed", count: trials.filter((t) => t.status === "COMPLETED" || Boolean(t.actualEndTime)).length },
                         { key: "CANCELLED", label: "Declined / Cancelled", count: trials.filter((t) => t.status === "CANCELLED" || t.status === "REJECTED").length },
                       ].map((tab) => (
                         <button
@@ -2768,7 +2909,13 @@ function TutorDashboardContent() {
                     </div>
                   </div>
 
-                  {trials.filter((t) => trialFilter === "ALL" || t.status === trialFilter || (trialFilter === "CANCELLED" && (t.status === "CANCELLED" || t.status === "REJECTED"))).length === 0 ? (
+                  {trials.filter((t) => {
+                    if (trialFilter === "ALL") return true;
+                    if (trialFilter === "COMPLETED") return t.status === "COMPLETED" || Boolean(t.actualEndTime);
+                    if (trialFilter === "CONFIRMED") return t.status === "CONFIRMED" && !t.actualEndTime;
+                    if (trialFilter === "CANCELLED") return t.status === "CANCELLED" || t.status === "REJECTED";
+                    return t.status === trialFilter;
+                  }).length === 0 ? (
                     <div className="text-center py-12 text-xs text-slate-400 italic bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
                       <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                       <span>No trial bookings found under &quot;{trialFilter.toLowerCase()}&quot; filter.</span>
@@ -2776,12 +2923,18 @@ function TutorDashboardContent() {
                   ) : (
                     <div className="space-y-4">
                       {trials
-                        .filter((t) => trialFilter === "ALL" || t.status === trialFilter || (trialFilter === "CANCELLED" && (t.status === "CANCELLED" || t.status === "REJECTED")))
+                        .filter((t) => {
+                          if (trialFilter === "ALL") return true;
+                          if (trialFilter === "COMPLETED") return t.status === "COMPLETED" || Boolean(t.actualEndTime);
+                          if (trialFilter === "CONFIRMED") return t.status === "CONFIRMED" && !t.actualEndTime;
+                          if (trialFilter === "CANCELLED") return t.status === "CANCELLED" || t.status === "REJECTED";
+                          return t.status === trialFilter;
+                        })
                         .map((tr) => {
-                          const isPending = tr.status === "PENDING";
-                          const isConfirmed = tr.status === "CONFIRMED";
-                          const isCancelled = tr.status === "CANCELLED" || tr.status === "REJECTED";
                           const isCompleted = tr.status === "COMPLETED" || Boolean(tr.actualEndTime);
+                          const isPending = tr.status === "PENDING";
+                          const isConfirmed = tr.status === "CONFIRMED" && !isCompleted;
+                          const isCancelled = tr.status === "CANCELLED" || tr.status === "REJECTED";
 
                           const isTrialLive = events.some(
                             (e) => (e.status === "LIVE" && !e.endedAt) &&
@@ -2846,33 +2999,30 @@ function TutorDashboardContent() {
                                 </div>
 
                                 <div className="shrink-0 self-start sm:self-center">
-                                  {isPending && (
+                                  {isCompleted ? (
+                                    <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs px-3 py-1 flex items-center gap-1.5">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>✓ Completed</span>
+                                    </Badge>
+                                  ) : isTrialLive ? (
+                                    <Badge className="bg-red-600 text-white font-extrabold text-xs px-3 py-1 flex items-center gap-1.5 shadow-xs animate-pulse">
+                                      <Radio className="w-3.5 h-3.5 text-white" />
+                                      <span>● LIVE NOW</span>
+                                    </Badge>
+                                  ) : isPending ? (
                                     <Badge className="bg-[#0c2461] text-white font-bold text-xs px-3 py-1 animate-pulse">
                                       ⏳ Action Needed: Set Date
                                     </Badge>
-                                  )}
-                                  {isConfirmed && (
-                                    isTrialLive ? (
-                                      <Badge className="bg-red-600 text-white font-extrabold text-xs px-3 py-1 flex items-center gap-1.5 shadow-xs animate-pulse">
-                                        <Radio className="w-3.5 h-3.5 text-white" />
-                                        <span>● LIVE NOW</span>
-                                      </Badge>
-                                    ) : isCompleted ? (
-                                      <Badge className="bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs px-3 py-1">
-                                        ✓ Completed
-                                      </Badge>
-                                    ) : (
-                                      <Badge className="bg-blue-50 text-blue-800 border border-blue-200 font-bold text-xs px-3 py-1 flex items-center gap-1.5">
-                                        <Clock className="w-3.5 h-3.5 text-blue-600" />
-                                        <span>Scheduled (Not Started)</span>
-                                      </Badge>
-                                    )
-                                  )}
-                                  {isCancelled && (
+                                  ) : isConfirmed ? (
+                                    <Badge className="bg-blue-50 text-blue-800 border border-blue-200 font-bold text-xs px-3 py-1 flex items-center gap-1.5">
+                                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Scheduled</span>
+                                    </Badge>
+                                  ) : isCancelled ? (
                                     <Badge className="bg-slate-200 text-slate-700 font-bold text-xs px-3 py-1">
                                       Declined / Cancelled
                                     </Badge>
-                                  )}
+                                  ) : null}
                                 </div>
                               </div>
 
@@ -3006,7 +3156,59 @@ function TutorDashboardContent() {
                               )}
 
                               <div className="border-t border-slate-100 pt-3.5 flex flex-wrap items-center justify-end gap-2.5">
-                                {isPending ? (
+                                {isCompleted ? (
+                                  <>
+                                    {tr.recordingUrl && (
+                                      <a
+                                        href={tr.recordingUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="h-9 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                      >
+                                        <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                                        <span>Watch Recording</span>
+                                      </a>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenRecordingModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName}`, currentUrl: tr.recordingUrl })}
+                                      className="h-9 px-3.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all"
+                                      title="Add or update recording link for this consultation"
+                                    >
+                                      <Video className="w-3.5 h-3.5 text-purple-600" />
+                                      <span>{tr.recordingUrl ? "Edit Recording" : "Attach Recording"}</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSyncMeeting(undefined, tr.id)}
+                                      disabled={syncingTrialId === tr.id}
+                                      className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                                      title="Auto-detect recording from Google Drive"
+                                    >
+                                      <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${syncingTrialId === tr.id ? "animate-spin" : ""}`} />
+                                      <span>{syncingTrialId === tr.id ? "Syncing..." : "Sync Meet"}</span>
+                                    </button>
+                                    {tr.studentId && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openChatWithStudent(tr.studentId)}
+                                        className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                        title="Open encrypted chat with student"
+                                      >
+                                        <MessageSquareLock className="w-3.5 h-3.5 text-blue-500" />
+                                        <span>Chat with Student</span>
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteTrial(tr.id, tr.studentName)}
+                                      className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 hover:border-red-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                                      title="Delete Consultation Record"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                ) : isPending ? (
                                   <>
                                     <button
                                       type="button"
@@ -4047,6 +4249,118 @@ function TutorDashboardContent() {
                 <Button type="submit" disabled={isSavingEditLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-4">
                   {isSavingEditLink ? "Saving..." : "Save Link"}
                 </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showRecordingModal && recordingModalTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                  <Play className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    {recordingModalTarget.currentUrl ? "Edit Session Recording" : "Attach Session Recording"}
+                  </h3>
+                  <p className="text-xs text-slate-500 truncate max-w-[220px]">
+                    {recordingModalTarget.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRecordingModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRecording} className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800 block">
+                  Recording URL (Google Drive / YouTube / Vimeo / Loom)
+                </label>
+                <Input
+                  placeholder="https://drive.google.com/file/d/... or https://youtu.be/..."
+                  value={recordingInputUrl}
+                  onChange={(e) => setRecordingInputUrl(e.target.value)}
+                  className="rounded-xl h-10 text-xs font-mono"
+                  required
+                />
+                <p className="text-[11px] text-slate-500">
+                  Enrolled students will see a &quot;Watch Recording&quot; button immediately on their dashboard and calendars.
+                </p>
+              </div>
+
+              {/* Helper box explaining Google Meet recording storage */}
+              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 space-y-2 text-slate-700">
+                <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs">
+                  <AlertCircle className="w-4 h-4 text-purple-700 shrink-0" />
+                  <span>Where are Google Meet recordings saved?</span>
+                </div>
+                <ul className="space-y-1.5 text-[11px] text-purple-900/90 list-disc list-inside">
+                  <li>
+                    <strong>Google Workspace Only:</strong> Free personal accounts (@gmail.com) do not support recording. Google Workspace (Business Standard/Plus or Enterprise) is required.
+                  </li>
+                  <li>
+                    <strong>Manual Start in Call:</strong> You must click <em>Activities &gt; Recording &gt; Start Recording</em> inside Google Meet during the session.
+                  </li>
+                  <li>
+                    <strong>Saved in Google Drive:</strong> Google deposits the video file inside your host <strong>Google Drive &gt; Meet Recordings</strong> folder (takes 15–30 minutes to render).
+                  </li>
+                  <li>
+                    <strong>Share Permission:</strong> In Google Drive, right-click the video file &gt; <em>Share</em> &gt; set to <em>&quot;Anyone with the link can view&quot;</em>, then copy and paste the link here.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={handleAutoSyncInModal}
+                    disabled={isAutoSyncingInModal}
+                    className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
+                    title="Attempt to fetch recording automatically from Google Drive"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isAutoSyncingInModal ? "animate-spin" : ""}`} />
+                    <span>{isAutoSyncingInModal ? "Detecting..." : "Auto-detect Drive"}</span>
+                  </button>
+                  {recordingModalTarget.currentUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveRecording}
+                      disabled={isSavingRecording}
+                      className="px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-semibold text-xs cursor-pointer w-full sm:w-auto"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRecordingModal(false)}
+                    className="rounded-xl h-9"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSavingRecording || !recordingInputUrl.trim()}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl px-4 h-9 shadow-xs"
+                  >
+                    {isSavingRecording ? "Saving..." : "Save Recording"}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>

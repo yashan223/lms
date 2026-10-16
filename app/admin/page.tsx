@@ -1659,22 +1659,145 @@ export default function AdminDashboardPage() {
   };
 
   const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
+  const [syncingTrialId, setSyncingTrialId] = useState<string | null>(null);
+  const [showRecordingModal, setShowRecordingModal] = useState(false);
+  const [recordingModalTarget, setRecordingModalTarget] = useState<{
+    eventId?: string;
+    trialId?: string;
+    title: string;
+    currentUrl?: string | null;
+  } | null>(null);
+  const [recordingInputUrl, setRecordingInputUrl] = useState("");
+  const [isSavingRecording, setIsSavingRecording] = useState(false);
+  const [isAutoSyncingInModal, setIsAutoSyncingInModal] = useState(false);
 
-  const handleSyncMeeting = async (eventId: string) => {
+  const handleSyncMeeting = async (eventId?: string, trialId?: string) => {
     try {
-      setSyncingEventId(eventId);
+      if (eventId) setSyncingEventId(eventId);
+      if (trialId) setSyncingTrialId(trialId);
       const res = await fetch("/api/meetings/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId }),
+        body: JSON.stringify({ eventId, trialId }),
       });
+      const data = await res.json();
       if (res.ok) {
         await fetchAdminData();
+        const found = data?.event?.recordingUrl || data?.trial?.recordingUrl;
+        if (found) {
+          alert("✅ Google Meet recording found & synced successfully!");
+        } else {
+          alert("Synced meeting details with Google. No recording file found yet (Google takes 15-30 mins to process). You can also click 'Attach Recording' to paste the link manually.");
+        }
+      } else {
+        alert(data.error || "Failed to sync with Google Meet.");
       }
     } catch (err) {
       console.error("Error syncing meeting:", err);
     } finally {
       setSyncingEventId(null);
+      setSyncingTrialId(null);
+    }
+  };
+
+  const handleOpenRecordingModal = (opts: {
+    eventId?: string;
+    trialId?: string;
+    title: string;
+    currentUrl?: string | null;
+  }) => {
+    setRecordingModalTarget(opts);
+    setRecordingInputUrl(opts.currentUrl || "");
+    setShowRecordingModal(true);
+  };
+
+  const handleSaveRecording = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!recordingModalTarget) return;
+
+    try {
+      setIsSavingRecording(true);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: recordingModalTarget.eventId,
+          trialId: recordingModalTarget.trialId,
+          manualRecordingUrl: recordingInputUrl.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setShowRecordingModal(false);
+        await fetchAdminData();
+      } else {
+        alert(data.error || "Failed to save recording link.");
+      }
+    } catch {
+      alert("Network error updating recording.");
+    } finally {
+      setIsSavingRecording(false);
+    }
+  };
+
+  const handleRemoveRecording = async () => {
+    if (!recordingModalTarget) return;
+    if (!confirm("Are you sure you want to remove the recording link from this session?")) return;
+
+    try {
+      setIsSavingRecording(true);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: recordingModalTarget.eventId,
+          trialId: recordingModalTarget.trialId,
+          manualRecordingUrl: "",
+        }),
+      });
+
+      if (res.ok) {
+        setShowRecordingModal(false);
+        await fetchAdminData();
+      }
+    } catch {
+      alert("Network error removing recording.");
+    } finally {
+      setIsSavingRecording(false);
+    }
+  };
+
+  const handleAutoSyncInModal = async () => {
+    if (!recordingModalTarget) return;
+    try {
+      setIsAutoSyncingInModal(true);
+      const res = await fetch("/api/meetings/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: recordingModalTarget.eventId,
+          trialId: recordingModalTarget.trialId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const foundUrl = data?.event?.recordingUrl || data?.trial?.recordingUrl;
+        if (foundUrl) {
+          setRecordingInputUrl(foundUrl);
+          await fetchAdminData();
+          alert("Recording successfully found and synced from Google Drive!");
+          setShowRecordingModal(false);
+        } else {
+          alert("Auto-sync completed, but no MP4 recording file was detected yet in Google Drive. If recorded with Google Meet, note that Google takes 15-30 minutes to render the video. You can also paste the share link manually.");
+        }
+      } else {
+        alert(data.error || "Sync attempt failed.");
+      }
+    } catch {
+      alert("Network error attempting sync.");
+    } finally {
+      setIsAutoSyncingInModal(false);
     }
   };
 
@@ -2786,17 +2909,29 @@ export default function AdminDashboardPage() {
                                   </a>
                                 )}
                                 {isCompleted && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleSyncMeeting(ev.id)}
-                                    disabled={syncingEventId === ev.id}
-                                    className="text-xs font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl h-8 flex items-center gap-1"
-                                    title="Fetch verified times and Google Drive recording"
-                                  >
-                                    <RefreshCw className={`w-3.5 h-3.5 ${syncingEventId === ev.id ? "animate-spin text-blue-600" : "text-slate-500"}`} />
-                                    <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
-                                  </Button>
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
+                                      className="text-xs font-semibold text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
+                                      title="Add or edit video recording link"
+                                    >
+                                      <Video className="w-3.5 h-3.5 text-purple-600" />
+                                      <span>{ev.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleSyncMeeting(ev.id)}
+                                      disabled={syncingEventId === ev.id}
+                                      className="text-xs font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl h-8 flex items-center gap-1 cursor-pointer"
+                                      title="Fetch verified times and Google Drive recording"
+                                    >
+                                      <RefreshCw className={`w-3.5 h-3.5 ${syncingEventId === ev.id ? "animate-spin text-blue-600" : "text-slate-500"}`} />
+                                      <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
+                                    </Button>
+                                  </>
                                 )}
                                 <button
                                   onClick={() => handleDeleteLiveClass(ev)}
@@ -4858,7 +4993,45 @@ export default function AdminDashboardPage() {
                             )}
                           </div>
 
-                          <div className="flex items-center justify-end gap-2.5 pt-1">
+                          <div className="flex items-center justify-end gap-2.5 pt-1 flex-wrap">
+                            {isCompleted && (
+                              <>
+                                {tr.recordingUrl && (
+                                  <a
+                                    href={tr.recordingUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                  >
+                                    <Play className="w-3.5 h-3.5 fill-current" />
+                                    <span>Watch</span>
+                                  </a>
+                                )}
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenRecordingModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}`, currentUrl: tr.recordingUrl })}
+                                  className="h-8.5 px-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                                  title="Add or edit video recording link"
+                                >
+                                  <Video className="w-3.5 h-3.5 text-purple-600" />
+                                  <span>{tr.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleSyncMeeting(undefined, tr.id)}
+                                  disabled={syncingTrialId === tr.id}
+                                  className="h-8.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                                  title="Sync recording from Google Drive"
+                                >
+                                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${syncingTrialId === tr.id ? "animate-spin" : ""}`} />
+                                  <span>{syncingTrialId === tr.id ? "Syncing..." : "Sync Meet"}</span>
+                                </Button>
+                              </>
+                            )}
                             {!isReset && !isRejected ? (
                               <Button
                                 type="button"
@@ -8278,7 +8451,32 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0 flex-wrap">
+                          {isCompleted && (
+                            <>
+                              {tr.recordingUrl && (
+                                <a
+                                  href={tr.recordingUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="h-8 px-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1 shadow-2xs transition-all"
+                                >
+                                  <Play className="w-3 h-3 fill-current" />
+                                  <span>Watch</span>
+                                </a>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenRecordingModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}`, currentUrl: tr.recordingUrl })}
+                                className="h-8 px-2.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+                                title="Attach or edit recording link"
+                              >
+                                <Video className="w-3 h-3 text-purple-600" />
+                                <span>{tr.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
+                              </Button>
+                            </>
+                          )}
                           {!isReset && !isRejected ? (
                             <Button
                               size="sm"
@@ -8461,6 +8659,118 @@ export default function AdminDashboardPage() {
                 )}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showRecordingModal && recordingModalTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                  <Play className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    {recordingModalTarget.currentUrl ? "Edit Session Recording" : "Attach Session Recording"}
+                  </h3>
+                  <p className="text-xs text-slate-500 truncate max-w-[220px]">
+                    {recordingModalTarget.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRecordingModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRecording} className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800 block">
+                  Recording URL (Google Drive / YouTube / Vimeo / Loom)
+                </label>
+                <Input
+                  placeholder="https://drive.google.com/file/d/... or https://youtu.be/..."
+                  value={recordingInputUrl}
+                  onChange={(e) => setRecordingInputUrl(e.target.value)}
+                  className="rounded-xl h-10 text-xs font-mono"
+                  required
+                />
+                <p className="text-[11px] text-slate-500">
+                  Enrolled students will immediately see a &quot;Watch Recording&quot; button on their dashboard and calendars.
+                </p>
+              </div>
+
+              {/* Helper box explaining Google Meet recording storage */}
+              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 space-y-2 text-slate-700">
+                <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs">
+                  <AlertCircle className="w-4 h-4 text-purple-700 shrink-0" />
+                  <span>Google Meet Recording Information</span>
+                </div>
+                <ul className="space-y-1.5 text-[11px] text-purple-900/90 list-disc list-inside">
+                  <li>
+                    <strong>Google Workspace Tier:</strong> Meet recording is exclusively available on paid Google Workspace editions (Business Standard/Plus/Enterprise/Education). Free @gmail.com accounts cannot record.
+                  </li>
+                  <li>
+                    <strong>Recording Trigger:</strong> The host must start recording in-call via <em>Activities &gt; Recording &gt; Start Recording</em>.
+                  </li>
+                  <li>
+                    <strong>Google Drive Delay:</strong> Google takes 15–30 minutes to render the MP4 and deposit it into the organizer&apos;s <strong>Google Drive &gt; Meet Recordings</strong> folder.
+                  </li>
+                  <li>
+                    <strong>Access:</strong> The Drive file must be shared as <em>&quot;Anyone with the link can view&quot;</em>.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={handleAutoSyncInModal}
+                    disabled={isAutoSyncingInModal}
+                    className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
+                    title="Attempt to fetch recording automatically from Google Drive"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isAutoSyncingInModal ? "animate-spin" : ""}`} />
+                    <span>{isAutoSyncingInModal ? "Detecting..." : "Auto-detect Drive"}</span>
+                  </button>
+                  {recordingModalTarget.currentUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveRecording}
+                      disabled={isSavingRecording}
+                      className="px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-semibold text-xs cursor-pointer w-full sm:w-auto"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRecordingModal(false)}
+                    className="rounded-xl h-9"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSavingRecording || !recordingInputUrl.trim()}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl px-4 h-9 shadow-xs"
+                  >
+                    {isSavingRecording ? "Saving..." : "Save Recording"}
+                  </Button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -787,6 +787,77 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, meetingLink: normalized });
     }
 
+    if (action === "update_recording") {
+      const { eventId, trialId, recordingUrl } = body;
+      const cleanUrl = typeof recordingUrl === "string" ? recordingUrl.trim() : null;
+      const recordingStatus = cleanUrl ? "AVAILABLE" : "NONE";
+
+      if (eventId) {
+        const ev = await prisma.event.update({
+          where: { id: eventId },
+          data: {
+            recordingUrl: cleanUrl,
+            recordingStatus,
+            ...(cleanUrl ? { status: "COMPLETED" } : {}),
+          },
+          include: { course: { include: { enrollments: true } } },
+        });
+
+        if (cleanUrl && ev.course?.enrollments) {
+          await prisma.notification.createMany({
+            data: ev.course.enrollments.map((en) => ({
+              userId: en.userId,
+              title: "🎥 Class Recording Available",
+              message: `The recording for "${ev.title}" is now ready to watch.`,
+              type: "SUCCESS",
+              link: cleanUrl,
+            })),
+          }).catch(() => {});
+          ev.course.enrollments.forEach((en) => broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: en.userId }));
+        }
+
+        broadcastLMSEvent("EVENTS_CHANGED", { eventId, recordingUrl: cleanUrl });
+      }
+
+      if (trialId) {
+        const tr = await prisma.trialRequest.update({
+          where: { id: trialId },
+          data: {
+            recordingUrl: cleanUrl,
+            recordingStatus,
+            ...(cleanUrl ? { status: TrialStatus.COMPLETED } : {}),
+          },
+        });
+
+        await prisma.event.updateMany({
+          where: { description: { contains: trialId } },
+          data: {
+            recordingUrl: cleanUrl,
+            recordingStatus,
+            ...(cleanUrl ? { status: "COMPLETED" } : {}),
+          },
+        }).catch(() => {});
+
+        if (cleanUrl && tr.studentId) {
+          await prisma.notification.create({
+            data: {
+              userId: tr.studentId,
+              title: "🎥 1-on-1 Consultation Recording Available",
+              message: `The recording for your consultation is ready to watch.`,
+              type: "SUCCESS",
+              link: cleanUrl,
+            },
+          }).catch(() => {});
+          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tr.studentId });
+        }
+
+        broadcastLMSEvent("TRIALS_CHANGED", { trialId, recordingUrl: cleanUrl });
+        broadcastLMSEvent("EVENTS_CHANGED");
+      }
+
+      return NextResponse.json({ success: true, recordingUrl: cleanUrl, recordingStatus });
+    }
+
     if (action === "delete_class" || action === "delete_event" || action === "delete_trial") {
       const { eventId, trialId } = body;
 

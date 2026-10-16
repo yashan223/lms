@@ -138,8 +138,8 @@ export async function syncClassMeetingSession(
 
   const actualStart = opts?.manualStartTime || event.actualStartTime || event.startedAt || new Date(event.dueDate);
   const actualEnd = opts?.manualEndTime || event.actualEndTime || new Date();
-  const recordingUrl = opts?.manualRecordingUrl?.trim() || event.recordingUrl;
-  const recordingStatus = recordingUrl ? "AVAILABLE" : "NONE";
+  const recordingUrl = opts?.manualRecordingUrl !== undefined ? (opts.manualRecordingUrl.trim() || null) : event.recordingUrl;
+  const recordingStatus = recordingUrl ? "AVAILABLE" : (event.recordingStatus === "RECORDING" ? "RECORDING" : "NONE");
 
   const updatedEvent = await prisma.event.update({
     where: { id: eventId },

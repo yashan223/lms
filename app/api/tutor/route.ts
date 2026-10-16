@@ -787,26 +787,65 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, meetingLink: normalized });
     }
 
-    if (action === "delete_class" || action === "delete_event") {
-      const { eventId } = body;
+    if (action === "delete_class" || action === "delete_event" || action === "delete_trial") {
+      const { eventId, trialId } = body;
 
-      if (!eventId) {
+      if (!eventId && !trialId) {
         return NextResponse.json(
-          { error: "Event ID is required." },
+          { error: "Event ID or Trial ID is required." },
           { status: 400 }
         );
       }
 
-      await prisma.event.delete({
-        where: { id: eventId },
-      });
+      if (trialId) {
+        // Delete linked events
+        await prisma.event.deleteMany({
+          where: {
+            OR: [
+              { description: { contains: trialId } },
+            ],
+          },
+        }).catch(() => {});
 
-      broadcastLMSEvent("EVENTS_CHANGED");
+        await prisma.trialRequest.delete({
+          where: { id: trialId },
+        }).catch(() => {});
 
-      return NextResponse.json({
-        success: true,
-        message: "Class session cancelled successfully.",
-      });
+        broadcastLMSEvent("EVENTS_CHANGED");
+        broadcastLMSEvent("TRIALS_CHANGED");
+
+        return NextResponse.json({
+          success: true,
+          message: "Consultation session deleted successfully.",
+        });
+      }
+
+      if (eventId) {
+        const ev = await prisma.event.findUnique({
+          where: { id: eventId },
+          select: { id: true, description: true },
+        });
+
+        // If it was linked to a trial, also delete the trial
+        const match = ev?.description?.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/);
+        if (match?.[1]) {
+          await prisma.trialRequest.delete({
+            where: { id: match[1] },
+          }).catch(() => {});
+          broadcastLMSEvent("TRIALS_CHANGED");
+        }
+
+        await prisma.event.delete({
+          where: { id: eventId },
+        });
+
+        broadcastLMSEvent("EVENTS_CHANGED");
+
+        return NextResponse.json({
+          success: true,
+          message: "Class session deleted successfully.",
+        });
+      }
     }
 
     if (action === "reschedule_class") {

@@ -147,9 +147,10 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        preferredDate: "asc",
-      },
+      orderBy: [
+        { createdAt: "desc" },
+        { preferredDate: "desc" },
+      ],
     });
 
     const trials = rawTrials.map((t) => ({

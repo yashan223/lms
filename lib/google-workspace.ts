@@ -263,7 +263,7 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
 export async function createGoogleCalendarEventWithMeet(opts: {
   title: string;
   description?: string;
-  startTime: Date;
+  startTime?: Date | string | number | null;
   durationMinutes?: number;
 }): Promise<GoogleMeetSpaceResult> {
   const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
@@ -349,15 +349,19 @@ export interface GoogleSessionSyncResult {
 export async function searchGoogleDriveForRecording(opts: {
   meetingCode?: string;
   title?: string;
-  afterDate?: Date;
+  afterDate?: Date | string | number | null;
 }): Promise<{ recordingUrl: string; driveFileId: string } | null> {
   try {
     const authHeaders = await getGoogleWorkspaceHeaders();
     const queryParts = ["trashed = false", "(mimeType contains 'video/' or mimeType = 'video/mp4')"];
 
     if (opts.afterDate) {
-      // Look from up to 2 hours before scheduled time, ensuring we don't query a future timestamp
-      const candidateTime = opts.afterDate.getTime() - 2 * 60 * 60 * 1000;
+      const afterDateObj =
+        opts.afterDate instanceof Date
+          ? opts.afterDate
+          : new Date(opts.afterDate);
+      const safeTime = isNaN(afterDateObj.getTime()) ? Date.now() : afterDateObj.getTime();
+      const candidateTime = safeTime - 2 * 60 * 60 * 1000;
       const windowStartTime = Math.min(candidateTime, Date.now() - 30 * 60 * 1000);
       const windowStart = new Date(windowStartTime).toISOString();
       queryParts.push(`createdTime >= '${windowStart}'`);

@@ -255,7 +255,7 @@ export async function GET(request: NextRequest) {
           tutor: true,
           student: true,
         },
-        orderBy: { updatedAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { updatedAt: "desc" }],
       });
     } catch (ptErr) {
       console.error("Error fetching pending trials:", ptErr);
@@ -276,7 +276,7 @@ export async function GET(request: NextRequest) {
             select: { id: true, name: true, email: true, avatar: true },
           },
         },
-        orderBy: { preferredDate: "desc" },
+        orderBy: [{ createdAt: "desc" }, { preferredDate: "desc" }],
       });
     } catch (atErr) {
       console.error("Error fetching all trials in admin:", atErr);
@@ -982,14 +982,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Class event not found" }, { status: 404 });
       }
 
-      const meetLink = getSafeMeetingLink(meetingLink || existing.meetingLink);
+      let meetLink = getSafeMeetingLink(meetingLink || existing.meetingLink);
+      if (!meetLink || isGenericGoogleMeetNewLink(meetLink)) {
+        try {
+          meetLink = await ensureValidGoogleMeetingLink(null, {
+            title: existing.title || "PulseEDU Live Class",
+            eventId: existing.id,
+            startTime: existing.dueDate || new Date(),
+          });
+        } catch (linkErr: any) {
+          console.warn("[Admin API] Failed to auto-generate Google Meet link:", linkErr?.message || linkErr);
+        }
+      }
 
       const updated = await prisma.event.update({
         where: { id: eventId },
         data: {
           status: "LIVE",
           startedAt: new Date(),
-          meetingLink: meetLink,
+          meetingLink: meetLink || null,
         },
         include: {
           course: {

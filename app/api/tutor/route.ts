@@ -5,7 +5,6 @@ import {
   getSafeMeetingLink,
   isGenericGoogleMeetNewLink,
   normalizeGoogleMeetLink,
-  generateUniqueGoogleMeetLink,
 } from "@/lib/utils";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { deleteStorageFile } from "@/lib/storage";
@@ -528,10 +527,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      if (!meetLink) {
-        meetLink = generateUniqueGoogleMeetLink();
-      }
-
       if (meetLink) {
         const codeMatch = meetLink.match(/meet\.google\.com\/([a-z0-9-]+)/i);
         meetingSpaceId = codeMatch?.[1] ? `spaces/${codeMatch[1]}` : null;
@@ -621,10 +616,6 @@ export async function POST(request: NextRequest) {
           eventId: existingEvent?.id,
           startTime: existingEvent?.dueDate || existingTrial?.preferredDate,
         });
-      }
-
-      if (!meetLink) {
-        meetLink = generateUniqueGoogleMeetLink();
       }
 
       const now = new Date();
@@ -1058,12 +1049,11 @@ export async function POST(request: NextRequest) {
 
       const rawDate = confirmedDate || scheduledDate;
       const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
-      const link =
-        (await ensureValidGoogleMeetingLink(meetingLink || existingTrial.meetingLink, {
-          title: `1-on-1 Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName || "Student"})`,
-          startTime: targetDate,
-          durationMinutes: 30,
-        })) || generateUniqueGoogleMeetLink();
+      const link = await ensureValidGoogleMeetingLink(meetingLink || existingTrial.meetingLink, {
+        title: `1-on-1 Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName || "Student"})`,
+        startTime: targetDate,
+        durationMinutes: 30,
+      });
 
       const codeMatch = link.match(/meet\.google\.com\/([a-z0-9-]+)/i);
       const derivedSpaceId = codeMatch?.[1] ? `spaces/${codeMatch[1]}` : null;

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink, isGenericGoogleMeetNewLink, generateUniqueGoogleMeetLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
 import {
   isGoogleWorkspaceConfigured,
   createGoogleWorkspaceMeetingSpace,
@@ -32,6 +32,9 @@ export async function createGoogleMeetingSpace(opts?: {
     };
   }
 
+  let calError: any = null;
+  let meetError: any = null;
+
   if (isGoogleWorkspaceConfigured()) {
     try {
       const cal = await createGoogleCalendarEventWithMeet({
@@ -48,6 +51,7 @@ export async function createGoogleMeetingSpace(opts?: {
         };
       }
     } catch (err: any) {
+      calError = err;
       console.warn("[Google Meet] Google Calendar auto-creation failed, trying Meet API directly:", err?.message || err);
     }
 
@@ -65,17 +69,13 @@ export async function createGoogleMeetingSpace(opts?: {
         };
       }
     } catch (err: any) {
+      meetError = err;
       console.warn("[Google Meet] Google Meet space auto-creation failed:", err?.message || err);
     }
   }
 
-  const fallbackLink = generateUniqueGoogleMeetLink();
-  return {
-    meetingUri: fallbackLink,
-    spaceName: null,
-    meetingCode: fallbackLink.split("/").pop() || null,
-    mode: "MANUAL",
-  };
+  const errorDetail = calError?.message || meetError?.message || "Google Workspace is not configured.";
+  throw new Error(`Failed to create authentic Google Meet space via Google API: ${errorDetail}`);
 }
 
 export async function ensureValidGoogleMeetingLink(
@@ -83,13 +83,16 @@ export async function ensureValidGoogleMeetingLink(
   opts?: {
     title?: string;
     eventId?: string;
-    startTime?: Date;
+    startTime?: Date | string | number | null;
     durationMinutes?: number;
   }
 ): Promise<string> {
   if (currentLink?.trim() && !isGenericGoogleMeetNewLink(currentLink)) {
     return getSafeMeetingLink(currentLink);
   }
+
+  let calError: any = null;
+  let meetError: any = null;
 
   if (isGoogleWorkspaceConfigured()) {
     try {
@@ -102,6 +105,7 @@ export async function ensureValidGoogleMeetingLink(
         return cal.meetingUri;
       }
     } catch (err: any) {
+      calError = err;
       console.warn("[Google Meet] Google Calendar auto-creation failed, trying Meet API directly:", err?.message || err);
     }
 
@@ -114,13 +118,13 @@ export async function ensureValidGoogleMeetingLink(
         return space.meetingUri;
       }
     } catch (err: any) {
+      meetError = err;
       console.warn("[Google Meet] Google Meet space auto-creation failed:", err?.message || err);
     }
   }
 
-  const guaranteedFallback = generateUniqueGoogleMeetLink();
-  console.log(`[Google Meet] Guaranteed unique room assigned: ${guaranteedFallback}`);
-  return guaranteedFallback;
+  const errorDetail = calError?.message || meetError?.message || "Google Workspace is not configured.";
+  throw new Error(`Failed to create authentic Google Meet space via Google API: ${errorDetail}`);
 }
 
 export async function syncClassMeetingSession(

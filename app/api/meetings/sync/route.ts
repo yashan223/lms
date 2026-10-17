@@ -20,7 +20,47 @@ export async function GET(request: NextRequest) {
     const result = await autoSyncActiveGoogleWorkspaceMeetings();
     return NextResponse.json({ success: true, ...result });
   }
-  return NextResponse.json({ ok: true });
+
+  const isTest = request.nextUrl.searchParams.get("test") === "1";
+  if (!isTest) {
+    return NextResponse.json({
+      ok: true,
+      isGoogleWorkspaceConfigured: isGoogleWorkspaceConfigured(),
+    });
+  }
+
+  let calendarError: string | null = null;
+  let calendarLink: string | null = null;
+  let meetApiError: string | null = null;
+  let meetApiLink: string | null = null;
+  const { createGoogleCalendarEventWithMeet, createGoogleWorkspaceMeetingSpace, loadServiceAccountCredentials } = await import("@/lib/google-workspace");
+  const creds = loadServiceAccountCredentials();
+
+  try {
+    const res = await createGoogleCalendarEventWithMeet({ title: "Diagnostic Test", startTime: new Date() });
+    calendarLink = res.meetingUri;
+  } catch (e: any) {
+    calendarError = e.message || String(e);
+  }
+
+  try {
+    const res = await createGoogleWorkspaceMeetingSpace({ title: "Diagnostic Meet Space" });
+    meetApiLink = res.meetingUri;
+  } catch (e: any) {
+    meetApiError = e.message || String(e);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    isGoogleWorkspaceConfigured: isGoogleWorkspaceConfigured(),
+    clientEmail: creds?.clientEmail || null,
+    hasKey: Boolean(creds?.privateKey),
+    adminEmail: process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL,
+    calendarLink,
+    calendarError,
+    meetApiLink,
+    meetApiError,
+  });
 }
 
 export async function POST(request: NextRequest) {

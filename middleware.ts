@@ -94,7 +94,7 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set("X-XSS-Protection", "1; mode=block");
   res.headers.set(
     "Permissions-Policy",
-    "camera=(self 'https://meet.google.com'), microphone=(self 'https://meet.google.com'), geolocation=(), payment=(self)"
+    "camera=(self *), microphone=(self *), geolocation=(), payment=(self)"
   );
   return res;
 }

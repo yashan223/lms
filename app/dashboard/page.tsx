@@ -1455,7 +1455,7 @@ function DashboardContent() {
                               {ev.actualStartTime && ev.actualEndTime ? (
                                 <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
                                   <Clock className="w-3 h-3 text-emerald-600" />
-                                  Google Meet: {formatTimeInTimezone(ev.actualStartTime, userTimezone)} - {formatTimeInTimezone(ev.actualEndTime, userTimezone, { includeAbbr: true })}
+                                  BigBlueButton: {formatTimeInTimezone(ev.actualStartTime, userTimezone)} - {formatTimeInTimezone(ev.actualEndTime, userTimezone, { includeAbbr: true })}
                                 </span>
                               ) : ev.startedAt && ev.endedAt ? (
                                 <span className="text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
@@ -1475,13 +1475,13 @@ function DashboardContent() {
                         <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                           {ev.status === "LIVE" ? (
                             <a
-                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
+                              href={getSafeMeetingLink(ev.meetingLink || `/api/meetings/join?eventId=${ev.id}`)}
                               target="_blank"
                               rel="noreferrer"
                               className="h-8.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 animate-pulse whitespace-nowrap"
                             >
                               <Video className="w-3.5 h-3.5 shrink-0" />
-                              <span>Join Live Meet</span>
+                              <span>Join Live Class</span>
                             </a>
                           ) : (ev.status === "COMPLETED" || ev.endedAt) ? (
                             ev.recordingUrl ? (
@@ -1508,7 +1508,7 @@ function DashboardContent() {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span
                                 className="h-8.5 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none"
-                                title="Your tutor will start the session shortly. Once started, this button turns into 'Join Live Meet'."
+                                title="Your tutor will start the session shortly. Once started, this button turns into 'Join Live Class'."
                               >
                                 <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                                 <span>Waiting for Tutor to Start</span>
@@ -1519,10 +1519,10 @@ function DashboardContent() {
                                   target="_blank"
                                   rel="noreferrer"
                                   className="h-8.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all shadow-2xs"
-                                  title="Google Meet room is ready - click to preview or enter"
+                                  title="Classroom room is ready - click to preview or enter"
                                 >
                                   <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                                  <span>Google Meet Room</span>
+                                  <span>Live Classroom</span>
                                 </a>
                               )}
                             </div>

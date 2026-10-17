@@ -838,7 +838,7 @@ export function TutorCourseWorkspaceContent({
         { id: "curriculum", label: "Curriculum & Syllabus", count: totalLessons, icon: Layers3 },
         { id: "materials", label: "Study Materials", count: course?.materials?.length, icon: FileText },
         { id: "students", label: "Enrolled Students", count: course?.enrollments?.length, icon: Users },
-        { id: "live_classes", label: "Live Google Meets", count: course?.events?.length, icon: Video },
+        { id: "live_classes", label: "Live Classes", count: course?.events?.length, icon: Video },
         { id: "reviews", label: "Reviews & Ratings", count: course?.reviews?.length, icon: Star },
       ];
 
@@ -1915,7 +1915,7 @@ export function TutorCourseWorkspaceContent({
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Live Classes & Google Meet Sessions</h2>
+                  <h2 className="text-lg font-black text-slate-900">Live Classes & Online Sessions</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Schedule live tutorial sessions, webinars, and interactive past-paper discussions for this course.
                   </p>
@@ -1928,7 +1928,7 @@ export function TutorCourseWorkspaceContent({
               >
                 <div className="font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <Video className="w-4 h-4 text-blue-600" />
-                  Schedule Live Google Meet Class
+                  Schedule Live Online Class
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
@@ -1959,7 +1959,7 @@ export function TutorCourseWorkspaceContent({
                   </div>
 
                   <div className="sm:col-span-2 space-y-1.5">
-                    <label className="font-bold text-slate-700">Google Meet / Video Link</label>
+                    <label className="font-bold text-slate-700">Classroom / Meeting Link</label>
                     <Input
                       placeholder="Leave empty to auto-generate or paste custom room link"
                       value={classMeetLink}
@@ -2057,7 +2057,7 @@ export function TutorCourseWorkspaceContent({
                             {isLive ? (
                               <>
                                 <a
-                                  href={eventItem.meetingLink || "https://meet.google.com"}
+                                  href={eventItem.meetingLink || `/api/meetings/join?eventId=${eventItem.id}`}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm"

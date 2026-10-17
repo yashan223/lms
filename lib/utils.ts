@@ -5,24 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function normalizeGoogleMeetLink(link?: string | null): string {
-  if (!link || typeof link !== "string" || !link.trim() || isGenericGoogleMeetNewLink(link)) {
+export function normalizeMeetingLink(link?: string | null): string {
+  if (!link || typeof link !== "string" || !link.trim() || isGenericMeetingLink(link)) {
     return "";
   }
   const trimmed = link.trim();
-  if (trimmed.startsWith("https://meet.google.com/") || trimmed.startsWith("http://meet.google.com/")) {
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
     return trimmed;
   }
-  if (/^[a-z]{3}-[a-z]{4}-[a-z]{3}$/i.test(trimmed)) {
-    return `https://meet.google.com/${trimmed.toLowerCase()}`;
-  }
-  if (trimmed.startsWith("http")) {
-    return trimmed;
-  }
-  return `https://meet.google.com/${trimmed}`;
+  return `https://${trimmed}`;
 }
 
-export function isGenericGoogleMeetNewLink(link?: string | null): boolean {
+export function isGenericMeetingLink(link?: string | null): boolean {
   if (!link || typeof link !== "string") return true;
   const trimmed = link.trim().toLowerCase();
   return (
@@ -35,17 +29,19 @@ export function isGenericGoogleMeetNewLink(link?: string | null): boolean {
   );
 }
 
-export function isValidGoogleMeetRoom(link?: string | null): boolean {
-  if (!link || typeof link !== "string" || isGenericGoogleMeetNewLink(link)) return false;
-  const trimmed = link.trim();
-  return (
-    /meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/i.test(trimmed) ||
-    /meet\.google\.com\/[a-z0-9_-]{8,}/i.test(trimmed)
-  );
+// Deprecated aliases kept for backward compatibility
+export const normalizeGoogleMeetLink = normalizeMeetingLink;
+export const isGenericGoogleMeetNewLink = isGenericMeetingLink;
+
+export function isValidMeetingRoom(link?: string | null): boolean {
+  if (!link || typeof link !== "string" || isGenericMeetingLink(link)) return false;
+  return link.trim().length > 4;
 }
 
+export const isValidGoogleMeetRoom = isValidMeetingRoom;
+
 export function getSafeMeetingLink(link?: string | null): string {
-  return normalizeGoogleMeetLink(link);
+  return normalizeMeetingLink(link);
 }
 
 export function parseTutorBio(bio: string | null | undefined): string {

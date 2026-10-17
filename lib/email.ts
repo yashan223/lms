@@ -1,6 +1,5 @@
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
-import { JWT } from "google-auth-library";
 
 export interface SendVerificationEmailParams {
   email: string;
@@ -24,7 +23,7 @@ export interface EmailDispatchParams {
 
 export interface EmailDispatchResult {
   success: boolean;
-  provider?: "google_workspace_smtp" | "google_workspace_api" | "resend";
+  provider?: "smtp" | "resend";
   error?: string;
   fallbackUsed?: boolean;
 }
@@ -66,39 +65,28 @@ function getResendFromEmail(): string {
 }
 
 // ==========================================
-// 1. Google Workspace Configurations & Senders
+// 1. SMTP Configurations & Senders
 // ==========================================
 
-export function isGoogleWorkspaceSmtpConfigured(): boolean {
+export function isSmtpConfigured(): boolean {
   const user =
+    process.env.SMTP_USER?.trim() ||
     process.env.GMAIL_USER?.trim() ||
-    process.env.GOOGLE_WORKSPACE_EMAIL?.trim() ||
-    process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim();
+    process.env.EMAIL_USER?.trim();
 
   const pass =
+    process.env.SMTP_PASS?.trim() ||
     process.env.GMAIL_APP_PASSWORD?.trim() ||
-    process.env.GOOGLE_WORKSPACE_APP_PASSWORD?.trim() ||
-    process.env.GOOGLE_SMTP_PASS?.trim();
+    process.env.EMAIL_PASS?.trim();
 
   return Boolean(user && pass);
 }
 
-export function isGoogleWorkspaceServiceAccountConfigured(): boolean {
-  return Boolean(
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim() &&
-    process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim() &&
-    process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim()
-  );
-}
-
-export function isGoogleWorkspaceConfigured(): boolean {
-  return isGoogleWorkspaceSmtpConfigured() || isGoogleWorkspaceServiceAccountConfigured();
-}
-
-function getGoogleSender(userFallback: string): { sender: string; replyTo: string } {
+function getSmtpSender(userFallback: string): { sender: string; replyTo: string } {
   const senderEmail =
-    process.env.GOOGLE_WORKSPACE_FROM_EMAIL?.trim() ||
-    process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() ||
+    process.env.SMTP_FROM_EMAIL?.trim() ||
+    process.env.SMTP_FROM?.trim() ||
+    process.env.DEFAULT_FROM_EMAIL?.trim() ||
     userFallback;
 
   const sender = senderEmail.includes("<")
@@ -106,44 +94,40 @@ function getGoogleSender(userFallback: string): { sender: string; replyTo: strin
     : `PulseEDU Global <${senderEmail}>`;
 
   const replyTo =
+    process.env.SMTP_REPLY_TO?.trim() ||
     process.env.RESEND_REPLY_TO?.trim() ||
-    process.env.GOOGLE_WORKSPACE_REPLY_TO?.trim() ||
     (senderEmail.match(/<([^>]+)>/)?.[1] ?? senderEmail);
 
   return { sender, replyTo };
 }
 
 // ==========================================
-// 2. Google Workspace Dispatch Engines
+// 2. SMTP Dispatch Engine
 // ==========================================
 
-/**
- * Primary Google Workspace Method 1:
- * SMTP via nodemailer using a Google Workspace Account or App Password.
- */
-async function dispatchGoogleWorkspaceSmtp(
+async function dispatchSmtpEmail(
   params: EmailDispatchParams
 ): Promise<{ success: boolean; error?: string }> {
   const user =
+    process.env.SMTP_USER?.trim() ||
     process.env.GMAIL_USER?.trim() ||
-    process.env.GOOGLE_WORKSPACE_EMAIL?.trim() ||
-    process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim();
+    process.env.EMAIL_USER?.trim();
 
   const rawPass =
+    process.env.SMTP_PASS?.trim() ||
     process.env.GMAIL_APP_PASSWORD?.trim() ||
-    process.env.GOOGLE_WORKSPACE_APP_PASSWORD?.trim() ||
-    process.env.GOOGLE_SMTP_PASS?.trim();
+    process.env.EMAIL_PASS?.trim();
 
   if (!user || !rawPass) {
-    return { success: false, error: "Google Workspace SMTP credentials not configured" };
+    return { success: false, error: "SMTP credentials not configured" };
   }
 
-  const pass = rawPass.replace(/\s+/g, ""); // Strip any spaces from 16-character App Passwords
-  const host = process.env.GOOGLE_SMTP_HOST?.trim() || "smtp.gmail.com";
-  const port = parseInt(process.env.GOOGLE_SMTP_PORT || "465", 10);
-  const secure = (process.env.GOOGLE_SMTP_SECURE ?? "true") === "true" || port === 465;
+  const pass = rawPass.replace(/\s+/g, "");
+  const host = process.env.SMTP_HOST?.trim() || process.env.GOOGLE_SMTP_HOST?.trim() || "smtp.gmail.com";
+  const port = parseInt(process.env.SMTP_PORT || process.env.GOOGLE_SMTP_PORT || "465", 10);
+  const secure = (process.env.SMTP_SECURE ?? process.env.GOOGLE_SMTP_SECURE ?? "true") === "true" || port === 465;
 
-  const { sender, replyTo } = getGoogleSender(user);
+  const { sender, replyTo } = getSmtpSender(user);
 
   const transporter = nodemailer.createTransport({
     host,
@@ -155,7 +139,7 @@ async function dispatchGoogleWorkspaceSmtp(
     socketTimeout: 15000,
   });
 
-  const info = await transporter.sendMail({
+  await transporter.sendMail({
     from: sender,
     to: params.to,
     replyTo: replyTo,
@@ -169,89 +153,6 @@ async function dispatchGoogleWorkspaceSmtp(
       "Precedence": "bulk",
     },
   });
-
-  return { success: true };
-}
-
-/**
- * Primary Google Workspace Method 2:
- * Gmail REST API via Service Account Domain-Wide Delegation.
- */
-async function dispatchGoogleWorkspaceGmailApi(
-  params: EmailDispatchParams
-): Promise<{ success: boolean; error?: string }> {
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
-  let privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim();
-  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim();
-
-  if (!clientEmail || !privateKey || !adminEmail) {
-    return { success: false, error: "Google Workspace Service Account credentials not configured" };
-  }
-
-  privateKey = privateKey.replace(/\\n/g, "\n");
-
-  const auth = new JWT({
-    email: clientEmail,
-    key: privateKey,
-    subject: adminEmail,
-    scopes: ["https://www.googleapis.com/auth/gmail.send"],
-  });
-
-  const { sender, replyTo } = getGoogleSender(adminEmail);
-  const boundary = `__pulseedu_boundary_${Date.now()}__`;
-  const subjectEncoded = `=?UTF-8?B?${Buffer.from(params.subject, "utf-8").toString("base64")}?=`;
-
-  const headers = [
-    `From: ${sender}`,
-    `To: ${params.to}`,
-    replyTo ? `Reply-To: ${replyTo}` : "",
-    `Subject: ${subjectEncoded}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    `X-Entity-Ref-ID: ${Date.now()}`,
-    `Auto-Submitted: auto-generated`,
-  ].filter(Boolean);
-
-  const bodyParts = [
-    `--${boundary}`,
-    `Content-Type: text/plain; charset="UTF-8"`,
-    `Content-Transfer-Encoding: base64`,
-    "",
-    Buffer.from(params.text || "", "utf-8").toString("base64"),
-    "",
-    `--${boundary}`,
-    `Content-Type: text/html; charset="UTF-8"`,
-    `Content-Transfer-Encoding: base64`,
-    "",
-    Buffer.from(params.html, "utf-8").toString("base64"),
-    "",
-    `--${boundary}--`,
-  ];
-
-  const rawMessage = headers.concat("", bodyParts).join("\r\n");
-  const rawBase64Url = Buffer.from(rawMessage)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-
-  const authHeaders = await auth.getRequestHeaders();
-  const res = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/${encodeURIComponent(adminEmail)}/messages/send`,
-    {
-      method: "POST",
-      headers: {
-        ...authHeaders,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ raw: rawBase64Url }),
-    }
-  );
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gmail API send failed (${res.status}): ${errText}`);
-  }
 
   return { success: true };
 }
@@ -341,53 +242,41 @@ async function dispatchResendEmail(
 }
 
 // ==========================================
-// 4. Unified Dispatcher (Google Workspace -> Resend Fallback)
+// 4. Unified Dispatcher (SMTP -> Resend Fallback)
 // ==========================================
 
 export async function dispatchAcademicEmail(
   params: EmailDispatchParams
 ): Promise<EmailDispatchResult> {
-  const hasWorkspaceSmtp = isGoogleWorkspaceSmtpConfigured();
-  const hasWorkspaceSa = isGoogleWorkspaceServiceAccountConfigured();
+  const hasSmtp = isSmtpConfigured();
   const resendEnabled = isResendEnabled();
-  let googleError: string | null = null;
+  let smtpError: string | null = null;
 
-  // Step 1: Attempt Google Workspace (Primary)
-  if (hasWorkspaceSmtp || hasWorkspaceSa) {
-    const preferredMethod = hasWorkspaceSmtp ? "SMTP" : "Gmail API";
-    console.log(`\n🚀 [EMAIL DISPATCH] Attempting primary delivery via Google Workspace (${preferredMethod}) to: ${params.to}`);
-
+  // Step 1: Attempt SMTP (Primary)
+  if (hasSmtp) {
+    console.log(`\n🚀 [EMAIL DISPATCH] Attempting primary delivery via SMTP to: ${params.to}`);
     try {
-      if (hasWorkspaceSmtp) {
-        const smtpRes = await dispatchGoogleWorkspaceSmtp(params);
-        if (smtpRes.success) {
-          console.log(`✅ [EMAIL SUCCESS] Delivered via Google Workspace SMTP to: ${params.to}\n`);
-          return { success: true, provider: "google_workspace_smtp" };
-        }
-        googleError = smtpRes.error || "Google Workspace SMTP failed";
-      } else if (hasWorkspaceSa) {
-        const apiRes = await dispatchGoogleWorkspaceGmailApi(params);
-        if (apiRes.success) {
-          console.log(`✅ [EMAIL SUCCESS] Delivered via Google Workspace Gmail API to: ${params.to}\n`);
-          return { success: true, provider: "google_workspace_api" };
-        }
-        googleError = apiRes.error || "Google Workspace Gmail API failed";
+      const smtpRes = await dispatchSmtpEmail(params);
+      if (smtpRes.success) {
+        console.log(`✅ [EMAIL SUCCESS] Delivered via SMTP to: ${params.to}\n`);
+        return { success: true, provider: "smtp" };
       }
+      smtpError = smtpRes.error || "SMTP delivery failed";
     } catch (err: any) {
-      googleError = err?.message || String(err);
+      smtpError = err?.message || String(err);
     }
 
-    console.warn(`⚠️ [Google Workspace Failed] Reason: ${googleError}`);
+    console.warn(`⚠️ [SMTP Failed] Reason: ${smtpError}`);
   } else {
-    console.log(`ℹ️ [EMAIL DISPATCH] Google Workspace not configured.`);
+    console.log(`ℹ️ [EMAIL DISPATCH] SMTP not configured.`);
   }
 
-  // If Resend is disabled, do not attempt fallback — operate in Google Workspace only mode
+  // If Resend is disabled, do not attempt fallback
   if (!resendEnabled) {
-    console.log(`ℹ️ [RESEND DISABLED] Resend fallback is disabled (ENABLE_RESEND=false). Operating in Google Workspace ONLY mode.\n`);
-    const failureSummary = googleError
-      ? `Google Workspace email delivery failed: ${googleError} (Resend fallback is disabled)`
-      : `Google Workspace is not configured and Resend fallback is disabled (ENABLE_RESEND=false)`;
+    console.log(`ℹ️ [RESEND DISABLED] Resend fallback is disabled (ENABLE_RESEND=false).\n`);
+    const failureSummary = smtpError
+      ? `SMTP email delivery failed: ${smtpError} (Resend fallback is disabled)`
+      : `SMTP is not configured and Resend fallback is disabled (ENABLE_RESEND=false)`;
     console.error(`❌ [EMAIL DELIVERY FAILED] ${failureSummary}\n`);
     return { success: false, error: failureSummary };
   }
@@ -396,20 +285,19 @@ export async function dispatchAcademicEmail(
   console.warn(`🔄 [FALLBACK TRIGGERED] Switching to Resend email delivery (Secondary)...\n`);
   const resendResult = await dispatchResendEmail(params);
   if (resendResult.success) {
-    const isFallback = Boolean(hasWorkspaceSmtp || hasWorkspaceSa);
     console.log(
-      `✅ [EMAIL SUCCESS] Delivered via Resend to: ${params.to}${isFallback ? " (Secondary fallback from Google Workspace)" : ""}\n`
+      `✅ [EMAIL SUCCESS] Delivered via Resend to: ${params.to}${hasSmtp ? " (Secondary fallback from SMTP)" : ""}\n`
     );
     return {
       success: true,
       provider: "resend",
-      fallbackUsed: isFallback,
+      fallbackUsed: hasSmtp,
     };
   }
 
   // Both engines failed or were unavailable
-  const failureSummary = googleError
-    ? `Google Workspace failed (${googleError}), and Resend secondary fallback also failed: ${resendResult.error}`
+  const failureSummary = smtpError
+    ? `SMTP failed (${smtpError}), and Resend secondary fallback also failed: ${resendResult.error}`
     : `Resend email dispatch failed: ${resendResult.error}`;
 
   console.error(`❌ [EMAIL DELIVERY FAILED] ${failureSummary}\n`);

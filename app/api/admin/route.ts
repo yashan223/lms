@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { deleteStorageFile } from "@/lib/storage";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { getAuthenticatedUser, hashPassword } from "@/lib/auth";
 import { getBundles, saveBundles, DEFAULT_BUNDLES } from "@/lib/bundles";
 import {
@@ -17,8 +17,14 @@ import {
   resetDefaultSubjects as resetDefaultSchools,
 } from "@/lib/subjects";
 import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
-import { syncClassMeetingSession, ensureValidGoogleMeetingLink } from "@/lib/google-meet";
-import { createGoogleWorkspaceTutorAccount, isGoogleWorkspaceConfigured } from "@/lib/google-workspace";
+import {
+  syncClassMeetingSession,
+  createBBBMeeting,
+  getBBBJoinUrl,
+  getBBBMeetingId,
+  getUniversalJoinLink,
+  isBigBlueButtonConfigured,
+} from "@/lib/bigbluebutton";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -407,42 +413,19 @@ export async function POST(request: NextRequest) {
         ? getRegionalTimezone(country).id
         : DEFAULT_TIMEZONE;
 
-      let workspaceResult: any = null;
-      if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
-        if (body.createWorkspaceAccount !== false && isGoogleWorkspaceConfigured()) {
-          try {
-            workspaceResult = await createGoogleWorkspaceTutorAccount({
-              name,
-              email: email.trim(),
-              password: rawPassword,
-              phone: phone ? phone.trim() : undefined,
-              customUsername: body.customWorkspaceUsername,
-            });
-          } catch (wsErr) {
-            console.warn("[admin] Error provisioning Workspace tutor account:", wsErr);
-          }
-        }
-      }
-
       let initialBio = bio ? bio.trim() : "";
       if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
+        const resolvedAL = String(hourlyRateAL || hourlyRate || "5000").trim();
+        const resolvedOL = String(hourlyRateOL || "3500").trim();
         try {
           const parsed = initialBio.trim().startsWith("{") ? JSON.parse(initialBio) : { about: initialBio };
-          const resolvedAL = String(hourlyRateAL || hourlyRate || "5000").trim();
-          const resolvedOL = String(hourlyRateOL || "3500").trim();
           parsed.hourlyRate = resolvedAL;
           parsed.hourlyRateAL = resolvedAL;
           parsed.hourlyRateOL = resolvedOL;
           parsed.isALTutor = isALTutor !== undefined ? Boolean(isALTutor) : true;
           parsed.isOLTutor = isOLTutor !== undefined ? Boolean(isOLTutor) : true;
-          if (workspaceResult?.workspaceEmail) {
-            parsed.googleWorkspaceEmail = workspaceResult.workspaceEmail;
-            parsed.workspaceProvisioned = workspaceResult.success || workspaceResult.alreadyExisted;
-          }
           initialBio = JSON.stringify(parsed);
         } catch {
-          const resolvedAL = String(hourlyRateAL || hourlyRate || "5000").trim();
-          const resolvedOL = String(hourlyRateOL || "3500").trim();
           initialBio = JSON.stringify({
             about: initialBio,
             hourlyRate: resolvedAL,
@@ -450,17 +433,11 @@ export async function POST(request: NextRequest) {
             hourlyRateOL: resolvedOL,
             isALTutor: isALTutor !== undefined ? Boolean(isALTutor) : true,
             isOLTutor: isOLTutor !== undefined ? Boolean(isOLTutor) : true,
-            googleWorkspaceEmail: workspaceResult?.workspaceEmail || undefined,
-            workspaceProvisioned: workspaceResult?.success || workspaceResult?.alreadyExisted || false,
           });
         }
       }
 
-      // If requested or if tutor, use Workspace email if chosen
-      const primaryUserEmail =
-        body.useWorkspaceEmailAsLogin && workspaceResult?.workspaceEmail
-          ? workspaceResult.workspaceEmail.toLowerCase()
-          : email.trim().toLowerCase();
+      const primaryUserEmail = email.trim().toLowerCase();
 
       const newUser = await prisma.user.create({
         data: {
@@ -483,71 +460,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         user: safeNewUser,
-        workspaceEmail: workspaceResult?.workspaceEmail,
-        workspaceProvisioned: workspaceResult?.success ?? false,
-        workspaceAlreadyExisted: workspaceResult?.alreadyExisted ?? false,
-        activationUrl: workspaceResult?.activationUrl,
         requiresVerification: assignedRole === Role.TUTOR,
         message: assignedRole === Role.TUTOR
-          ? workspaceResult?.success
-            ? `Tutor account created and Google Workspace email (${workspaceResult.workspaceEmail}) provisioned successfully.`
-            : workspaceResult?.alreadyExisted
-            ? `Tutor account created. Google Workspace email (${workspaceResult.workspaceEmail}) is already active.`
-            : "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time."
+          ? "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time."
           : "User account created successfully.",
       });
     }
 
     if (action === "provision_workspace_tutor") {
-      const { userId, customUsername } = body;
-      if (!userId) {
-        return NextResponse.json({ error: "User ID is required." }, { status: 400 });
-      }
-
-      const tutor = await prisma.user.findUnique({ where: { id: userId } });
-      if (!tutor) {
-        return NextResponse.json({ error: "Tutor not found." }, { status: 404 });
-      }
-
-      const wsResult = await createGoogleWorkspaceTutorAccount({
-        name: tutor.name,
-        email: tutor.email,
-        phone: tutor.phone || undefined,
-        customUsername,
-      });
-
-      let parsedBio: any = {};
-      try {
-        if (tutor.bio && tutor.bio.trim().startsWith("{")) {
-          parsedBio = JSON.parse(tutor.bio);
-        } else {
-          parsedBio = { about: tutor.bio || "" };
-        }
-      } catch {
-        parsedBio = { about: tutor.bio || "" };
-      }
-
-      parsedBio.googleWorkspaceEmail = wsResult.workspaceEmail;
-      parsedBio.workspaceProvisioned = wsResult.success || wsResult.alreadyExisted;
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: { bio: JSON.stringify(parsedBio) },
-      });
-
-      broadcastLMSEvent("USERS_CHANGED");
-
       return NextResponse.json({
-        success: wsResult.success || wsResult.alreadyExisted,
-        workspaceEmail: wsResult.workspaceEmail,
-        alreadyExisted: wsResult.alreadyExisted,
-        error: wsResult.error,
-        activationUrl: wsResult.activationUrl,
-        message: wsResult.success
-          ? `Successfully provisioned Google Workspace email: ${wsResult.workspaceEmail}`
-          : wsResult.alreadyExisted
-          ? `Google Workspace email ${wsResult.workspaceEmail} is already active.`
-          : `Workspace provisioning: ${wsResult.error}`,
+        success: true,
+        message: "Google Workspace provisioning is disabled. PulseEDU uses BigBlueButton for live classroom conferencing.",
       });
     }
 
@@ -911,13 +834,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const meetLink = await ensureValidGoogleMeetingLink(meetingLink, {
-        title: title || "Scheduled Live Class",
-        startTime: targetDate,
-        durationMinutes: 60,
-        tutorEmail,
-        tutorName,
-      });
+      const tempId = `class-${Date.now()}`;
+      let meetLink =
+        meetingLink?.trim() && !isGenericMeetingLink(meetingLink) && !meetingLink.includes("meet.google.com")
+          ? getSafeMeetingLink(meetingLink)
+          : getUniversalJoinLink({ eventId: tempId });
 
       const newEvent = await prisma.event.create({
         data: {
@@ -926,11 +847,35 @@ export async function POST(request: NextRequest) {
           type: "LIVE_SEMINAR",
           status: "SCHEDULED",
           meetingLink: meetLink,
+          meetingSpaceId: tempId,
           dueDate: targetDate,
           courseId: courseId || null,
           approvalStatus: "APPROVED",
         },
       });
+
+      const canonicalId = getBBBMeetingId({ eventId: newEvent.id });
+      const canonicalLink = getUniversalJoinLink({ eventId: newEvent.id });
+      if (meetLink.includes(tempId)) {
+        await prisma.event.update({
+          where: { id: newEvent.id },
+          data: { meetingLink: canonicalLink, meetingSpaceId: canonicalId },
+        });
+        meetLink = canonicalLink;
+      }
+
+      if (isBigBlueButtonConfigured()) {
+        try {
+          await createBBBMeeting({
+            meetingId: canonicalId,
+            name: title || "Scheduled Live Class",
+            record: true,
+          });
+        } catch (e) {
+          console.warn("[Admin API] createBBBMeeting notice:", e);
+        }
+      }
+
       broadcastLMSEvent("EVENTS_CHANGED");
       return NextResponse.json({ success: true, event: newEvent, meetingLink: meetLink });
     }
@@ -1006,27 +951,40 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Class event not found" }, { status: 404 });
       }
 
-      let meetLink = getSafeMeetingLink(meetingLink || existing.meetingLink);
-      if (!meetLink || isGenericGoogleMeetNewLink(meetLink)) {
+      const bbbId = existing.meetingSpaceId || getBBBMeetingId({ eventId });
+      const studentJoinLink = getUniversalJoinLink({ eventId });
+      const moderatorJoinUrl = getBBBJoinUrl({
+        meetingId: bbbId,
+        fullName: existing.course?.tutor?.name || "Administrator",
+        isModerator: true,
+        userId: existing.course?.tutorId || undefined,
+      });
+
+      if (isBigBlueButtonConfigured()) {
         try {
-          meetLink = await ensureValidGoogleMeetingLink(null, {
-            title: existing.title || "PulseEDU Live Class",
-            eventId: existing.id,
-            startTime: existing.dueDate || new Date(),
-            tutorEmail: existing.course?.tutor?.email,
-            tutorName: existing.course?.tutor?.name,
+          await createBBBMeeting({
+            meetingId: bbbId,
+            name: existing.title || "PulseEDU Live Class",
+            record: true,
           });
-        } catch (linkErr: any) {
-          console.warn("[Admin API] Failed to auto-generate Google Meet link:", linkErr?.message || linkErr);
+        } catch (err: any) {
+          console.warn("[Admin API] createBBBMeeting notice:", err?.message || err);
         }
       }
+
+      const rawCandidate = meetingLink || existing.meetingLink;
+      const effectiveStudentLink =
+        rawCandidate && !isGenericMeetingLink(rawCandidate) && !rawCandidate.includes("meet.google.com")
+          ? getSafeMeetingLink(rawCandidate)
+          : studentJoinLink;
 
       const updated = await prisma.event.update({
         where: { id: eventId },
         data: {
           status: "LIVE",
           startedAt: new Date(),
-          meetingLink: meetLink || null,
+          meetingLink: effectiveStudentLink,
+          meetingSpaceId: bbbId,
         },
         include: {
           course: {
@@ -1036,13 +994,18 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      broadcastLMSEvent("EVENTS_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED", {
+        classLive: true,
+        eventId: updated.id,
+        title: updated.title,
+        meetingLink: effectiveStudentLink,
+      });
 
       return NextResponse.json({
         success: true,
         message: "Live class session has been started!",
         event: updated,
-        meetingLink: meetLink,
+        meetingLink: moderatorJoinUrl,
       });
     }
 
@@ -1194,20 +1157,28 @@ export async function POST(request: NextRequest) {
       const courseTitle = updated.course?.title || "London A/L Tutorial Individual Class";
       const courseCode = updated.course?.subjectCode || "";
       const eventTitle = `30-Min Free Trial: ${courseTitle} (${updated.studentName})`;
-      const link = await ensureValidGoogleMeetingLink(updated.meetingLink, {
-        title: eventTitle,
-        startTime: updated.preferredDate,
-        durationMinutes: 30,
-        tutorEmail: updated.tutor?.email,
-        tutorName: updated.tutor?.name,
-      });
+      const bbbId = updated.meetingSpaceId || getBBBMeetingId({ trialId });
+      const link =
+        updated.meetingLink && !isGenericMeetingLink(updated.meetingLink) && !updated.meetingLink.includes("meet.google.com")
+          ? getSafeMeetingLink(updated.meetingLink)
+          : getUniversalJoinLink({ trialId });
 
-      if (link && link !== updated.meetingLink) {
-        await prisma.trialRequest.update({
-          where: { id: trialId },
-          data: { meetingLink: link },
-        });
+      if (isBigBlueButtonConfigured()) {
+        try {
+          await createBBBMeeting({
+            meetingId: bbbId,
+            name: eventTitle,
+            record: true,
+          });
+        } catch (e) {
+          console.warn("[Admin API] approve_trial BBB notice:", e);
+        }
       }
+
+      await prisma.trialRequest.update({
+        where: { id: trialId },
+        data: { meetingLink: link, meetingSpaceId: bbbId },
+      });
 
       const eventDescription = [
         `🎯 30-Minute 1-on-1 Online Free Trial Session with Senior Tutor.`,
@@ -1236,6 +1207,7 @@ export async function POST(request: NextRequest) {
           status: EventStatus.SCHEDULED,
           approvalStatus: "APPROVED",
           meetingLink: link,
+          meetingSpaceId: bbbId,
           courseId: updated.courseId || null,
           userId: updated.studentId || updated.tutorId || null,
         },
@@ -1253,7 +1225,7 @@ export async function POST(request: NextRequest) {
           data: {
             userId: updated.studentId,
             title: "🎉 Free Trial Confirmed!",
-            message: `Your trial session for "${courseTitle}" has been approved and confirmed for ${dateStr}. Google Meet link is ready on your calendar!`,
+            message: `Your trial session for "${courseTitle}" has been approved and confirmed for ${dateStr}. BigBlueButton classroom link is ready on your dashboard!`,
             type: "SUCCESS",
             link: "/dashboard",
           },

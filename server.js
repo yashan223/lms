@@ -7,20 +7,6 @@ const path = require("path");
 
 loadEnvConfig(process.cwd());
 
-// Auto-sync Google Workspace Service Account credentials into process.env from JSON
-try {
-  const jsonPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || "pulseedu-lms-2553918dfc26.json";
-  const fullJsonPath = path.isAbsolute(jsonPath) ? jsonPath : path.join(process.cwd(), jsonPath);
-  if (fs.existsSync(fullJsonPath)) {
-    const parsed = JSON.parse(fs.readFileSync(fullJsonPath, "utf8"));
-    if (parsed.client_email) process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email;
-    if (parsed.private_key) process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = parsed.private_key;
-    if (parsed.project_id) process.env.GOOGLE_PROJECT_ID = parsed.project_id;
-    console.log(`[server] Synchronized service account env from JSON: ${jsonPath}`);
-  }
-} catch (e) {
-  console.warn("[server] Could not load service account JSON into env:", e.message);
-}
 
 const dev = process.env.NODE_ENV === "development" || process.env.npm_lifecycle_event === "dev";
 if (!process.env.NODE_ENV) {
@@ -186,10 +172,10 @@ app.prepare().then(() => {
     console.log(`> Native WebSocket server attached at ws://${hostname}:${port}/ws`);
   });
 
-  // ─── Background: Auto-sync Google Workspace recordings every 5 minutes ───
-  // Polls all active/recent meetings for actual start time, end time, and Drive recording.
+  // ─── Background: Auto-sync BigBlueButton recordings every 5 minutes ───
+  // Polls all active/recent meetings for completion and BigBlueButton recording playback links.
   const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-  const autoSyncGoogleWorkspace = async () => {
+  const autoSyncBigBlueButton = async () => {
     try {
       const base = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${port}`;
       const res = await fetch(`${base}/api/meetings/sync`, {
@@ -200,7 +186,7 @@ app.prepare().then(() => {
       if (res.ok) {
         const data = await res.json();
         if (data.syncedEvents > 0 || data.syncedTrials > 0) {
-          console.log(`[auto-sync] Google Workspace sync: ${data.syncedEvents} class(es), ${data.syncedTrials} trial(s) updated.`);
+          console.log(`[auto-sync] BigBlueButton sync: ${data.syncedEvents} class(es), ${data.syncedTrials} trial(s) updated.`);
         }
       }
     } catch (err) {
@@ -210,15 +196,15 @@ app.prepare().then(() => {
 
   // Delay first run by 30s to let the server fully initialise
   const firstSyncTimeout = setTimeout(() => {
-    autoSyncGoogleWorkspace();
+    autoSyncBigBlueButton();
   }, 30 * 1000);
 
-  const autoSyncInterval = setInterval(autoSyncGoogleWorkspace, SYNC_INTERVAL_MS);
+  const autoSyncInterval = setInterval(autoSyncBigBlueButton, SYNC_INTERVAL_MS);
 
   if (firstSyncTimeout.unref) firstSyncTimeout.unref();
   if (autoSyncInterval.unref) autoSyncInterval.unref();
 
-  console.log(`> Google Workspace auto-sync enabled (every ${SYNC_INTERVAL_MS / 60000} min)`);
+  console.log(`> BigBlueButton auto-sync enabled (every ${SYNC_INTERVAL_MS / 60000} min)`);
   // ─────────────────────────────────────────────────────────────────────────
 
   const handleShutdown = (signal) => {

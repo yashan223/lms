@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
-import { ensureValidGoogleMeetingLink } from "@/lib/google-meet";
+import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
+import {
+  createBBBMeeting,
+  getBBBMeetingId,
+  getUniversalJoinLink,
+  isBigBlueButtonConfigured,
+} from "@/lib/bigbluebutton";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
@@ -505,16 +510,23 @@ export async function POST(request: NextRequest) {
       const rawDate = confirmedDate || scheduledDate;
       const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
       const targetStatus = (status as TrialStatus) || TrialStatus.CONFIRMED;
+      const bbbId = existingTrial.meetingSpaceId || getBBBMeetingId({ trialId: existingTrial.id });
       const link =
-        targetStatus === TrialStatus.CONFIRMED
-          ? await ensureValidGoogleMeetingLink(meetingLink || existingTrial.meetingLink, {
-              title: `30-Min Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName})`,
-              startTime: targetDate,
-              durationMinutes: 30,
-              tutorEmail: existingTrial.tutor?.email,
-              tutorName: existingTrial.tutor?.name,
-            })
-          : getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
+        meetingLink?.trim() && !isGenericMeetingLink(meetingLink) && !meetingLink.includes("meet.google.com")
+          ? getSafeMeetingLink(meetingLink)
+          : getUniversalJoinLink({ trialId: existingTrial.id });
+
+      if (targetStatus === TrialStatus.CONFIRMED && isBigBlueButtonConfigured()) {
+        try {
+          await createBBBMeeting({
+            meetingId: bbbId,
+            name: `30-Min Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName})`,
+            record: true,
+          });
+        } catch (e) {
+          console.warn("[trials] BBB create notice:", e);
+        }
+      }
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },
@@ -522,6 +534,7 @@ export async function POST(request: NextRequest) {
           status: targetStatus,
           preferredDate: targetDate,
           meetingLink: link,
+          meetingSpaceId: bbbId,
           notes: notes !== undefined ? notes?.trim() || null : existingTrial.notes,
         },
         include: {
@@ -600,7 +613,7 @@ export async function POST(request: NextRequest) {
             data: {
               userId: updatedTrial.studentId,
               title: "🎉 Free Trial Confirmed!",
-              message: `Your 30-min trial session for "${courseTitle}" has been confirmed for ${dateStr}. Google Meet link is ready on your calendar!`,
+              message: `Your 30-min trial session for "${courseTitle}" has been confirmed for ${dateStr}. BigBlueButton classroom link is ready on your dashboard!`,
               type: "SUCCESS",
               link: "/dashboard",
             },
@@ -764,13 +777,23 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const link = await ensureValidGoogleMeetingLink(meetingLink || existing.meetingLink, {
-        title: `1-on-1 Trial: ${existing.course?.title || "London A/L"} (${existing.studentName || "Student"})`,
-        startTime: new Date(scheduledDate),
-        durationMinutes: 30,
-        tutorEmail: existing.tutor?.email,
-        tutorName: existing.tutor?.name,
-      });
+      const bbbId = existing.meetingSpaceId || getBBBMeetingId({ trialId: existing.id });
+      const link =
+        meetingLink?.trim() && !isGenericMeetingLink(meetingLink) && !meetingLink.includes("meet.google.com")
+          ? getSafeMeetingLink(meetingLink)
+          : getUniversalJoinLink({ trialId: existing.id });
+
+      if (isBigBlueButtonConfigured()) {
+        try {
+          await createBBBMeeting({
+            meetingId: bbbId,
+            name: `1-on-1 Trial: ${existing.course?.title || "London A/L"} (${existing.studentName || "Student"})`,
+            record: true,
+          });
+        } catch (e) {
+          console.warn("[trials] BBB reschedule notice:", e);
+        }
+      }
 
       const updatedTrial = await prisma.trialRequest.update({
         where: { id: trialId },
@@ -778,6 +801,7 @@ export async function POST(request: NextRequest) {
           preferredDate: new Date(scheduledDate),
           ...(body.timezone ? { timezone: body.timezone } : {}),
           meetingLink: link,
+          meetingSpaceId: bbbId,
           notes: notes?.trim() || existing.notes,
           status: TrialStatus.CONFIRMED,
         },

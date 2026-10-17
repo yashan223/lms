@@ -650,7 +650,7 @@ export function TrialRequestModal({
               )}
 
               <p className="text-xs text-slate-500 bg-blue-50/70 border border-blue-100 rounded-xl p-3 text-left">
-                💡 <strong>Next Step:</strong> As soon as your tutor accepts or confirms the time, you will receive an in-app notification and the Google Meet room link will appear on your Academic Dashboard.
+                💡 <strong>Next Step:</strong> As soon as your tutor accepts or confirms the time, you will receive an in-app notification and the live classroom link will appear on your Academic Dashboard.
               </p>
 
               <div className="pt-2">

@@ -1,65 +1,60 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse, NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
-import { syncClassMeetingSession } from "@/lib/google-meet";
 import {
-  syncTrialFromGoogleWorkspace,
-  autoSyncActiveGoogleWorkspaceMeetings,
-  isGoogleWorkspaceConfigured,
-} from "@/lib/google-workspace";
-import { broadcastLMSEvent } from "@/lib/events";
+  syncClassMeetingSession,
+  syncTrialSession,
+  autoSyncActiveBBBMeetings,
+  isBigBlueButtonConfigured,
+  getBBBConfig,
+  createBBBMeeting,
+  getBBBRecordings,
+} from "@/lib/bigbluebutton";
 
 export const dynamic = "force-dynamic";
 
-// GET: lightweight internal health + trigger auto-sync (called by server.js background loop)
+// GET: internal health + trigger auto-sync (called by server.js background loop)
 export async function GET(request: NextRequest) {
   const internalHeader = request.headers.get("x-internal-sync");
   if (internalHeader === "1") {
-    const result = await autoSyncActiveGoogleWorkspaceMeetings();
+    const result = await autoSyncActiveBBBMeetings();
     return NextResponse.json({ success: true, ...result });
   }
 
   const isTest = request.nextUrl.searchParams.get("test") === "1";
+  const bbbConfig = getBBBConfig();
+
   if (!isTest) {
     return NextResponse.json({
       ok: true,
-      isGoogleWorkspaceConfigured: isGoogleWorkspaceConfigured(),
+      provider: "bigbluebutton",
+      isBigBlueButtonConfigured: isBigBlueButtonConfigured(),
+      bbbServerUrl: bbbConfig.url,
     });
   }
 
-  let calendarError: string | null = null;
-  let calendarLink: string | null = null;
-  let meetApiError: string | null = null;
-  let meetApiLink: string | null = null;
-  const { createGoogleCalendarEventWithMeet, createGoogleWorkspaceMeetingSpace, loadServiceAccountCredentials } = await import("@/lib/google-workspace");
-  const creds = loadServiceAccountCredentials();
+  let testMeetingError: string | null = null;
+  let testMeetingId: string | null = null;
 
   try {
-    const res = await createGoogleCalendarEventWithMeet({ title: "Diagnostic Test", startTime: new Date() });
-    calendarLink = res.meetingUri;
+    const testResult = await createBBBMeeting({
+      meetingId: `diagnostic-${Date.now()}`,
+      name: "PulseEDU Diagnostic Room",
+    });
+    testMeetingId = testResult.meetingId;
   } catch (e: any) {
-    calendarError = e.message || String(e);
-  }
-
-  try {
-    const res = await createGoogleWorkspaceMeetingSpace({ title: "Diagnostic Meet Space" });
-    meetApiLink = res.meetingUri;
-  } catch (e: any) {
-    meetApiError = e.message || String(e);
+    testMeetingError = e.message || String(e);
   }
 
   return NextResponse.json({
     ok: true,
-    isGoogleWorkspaceConfigured: isGoogleWorkspaceConfigured(),
-    clientEmail: creds?.clientEmail || null,
-    hasKey: Boolean(creds?.privateKey),
-    adminEmail: process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL,
-    calendarLink,
-    calendarError,
-    meetApiLink,
-    meetApiError,
+    provider: "bigbluebutton",
+    isBigBlueButtonConfigured: isBigBlueButtonConfigured(),
+    bbbServerUrl: bbbConfig.url,
+    hasSecret: Boolean(bbbConfig.secret),
+    testMeetingId,
+    testMeetingError,
   });
 }
 
@@ -83,10 +78,10 @@ export async function POST(request: NextRequest) {
     const { action, eventId, trialId, manualStartTime, manualEndTime, manualRecordingUrl } = body;
 
     if (action === "auto_sync_all" || action === "sync_all") {
-      const result = await autoSyncActiveGoogleWorkspaceMeetings();
+      const result = await autoSyncActiveBBBMeetings();
       return NextResponse.json({
         success: true,
-        message: `Synchronized ${result.syncedEvents} classes and ${result.syncedTrials} trials with Google Workspace.`,
+        message: `Synchronized ${result.syncedEvents} classes and ${result.syncedTrials} trials with BigBlueButton.`,
         ...result,
       });
     }
@@ -113,91 +108,24 @@ export async function POST(request: NextRequest) {
     }
 
     if (trialId) {
-      if (
-        isGoogleWorkspaceConfigured() &&
-        !manualStartTime &&
-        !manualEndTime &&
-        manualRecordingUrl === undefined
-      ) {
-        const wsResult = await syncTrialFromGoogleWorkspace(trialId);
-        if (wsResult.syncedWithGoogle) {
-          return NextResponse.json({
-            success: true,
-            trial: wsResult.trial,
-            message: wsResult.message,
-          });
-        }
-      }
-      const trial = await prisma.trialRequest.findUnique({
-        where: { id: trialId },
-        include: { course: true, tutor: true, student: true },
+      const result = await syncTrialSession(trialId, {
+        manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
+        manualEndTime: manualEndTime ? new Date(manualEndTime) : undefined,
+        manualRecordingUrl: manualRecordingUrl !== undefined ? manualRecordingUrl : undefined,
       });
-
-      if (!trial) {
-        return NextResponse.json(
-          { error: "Trial consultation not found." },
-          { status: 404 }
-        );
-      }
-
-      const actualStart = manualStartTime ? new Date(manualStartTime) : trial.actualStartTime || trial.preferredDate;
-      const actualEnd = manualEndTime ? new Date(manualEndTime) : trial.actualEndTime || new Date(actualStart.getTime() + 30 * 60 * 1000);
-      const recordingUrl = manualRecordingUrl !== undefined ? (manualRecordingUrl.trim() || null) : trial.recordingUrl;
-      const recordingStatus = recordingUrl ? "AVAILABLE" : "NONE";
-
-      const updatedTrial = await prisma.trialRequest.update({
-        where: { id: trialId },
-        data: {
-          status: "COMPLETED",
-          actualStartTime: actualStart,
-          actualEndTime: actualEnd,
-          recordingUrl,
-          recordingStatus,
-        },
-      });
-
-      // Also update linked Event in calendar if present
-      await prisma.event.updateMany({
-        where: { description: { contains: trialId } },
-        data: {
-          status: "COMPLETED",
-          actualStartTime: actualStart,
-          actualEndTime: actualEnd,
-          recordingUrl,
-          recordingStatus,
-        },
-      }).catch(() => {});
-
-      if (recordingUrl && trial.studentId) {
-        await prisma.notification.create({
-          data: {
-            userId: trial.studentId,
-            title: "🎥 Trial Consultation Recording Available",
-            message: `The recording for your 1-on-1 consultation is now ready to view.`,
-            type: "SUCCESS",
-            link: recordingUrl,
-          },
-        });
-        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: trial.studentId });
-      }
-
-      broadcastLMSEvent("TRIALS_CHANGED", { trialId });
-      broadcastLMSEvent("EVENTS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        trial: updatedTrial,
-        message: recordingUrl
-          ? `Trial session marked completed and recording attached.`
-          : `Trial session marked completed.`,
+        trial: result.trial,
+        message: result.message,
       });
     }
 
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    return NextResponse.json({ error: "Unknown action." }, { status: 400 });
   } catch (error: any) {
-    console.error("Sync meeting error:", error);
+    console.error("[BigBlueButton Meeting Sync Error]:", error);
     return NextResponse.json(
-      { error: error?.message || "Failed to synchronize meeting session" },
+      { error: error?.message || "Failed to synchronize meeting session." },
       { status: 500 }
     );
   }

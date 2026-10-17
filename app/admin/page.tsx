@@ -136,7 +136,7 @@ const AUDIT_ACTION_CONFIG: Record<string, { label: string; icon: any; color: str
   delete_lesson: { label: "Delete Lesson Video", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
   add_course_material: { label: "Upload Resource / Material", icon: Upload, color: "text-blue-600 bg-blue-50 border-blue-200" },
   delete_course_material: { label: "Delete Class Material", icon: Trash2, color: "text-red-600 bg-red-50 border-red-200" },
-  schedule_class: { label: "Schedule Live Google Meet", icon: Video, color: "text-blue-700 bg-blue-50 border-blue-200" },
+  schedule_class: { label: "Schedule Live BigBlueButton Class", icon: Video, color: "text-blue-700 bg-blue-50 border-blue-200" },
   start_class: { label: "Launch Live Class Room", icon: Radio, color: "text-red-600 bg-red-50 border-red-200" },
   end_class: { label: "Conclude Live Class", icon: CheckCircle2, color: "text-slate-600 bg-slate-50 border-slate-200" },
   approve_class: { label: "Approve Live Class Proposal", icon: CheckCircle2, color: "text-blue-600 bg-blue-50 border-blue-200" },
@@ -247,10 +247,6 @@ export default function AdminDashboardPage() {
   const [formUserIsOLTutor, setFormUserIsOLTutor] = useState(true);
   const [formUserTimezone, setFormUserTimezone] = useState(DEFAULT_TIMEZONE);
   const [formUserEmailManual, setFormUserEmailManual] = useState(false);
-  const [formUserWorkspaceUsername, setFormUserWorkspaceUsername] = useState("");
-  const [formUserAutoWorkspace, setFormUserAutoWorkspace] = useState(true);
-  const [formUserUseWorkspaceLogin, setFormUserUseWorkspaceLogin] = useState(true);
-  const [isProvisioningWorkspaceId, setIsProvisioningWorkspaceId] = useState<string | null>(null);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
   const [showUserCreatedSuccessModal, setShowUserCreatedSuccessModal] = useState(false);
   const [createdUserSuccess, setCreatedUserSuccess] = useState<{
@@ -774,9 +770,6 @@ export default function AdminDashboardPage() {
     setFormUserIsALTutor(true);
     setFormUserIsOLTutor(true);
     setFormUserTimezone(DEFAULT_TIMEZONE);
-    setFormUserWorkspaceUsername("");
-    setFormUserAutoWorkspace(true);
-    setFormUserUseWorkspaceLogin(true);
     setIsAddUserFullScreen(true);
     setShowAddUserModal(true);
   };
@@ -787,19 +780,13 @@ export default function AdminDashboardPage() {
       const isTutor = formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR";
       let resolvedEmail = formUserEmail.trim().toLowerCase();
 
-      if (isTutor) {
-        if (!resolvedEmail) {
-          alert("Please enter a username for the tutor's Google Workspace email.");
-          return;
-        }
-        if (!resolvedEmail.endsWith("@pulseedu.online")) {
-          const cleanUser = resolvedEmail.replace(/@.*$/, "").replace(/[^a-z0-9._-]/g, "");
-          if (!cleanUser) {
-            alert("Please provide a valid username for the tutor's @pulseedu.online email.");
-            return;
-          }
-          resolvedEmail = `${cleanUser}@pulseedu.online`;
-        }
+      if (!resolvedEmail) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+
+      if (isTutor && !resolvedEmail.includes("@")) {
+        resolvedEmail = `${resolvedEmail}@pulseedu.online`;
       }
 
       let fullPhoneNumber = formUserPhone.trim();
@@ -828,9 +815,6 @@ export default function AdminDashboardPage() {
           isALTutor: formUserIsALTutor,
           isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,
-          customWorkspaceUsername: isTutor ? resolvedEmail.replace(/@pulseedu\.online$/i, "") : undefined,
-          createWorkspaceAccount: isTutor ? true : formUserAutoWorkspace,
-          useWorkspaceEmailAsLogin: true,
         }),
       });
 
@@ -854,29 +838,6 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       console.error("Error creating user:", err);
-    }
-  };
-
-  const handleProvisionWorkspaceTutor = async (userId: string) => {
-    try {
-      setIsProvisioningWorkspaceId(userId);
-      const res = await fetch("/api/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "provision_workspace_tutor",
-          userId,
-        }),
-      });
-      const data = await res.json();
-      if (data.message) {
-        alert(data.message);
-      }
-      fetchAdminData();
-    } catch (err) {
-      console.error("Error provisioning workspace tutor:", err);
-    } finally {
-      setIsProvisioningWorkspaceId(null);
     }
   };
 
@@ -1685,12 +1646,12 @@ export default function AdminDashboardPage() {
         await fetchAdminData();
         const found = data?.event?.recordingUrl || data?.trial?.recordingUrl;
         if (found) {
-          alert("✅ Google Meet recording found & synced successfully!");
+          alert("✅ BigBlueButton recording found & synced successfully!");
         } else {
-          alert("Synced meeting details with Google. No recording file found yet (Google takes 15-30 mins to process). You can also click 'Attach Recording' to paste the link manually.");
+          alert("Synced meeting details with BigBlueButton. No recording published yet (processing may take a few minutes). You can also click 'Attach Recording' to paste a link manually.");
         }
       } else {
-        alert(data.error || "Failed to sync with Google Meet.");
+        alert(data.error || "Failed to sync with BigBlueButton.");
       }
     } catch (err) {
       console.error("Error syncing meeting:", err);
@@ -1786,10 +1747,10 @@ export default function AdminDashboardPage() {
         if (foundUrl) {
           setRecordingInputUrl(foundUrl);
           await fetchAdminData();
-          alert("Recording successfully found and synced from Google Drive!");
+          alert("Recording successfully found and synced from BigBlueButton!");
           setShowRecordingModal(false);
         } else {
-          alert("Auto-sync completed, but no MP4 recording file was detected yet in Google Drive. If recorded with Google Meet, note that Google takes 15-30 minutes to render the video. You can also paste the share link manually.");
+          alert("Auto-sync completed, but no recording file was published yet in BigBlueButton. BigBlueButton takes a few minutes after ending a session to process recordings. You can also paste a link manually.");
         }
       } else {
         alert(data.error || "Sync attempt failed.");
@@ -1805,7 +1766,7 @@ export default function AdminDashboardPage() {
     setConfirmModalData({
       isOpen: true,
       title: `Cancel Class: ${event.title}?`,
-      description: `This will cancel this live Google Meet class session and remove it from tutor and student calendars.`,
+      description: `This will cancel this live classroom session and remove it from tutor and student calendars.`,
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -2292,7 +2253,7 @@ export default function AdminDashboardPage() {
                   {activeTab === "approvals"
                     ? "Tutor Approvals & Academic Verification"
                     : activeTab === "live_classes"
-                    ? "Live Classes & Google Meet Operations"
+                    ? "Live Classes & BigBlueButton Operations"
                     : activeTab === "users"
                     ? "User Management"
                     : activeTab === "courses"
@@ -2526,7 +2487,7 @@ export default function AdminDashboardPage() {
                   <div className="text-2xl font-black tracking-tight text-slate-900">
                     {liveNowCount} {liveNowCount === 1 ? "Class Active" : "Classes Active"}
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">Google Meet Real-time Rooms</div>
+                  <div className="text-[11px] text-slate-500 font-medium">BigBlueButton Real-time Rooms</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -2622,7 +2583,7 @@ export default function AdminDashboardPage() {
                           Live Classes Currently In Progress ({liveNowCount})
                         </h3>
                         <p className="text-xs text-red-700">
-                          Active Google Meet classrooms with students & tutors connected
+                          Active BigBlueButton classrooms with students & tutors connected
                         </p>
                       </div>
                     </div>
@@ -2685,7 +2646,7 @@ export default function AdminDashboardPage() {
                                 className="flex-1 py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
                               >
                                 <Video className="w-3.5 h-3.5" />
-                                <span>Join Google Meet</span>
+                                <span>Join Classroom</span>
                                 <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
                               </a>
                             ) : (
@@ -2716,7 +2677,7 @@ export default function AdminDashboardPage() {
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                   <div>
                     <h3 className="font-bold text-sm text-slate-900">
-                      Academic Class Schedule & Google Meet Directory
+                      Academic Class Schedule & BigBlueButton Directory
                     </h3>
                     <p className="text-xs text-slate-500">
                       Showing {liveClassesList.length} classes matching current filter
@@ -2729,7 +2690,7 @@ export default function AdminDashboardPage() {
                     {liveClassesList.map((ev) => {
                       const isLive = ev.status === "LIVE";
                       const isCompleted = ev.status === "COMPLETED";
-                      const meetLink = ev.meetingLink || (ev.description?.match(/https:\/\/meet\.google\.com\/[a-z0-9-]+/i)?.[0]);
+                      const meetLink = ev.meetingLink || (ev.description?.match(/https?:\/\/[^\s]+/i)?.[0]);
 
                       return (
                         <div
@@ -2926,10 +2887,10 @@ export default function AdminDashboardPage() {
                                       onClick={() => handleSyncMeeting(ev.id)}
                                       disabled={syncingEventId === ev.id}
                                       className="text-xs font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl h-8 flex items-center gap-1 cursor-pointer"
-                                      title="Fetch verified times and Google Drive recording"
+                                      title="Fetch verified times and BigBlueButton recording"
                                     >
                                       <RefreshCw className={`w-3.5 h-3.5 ${syncingEventId === ev.id ? "animate-spin text-blue-600" : "text-slate-500"}`} />
-                                      <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
+                                      <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
                                     </Button>
                                   </>
                                 )}
@@ -2952,7 +2913,7 @@ export default function AdminDashboardPage() {
                     <Video className="w-10 h-10 text-slate-300 mx-auto" />
                     <h4 className="font-bold text-xs text-slate-700">No Classes Found</h4>
                     <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                      No Google Meet classes match the selected filter.
+                      No live classes match the selected filter.
                     </p>
                   </div>
                 )}
@@ -3069,28 +3030,11 @@ export default function AdminDashboardPage() {
                                 <div className="text-[11px] text-slate-500">{u.email}</div>
                                 {(() => {
                                   if (u.role !== "TUTOR" && (u.role as any) !== "INSTRUCTOR") return null;
-                                  let wsEmail: string | null = null;
                                   if (u.email?.endsWith("@pulseedu.online")) {
-                                    wsEmail = u.email;
-                                  } else {
-                                    try {
-                                      if (u.bio?.startsWith("{")) {
-                                        const p = JSON.parse(u.bio);
-                                        if (p?.googleWorkspaceEmail) wsEmail = p.googleWorkspaceEmail;
-                                      }
-                                    } catch {}
-                                  }
-                                  if (wsEmail && wsEmail !== u.email) {
                                     return (
-                                      <div className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1 font-mono mt-0.5 w-fit" title="Google Workspace Tutor Email">
-                                        <span>Workspace: {wsEmail}</span>
-                                      </div>
-                                    );
-                                  } else if (wsEmail) {
-                                    return (
-                                      <div className="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-semibold w-fit mt-0.5 flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        <span>Workspace Active</span>
+                                      <div className="text-[9px] text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-semibold w-fit mt-0.5 flex items-center gap-1" title="Official Tutor Account">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        <span>Official Account</span>
                                       </div>
                                     );
                                   }
@@ -3203,17 +3147,6 @@ export default function AdminDashboardPage() {
                                     <span>Enroll</span>
                                   </button>
                                 </>
-                              )}
-                              {(u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR") && (
-                                <button
-                                  onClick={() => handleProvisionWorkspaceTutor(u.id)}
-                                  disabled={isProvisioningWorkspaceId === u.id}
-                                  className="h-7 px-2 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
-                                  title="Provision or sync official Google Workspace account for this tutor"
-                                >
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                  <span>{isProvisioningWorkspaceId === u.id ? "Syncing..." : "Workspace"}</span>
-                                </button>
                               )}
                               <button
                                 onClick={() => handleOpenEditUser(u)}
@@ -5025,10 +4958,10 @@ export default function AdminDashboardPage() {
                                   onClick={() => handleSyncMeeting(undefined, tr.id)}
                                   disabled={syncingTrialId === tr.id}
                                   className="h-8.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                                  title="Sync recording from Google Drive"
+                                  title="Sync recording from BigBlueButton"
                                 >
                                   <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${syncingTrialId === tr.id ? "animate-spin" : ""}`} />
-                                  <span>{syncingTrialId === tr.id ? "Syncing..." : "Sync Meet"}</span>
+                                  <span>{syncingTrialId === tr.id ? "Syncing..." : "Sync BBB"}</span>
                                 </Button>
                               </>
                             )}
@@ -5789,7 +5722,7 @@ export default function AdminDashboardPage() {
                   <span>Add New Tutor / Admin</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Create a tutor or administrator account with custom regional settings and Google Workspace provisioning.
+                  Create a tutor or administrator account with custom regional settings and official credentials.
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
@@ -5834,7 +5767,7 @@ export default function AdminDashboardPage() {
                 </div>
                 {formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR" ? (
                   <div>
-                    <label className="font-bold block mb-1.5 text-slate-700">Google Workspace Email</label>
+                    <label className="font-bold block mb-1.5 text-slate-700">Official Tutor Email</label>
                     <div className="flex items-center">
                       <Input
                         required
@@ -6166,7 +6099,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
-                <span className="text-slate-500 text-[11px] shrink-0">Workspace Email</span>
+                <span className="text-slate-500 text-[11px] shrink-0">Tutor Email</span>
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] truncate">
                     {createdUserSuccess.email}
@@ -8583,7 +8516,7 @@ export default function AdminDashboardPage() {
                         <li>All student accounts, tutors, and profiles</li>
                         <li>All individual class courses, modules, lessons & materials</li>
                         <li>All course enrollments, student progress & certificates</li>
-                        <li>All live Google Meet events, schedules & bookings</li>
+                        <li>All live classroom events, schedules & bookings</li>
                         <li>All 1-on-1 trial consultation requests</li>
                         <li>All end-to-end encrypted chat messages</li>
                         <li>All student token wallets & credit transaction logs</li>
@@ -8693,7 +8626,7 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleSaveRecording} className="space-y-4 text-xs">
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-800 block">
-                  Recording URL (Google Drive / YouTube / Vimeo / Loom)
+                  Recording Playback URL (BigBlueButton / YouTube / Cloud Storage)
                 </label>
                 <Input
                   placeholder="https://drive.google.com/file/d/... or https://youtu.be/..."
@@ -8707,24 +8640,24 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
 
-              {/* Helper box explaining Google Meet recording storage */}
+              {/* Helper box explaining BigBlueButton recording storage */}
               <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 space-y-2 text-slate-700">
                 <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs">
                   <AlertCircle className="w-4 h-4 text-purple-700 shrink-0" />
-                  <span>Google Meet Recording Information</span>
+                  <span>BigBlueButton Recording Information</span>
                 </div>
                 <ul className="space-y-1.5 text-[11px] text-purple-900/90 list-disc list-inside">
                   <li>
-                    <strong>Google Workspace Tier:</strong> Meet recording is exclusively available on paid Google Workspace editions (Business Standard/Plus/Enterprise/Education). Free @gmail.com accounts cannot record.
+                    <strong>Automatic Recording:</strong> BigBlueButton classrooms are recorded on the server when active.
                   </li>
                   <li>
-                    <strong>Recording Trigger:</strong> The host must start recording in-call via <em>Activities &gt; Recording &gt; Start Recording</em>.
+                    <strong>Processing:</strong> BigBlueButton processes playback recordings within a few minutes after the live session ends.
                   </li>
                   <li>
-                    <strong>Google Drive Delay:</strong> Google takes 15–30 minutes to render the MP4 and deposit it into the organizer&apos;s <strong>Google Drive &gt; Meet Recordings</strong> folder.
+                    <strong>Auto-Sync:</strong> Click <em>Auto-sync Recording</em> below or wait for automatic background sync to attach the playback URL.
                   </li>
                   <li>
-                    <strong>Access:</strong> The Drive file must be shared as <em>&quot;Anyone with the link can view&quot;</em>.
+                    <strong>Custom Link:</strong> You can also paste any external video or cloud recording link directly above.
                   </li>
                 </ul>
               </div>
@@ -8736,10 +8669,10 @@ export default function AdminDashboardPage() {
                     onClick={handleAutoSyncInModal}
                     disabled={isAutoSyncingInModal}
                     className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
-                    title="Attempt to fetch recording automatically from Google Drive"
+                    title="Attempt to fetch recording automatically from BigBlueButton"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isAutoSyncingInModal ? "animate-spin" : ""}`} />
-                    <span>{isAutoSyncingInModal ? "Detecting..." : "Auto-detect Drive"}</span>
+                    <span>{isAutoSyncingInModal ? "Syncing BBB..." : "Auto-sync Recording"}</span>
                   </button>
                   {recordingModalTarget.currentUrl && (
                     <button

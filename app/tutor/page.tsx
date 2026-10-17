@@ -858,14 +858,14 @@ function TutorDashboardContent() {
         newWin.document.write(`
           <!DOCTYPE html>
           <html>
-            <head><title>Connecting to Google Meet...</title></head>
+            <head><title>Connecting to BigBlueButton...</title></head>
             <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#f8fafc;">
               <div style="text-align:center;padding:28px 24px;border-radius:16px;background:#1e293b;box-shadow:0 10px 25px -5px rgba(0,0,0,0.3);max-width:420px;border:1px solid #334155;">
                 <div style="width:38px;height:38px;border:3px solid #38bdf8;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
                 <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;">Starting Live Session...</h3>
-                <p style="margin:0 0 16px;font-size:13px;color:#94a3b8;line-height:1.5;">Auto-generating Google Meet room via Google Workspace API.<br>You will be redirected automatically.</p>
+                <p style="margin:0 0 16px;font-size:13px;color:#94a3b8;line-height:1.5;">Preparing your BigBlueButton live classroom room.<br>You will be redirected automatically.</p>
                 <div style="font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px 12px;border-radius:8px;border:1px solid #334155;">
-                  💡 Remember to click <b>Activities &gt; Recording</b> in Meet to record to Drive!
+                  🎥 Interactive whiteboard, breakout rooms & automatic recording enabled.
                 </div>
                 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
               </div>
@@ -913,14 +913,14 @@ function TutorDashboardContent() {
         newWin.document.write(`
           <!DOCTYPE html>
           <html>
-            <head><title>Connecting to Google Meet...</title></head>
+            <head><title>Connecting to BigBlueButton...</title></head>
             <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#f8fafc;">
               <div style="text-align:center;padding:28px 24px;border-radius:16px;background:#1e293b;box-shadow:0 10px 25px -5px rgba(0,0,0,0.3);max-width:420px;border:1px solid #334155;">
                 <div style="width:38px;height:38px;border:3px solid #10b981;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
                 <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;">Starting Live Consultation...</h3>
-                <p style="margin:0 0 16px;font-size:13px;color:#94a3b8;line-height:1.5;">Auto-generating Google Meet room via Google Workspace API.<br>You will be redirected automatically.</p>
+                <p style="margin:0 0 16px;font-size:13px;color:#94a3b8;line-height:1.5;">Preparing your BigBlueButton consultation room.<br>You will be redirected automatically.</p>
                 <div style="font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px 12px;border-radius:8px;border:1px solid #334155;">
-                  💡 Remember to click <b>Activities &gt; Recording</b> in Meet to record to Drive!
+                  🎥 1-on-1 video consultation with interactive screen sharing.
                 </div>
                 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
               </div>
@@ -1038,7 +1038,7 @@ function TutorDashboardContent() {
     if (!editLinkTarget) return;
     const normalized = normalizeGoogleMeetLink(editLinkInput);
     if (!normalized) {
-      alert("Please enter a valid Google Meet link (e.g. https://meet.google.com/xxx-yyyy-zzz).");
+      alert("Please enter a valid classroom meeting link (e.g. BigBlueButton or custom video room URL).");
       return;
     }
 
@@ -1126,12 +1126,12 @@ function TutorDashboardContent() {
         await fetchTutorData();
         const found = data?.event?.recordingUrl || data?.trial?.recordingUrl;
         if (found) {
-          alert("✅ Google Meet recording found & synced successfully!");
+          alert("✅ BigBlueButton recording found & synced successfully!");
         } else {
-          alert("Synced session status with Google. No recording file found yet (Google takes 15-30 mins to process). You can also click 'Attach Recording' to paste the link manually.");
+          alert("Synced session status with BigBlueButton. No recording file published yet (processing may take a few minutes). You can also click 'Attach Recording' to paste a link manually.");
         }
       } else {
-        alert(data.error || "Failed to sync with Google Meet.");
+        alert(data.error || "Failed to sync with BigBlueButton.");
       }
     } catch (error) {
       console.error("Failed to sync meeting:", error);
@@ -1227,10 +1227,10 @@ function TutorDashboardContent() {
         if (foundUrl) {
           setRecordingInputUrl(foundUrl);
           await fetchTutorData();
-          alert("Recording successfully found and synced from Google Drive!");
+          alert("Recording successfully found and synced from BigBlueButton!");
           setShowRecordingModal(false);
         } else {
-          alert("Auto-sync completed, but no MP4 recording file was detected yet in Google Drive. If you recorded with Google Meet, note that Google takes 15-30 minutes to render the video. You can also paste the share link manually above.");
+          alert("Auto-sync completed, but no recording was published yet by BigBlueButton. BigBlueButton takes a few minutes after ending a session to process recordings. You can also paste a link manually above.");
         }
       } else {
         alert(data.error || "Sync attempt failed.");
@@ -2446,7 +2446,7 @@ function TutorDashboardContent() {
                                 {ev.actualStartTime && ev.actualEndTime ? (
                                   <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
                                     <Clock className="w-3 h-3 text-emerald-600" />
-                                    Google Meet: {formatTimeInTimezone(ev.actualStartTime, tutorTimezone)} - {formatTimeInTimezone(ev.actualEndTime, tutorTimezone, { includeAbbr: true })}
+                                    BigBlueButton: {formatTimeInTimezone(ev.actualStartTime, tutorTimezone)} - {formatTimeInTimezone(ev.actualEndTime, tutorTimezone, { includeAbbr: true })}
                                     {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
                                   </span>
                                 ) : ev.startedAt && ev.endedAt ? (
@@ -2514,10 +2514,10 @@ function TutorDashboardContent() {
                                     onClick={() => handleSyncMeeting(ev.id)}
                                     disabled={syncingEventId === ev.id}
                                     className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                                    title="Sync verified timing & recording from Google Meet"
+                                    title="Sync verified timing & recording from BigBlueButton"
                                   >
                                     <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
-                                    <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
+                                    <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
                                   </button>
                                   <button
                                     onClick={() => handleDeleteClass(ev.id, ev.title)}
@@ -2578,10 +2578,10 @@ function TutorDashboardContent() {
                                   <button
                                     onClick={() => handleOpenEditLink({ eventId: ev.id, title: ev.title, currentLink: ev.meetingLink })}
                                     className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                                    title="Set or update Google Meet link"
+                                    title="Set or update classroom link"
                                   >
                                     <Video className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>{ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? "Edit Link" : "Meet Link"}</span>
+                                    <span>{ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? "Edit Link" : "Room Link"}</span>
                                   </button>
                                   <button
                                     onClick={() => openRescheduleForClass(ev)}
@@ -2752,10 +2752,10 @@ function TutorDashboardContent() {
                                 onClick={() => handleSyncMeeting(ev.id)}
                                 disabled={syncingEventId === ev.id}
                                 className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                                title="Sync timing & recording from Google Meet"
+                                title="Sync timing & recording from BigBlueButton"
                               >
                                 <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
-                                <span>{syncingEventId === ev.id ? "Syncing..." : "Sync Meet"}</span>
+                                <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
                               </button>
                               {ev.meetingLink && (
                                 <a
@@ -2972,7 +2972,7 @@ function TutorDashboardContent() {
                           </h3>
                         </div>
                         <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-                          Review incoming student requests, set/confirm official session dates, and launch 1-on-1 Google Meet trial sessions.
+                          Review incoming student requests, set/confirm official session dates, and launch 1-on-1 BigBlueButton trial sessions.
                         </p>
                       </div>
                     </div>
@@ -3392,7 +3392,7 @@ function TutorDashboardContent() {
                                           onClick={() => triggerStartTrialFlow(tr)}
                                           disabled={startingTrialId === tr.id}
                                           className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                                          title="Start live consultation session and open Google Meet room"
+                                          title="Start live consultation session and open BigBlueButton room"
                                         >
                                           <Play className="w-3.5 h-3.5 fill-current" />
                                           <span>{startingTrialId === tr.id ? "Starting..." : "Start Session"}</span>
@@ -3402,10 +3402,10 @@ function TutorDashboardContent() {
                                           type="button"
                                           onClick={() => handleOpenEditLink({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName}`, currentLink: tr.meetingLink })}
                                           className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                                          title="Set or update Google Meet link"
+                                          title="Set or update classroom link"
                                         >
                                           <Video className="w-3.5 h-3.5 text-blue-600" />
-                                          <span>{tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? "Edit Link" : "Set Meet Link"}</span>
+                                          <span>{tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? "Edit Link" : "Room Link"}</span>
                                         </button>
 
                                         {tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) && (
@@ -3414,7 +3414,7 @@ function TutorDashboardContent() {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
-                                            title="Open Google Meet room directly"
+                                            title="Open classroom room directly"
                                           >
                                             <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
                                             <span>Room Link</span>
@@ -4258,12 +4258,12 @@ function TutorDashboardContent() {
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-emerald-950 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Google Workspace Meet Connected</span>
+                    <span>BigBlueButton Classroom Connected</span>
                   </span>
                   <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-100/70 px-2 py-0.5 rounded-full">Automated</span>
                 </div>
                 <p className="text-[11px] text-emerald-900 leading-relaxed">
-                  A unique, secure Google Meet room is automatically created via the Google Workspace API. When you start, your Google Meet room will open in a new tab and students will be notified to join immediately.
+                  A unique, secure BigBlueButton classroom is automatically created with full moderator controls, whiteboard tools, and automatic server-side recording.
                 </p>
                 {startSessionTarget.currentLink && !isGenericGoogleMeetNewLink(startSessionTarget.currentLink) && (
                   <div className="text-[11px] font-mono bg-white/80 p-2 rounded-lg border border-emerald-200 text-emerald-800 truncate">
@@ -4274,10 +4274,10 @@ function TutorDashboardContent() {
 
               <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 space-y-1">
                 <div className="font-bold text-blue-950 text-[11px] flex items-center gap-1">
-                  <span>🎥 Google Drive Recording Reminder</span>
+                  <span>🎥 BigBlueButton Automatic Recording</span>
                 </div>
                 <p className="text-[10px] text-blue-800 leading-snug">
-                  When you join the Google Meet call, click <b>Activities &gt; Recording &gt; Start Recording</b>. Google Drive will automatically archive the video when you end the call, and EduPulse will detect and attach it to your class dashboard.
+                  Classes are recorded automatically on the server when active. When the session finishes, BigBlueButton processes the video and EduPulse links the playback to your dashboard.
                 </p>
               </div>
 
@@ -4287,13 +4287,13 @@ function TutorDashboardContent() {
                     Custom Room URL (Optional override)
                   </label>
                   <Input
-                    placeholder="Leave empty to auto-generate via Google Workspace API"
+                    placeholder="Leave empty to auto-generate BigBlueButton room"
                     value={startSessionMeetLink}
                     onChange={(e) => setStartSessionMeetLink(e.target.value)}
                     className="rounded-xl h-9.5 text-xs font-mono"
                   />
                   <p className="text-[10px] text-slate-400">
-                    If left blank, a dedicated Google Meet room will be generated automatically.
+                    If left blank, a dedicated BigBlueButton classroom will be generated automatically.
                   </p>
                 </div>
 
@@ -4312,7 +4312,7 @@ function TutorDashboardContent() {
                     className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>{isStartingSession ? "Launching Google Meet..." : "Start Session & Open Meet"}</span>
+                    <span>{isStartingSession ? "Launching Classroom..." : "Start Session & Open Room"}</span>
                   </Button>
                 </div>
               </form>
@@ -4344,9 +4344,9 @@ function TutorDashboardContent() {
 
             <form onSubmit={handleSaveEditLink} className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Google Meet Room URL</label>
+                <label className="font-bold text-slate-700 block mb-1">Classroom Room URL</label>
                 <Input
-                  placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                  placeholder="Auto-generated BigBlueButton room or custom URL"
                   value={editLinkInput}
                   onChange={(e) => setEditLinkInput(e.target.value)}
                   className="rounded-xl h-9 text-xs font-mono"
@@ -4395,7 +4395,7 @@ function TutorDashboardContent() {
             <form onSubmit={handleSaveRecording} className="space-y-4 text-xs">
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-800 block">
-                  Recording URL (Google Drive / YouTube / Vimeo / Loom)
+                  Recording Playback URL (BigBlueButton / YouTube / Cloud Storage)
                 </label>
                 <Input
                   placeholder="https://drive.google.com/file/d/... or https://youtu.be/..."
@@ -4409,24 +4409,24 @@ function TutorDashboardContent() {
                 </p>
               </div>
 
-              {/* Helper box explaining Google Meet recording storage */}
+              {/* Helper box explaining BigBlueButton recording storage */}
               <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 space-y-2 text-slate-700">
                 <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs">
                   <AlertCircle className="w-4 h-4 text-purple-700 shrink-0" />
-                  <span>Where are Google Meet recordings saved?</span>
+                  <span>BigBlueButton Recording Information</span>
                 </div>
                 <ul className="space-y-1.5 text-[11px] text-purple-900/90 list-disc list-inside">
                   <li>
-                    <strong>Google Workspace Only:</strong> Free personal accounts (@gmail.com) do not support recording. Google Workspace (Business Standard/Plus or Enterprise) is required.
+                    <strong>Automatic Recording:</strong> BigBlueButton classrooms are recorded on the server automatically when active.
                   </li>
                   <li>
-                    <strong>Manual Start in Call:</strong> You must click <em>Activities &gt; Recording &gt; Start Recording</em> inside Google Meet during the session.
+                    <strong>Server Processing:</strong> Playback recordings take a few minutes after the live class ends to complete server processing.
                   </li>
                   <li>
-                    <strong>Saved in Google Drive:</strong> Google deposits the video file inside your host <strong>Google Drive &gt; Meet Recordings</strong> folder (takes 15–30 minutes to render).
+                    <strong>Auto-Sync:</strong> Use the <em>Auto-sync Recording</em> button below to query BigBlueButton for the published playback URL.
                   </li>
                   <li>
-                    <strong>Share Permission:</strong> In Google Drive, right-click the video file &gt; <em>Share</em> &gt; set to <em>&quot;Anyone with the link can view&quot;</em>, then copy and paste the link here.
+                    <strong>External Videos:</strong> You can also paste an external video link (e.g. YouTube, Vimeo, Loom) directly above.
                   </li>
                 </ul>
               </div>
@@ -4438,10 +4438,10 @@ function TutorDashboardContent() {
                     onClick={handleAutoSyncInModal}
                     disabled={isAutoSyncingInModal}
                     className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
-                    title="Attempt to fetch recording automatically from Google Drive"
+                    title="Attempt to fetch recording automatically from BigBlueButton"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isAutoSyncingInModal ? "animate-spin" : ""}`} />
-                    <span>{isAutoSyncingInModal ? "Detecting..." : "Auto-detect Drive"}</span>
+                    <span>{isAutoSyncingInModal ? "Syncing BBB..." : "Auto-sync Recording"}</span>
                   </button>
                   {recordingModalTarget.currentUrl && (
                     <button
@@ -4492,7 +4492,7 @@ function TutorDashboardContent() {
                     Schedule Live Classroom Session
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Broadcast a Google Meet interactive seminar to students
+                    Broadcast an interactive live seminar to students
                   </p>
                 </div>
               </div>
@@ -4653,14 +4653,14 @@ function TutorDashboardContent() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="font-bold text-slate-700 block">
-                    Google Meet URL (Optional)
+                    Classroom / Video URL (Optional)
                   </label>
                   <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                     ✨ Auto-Generated if blank
                   </span>
                 </div>
                 <Input
-                  placeholder="Leave empty to auto-generate or paste meet.google.com/xxx-yyyy-zzz"
+                  placeholder="Leave empty to auto-generate BigBlueButton room or paste custom URL"
                   value={newClassMeetingLink}
                   onChange={(e) => setNewClassMeetingLink(e.target.value)}
                   className="rounded-xl h-9 text-xs font-mono"
@@ -4770,10 +4770,10 @@ function TutorDashboardContent() {
               {rescheduleTargetEvent && (
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-700 block">
-                    Google Meet / Zoom URL (Optional)
+                    Classroom / Video URL (Optional)
                   </label>
                   <Input
-                    placeholder="https://meet.google.com/..."
+                    placeholder="https://..."
                     value={rescheduleMeetingLink}
                     onChange={(e) => setRescheduleMeetingLink(e.target.value)}
                     className="rounded-xl h-9 text-xs font-mono"
@@ -4946,7 +4946,7 @@ function TutorDashboardContent() {
                     </Badge>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Select the student&apos;s preferred time slot, confirm Google Meet details, and schedule the session
+                    Select the student&apos;s preferred time slot, confirm classroom session details, and schedule the session
                   </p>
                 </div>
               </div>
@@ -5146,26 +5146,26 @@ function TutorDashboardContent() {
                     );
                   })()}
 
-                  {/* 2-Column Grid for Google Meet Link and Notes */}
+                  {/* 2-Column Grid for BigBlueButton Link and Notes */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
                       <div className="flex items-center justify-between">
                         <label className="font-bold text-slate-800 text-xs flex items-center gap-2">
                           <Video className="w-4 h-4 text-blue-600" />
-                          <span>Google Meet Classroom Link</span>
+                          <span>BigBlueButton Classroom Link</span>
                         </label>
                         <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
                           ✨ Auto-Generated
                         </span>
                       </div>
                       <Input
-                        placeholder="Auto-generated unique room (or paste https://meet.google.com/...)"
+                        placeholder="Auto-generated unique room (or paste custom URL)"
                         value={confirmMeetLink}
                         onChange={(e) => setConfirmMeetLink(e.target.value)}
                         className="rounded-xl h-11 text-xs font-mono bg-white border-slate-300"
                       />
                       <p className="text-[11px] text-slate-500">
-                        Leave blank to automatically generate a dedicated Google Meet room for this session, or paste a custom link.
+                        Leave blank to automatically generate a dedicated BigBlueButton classroom for this session, or paste a custom link.
                       </p>
                     </div>
 

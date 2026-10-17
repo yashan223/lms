@@ -7,7 +7,8 @@ import { fulfillPayment } from "@/lib/payment-fulfillment";
 import { getPaymentsLkCheckout, isPaymentsLkConfigured } from "@/lib/payments-lk";
 import { EventType, EventStatus, TrialStatus, Role } from "@prisma/client";
 import { formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
-import { ensureValidGoogleMeetingLink } from "@/lib/google-meet";
+import { getBBBMeetingId, getUniversalJoinLink, createBBBMeeting, isBigBlueButtonConfigured } from "@/lib/bigbluebutton";
+import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -305,18 +306,28 @@ export async function GET(request: NextRequest) {
           const courseTitle = trial.course?.title || "London A/L Tutorial Individual Class";
           const courseCode = trial.course?.subjectCode || "";
           const eventTitle = `1-on-1 Trial: ${courseTitle} (${trial.studentName || user.name})`;
-          const link = await ensureValidGoogleMeetingLink(trial.meetingLink, {
-            title: eventTitle,
-            startTime: trial.preferredDate,
-            durationMinutes: 30,
-            tutorEmail: trial.tutor?.email,
-            tutorName: trial.tutor?.name,
-          });
+          const bbbMeetingId = trial.meetingSpaceId || getBBBMeetingId({ trialId: trial.id });
+          const link =
+            trial.meetingLink && !isGenericMeetingLink(trial.meetingLink) && !trial.meetingLink.includes("meet.google.com")
+              ? getSafeMeetingLink(trial.meetingLink)
+              : getUniversalJoinLink({ trialId: trial.id });
 
-          if (link && link !== trial.meetingLink) {
+          if (isBigBlueButtonConfigured()) {
+            try {
+              await createBBBMeeting({
+                meetingId: bbbMeetingId,
+                name: eventTitle,
+                record: true,
+              });
+            } catch (e) {
+              console.warn("[dashboard] BBB notice:", e);
+            }
+          }
+
+          if (link !== trial.meetingLink || !trial.meetingSpaceId) {
             await prisma.trialRequest.update({
               where: { id: trial.id },
-              data: { meetingLink: link },
+              data: { meetingLink: link, meetingSpaceId: bbbMeetingId },
             });
           }
 

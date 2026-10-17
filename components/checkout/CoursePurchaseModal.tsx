@@ -232,7 +232,7 @@ export function CoursePurchaseModal({
                 </div>
                 <div className="flex items-center gap-2">
                   <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span>Google Meet live classes</span>
+                  <span>Interactive live video classes</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Award className="w-3.5 h-3.5 text-blue-600 shrink-0" />

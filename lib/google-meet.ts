@@ -20,6 +20,8 @@ export async function createGoogleMeetingSpace(opts?: {
   title?: string;
   meetingLink?: string | null;
   eventId?: string;
+  tutorEmail?: string | null;
+  tutorName?: string | null;
 }): Promise<GoogleMeetSpace> {
   // If a valid, non-generic meeting room link is already provided, use it
   if (opts?.meetingLink?.trim() && !isGenericGoogleMeetNewLink(opts.meetingLink)) {
@@ -41,6 +43,8 @@ export async function createGoogleMeetingSpace(opts?: {
         title: opts?.title || "PulseEDU Live Session",
         startTime: new Date(),
         durationMinutes: 60,
+        tutorEmail: opts?.tutorEmail,
+        tutorName: opts?.tutorName,
       });
       if (cal.meetingUri && !isGenericGoogleMeetNewLink(cal.meetingUri)) {
         return {
@@ -59,6 +63,8 @@ export async function createGoogleMeetingSpace(opts?: {
       const space = await createGoogleWorkspaceMeetingSpace({
         title: opts?.title,
         eventId: opts?.eventId,
+        tutorEmail: opts?.tutorEmail,
+        tutorName: opts?.tutorName,
       });
       if (space.meetingUri && !isGenericGoogleMeetNewLink(space.meetingUri)) {
         return {
@@ -85,6 +91,8 @@ export async function ensureValidGoogleMeetingLink(
     eventId?: string;
     startTime?: Date | string | number | null;
     durationMinutes?: number;
+    tutorEmail?: string | null;
+    tutorName?: string | null;
   }
 ): Promise<string> {
   if (currentLink?.trim() && !isGenericGoogleMeetNewLink(currentLink)) {
@@ -100,6 +108,8 @@ export async function ensureValidGoogleMeetingLink(
         title: opts?.title || "PulseEDU Live Session",
         startTime: opts?.startTime || new Date(),
         durationMinutes: opts?.durationMinutes ?? 60,
+        tutorEmail: opts?.tutorEmail,
+        tutorName: opts?.tutorName,
       });
       if (cal.meetingUri && !isGenericGoogleMeetNewLink(cal.meetingUri)) {
         return cal.meetingUri;
@@ -113,6 +123,8 @@ export async function ensureValidGoogleMeetingLink(
       const space = await createGoogleWorkspaceMeetingSpace({
         title: opts?.title,
         eventId: opts?.eventId,
+        tutorEmail: opts?.tutorEmail,
+        tutorName: opts?.tutorName,
       });
       if (space.meetingUri && !isGenericGoogleMeetNewLink(space.meetingUri)) {
         return space.meetingUri;

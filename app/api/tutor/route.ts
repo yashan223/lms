@@ -524,6 +524,8 @@ export async function POST(request: NextRequest) {
           title: title.trim(),
           startTime: parsedDueDate,
           durationMinutes: durationMinutes ?? 90,
+          tutorEmail: tutor.email,
+          tutorName: tutor.name,
         });
       }
 
@@ -615,6 +617,8 @@ export async function POST(request: NextRequest) {
           title: existingEvent?.title || existingTrial?.topic || "PulseEDU Live Session",
           eventId: existingEvent?.id,
           startTime: existingEvent?.dueDate || existingTrial?.preferredDate,
+          tutorEmail: existingEvent?.course?.tutor?.email || existingTrial?.tutor?.email || tutor.email,
+          tutorName: existingEvent?.course?.tutor?.name || existingTrial?.tutor?.name || tutor.name,
         });
       }
 
@@ -1053,6 +1057,8 @@ export async function POST(request: NextRequest) {
         title: `1-on-1 Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName || "Student"})`,
         startTime: targetDate,
         durationMinutes: 30,
+        tutorEmail: existingTrial.tutor?.email || tutor.email,
+        tutorName: existingTrial.tutor?.name || tutor.name,
       });
 
       const codeMatch = link.match(/meet\.google\.com\/([a-z0-9-]+)/i);
@@ -1269,6 +1275,8 @@ export async function POST(request: NextRequest) {
         title: `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`,
         startTime: parsedDate,
         durationMinutes: 30,
+        tutorEmail: updatedTrial.tutor?.email || tutor.email,
+        tutorName: updatedTrial.tutor?.name || tutor.name,
       });
       if (!updatedTrial.meetingLink || isGenericGoogleMeetNewLink(updatedTrial.meetingLink)) {
         await prisma.trialRequest.update({

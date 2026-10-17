@@ -897,10 +897,26 @@ export async function POST(request: NextRequest) {
     if (action === "schedule_class" || action === "create_class") {
       const { title, description, dueDate, courseId, meetingLink } = body;
       const targetDate = dueDate ? new Date(dueDate) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      let tutorEmail: string | undefined = undefined;
+      let tutorName: string | undefined = undefined;
+      if (courseId) {
+        const course = await prisma.course.findUnique({
+          where: { id: courseId },
+          include: { tutor: true },
+        });
+        if (course?.tutor) {
+          tutorEmail = course.tutor.email;
+          tutorName = course.tutor.name || undefined;
+        }
+      }
+
       const meetLink = await ensureValidGoogleMeetingLink(meetingLink, {
         title: title || "Scheduled Live Class",
         startTime: targetDate,
         durationMinutes: 60,
+        tutorEmail,
+        tutorName,
       });
 
       const newEvent = await prisma.event.create({
@@ -977,7 +993,15 @@ export async function POST(request: NextRequest) {
 
     if (action === "start_class") {
       const { eventId, meetingLink } = body;
-      const existing = await prisma.event.findUnique({ where: { id: eventId } });
+      const existing = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+          course: {
+            include: { tutor: true },
+          },
+          user: true,
+        },
+      });
       if (!existing) {
         return NextResponse.json({ error: "Class event not found" }, { status: 404 });
       }
@@ -989,6 +1013,8 @@ export async function POST(request: NextRequest) {
             title: existing.title || "PulseEDU Live Class",
             eventId: existing.id,
             startTime: existing.dueDate || new Date(),
+            tutorEmail: existing.course?.tutor?.email,
+            tutorName: existing.course?.tutor?.name,
           });
         } catch (linkErr: any) {
           console.warn("[Admin API] Failed to auto-generate Google Meet link:", linkErr?.message || linkErr);
@@ -1172,6 +1198,8 @@ export async function POST(request: NextRequest) {
         title: eventTitle,
         startTime: updated.preferredDate,
         durationMinutes: 30,
+        tutorEmail: updated.tutor?.email,
+        tutorName: updated.tutor?.name,
       });
 
       if (link && link !== updated.meetingLink) {

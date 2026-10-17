@@ -251,6 +251,8 @@ export interface GoogleMeetSpaceResult {
 export async function createGoogleWorkspaceMeetingSpace(opts?: {
   title?: string;
   eventId?: string;
+  tutorEmail?: string | null;
+  tutorName?: string | null;
 }): Promise<GoogleMeetSpaceResult> {
   const auth = getGoogleWorkspaceAuthClient();
   if (!auth) {
@@ -284,6 +286,19 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
   const spaceName = space.name || "";
   const meetingCode = space.meetingCode || spaceName.split("/").pop() || "";
 
+  if (opts?.tutorEmail && spaceName) {
+    try {
+      await fetch(`https://meet.googleapis.com/v2/${spaceName}/members`, {
+        method: "POST",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: opts.tutorEmail.trim(), role: "COHOST" }),
+      });
+      console.log(`[Google Meet] Assigned COHOST role to tutor ${opts.tutorEmail} on ${spaceName}`);
+    } catch {
+      // Non-fatal if domain policies handle co-hosting via calendar guest modification
+    }
+  }
+
   return {
     meetingUri,
     spaceName,
@@ -297,12 +312,15 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
  * This is the preferred method when scheduling a class — it tells Google Meet
  * the exact scheduled start/end time, so conference records and recordings
  * are correctly timestamped and attributed to the right session.
+ * Adds the tutor's email as an accepted attendee with guest modification permissions.
  */
 export async function createGoogleCalendarEventWithMeet(opts: {
   title: string;
   description?: string;
   startTime?: Date | string | number | null;
   durationMinutes?: number;
+  tutorEmail?: string | null;
+  tutorName?: string | null;
 }): Promise<GoogleMeetSpaceResult> {
   const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
   const authHeaders = await getGoogleWorkspaceHeaders();
@@ -318,6 +336,24 @@ export async function createGoogleCalendarEventWithMeet(opts: {
   const endTime = new Date(safeStartTime.getTime() + (opts.durationMinutes ?? 90) * 60 * 1000);
   const endIso = endTime.toISOString();
 
+  const attendees: Array<{
+    email: string;
+    displayName?: string;
+    responseStatus?: string;
+    organizer?: boolean;
+    optional?: boolean;
+  }> = [{ email: adminEmail, responseStatus: "accepted", organizer: true }];
+
+  const cleanTutorEmail = opts.tutorEmail?.trim();
+  if (cleanTutorEmail && cleanTutorEmail.toLowerCase() !== adminEmail.toLowerCase()) {
+    attendees.push({
+      email: cleanTutorEmail,
+      displayName: opts.tutorName?.trim() || "Tutor",
+      responseStatus: "accepted",
+      optional: false,
+    });
+  }
+
   const calEventBody = {
     summary: opts.title,
     description: opts.description || "",
@@ -329,10 +365,12 @@ export async function createGoogleCalendarEventWithMeet(opts: {
         conferenceSolutionKey: { type: "hangoutsMeet" },
       },
     },
-    attendees: [{ email: adminEmail, responseStatus: "accepted", organizer: true }],
+    attendees,
+    guestsCanModify: true,
+    guestsCanInviteOthers: true,
+    guestsCanSeeOtherGuests: true,
     reminders: { useDefault: false },
     visibility: "public",
-    guestsCanSeeOtherGuests: false,
   };
 
   const calRes = await fetch(

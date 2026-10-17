@@ -309,6 +309,8 @@ export async function GET(request: NextRequest) {
             title: eventTitle,
             startTime: trial.preferredDate,
             durationMinutes: 30,
+            tutorEmail: trial.tutor?.email,
+            tutorName: trial.tutor?.name,
           });
 
           if (link && link !== trial.meetingLink) {

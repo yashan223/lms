@@ -511,6 +511,8 @@ export async function POST(request: NextRequest) {
               title: `30-Min Trial: ${existingTrial.course?.title || "London A/L"} (${existingTrial.studentName})`,
               startTime: targetDate,
               durationMinutes: 30,
+              tutorEmail: existingTrial.tutor?.email,
+              tutorName: existingTrial.tutor?.name,
             })
           : getSafeMeetingLink(meetingLink || existingTrial.meetingLink);
 
@@ -766,6 +768,8 @@ export async function POST(request: NextRequest) {
         title: `1-on-1 Trial: ${existing.course?.title || "London A/L"} (${existing.studentName || "Student"})`,
         startTime: new Date(scheduledDate),
         durationMinutes: 30,
+        tutorEmail: existing.tutor?.email,
+        tutorName: existing.tutor?.name,
       });
 
       const updatedTrial = await prisma.trialRequest.update({

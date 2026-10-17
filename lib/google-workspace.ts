@@ -345,17 +345,19 @@ export async function searchGoogleDriveForRecording(opts: {
 }): Promise<{ recordingUrl: string; driveFileId: string } | null> {
   try {
     const authHeaders = await getGoogleWorkspaceHeaders();
-    const queryParts = ["trashed = false", "mimeType = 'video/mp4'"];
+    const queryParts = ["trashed = false", "(mimeType contains 'video/' or mimeType = 'video/mp4')"];
 
     if (opts.afterDate) {
-      // Look from 2 hours before scheduled time
-      const windowStart = new Date(opts.afterDate.getTime() - 2 * 60 * 60 * 1000).toISOString();
+      // Look from up to 2 hours before scheduled time, ensuring we don't query a future timestamp
+      const candidateTime = opts.afterDate.getTime() - 2 * 60 * 60 * 1000;
+      const windowStartTime = Math.min(candidateTime, Date.now() - 30 * 60 * 1000);
+      const windowStart = new Date(windowStartTime).toISOString();
       queryParts.push(`createdTime >= '${windowStart}'`);
     }
 
     const q = encodeURIComponent(queryParts.join(" and "));
     const searchRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,webViewLink,createdTime)&orderBy=createdTime desc&pageSize=15`,
+      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,webViewLink,createdTime)&orderBy=createdTime desc&pageSize=25&supportsAllDrives=true&includeItemsFromAllDrives=true`,
       { headers: authHeaders }
     );
 
@@ -367,15 +369,32 @@ export async function searchGoogleDriveForRecording(opts: {
     const files: any[] = data.files || [];
     if (files.length === 0) return null;
 
-    let matched = files[0];
-    if (opts.meetingCode) {
-      const cleanCode = opts.meetingCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-      const codeDashed = opts.meetingCode.toLowerCase();
-      const byCode = files.find((f) => {
+    let matched: any = null;
+    const cleanCode = opts.meetingCode ? opts.meetingCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() : "";
+    const codeDashed = opts.meetingCode ? opts.meetingCode.toLowerCase() : "";
+
+    // 1. Try matching by meeting code
+    if (codeDashed) {
+      matched = files.find((f) => {
         const name = (f.name || "").toLowerCase();
-        return name.includes(codeDashed) || name.replace(/[^a-zA-Z0-9]/g, "").includes(cleanCode);
+        return name.includes(codeDashed) || (cleanCode && name.replace(/[^a-zA-Z0-9]/g, "").includes(cleanCode));
       });
-      if (byCode) matched = byCode;
+    }
+
+    // 2. Try matching by class/event title keywords
+    if (!matched && opts.title) {
+      const cleanTitle = opts.title.trim().toLowerCase();
+      const titleWords = cleanTitle.split(/\s+/).filter((w) => w.length > 3);
+      matched = files.find((f) => {
+        const name = (f.name || "").toLowerCase();
+        if (name.includes(cleanTitle)) return true;
+        return titleWords.length > 0 && titleWords.some((w) => name.includes(w));
+      });
+    }
+
+    // 3. Fall back to most recent file only if no meeting code and no title were specified
+    if (!matched && !opts.meetingCode && !opts.title && files.length > 0) {
+      matched = files[0];
     }
 
     if (!matched) return null;
@@ -384,7 +403,7 @@ export async function searchGoogleDriveForRecording(opts: {
 
     // Set public view permissions so students can watch without restriction
     try {
-      await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}/permissions`, {
+      await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}/permissions?supportsAllDrives=true`, {
         method: "POST",
         headers: {
           ...authHeaders,
@@ -750,10 +769,20 @@ export async function autoSyncActiveGoogleWorkspaceMeetings(): Promise<{
   const pendingEvents = await prisma.event.findMany({
     where: {
       meetingLink: { not: null },
-      dueDate: { gte: recentCutoff },
-      OR: [
-        { status: { in: ["SCHEDULED", "LIVE"] } },
-        { recordingUrl: null, recordingStatus: { not: "AVAILABLE" } },
+      AND: [
+        {
+          OR: [
+            { dueDate: { gte: recentCutoff } },
+            { startedAt: { gte: recentCutoff } },
+            { status: "LIVE" },
+          ],
+        },
+        {
+          OR: [
+            { status: { in: ["SCHEDULED", "LIVE"] } },
+            { recordingUrl: null, recordingStatus: { not: "AVAILABLE" } },
+          ],
+        },
       ],
     },
     select: { id: true, status: true, startedAt: true },
@@ -773,10 +802,20 @@ export async function autoSyncActiveGoogleWorkspaceMeetings(): Promise<{
   const pendingTrials = await prisma.trialRequest.findMany({
     where: {
       meetingLink: { not: null },
-      preferredDate: { gte: recentCutoff },
-      OR: [
-        { status: { in: ["CONFIRMED", "PENDING"] } },
-        { recordingUrl: null, recordingStatus: { not: "AVAILABLE" } },
+      AND: [
+        {
+          OR: [
+            { preferredDate: { gte: recentCutoff } },
+            { actualStartTime: { gte: recentCutoff } },
+            { status: "CONFIRMED" },
+          ],
+        },
+        {
+          OR: [
+            { status: { in: ["CONFIRMED", "PENDING"] } },
+            { recordingUrl: null, recordingStatus: { not: "AVAILABLE" } },
+          ],
+        },
       ],
     },
     select: { id: true },

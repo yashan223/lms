@@ -49,7 +49,24 @@ export async function createGoogleMeetingSpace(opts?: {
         };
       }
     } catch (err: any) {
-      console.warn("[Google Meet] Google Calendar auto-creation failed:", err?.message || err);
+      console.warn("[Google Meet] Google Calendar auto-creation failed, trying Meet API directly:", err?.message || err);
+    }
+
+    try {
+      const space = await createGoogleWorkspaceMeetingSpace({
+        title: opts?.title,
+        eventId: opts?.eventId,
+      });
+      if (space.meetingUri && !isGenericGoogleMeetNewLink(space.meetingUri)) {
+        return {
+          meetingUri: space.meetingUri,
+          spaceName: space.spaceName,
+          meetingCode: space.meetingCode,
+          mode: "WORKSPACE_API",
+        };
+      }
+    } catch (err: any) {
+      console.warn("[Google Meet] Google Meet space auto-creation failed:", err?.message || err);
     }
   }
 
@@ -85,7 +102,19 @@ export async function ensureValidGoogleMeetingLink(
         return cal.meetingUri;
       }
     } catch (err: any) {
-      console.warn("[Google Meet] Google Calendar auto-creation failed:", err?.message || err);
+      console.warn("[Google Meet] Google Calendar auto-creation failed, trying Meet API directly:", err?.message || err);
+    }
+
+    try {
+      const space = await createGoogleWorkspaceMeetingSpace({
+        title: opts?.title,
+        eventId: opts?.eventId,
+      });
+      if (space.meetingUri && !isGenericGoogleMeetNewLink(space.meetingUri)) {
+        return space.meetingUri;
+      }
+    } catch (err: any) {
+      console.warn("[Google Meet] Google Meet space auto-creation failed:", err?.message || err);
     }
   }
 

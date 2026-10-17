@@ -844,45 +844,139 @@ function TutorDashboardContent() {
   const [startingTrialId, setStartingTrialId] = useState<string | null>(null);
   const [endingTrialId, setEndingTrialId] = useState<string | null>(null);
 
+  const handleStartClassDirect = async (ev: ScheduledClassEvent) => {
+    if (startingClassId) return;
+    try {
+      setStartingClassId(ev.id);
+      const newWin = typeof window !== "undefined" ? window.open("", "_blank") : null;
+      if (newWin) {
+        newWin.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>Connecting to Google Meet...</title></head>
+            <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#f8fafc;">
+              <div style="text-align:center;padding:28px 24px;border-radius:16px;background:#1e293b;box-shadow:0 10px 25px -5px rgba(0,0,0,0.3);max-width:420px;border:1px solid #334155;">
+                <div style="width:38px;height:38px;border:3px solid #38bdf8;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
+                <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;">Starting Live Session...</h3>
+                <p style="margin:0 0 16px;font-size:13px;color:#94a3b8;line-height:1.5;">Auto-generating Google Meet room via Google Workspace API.<br>You will be redirected automatically.</p>
+                <div style="font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px 12px;border-radius:8px;border:1px solid #334155;">
+                  💡 Remember to click <b>Activities &gt; Recording</b> in Meet to record to Drive!
+                </div>
+                <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "start_class",
+          eventId: ev.id,
+          meetingLink: ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? ev.meetingLink : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.meetingLink) {
+        if (newWin) {
+          newWin.location.href = data.meetingLink;
+        } else {
+          window.open(data.meetingLink, "_blank", "noopener,noreferrer");
+        }
+        await fetchTutorData();
+      } else {
+        if (newWin) newWin.close();
+        alert(data.error || "Failed to start live session.");
+      }
+    } catch (err) {
+      console.error("Failed to start class session:", err);
+      alert("Failed to start live session. Please try again.");
+    } finally {
+      setStartingClassId(null);
+    }
+  };
+
+  const handleStartTrialDirect = async (tr: any) => {
+    if (startingTrialId) return;
+    try {
+      setStartingTrialId(tr.id);
+      const newWin = typeof window !== "undefined" ? window.open("", "_blank") : null;
+      if (newWin) {
+        newWin.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>Connecting to Google Meet...</title></head>
+            <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#f8fafc;">
+              <div style="text-align:center;padding:28px 24px;border-radius:16px;background:#1e293b;box-shadow:0 10px 25px -5px rgba(0,0,0,0.3);max-width:420px;border:1px solid #334155;">
+                <div style="width:38px;height:38px;border:3px solid #10b981;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
+                <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;">Starting Live Consultation...</h3>
+                <p style="margin:0 0 16px;font-size:13px;color:#94a3b8;line-height:1.5;">Auto-generating Google Meet room via Google Workspace API.<br>You will be redirected automatically.</p>
+                <div style="font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px 12px;border-radius:8px;border:1px solid #334155;">
+                  💡 Remember to click <b>Activities &gt; Recording</b> in Meet to record to Drive!
+                </div>
+                <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "start_class",
+          trialId: tr.id,
+          meetingLink: tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? tr.meetingLink : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.meetingLink) {
+        if (newWin) {
+          newWin.location.href = data.meetingLink;
+        } else {
+          window.open(data.meetingLink, "_blank", "noopener,noreferrer");
+        }
+        await fetchTutorData();
+      } else {
+        if (newWin) newWin.close();
+        alert(data.error || "Failed to start live consultation.");
+      }
+    } catch (err) {
+      console.error("Failed to start trial session:", err);
+      alert("Failed to start live consultation. Please try again.");
+    } finally {
+      setStartingTrialId(null);
+    }
+  };
+
   const triggerStartClassFlow = (ev: ScheduledClassEvent) => {
-    setStartSessionTarget({
-      eventId: ev.id,
-      title: ev.title,
-      currentLink: ev.meetingLink || "",
-    });
-    setStartSessionMeetLink(ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? ev.meetingLink : "");
-    setShowStartSessionModal(true);
+    handleStartClassDirect(ev);
   };
 
   const triggerStartTrialFlow = (tr: any) => {
-    setStartSessionTarget({
-      trialId: tr.id,
-      title: `1-on-1 Trial: ${tr.course?.title || "Consultation"} (${tr.studentName})`,
-      currentLink: tr.meetingLink || "",
-    });
-    setStartSessionMeetLink(tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? tr.meetingLink : "");
-    setShowStartSessionModal(true);
+    handleStartTrialDirect(tr);
   };
 
   const handleStartClass = (eventId: string) => {
     const ev = events.find((e) => e.id === eventId);
-    if (ev) triggerStartClassFlow(ev);
+    if (ev) handleStartClassDirect(ev);
   };
 
   const handleStartTrial = (trialId: string) => {
     const tr = trials.find((t) => t.id === trialId);
-    if (tr) triggerStartTrialFlow(tr);
+    if (tr) handleStartTrialDirect(tr);
   };
 
   const handleStartLiveSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startSessionTarget) return;
 
-    const normalized = normalizeGoogleMeetLink(startSessionMeetLink);
-    if (!normalized) {
-      alert("Please open Google Meet, copy your meeting room link, and paste it here before starting.");
-      return;
-    }
+    const normalized = startSessionMeetLink.trim() ? normalizeGoogleMeetLink(startSessionMeetLink) : undefined;
 
     try {
       setIsStartingSession(true);
@@ -900,7 +994,7 @@ function TutorDashboardContent() {
           action: "start_class",
           eventId: startSessionTarget.eventId,
           trialId: startSessionTarget.trialId,
-          meetingLink: normalized,
+          meetingLink: normalized || (startSessionTarget.currentLink && !isGenericGoogleMeetNewLink(startSessionTarget.currentLink) ? startSessionTarget.currentLink : undefined),
         }),
       });
       const data = await res.json();
@@ -4150,38 +4244,46 @@ function TutorDashboardContent() {
             </div>
 
             <div className="space-y-3.5 text-xs text-slate-600">
-              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 space-y-2">
+              <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-100 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-blue-950 block">Step 1: Open Google Meet</span>
-                  <span className="text-[10px] text-blue-700 font-semibold bg-blue-100/70 px-2 py-0.5 rounded-full">Creates Real Room</span>
+                  <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Google Workspace Meet Connected</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-100/70 px-2 py-0.5 rounded-full">Automated</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer")}
-                  className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Open meet.google.com/new in New Tab</span>
-                </button>
-                <p className="text-[11px] text-blue-800 leading-snug">
-                  Google Meet will create your meeting room. Copy the URL (e.g. <code>meet.google.com/xxx-yyyy-zzz</code>) from your address bar and paste it below.
+                <p className="text-[11px] text-emerald-900 leading-relaxed">
+                  A unique, secure Google Meet room is automatically created via the Google Workspace API. When you start, your Google Meet room will open in a new tab and students will be notified to join immediately.
+                </p>
+                {startSessionTarget.currentLink && !isGenericGoogleMeetNewLink(startSessionTarget.currentLink) && (
+                  <div className="text-[11px] font-mono bg-white/80 p-2 rounded-lg border border-emerald-200 text-emerald-800 truncate">
+                    Ready Room: {startSessionTarget.currentLink}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 space-y-1">
+                <div className="font-bold text-blue-950 text-[11px] flex items-center gap-1">
+                  <span>🎥 Google Drive Recording Reminder</span>
+                </div>
+                <p className="text-[10px] text-blue-800 leading-snug">
+                  When you join the Google Meet call, click <b>Activities &gt; Recording &gt; Start Recording</b>. Google Drive will automatically archive the video when you end the call, and EduPulse will detect and attach it to your class dashboard.
                 </p>
               </div>
 
               <form onSubmit={handleStartLiveSession} className="space-y-3.5">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-800 block">
-                    Step 2: Paste Google Meet Link / Code
+                  <label className="font-semibold text-slate-700 block text-[11px]">
+                    Custom Room URL (Optional override)
                   </label>
                   <Input
-                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    placeholder="Leave empty to auto-generate via Google Workspace API"
                     value={startSessionMeetLink}
                     onChange={(e) => setStartSessionMeetLink(e.target.value)}
-                    required
                     className="rounded-xl h-9.5 text-xs font-mono"
                   />
                   <p className="text-[10px] text-slate-400">
-                    Students will immediately receive this exact room link to join your live session together.
+                    If left blank, a dedicated Google Meet room will be generated automatically.
                   </p>
                 </div>
 
@@ -4200,7 +4302,7 @@ function TutorDashboardContent() {
                     className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-5 gap-1.5 cursor-pointer shadow-md"
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>{isStartingSession ? "Starting..." : "Start & Notify Students"}</span>
+                    <span>{isStartingSession ? "Launching Google Meet..." : "Start Session & Open Meet"}</span>
                   </Button>
                 </div>
               </form>

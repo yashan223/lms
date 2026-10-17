@@ -619,6 +619,8 @@ export async function POST(request: NextRequest) {
       }
 
       const now = new Date();
+      const codeMatch = meetLink.match(/meet\.google\.com\/([a-z0-9-]+)/i);
+      const derivedSpaceId = codeMatch?.[1] ? `spaces/${codeMatch[1]}` : null;
 
       if (existingEvent) {
         existingEvent = await prisma.event.update({
@@ -627,6 +629,7 @@ export async function POST(request: NextRequest) {
             status: "LIVE",
             startedAt: now,
             meetingLink: meetLink,
+            ...(derivedSpaceId && !existingEvent.meetingSpaceId ? { meetingSpaceId: derivedSpaceId } : {}),
           },
           include: { course: true, user: true },
         });
@@ -641,6 +644,7 @@ export async function POST(request: NextRequest) {
             startedAt: now,
             approvalStatus: "APPROVED",
             meetingLink: meetLink,
+            meetingSpaceId: derivedSpaceId,
             courseId: existingTrial.courseId || null,
             userId: existingTrial.studentId || null,
             requestedBy: tutor.id,
@@ -656,6 +660,7 @@ export async function POST(request: NextRequest) {
             status: TrialStatus.CONFIRMED,
             actualStartTime: now,
             meetingLink: meetLink,
+            ...(derivedSpaceId && !existingTrial.meetingSpaceId ? { meetingSpaceId: derivedSpaceId } : {}),
           },
         });
         broadcastLMSEvent("TRIALS_CHANGED", { trialId: existingTrial.id, live: true, meetingLink: meetLink });

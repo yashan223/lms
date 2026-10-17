@@ -210,18 +210,29 @@ async function extractClientHeaders(client: JWT): Promise<Record<string, string>
 
 /**
  * Returns authorization headers for Google Workspace APIs.
- * Tries impersonating adminEmail first (for Workspace domain delegation).
- * If domain delegation is not enabled or throws unauthorized_client,
- * transparently falls back to direct Service Account credentials so Drive & Meet calls continue.
+ * Supports impersonating a specific user (such as a tutor) via domain delegation.
+ * If preferDirect is true or subject is null, uses direct Service Account auth.
+ * Transparently falls back to direct Service Account credentials if domain delegation throws unauthorized_client.
  */
-export async function getGoogleWorkspaceHeaders(preferDirect = false): Promise<Record<string, string>> {
-  if (preferDirect) {
+export async function getGoogleWorkspaceHeaders(
+  subjectOverrideOrDirect?: string | boolean | null
+): Promise<Record<string, string>> {
+  let subject: string | null | undefined = undefined;
+  let preferDirect = false;
+
+  if (typeof subjectOverrideOrDirect === "boolean") {
+    preferDirect = subjectOverrideOrDirect;
+  } else if (subjectOverrideOrDirect !== undefined) {
+    subject = subjectOverrideOrDirect;
+  }
+
+  if (preferDirect || subject === null) {
     const directClient = getGoogleWorkspaceAuthClient(null);
     if (!directClient) throw new Error("Google Workspace credentials not configured");
     return extractClientHeaders(directClient);
   }
 
-  const client = getGoogleWorkspaceAuthClient();
+  const client = getGoogleWorkspaceAuthClient(subject);
   if (!client) throw new Error("Google Workspace credentials not configured");
 
   try {
@@ -230,7 +241,7 @@ export async function getGoogleWorkspaceHeaders(preferDirect = false): Promise<R
     const msg = String(err?.message || "");
     if (msg.includes("unauthorized_client") || err?.status === 401) {
       console.warn(
-        "[Google Workspace] Domain-wide delegation not authorized for admin user. Falling back to direct service account auth for Google Drive."
+        `[Google Workspace] Domain-wide delegation not authorized for subject "${subject || "admin"}". Falling back to direct service account auth.`
       );
       const directClient = getGoogleWorkspaceAuthClient(null);
       if (directClient) {
@@ -248,6 +259,75 @@ export interface GoogleMeetSpaceResult {
   calendarEventId?: string | null;
 }
 
+const workspaceUserCache = new Map<string, { email: string; timestamp: number }>();
+
+/**
+ * Resolves a tutor's LMS email to their official Google Workspace account.
+ * 1. If tutor's email is already in the workspace domain (e.g. @pulseedu.online), returns it directly.
+ * 2. If tutor registered with an external email (e.g. Gmail), queries Google Workspace Directory
+ *    to find an active user with matching recoveryEmail or name.
+ * 3. Results are cached in memory for high performance.
+ */
+export async function resolveTutorWorkspaceEmail(
+  tutorEmail?: string | null,
+  tutorName?: string | null
+): Promise<string | null> {
+  if (!tutorEmail?.trim()) return null;
+  const rawEmail = tutorEmail.trim().toLowerCase();
+
+  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
+  const domain = (adminEmail.split("@")[1] || "pulseedu.online").toLowerCase();
+
+  // 1. If the email is already in the workspace domain
+  if (rawEmail.endsWith(`@${domain}`)) {
+    return rawEmail;
+  }
+
+  // 2. Check in-memory cache (TTL: 15 minutes)
+  const cached = workspaceUserCache.get(rawEmail);
+  if (cached && Date.now() - cached.timestamp < 15 * 60 * 1000) {
+    return cached.email;
+  }
+
+  // 3. Lookup in Google Workspace Directory API
+  try {
+    const authHeaders = await getGoogleWorkspaceHeaders();
+    const res = await fetch(
+      `https://admin.googleapis.com/admin/directory/v1/users?domain=${domain}&maxResults=100`,
+      { headers: authHeaders }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const users: any[] = data.users || [];
+      for (const u of users) {
+        if (u.suspended) continue;
+        const primary = (u.primaryEmail || "").toLowerCase();
+        const recovery = (u.recoveryEmail || "").toLowerCase();
+
+        // Check recovery email match (set during tutor account provisioning)
+        if (recovery === rawEmail) {
+          workspaceUserCache.set(rawEmail, { email: primary, timestamp: Date.now() });
+          return primary;
+        }
+
+        // Check full name match
+        if (tutorName?.trim()) {
+          const fullName = (u.name?.fullName || "").toLowerCase();
+          const targetName = tutorName.trim().toLowerCase();
+          if (fullName === targetName || (targetName.length > 5 && fullName.includes(targetName))) {
+            workspaceUserCache.set(rawEmail, { email: primary, timestamp: Date.now() });
+            return primary;
+          }
+        }
+      }
+    }
+  } catch (lookupErr) {
+    console.warn("[Google Workspace] Error looking up tutor in directory:", lookupErr);
+  }
+
+  return null;
+}
+
 export async function createGoogleWorkspaceMeetingSpace(opts?: {
   title?: string;
   eventId?: string;
@@ -261,9 +341,28 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
     );
   }
 
-  const authHeaders = await getGoogleWorkspaceHeaders();
+  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
+  const tutorWsEmail = await resolveTutorWorkspaceEmail(opts?.tutorEmail, opts?.tutorName);
 
-  const response = await fetch("https://meet.googleapis.com/v2/spaces", {
+  // Authenticate as tutor if possible so tutor is the genuine Meet space owner/host
+  let authHeaders: Record<string, string> | null = null;
+  let hostingAccount = adminEmail;
+
+  if (tutorWsEmail) {
+    try {
+      authHeaders = await getGoogleWorkspaceHeaders(tutorWsEmail);
+      hostingAccount = tutorWsEmail;
+    } catch (tutorAuthErr) {
+      console.warn(`[Google Meet] Could not authenticate as tutor (${tutorWsEmail}), falling back to admin:`, tutorAuthErr);
+    }
+  }
+
+  if (!authHeaders) {
+    authHeaders = await getGoogleWorkspaceHeaders();
+    hostingAccount = adminEmail;
+  }
+
+  let response = await fetch("https://meet.googleapis.com/v2/spaces", {
     method: "POST",
     headers: {
       ...authHeaders,
@@ -278,6 +377,27 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
     }),
   });
 
+  // If tutor impersonation returned an error, retry with admin
+  if (!response.ok && hostingAccount !== adminEmail) {
+    console.warn(`[Google Meet] Failed to create space under ${hostingAccount} (${response.status}), retrying under admin (${adminEmail})...`);
+    authHeaders = await getGoogleWorkspaceHeaders();
+    hostingAccount = adminEmail;
+    response = await fetch("https://meet.googleapis.com/v2/spaces", {
+      method: "POST",
+      headers: {
+        ...authHeaders,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        config: {
+          accessType: "OPEN",
+          entryPointAccess: "ALL",
+          moderation: "OFF",
+        },
+      }),
+    });
+  }
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Google Meet space creation failed (${response.status}): ${errorText}`);
@@ -287,6 +407,8 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
   const meetingUri = space.meetingUri || `https://meet.google.com/${space.meetingCode}`;
   const spaceName = space.name || "";
   const meetingCode = space.meetingCode || spaceName.split("/").pop() || "";
+
+  console.log(`[Google Meet] Space created: ${meetingUri} (Host/Owner: ${hostingAccount})`);
 
   return {
     meetingUri,
@@ -298,10 +420,9 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
 
 /**
  * Creates a Google Calendar event with a Google Meet conference attached.
- * This is the preferred method when scheduling a class — it tells Google Meet
- * the exact scheduled start/end time, so conference records and recordings
- * are correctly timestamped and attributed to the right session.
- * Adds the tutor's LMS email as an accepted attendee with guest modification permissions.
+ * Generates the meeting using the tutor's Google Workspace account directly,
+ * ensuring the tutor is the genuine host and organizer.
+ * Falls back safely to the admin account if tutor's Workspace account is unavailable.
  */
 export async function createGoogleCalendarEventWithMeet(opts: {
   title: string;
@@ -312,7 +433,7 @@ export async function createGoogleCalendarEventWithMeet(opts: {
   tutorName?: string | null;
 }): Promise<GoogleMeetSpaceResult> {
   const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
-  const authHeaders = await getGoogleWorkspaceHeaders();
+  const tutorWsEmail = await resolveTutorWorkspaceEmail(opts.tutorEmail, opts.tutorName);
 
   const startTimeObj =
     opts.startTime instanceof Date
@@ -325,6 +446,101 @@ export async function createGoogleCalendarEventWithMeet(opts: {
   const endTime = new Date(safeStartTime.getTime() + (opts.durationMinutes ?? 90) * 60 * 1000);
   const endIso = endTime.toISOString();
 
+  // 1. Try creating directly on the tutor's Google Workspace Calendar
+  if (tutorWsEmail) {
+    try {
+      const tutorAuthHeaders = await getGoogleWorkspaceHeaders(tutorWsEmail);
+      const attendees: Array<{
+        email: string;
+        displayName?: string;
+        responseStatus?: string;
+        organizer?: boolean;
+        optional?: boolean;
+      }> = [
+        { email: tutorWsEmail, responseStatus: "accepted", organizer: true },
+      ];
+
+      if (adminEmail.toLowerCase() !== tutorWsEmail.toLowerCase()) {
+        attendees.push({ email: adminEmail, responseStatus: "accepted", optional: true });
+      }
+
+      const cleanLmsEmail = opts.tutorEmail?.trim().toLowerCase();
+      if (cleanLmsEmail && cleanLmsEmail !== tutorWsEmail.toLowerCase() && cleanLmsEmail !== adminEmail.toLowerCase()) {
+        attendees.push({
+          email: cleanLmsEmail,
+          displayName: opts.tutorName?.trim() || "Tutor",
+          responseStatus: "accepted",
+          optional: false,
+        });
+      }
+
+      const calEventBody = {
+        summary: opts.title,
+        description: opts.description || "",
+        start: { dateTime: startIso, timeZone: "UTC" },
+        end: { dateTime: endIso, timeZone: "UTC" },
+        conferenceData: {
+          createRequest: {
+            requestId: `pulseedu-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            conferenceSolutionKey: { type: "hangoutsMeet" },
+          },
+        },
+        attendees,
+        guestsCanModify: true,
+        guestsCanInviteOthers: true,
+        guestsCanSeeOtherGuests: true,
+        reminders: { useDefault: false },
+        visibility: "public",
+      };
+
+      const tutorCalRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendNotifications=false`,
+        {
+          method: "POST",
+          headers: { ...tutorAuthHeaders, "Content-Type": "application/json" },
+          body: JSON.stringify(calEventBody),
+        }
+      );
+
+      if (tutorCalRes.ok) {
+        const calEvent = await tutorCalRes.json();
+        const hangoutLink: string =
+          calEvent.hangoutLink ||
+          calEvent.conferenceData?.entryPoints?.[0]?.uri ||
+          "";
+        const calendarEventId: string = calEvent.id || "";
+        const meetCode =
+          hangoutLink.split("/").pop() ||
+          calEvent.conferenceData?.conferenceId ||
+          "";
+        const spaceName = meetCode ? `spaces/${meetCode}` : "";
+
+        console.log(
+          `✅ [Google Calendar] Successfully created under tutor's Google Workspace: "${opts.title}" (${startIso}) — Meet: ${hangoutLink} (Host/Organizer: ${tutorWsEmail})`
+        );
+
+        return {
+          meetingUri: hangoutLink,
+          spaceName,
+          meetingCode: meetCode,
+          calendarEventId,
+        };
+      } else {
+        const errText = await tutorCalRes.text();
+        console.warn(
+          `[Google Calendar] Tutor workspace scheduling returned ${tutorCalRes.status}: ${errText}. Falling back to admin calendar.`
+        );
+      }
+    } catch (tutorErr: any) {
+      console.warn(
+        `[Google Calendar] Tutor workspace scheduling failed (${tutorWsEmail}), falling back to admin:`,
+        tutorErr?.message || tutorErr
+      );
+    }
+  }
+
+  // 2. Fallback: Create on admin calendar with tutor invited as accepted attendee
+  const authHeaders = await getGoogleWorkspaceHeaders();
   const attendees: Array<{
     email: string;
     displayName?: string;
@@ -343,8 +559,6 @@ export async function createGoogleCalendarEventWithMeet(opts: {
     });
   }
 
-  // Pre-create an open, unmoderated Meet space so the tutor (with their LMS email)
-  // has full host/presenter privileges upon entry without getting gated by host controls.
   let preCreatedSpace: GoogleMeetSpaceResult | null = null;
   try {
     preCreatedSpace = await createGoogleWorkspaceMeetingSpace({
@@ -422,7 +636,7 @@ export async function createGoogleCalendarEventWithMeet(opts: {
   const spaceName = preCreatedSpace?.spaceName || (meetCode ? `spaces/${meetCode}` : "");
 
   console.log(
-    `[Google Calendar] Scheduled "${opts.title}" (${startIso}) — Meet: ${hangoutLink} (Host: ${opts.tutorEmail || adminEmail})`
+    `[Google Calendar] Scheduled "${opts.title}" (${startIso}) — Meet: ${hangoutLink} (Host fallback: ${adminEmail})`
   );
 
   return {
@@ -452,90 +666,100 @@ export async function searchGoogleDriveForRecording(opts: {
   meetingCode?: string;
   title?: string;
   afterDate?: Date | string | number | null;
+  tutorEmail?: string | null;
 }): Promise<{ recordingUrl: string; driveFileId: string } | null> {
-  try {
-    const authHeaders = await getGoogleWorkspaceHeaders();
-    const queryParts = ["trashed = false", "(mimeType contains 'video/' or mimeType = 'video/mp4')"];
-
-    if (opts.afterDate) {
-      const afterDateObj =
-        opts.afterDate instanceof Date
-          ? opts.afterDate
-          : new Date(opts.afterDate);
-      const safeTime = isNaN(afterDateObj.getTime()) ? Date.now() : afterDateObj.getTime();
-      const candidateTime = safeTime - 2 * 60 * 60 * 1000;
-      const windowStartTime = Math.min(candidateTime, Date.now() - 30 * 60 * 1000);
-      const windowStart = new Date(windowStartTime).toISOString();
-      queryParts.push(`createdTime >= '${windowStart}'`);
-    }
-
-    const q = encodeURIComponent(queryParts.join(" and "));
-    const searchRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,webViewLink,createdTime)&orderBy=createdTime desc&pageSize=25&supportsAllDrives=true&includeItemsFromAllDrives=true`,
-      { headers: authHeaders }
-    );
-
-    if (!searchRes.ok) {
-      return null;
-    }
-
-    const data = await searchRes.json();
-    const files: any[] = data.files || [];
-    if (files.length === 0) return null;
-
-    let matched: any = null;
-    const cleanCode = opts.meetingCode ? opts.meetingCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() : "";
-    const codeDashed = opts.meetingCode ? opts.meetingCode.toLowerCase() : "";
-
-    // 1. Try matching by meeting code
-    if (codeDashed) {
-      matched = files.find((f) => {
-        const name = (f.name || "").toLowerCase();
-        return name.includes(codeDashed) || (cleanCode && name.replace(/[^a-zA-Z0-9]/g, "").includes(cleanCode));
-      });
-    }
-
-    // 2. Try matching by class/event title keywords
-    if (!matched && opts.title) {
-      const cleanTitle = opts.title.trim().toLowerCase();
-      const titleWords = cleanTitle.split(/\s+/).filter((w) => w.length > 3);
-      matched = files.find((f) => {
-        const name = (f.name || "").toLowerCase();
-        if (name.includes(cleanTitle)) return true;
-        return titleWords.length > 0 && titleWords.some((w) => name.includes(w));
-      });
-    }
-
-    // 3. Fall back to most recent file only if no meeting code and no title were specified
-    if (!matched && !opts.meetingCode && !opts.title && files.length > 0) {
-      matched = files[0];
-    }
-
-    if (!matched) return null;
-
-    const driveFileId = matched.id;
-
-    // Set public view permissions so students can watch without restriction
-    try {
-      await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}/permissions?supportsAllDrives=true`, {
-        method: "POST",
-        headers: {
-          ...authHeaders,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role: "reader", type: "anyone" }),
-      });
-    } catch (permErr) {
-      console.warn("[Google Drive] Could not set public permission on recording:", permErr);
-    }
-
-    const recordingUrl = matched.webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`;
-    console.log(`[Google Drive] Discovered class recording file "${matched.name}": ${recordingUrl}`);
-    return { recordingUrl, driveFileId };
-  } catch (err) {
-    console.warn("[Google Drive] Recording search error:", err);
-    return null;
+  const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
+  const tutorWsEmail = await resolveTutorWorkspaceEmail(opts.tutorEmail);
+  const targetAccounts: string[] = [];
+  if (tutorWsEmail) targetAccounts.push(tutorWsEmail);
+  if (!tutorWsEmail || tutorWsEmail.toLowerCase() !== adminEmail.toLowerCase()) {
+    targetAccounts.push(adminEmail);
   }
+
+  for (const accountEmail of targetAccounts) {
+    try {
+      const authHeaders = await getGoogleWorkspaceHeaders(accountEmail);
+      const queryParts = ["trashed = false", "(mimeType contains 'video/' or mimeType = 'video/mp4')"];
+
+      if (opts.afterDate) {
+        const afterDateObj =
+          opts.afterDate instanceof Date
+            ? opts.afterDate
+            : new Date(opts.afterDate);
+        const safeTime = isNaN(afterDateObj.getTime()) ? Date.now() : afterDateObj.getTime();
+        const candidateTime = safeTime - 2 * 60 * 60 * 1000;
+        const windowStartTime = Math.min(candidateTime, Date.now() - 30 * 60 * 1000);
+        const windowStart = new Date(windowStartTime).toISOString();
+        queryParts.push(`createdTime >= '${windowStart}'`);
+      }
+
+      const q = encodeURIComponent(queryParts.join(" and "));
+      const searchRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,webViewLink,createdTime)&orderBy=createdTime desc&pageSize=25&supportsAllDrives=true&includeItemsFromAllDrives=true`,
+        { headers: authHeaders }
+      );
+
+      if (!searchRes.ok) continue;
+
+      const data = await searchRes.json();
+      const files: any[] = data.files || [];
+      if (files.length === 0) continue;
+
+      let matched: any = null;
+      const cleanCode = opts.meetingCode ? opts.meetingCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() : "";
+      const codeDashed = opts.meetingCode ? opts.meetingCode.toLowerCase() : "";
+
+      // 1. Try matching by meeting code
+      if (codeDashed) {
+        matched = files.find((f) => {
+          const name = (f.name || "").toLowerCase();
+          return name.includes(codeDashed) || (cleanCode && name.replace(/[^a-zA-Z0-9]/g, "").includes(cleanCode));
+        });
+      }
+
+      // 2. Try matching by class/event title keywords
+      if (!matched && opts.title) {
+        const cleanTitle = opts.title.trim().toLowerCase();
+        const titleWords = cleanTitle.split(/\s+/).filter((w) => w.length > 3);
+        matched = files.find((f) => {
+          const name = (f.name || "").toLowerCase();
+          if (name.includes(cleanTitle)) return true;
+          return titleWords.length > 0 && titleWords.some((w) => name.includes(w));
+        });
+      }
+
+      // 3. Fall back to most recent file only if no meeting code and no title were specified
+      if (!matched && !opts.meetingCode && !opts.title && files.length > 0) {
+        matched = files[0];
+      }
+
+      if (!matched) continue;
+
+      const driveFileId = matched.id;
+
+      // Set public view permissions so students can watch without restriction
+      try {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}/permissions?supportsAllDrives=true`, {
+          method: "POST",
+          headers: {
+            ...authHeaders,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ role: "reader", type: "anyone" }),
+        });
+      } catch (permErr) {
+        console.warn("[Google Drive] Could not set public permission on recording:", permErr);
+      }
+
+      const recordingUrl = matched.webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`;
+      console.log(`[Google Drive] Discovered class recording file "${matched.name}" in account (${accountEmail}): ${recordingUrl}`);
+      return { recordingUrl, driveFileId };
+    } catch (accErr) {
+      console.warn(`[Google Drive] Error searching Drive for ${accountEmail}:`, accErr);
+    }
+  }
+
+  return null;
 }
 
 export async function fetchGoogleMeetSessionData(
@@ -543,6 +767,7 @@ export async function fetchGoogleMeetSessionData(
   opts?: {
     title?: string;
     afterDate?: Date;
+    tutorEmail?: string | null;
   }
 ): Promise<GoogleSessionSyncResult | null> {
   if (!isGoogleWorkspaceConfigured()) return null;
@@ -664,6 +889,7 @@ export async function fetchGoogleMeetSessionData(
         meetingCode,
         title: opts?.title,
         afterDate: opts?.afterDate || actualStartTime || undefined,
+        tutorEmail: opts?.tutorEmail,
       });
 
       if (driveMatch) {
@@ -730,6 +956,7 @@ export async function syncEventFromGoogleWorkspace(eventId: string): Promise<{
     const sessionData = await fetchGoogleMeetSessionData(spaceName, {
       title: event.title,
       afterDate: event.dueDate,
+      tutorEmail: event.course?.tutor?.email,
     });
     if (sessionData) {
       syncedWithGoogle = true;

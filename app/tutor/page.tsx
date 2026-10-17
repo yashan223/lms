@@ -544,8 +544,13 @@ function TutorDashboardContent() {
       }
       setCourses(data.courses || []);
       setStudents(data.students || []);
-      setEvents(data.events || []);
-      setTrials(data.trials || []);
+      const rawTrials = data.trials || [];
+      const sortedTrials = [...rawTrials].sort((a: any, b: any) => {
+        const timeA = new Date(a.createdAt || a.preferredDate || 0).getTime();
+        const timeB = new Date(b.createdAt || b.preferredDate || 0).getTime();
+        return timeB - timeA;
+      });
+      setTrials(sortedTrials);
 
       if (data.courses && data.courses.length > 0 && !newClassCourseId) {
         setNewClassCourseId(data.courses[0].id);
@@ -3023,6 +3028,11 @@ function TutorDashboardContent() {
                           if (trialFilter === "CONFIRMED") return t.status === "CONFIRMED" && !t.actualEndTime;
                           if (trialFilter === "CANCELLED") return t.status === "CANCELLED" || t.status === "REJECTED";
                           return t.status === trialFilter;
+                        })
+                        .sort((a, b) => {
+                          const timeA = new Date(a.createdAt || a.preferredDate || 0).getTime();
+                          const timeB = new Date(b.createdAt || b.preferredDate || 0).getTime();
+                          return timeB - timeA;
                         })
                         .map((tr) => {
                           const isCompleted = tr.status === "COMPLETED" || Boolean(tr.actualEndTime);

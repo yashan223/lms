@@ -154,9 +154,10 @@ export async function GET(request: NextRequest) {
         course: true,
         student: true,
       },
-      orderBy: {
-        preferredDate: "asc",
-      },
+      orderBy: [
+        { createdAt: "desc" },
+        { preferredDate: "desc" },
+      ],
     });
 
     return NextResponse.json({

@@ -8370,7 +8370,9 @@ export default function AdminDashboardPage() {
                   No trial session bookings found for this student.
                 </div>
               ) : (
-                trialsForSelectedStudent.map((tr: any) => {
+                [...trialsForSelectedStudent]
+                  .sort((a: any, b: any) => new Date(b.createdAt || b.preferredDate || 0).getTime() - new Date(a.createdAt || a.preferredDate || 0).getTime())
+                  .map((tr: any) => {
                   const tutorName = tr.tutor?.name || tr.course?.tutor?.name || "Assigned Tutor";
                   const isReset = tr.status === "CANCELLED";
                   const isRejected = tr.status === "REJECTED";

@@ -19,9 +19,10 @@ export function loadServiceAccountCredentials(): ServiceAccountCredentials | nul
   }
 
   // 1. Try explicit path from GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_SERVICE_ACCOUNT_KEY_PATH
-  const explicitPath =
+  const rawPath =
     process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim() ||
     process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH?.trim();
+  const explicitPath = rawPath ? rawPath.replace(/^["']|["']$/g, "").trim() : "";
 
   if (explicitPath) {
     const fullPath = path.isAbsolute(explicitPath)
@@ -268,8 +269,15 @@ export async function createGoogleCalendarEventWithMeet(opts: {
   const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || "admin@pulseedu.online";
   const authHeaders = await getGoogleWorkspaceHeaders();
 
-  const startIso = opts.startTime.toISOString();
-  const endTime = new Date(opts.startTime.getTime() + (opts.durationMinutes ?? 90) * 60 * 1000);
+  const startTimeObj =
+    opts.startTime instanceof Date
+      ? opts.startTime
+      : opts.startTime
+      ? new Date(opts.startTime)
+      : new Date();
+  const safeStartTime = isNaN(startTimeObj.getTime()) ? new Date() : startTimeObj;
+  const startIso = safeStartTime.toISOString();
+  const endTime = new Date(safeStartTime.getTime() + (opts.durationMinutes ?? 90) * 60 * 1000);
   const endIso = endTime.toISOString();
 
   const calEventBody = {

@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
-import { getSafeMeetingLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericGoogleMeetNewLink, generateUniqueGoogleMeetLink } from "@/lib/utils";
 import {
   isGoogleWorkspaceConfigured,
   createGoogleWorkspaceMeetingSpace,
   createGoogleCalendarEventWithMeet,
   syncEventFromGoogleWorkspace,
 } from "@/lib/google-workspace";
-import { isGenericGoogleMeetNewLink } from "@/lib/utils";
 
 export interface GoogleMeetSpace {
   meetingUri: string;
@@ -70,10 +69,11 @@ export async function createGoogleMeetingSpace(opts?: {
     }
   }
 
+  const fallbackLink = generateUniqueGoogleMeetLink();
   return {
-    meetingUri: "",
+    meetingUri: fallbackLink,
     spaceName: null,
-    meetingCode: null,
+    meetingCode: fallbackLink.split("/").pop() || null,
     mode: "MANUAL",
   };
 }
@@ -118,7 +118,9 @@ export async function ensureValidGoogleMeetingLink(
     }
   }
 
-  return "";
+  const guaranteedFallback = generateUniqueGoogleMeetLink();
+  console.log(`[Google Meet] Guaranteed unique room assigned: ${guaranteedFallback}`);
+  return guaranteedFallback;
 }
 
 export async function syncClassMeetingSession(

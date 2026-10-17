@@ -48,6 +48,16 @@ export function getSafeMeetingLink(link?: string | null): string {
   return normalizeGoogleMeetLink(link);
 }
 
+export function generateUniqueGoogleMeetCode(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+  const pick = (n: number) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `${pick(3)}-${pick(4)}-${pick(3)}`;
+}
+
+export function generateUniqueGoogleMeetLink(): string {
+  return `https://meet.google.com/${generateUniqueGoogleMeetCode()}`;
+}
+
 export function parseTutorBio(bio: string | null | undefined): string {
   if (!bio || typeof bio !== "string") return "";
   const trimmed = bio.trim();

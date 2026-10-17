@@ -272,6 +272,8 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
     body: JSON.stringify({
       config: {
         accessType: "OPEN",
+        entryPointAccess: "ALL",
+        moderation: "OFF",
       },
     }),
   });
@@ -286,19 +288,6 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
   const spaceName = space.name || "";
   const meetingCode = space.meetingCode || spaceName.split("/").pop() || "";
 
-  if (opts?.tutorEmail && spaceName) {
-    try {
-      await fetch(`https://meet.googleapis.com/v2/${spaceName}/members`, {
-        method: "POST",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: opts.tutorEmail.trim(), role: "COHOST" }),
-      });
-      console.log(`[Google Meet] Assigned COHOST role to tutor ${opts.tutorEmail} on ${spaceName}`);
-    } catch {
-      // Non-fatal if domain policies handle co-hosting via calendar guest modification
-    }
-  }
-
   return {
     meetingUri,
     spaceName,
@@ -312,7 +301,7 @@ export async function createGoogleWorkspaceMeetingSpace(opts?: {
  * This is the preferred method when scheduling a class — it tells Google Meet
  * the exact scheduled start/end time, so conference records and recordings
  * are correctly timestamped and attributed to the right session.
- * Adds the tutor's email as an accepted attendee with guest modification permissions.
+ * Adds the tutor's LMS email as an accepted attendee with guest modification permissions.
  */
 export async function createGoogleCalendarEventWithMeet(opts: {
   title: string;
@@ -354,17 +343,47 @@ export async function createGoogleCalendarEventWithMeet(opts: {
     });
   }
 
+  // Pre-create an open, unmoderated Meet space so the tutor (with their LMS email)
+  // has full host/presenter privileges upon entry without getting gated by host controls.
+  let preCreatedSpace: GoogleMeetSpaceResult | null = null;
+  try {
+    preCreatedSpace = await createGoogleWorkspaceMeetingSpace({
+      title: opts.title,
+      tutorEmail: opts.tutorEmail,
+      tutorName: opts.tutorName,
+    });
+  } catch (spaceErr) {
+    console.warn("[Google Calendar] Space pre-creation notice, using standard calendar conferenceData:", spaceErr);
+  }
+
+  const conferenceData = preCreatedSpace
+    ? {
+        conferenceId: preCreatedSpace.meetingCode,
+        entryPoints: [
+          {
+            entryPointType: "video",
+            uri: preCreatedSpace.meetingUri,
+            label: preCreatedSpace.meetingCode,
+          },
+        ],
+        conferenceSolution: {
+          key: { type: "hangoutsMeet" },
+          name: "Google Meet",
+        },
+      }
+    : {
+        createRequest: {
+          requestId: `pulseedu-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          conferenceSolutionKey: { type: "hangoutsMeet" },
+        },
+      };
+
   const calEventBody = {
     summary: opts.title,
     description: opts.description || "",
     start: { dateTime: startIso, timeZone: "UTC" },
     end: { dateTime: endIso, timeZone: "UTC" },
-    conferenceData: {
-      createRequest: {
-        requestId: `pulseedu-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        conferenceSolutionKey: { type: "hangoutsMeet" },
-      },
-    },
+    conferenceData,
     attendees,
     guestsCanModify: true,
     guestsCanInviteOthers: true,
@@ -388,15 +407,22 @@ export async function createGoogleCalendarEventWithMeet(opts: {
   }
 
   const calEvent = await calRes.json();
-  const hangoutLink: string = calEvent.hangoutLink || "";
+  const hangoutLink: string =
+    calEvent.hangoutLink ||
+    preCreatedSpace?.meetingUri ||
+    calEvent.conferenceData?.entryPoints?.[0]?.uri ||
+    "";
   const calendarEventId: string = calEvent.id || "";
 
-  // Derive Meet space name from the hangout link (meet.google.com/abc-defg-hij → spaces/abc-defg-hij)
-  const meetCode = hangoutLink.split("/").pop() || "";
-  const spaceName = meetCode ? `spaces/${meetCode}` : "";
+  const meetCode =
+    hangoutLink.split("/").pop() ||
+    preCreatedSpace?.meetingCode ||
+    calEvent.conferenceData?.conferenceId ||
+    "";
+  const spaceName = preCreatedSpace?.spaceName || (meetCode ? `spaces/${meetCode}` : "");
 
   console.log(
-    `[Google Calendar] Scheduled "${opts.title}" (${startIso}) — Meet: ${hangoutLink}`
+    `[Google Calendar] Scheduled "${opts.title}" (${startIso}) — Meet: ${hangoutLink} (Host: ${opts.tutorEmail || adminEmail})`
   );
 
   return {

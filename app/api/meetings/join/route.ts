@@ -136,6 +136,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const hidePresentationParam = searchParams.get("hidePresentation");
+    const hidePresentationOnJoin = hidePresentationParam === "1" || hidePresentationParam === "true";
+
     // Generate Join URL
     const joinUrl = getBBBJoinUrl({
       meetingId: bbbMeetingId,
@@ -143,6 +146,7 @@ export async function GET(request: NextRequest) {
       isModerator,
       userId: user.id,
       redirect: true,
+      hidePresentationOnJoin,
     });
 
     if (wantsJson) {

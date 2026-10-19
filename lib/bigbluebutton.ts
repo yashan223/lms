@@ -102,6 +102,14 @@ export interface BBBMeetingCreationResult {
 }
 
 /**
+ * 5-page 16:9 blank widescreen whiteboard PDF encoded as Base64 (1160 bytes).
+ * Pre-uploading this replaces BigBlueButton's default "Welcome to BigBlueButton" presentation,
+ * giving instructors and students a clean, distraction-free whiteboard ready for teaching.
+ */
+export const DEFAULT_BLANK_WHITEBOARD_BASE64 =
+  "JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA1IDAgUiA3IDAgUiA5IDAgUiAxMSAwIFJdIC9Db3VudCA1ID4+CmVuZG9iagozIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgMTkyMCAxMDgwXSAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAwID4+CnN0cmVhbQoKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgMTkyMCAxMDgwXSAvQ29udGVudHMgNiAwIFIgPj4KZW5kb2JqCjYgMCBvYmoKPDwgL0xlbmd0aCAwID4+CnN0cmVhbQoKZW5kc3RyZWFtCmVuZG9iago3IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgMTkyMCAxMDgwXSAvQ29udGVudHMgOCAwIFIgPj4KZW5kb2JqCjggMCBvYmoKPDwgL0xlbmd0aCAwID4+CnN0cmVhbQoKZW5kc3RyZWFtCmVuZG9iago5IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgMTkyMCAxMDgwXSAvQ29udGVudHMgMTAgMCBSID4+CmVuZG9iagoxMCAwIG9iago8PCAvTGVuZ3RoIDAgPj4Kc3RyZWFtCgplbmRzdHJlYW0KZW5kb2JqCjExIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgMTkyMCAxMDgwXSAvQ29udGVudHMgMTIgMCBSID4+CmVuZG9iagoxMiAwIG9iago8PCAvTGVuZ3RoIDAgPj4Kc3RyZWFtCgplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCAxMwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTQwIDAwMDAwIG4gCjAwMDAwMDAyMjkgMDAwMDAgbiAKMDAwMDAwMDI3OCAwMDAwMCBuIAowMDAwMDAwMzY3IDAwMDAwIG4gCjAwMDAwMDA0MTYgMDAwMDAgbiAKMDAwMDAwMDUwNSAwMDAwMCBuIAowMDAwMDAwNTU0IDAwMDAwIG4gCjAwMDAwMDA2NDQgMDAwMDAgbiAKMDAwMDAwMDY5NCAwMDAwMCBuIAowMDAwMDAwNzg1IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTMgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjgzNQolJUVPRgo=";
+
+/**
  * Creates or gets an existing BigBlueButton meeting room
  */
 export async function createBBBMeeting(opts: {
@@ -117,6 +125,10 @@ export async function createBBBMeeting(opts: {
   meta?: Record<string, string>;
   endWhenNoModerator?: boolean;
   endWhenNoModeratorDelayInMinutes?: number;
+  overrideDefaultPresentation?: boolean;
+  presentationUrl?: string;
+  presentationBase64?: string;
+  presentationFilename?: string;
 }): Promise<BBBMeetingCreationResult> {
   const meetingId = opts.meetingId.trim();
   const name = opts.name.trim();
@@ -156,10 +168,36 @@ export async function createBBBMeeting(opts: {
     }
   }
 
+  // Pre-upload a clean whiteboard presentation to replace the default "Welcome to BigBlueButton" slides
+  let xmlBody: string | undefined;
+  if (opts.overrideDefaultPresentation !== false) {
+    const filename = (opts.presentationFilename || "EduPulse_Whiteboard.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
+    if (opts.presentationUrl) {
+      xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+  <module name="presentation">
+    <document url="${opts.presentationUrl}" filename="${filename}" current="true" downloadable="false" removable="true"/>
+  </module>
+</modules>`;
+    } else {
+      const b64 = opts.presentationBase64 || DEFAULT_BLANK_WHITEBOARD_BASE64;
+      xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+  <module name="presentation">
+    <document name="${filename}" current="true" downloadable="false" removable="true">${b64}</document>
+  </module>
+</modules>`;
+    }
+  }
+
   const callUrl = buildBBBUrl("create", params);
 
   try {
-    const res = await fetch(callUrl, { method: "GET" });
+    const res = await fetch(callUrl, {
+      method: xmlBody ? "POST" : "GET",
+      headers: xmlBody ? { "Content-Type": "application/xml" } : undefined,
+      body: xmlBody,
+    });
     const text = await res.text();
 
     const returncode = extractXmlTag(text, "returncode");
@@ -195,6 +233,7 @@ export function getBBBJoinUrl(opts: {
   userId?: string;
   avatarUrl?: string;
   redirect?: boolean;
+  hidePresentationOnJoin?: boolean;
 }): string {
   const meetingId = opts.meetingId.trim();
   const hash = crypto.createHash("sha256").update(meetingId).digest("hex");
@@ -215,6 +254,9 @@ export function getBBBJoinUrl(opts: {
 
   if (opts.userId) params.userID = opts.userId;
   if (opts.avatarUrl) params.avatarURL = opts.avatarUrl;
+  if (opts.hidePresentationOnJoin) {
+    params["userdata-bbb_hide_presentation_on_join"] = "true";
+  }
 
   return buildBBBUrl("join", params);
 }

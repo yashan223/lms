@@ -23,6 +23,7 @@ import {
   getBBBJoinUrl,
   getBBBMeetingId,
   getUniversalJoinLink,
+  endBBBMeeting,
   isBigBlueButtonConfigured,
 } from "@/lib/bigbluebutton";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
@@ -959,6 +960,8 @@ export async function POST(request: NextRequest) {
             meetingId: bbbId,
             name: existing.title || "PulseEDU Live Class",
             record: true,
+            autoStartRecording: true,
+            allowStartStopRecording: true,
           });
         } catch (err: any) {
           console.warn("[Admin API] createBBBMeeting notice:", err?.message || err);
@@ -1006,6 +1009,11 @@ export async function POST(request: NextRequest) {
       const { eventId, recordingUrl, manualStartTime, manualEndTime } = body;
       if (!eventId) {
         return NextResponse.json({ error: "Event ID is required." }, { status: 400 });
+      }
+
+      const bbbId = getBBBMeetingId({ eventId });
+      if (isBigBlueButtonConfigured()) {
+        endBBBMeeting(bbbId).catch(() => {});
       }
 
       const syncResult = await syncClassMeetingSession(eventId, {

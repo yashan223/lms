@@ -644,7 +644,7 @@ export async function POST(request: NextRequest) {
             meetingId: bbbId,
             name: roomTitle,
             record: true,
-            autoStartRecording: false,
+            autoStartRecording: true,
             allowStartStopRecording: true,
           });
         } catch (err: any) {

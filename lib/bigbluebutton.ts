@@ -115,6 +115,8 @@ export async function createBBBMeeting(opts: {
   welcome?: string;
   logoutUrl?: string;
   meta?: Record<string, string>;
+  endWhenNoModerator?: boolean;
+  endWhenNoModeratorDelayInMinutes?: number;
 }): Promise<BBBMeetingCreationResult> {
   const meetingId = opts.meetingId.trim();
   const name = opts.name.trim();
@@ -138,8 +140,11 @@ export async function createBBBMeeting(opts: {
     attendeePW,
     moderatorPW,
     record: opts.record !== false ? "true" : "false",
-    autoStartRecording: opts.autoStartRecording === true ? "true" : "false",
+    autoStartRecording: opts.autoStartRecording !== false ? "true" : "false",
     allowStartStopRecording: opts.allowStartStopRecording !== false ? "true" : "false",
+    endWhenNoModerator: opts.endWhenNoModerator !== false ? "true" : "false",
+    endWhenNoModeratorDelayInMinutes: (opts.endWhenNoModeratorDelayInMinutes ?? 1).toString(),
+    meetingExpireWhenEnd: "true",
     welcome: welcomeMsg,
     logoutURL: logoutUrl,
   };
@@ -440,6 +445,11 @@ export async function syncClassMeetingSession(
   }
 
   const bbbMeetingId = event.meetingSpaceId || getBBBMeetingId({ eventId });
+  if (isBigBlueButtonConfigured() && event.status === "LIVE") {
+    try {
+      await endBBBMeeting(bbbMeetingId);
+    } catch {}
+  }
   let recordingUrl = opts?.manualRecordingUrl?.trim() || event.recordingUrl;
   let actualStart = opts?.manualStartTime || event.actualStartTime || event.startedAt;
   let actualEnd = opts?.manualEndTime || event.actualEndTime || new Date();
@@ -530,6 +540,11 @@ export async function syncTrialSession(
   }
 
   const bbbMeetingId = trial.meetingSpaceId || getBBBMeetingId({ trialId });
+  if (isBigBlueButtonConfigured() && trial.status === "CONFIRMED" && trial.actualStartTime) {
+    try {
+      await endBBBMeeting(bbbMeetingId);
+    } catch {}
+  }
   let recordingUrl = opts?.manualRecordingUrl?.trim() || trial.recordingUrl;
   let actualStart = opts?.manualStartTime || trial.actualStartTime || trial.preferredDate;
   let actualEnd = opts?.manualEndTime || trial.actualEndTime || new Date();

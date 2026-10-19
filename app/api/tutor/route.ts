@@ -645,7 +645,7 @@ export async function POST(request: NextRequest) {
             name: roomTitle,
             record: true,
             autoStartRecording: true,
-            allowStartStopRecording: true,
+            allowStartStopRecording: false,
           });
         } catch (err: any) {
           console.warn("[start_class] createBBBMeeting notice:", err?.message || err);

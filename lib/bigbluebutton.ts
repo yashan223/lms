@@ -141,7 +141,8 @@ export async function createBBBMeeting(opts: {
     moderatorPW,
     record: opts.record !== false ? "true" : "false",
     autoStartRecording: opts.autoStartRecording !== false ? "true" : "false",
-    allowStartStopRecording: opts.allowStartStopRecording !== false ? "true" : "false",
+    // allowStartStopRecording: false disables pause/stop controls in BigBlueButton, ensuring continuous uninterrupted recording
+    allowStartStopRecording: opts.allowStartStopRecording === true ? "true" : "false",
     endWhenNoModerator: opts.endWhenNoModerator !== false ? "true" : "false",
     endWhenNoModeratorDelayInMinutes: (opts.endWhenNoModeratorDelayInMinutes ?? 1).toString(),
     meetingExpireWhenEnd: "true",

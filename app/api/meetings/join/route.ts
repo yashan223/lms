@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
           name: meetingTitle,
           record: true,
           autoStartRecording: true,
-          allowStartStopRecording: true,
+          allowStartStopRecording: false,
           welcome: `<br>Welcome to <b>${meetingTitle}</b> on EduPulse LMS!<br>${courseTitle ? `Course: <i>${courseTitle}</i><br>` : ""}Use audio and video controls below to interact.<br>`,
           logoutUrl: `${appBase}/dashboard`,
           meta: {

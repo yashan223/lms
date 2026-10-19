@@ -961,7 +961,7 @@ export async function POST(request: NextRequest) {
             name: existing.title || "PulseEDU Live Class",
             record: true,
             autoStartRecording: true,
-            allowStartStopRecording: true,
+            allowStartStopRecording: false,
           });
         } catch (err: any) {
           console.warn("[Admin API] createBBBMeeting notice:", err?.message || err);

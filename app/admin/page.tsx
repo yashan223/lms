@@ -246,7 +246,6 @@ export default function AdminDashboardPage() {
   const [formUserIsALTutor, setFormUserIsALTutor] = useState(true);
   const [formUserIsOLTutor, setFormUserIsOLTutor] = useState(true);
   const [formUserTimezone, setFormUserTimezone] = useState(DEFAULT_TIMEZONE);
-  const [formUserEmailManual, setFormUserEmailManual] = useState(false);
   const [selectedCourseToEnroll, setSelectedCourseToEnroll] = useState("");
   const [showUserCreatedSuccessModal, setShowUserCreatedSuccessModal] = useState(false);
   const [createdUserSuccess, setCreatedUserSuccess] = useState<{
@@ -756,7 +755,6 @@ export default function AdminDashboardPage() {
   const handleOpenAddUser = () => {
     setFormUserName("");
     setFormUserEmail("");
-    setFormUserEmailManual(false);
     setFormUserPhone("");
     setFormUserCountryDial(DEFAULT_DIAL_CODE);
     setFormUserPassword("");
@@ -777,16 +775,11 @@ export default function AdminDashboardPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const isTutor = formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR";
       let resolvedEmail = formUserEmail.trim().toLowerCase();
 
-      if (!resolvedEmail) {
+      if (!resolvedEmail || !resolvedEmail.includes("@")) {
         alert("Please enter a valid email address.");
         return;
-      }
-
-      if (isTutor && !resolvedEmail.includes("@")) {
-        resolvedEmail = `${resolvedEmail}@pulseedu.online`;
       }
 
       let fullPhoneNumber = formUserPhone.trim();
@@ -3028,18 +3021,7 @@ export default function AdminDashboardPage() {
                               <div>
                                 <div className="font-bold text-slate-900">{u.name}</div>
                                 <div className="text-[11px] text-slate-500">{u.email}</div>
-                                {(() => {
-                                  if (u.role !== "TUTOR" && (u.role as any) !== "INSTRUCTOR") return null;
-                                  if (u.email?.endsWith("@pulseedu.online")) {
-                                    return (
-                                      <div className="text-[9px] text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-semibold w-fit mt-0.5 flex items-center gap-1" title="Official Tutor Account">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                        <span>Official Account</span>
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                })()}
+
                                 {u.phone && (
                                   <div className="text-[10px] text-blue-600 font-mono flex items-center gap-1 mt-0.5">
                                     <Phone className="w-3 h-3" />
@@ -5754,54 +5736,21 @@ export default function AdminDashboardPage() {
                     required
                     placeholder="Enter full name"
                     value={formUserName}
-                    onChange={(e) => {
-                      const newName = e.target.value;
-                      setFormUserName(newName);
-                      if ((formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR") && !formUserEmailManual) {
-                        const slug = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "");
-                        setFormUserEmail(slug ? `${slug}@pulseedu.online` : "");
-                      }
-                    }}
+                    onChange={(e) => setFormUserName(e.target.value)}
                     className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs"
                   />
                 </div>
-                {formUserRole === "TUTOR" || (formUserRole as any) === "INSTRUCTOR" ? (
-                  <div>
-                    <label className="font-bold block mb-1.5 text-slate-700">Official Tutor Email</label>
-                    <div className="flex items-center">
-                      <Input
-                        required
-                        type="text"
-                        placeholder="Enter username"
-                        value={formUserEmail.replace(/@pulseedu\.online$/i, "")}
-                        onChange={(e) => {
-                          setFormUserEmailManual(true);
-                          const clean = e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, "");
-                          setFormUserEmail(clean ? `${clean}@pulseedu.online` : "");
-                        }}
-                        className="rounded-l-xl rounded-r-none font-mono text-xs h-10 bg-white focus-visible:ring-emerald-400 border-r-0"
-                      />
-                      <span className="h-10 px-3 bg-slate-100 border border-slate-200 text-slate-700 font-bold font-mono text-xs flex items-center rounded-r-xl select-none shrink-0">
-                        @pulseedu.online
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="font-bold block mb-1.5 text-slate-700">Email Address</label>
-                    <Input
-                      required
-                      type="email"
-                      placeholder="Enter email address"
-                      value={formUserEmail}
-                      onChange={(e) => {
-                        setFormUserEmailManual(true);
-                        setFormUserEmail(e.target.value);
-                      }}
-                      className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="font-bold block mb-1.5 text-slate-700">Email Address</label>
+                  <Input
+                    required
+                    type="email"
+                    placeholder="Enter email address"
+                    value={formUserEmail}
+                    onChange={(e) => setFormUserEmail(e.target.value)}
+                    className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -5809,18 +5758,7 @@ export default function AdminDashboardPage() {
                   <label className="font-bold block mb-1.5 text-slate-700">Role</label>
                   <select
                     value={formUserRole}
-                    onChange={(e) => {
-                      const newRole = e.target.value;
-                      setFormUserRole(newRole);
-                      if ((newRole === "TUTOR" || (newRole as any) === "INSTRUCTOR") && !formUserEmailManual) {
-                        const slug = formUserName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "");
-                        setFormUserEmail(slug ? `${slug}@pulseedu.online` : "");
-                      } else if (newRole === "ADMIN") {
-                        if (formUserEmail.endsWith("@pulseedu.online") && !formUserEmailManual) {
-                          setFormUserEmail("");
-                        }
-                      }
-                    }}
+                    onChange={(e) => setFormUserRole(e.target.value)}
                     className="w-full h-10 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="TUTOR">Tutor</option>

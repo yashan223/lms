@@ -72,7 +72,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
-import { getSafeMeetingLink, normalizeGoogleMeetLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
+import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
@@ -880,7 +880,7 @@ function TutorDashboardContent() {
         body: JSON.stringify({
           action: "start_class",
           eventId: ev.id,
-          meetingLink: ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? ev.meetingLink : undefined,
+          meetingLink: ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) ? ev.meetingLink : undefined,
         }),
       });
 
@@ -935,7 +935,7 @@ function TutorDashboardContent() {
         body: JSON.stringify({
           action: "start_class",
           trialId: tr.id,
-          meetingLink: tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? tr.meetingLink : undefined,
+          meetingLink: tr.meetingLink && !isGenericMeetingLink(tr.meetingLink) ? tr.meetingLink : undefined,
         }),
       });
 
@@ -981,7 +981,7 @@ function TutorDashboardContent() {
     e.preventDefault();
     if (!startSessionTarget) return;
 
-    const normalized = startSessionMeetLink.trim() ? normalizeGoogleMeetLink(startSessionMeetLink) : undefined;
+    const normalized = startSessionMeetLink.trim() ? normalizeMeetingLink(startSessionMeetLink) : undefined;
 
     try {
       setIsStartingSession(true);
@@ -999,14 +999,14 @@ function TutorDashboardContent() {
           action: "start_class",
           eventId: startSessionTarget.eventId,
           trialId: startSessionTarget.trialId,
-          meetingLink: normalized || (startSessionTarget.currentLink && !isGenericGoogleMeetNewLink(startSessionTarget.currentLink) ? startSessionTarget.currentLink : undefined),
+          meetingLink: normalized || (startSessionTarget.currentLink && !isGenericMeetingLink(startSessionTarget.currentLink) ? startSessionTarget.currentLink : undefined),
         }),
       });
       const data = await res.json();
       if (res.ok) {
         setShowStartSessionModal(false);
         fetchTutorData();
-        if (data.meetingLink && !isGenericGoogleMeetNewLink(data.meetingLink)) {
+        if (data.meetingLink && !isGenericMeetingLink(data.meetingLink)) {
           window.open(data.meetingLink, "_blank", "noopener,noreferrer");
         }
       } else {
@@ -1029,14 +1029,14 @@ function TutorDashboardContent() {
       title: opts.title,
       currentLink: opts.currentLink || "",
     });
-    setEditLinkInput(opts.currentLink && !isGenericGoogleMeetNewLink(opts.currentLink) ? opts.currentLink : "");
+    setEditLinkInput(opts.currentLink && !isGenericMeetingLink(opts.currentLink) ? opts.currentLink : "");
     setShowEditLinkModal(true);
   };
 
   const handleSaveEditLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editLinkTarget) return;
-    const normalized = normalizeGoogleMeetLink(editLinkInput);
+    const normalized = normalizeMeetingLink(editLinkInput);
     if (!normalized) {
       alert("Please enter a valid classroom meeting link (e.g. BigBlueButton or custom video room URL).");
       return;
@@ -1593,7 +1593,7 @@ function TutorDashboardContent() {
     setSelectedSlotIndex(0);
     setConfirmDate(formatForDateTimeInput(new Date(slots[0])));
     const rawLink = trial.meetingLink?.trim();
-    setConfirmMeetLink(rawLink && !isGenericGoogleMeetNewLink(rawLink) ? rawLink : "");
+    setConfirmMeetLink(rawLink && !isGenericMeetingLink(rawLink) ? rawLink : "");
     setConfirmNotes(trial.notes || "");
     setConfirmTrialStatusMsg(null);
     setShowConfirmTrialModal(true);
@@ -1612,8 +1612,8 @@ function TutorDashboardContent() {
           action: "confirm_trial",
           trialId: confirmingTrial.id,
           confirmedDate: new Date(confirmDate).toISOString(),
-          meetingLink: confirmMeetLink.trim() && !isGenericGoogleMeetNewLink(confirmMeetLink)
-            ? normalizeGoogleMeetLink(confirmMeetLink)
+          meetingLink: confirmMeetLink.trim() && !isGenericMeetingLink(confirmMeetLink)
+            ? normalizeMeetingLink(confirmMeetLink)
             : undefined,
           notes: confirmNotes,
         }),
@@ -2581,7 +2581,7 @@ function TutorDashboardContent() {
                                     title="Set or update classroom link"
                                   >
                                     <Video className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>{ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) ? "Edit Link" : "Room Link"}</span>
+                                    <span>{ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) ? "Edit Link" : "Room Link"}</span>
                                   </button>
                                   <button
                                     onClick={() => openRescheduleForClass(ev)}
@@ -2823,7 +2823,7 @@ function TutorDashboardContent() {
                               <>
                                 <span className="text-slate-200 hidden sm:inline">•</span>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meet Verified:</span>
+                                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">BBB Verified:</span>
                                   <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                                     {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
@@ -3287,10 +3287,10 @@ function TutorDashboardContent() {
                                       onClick={() => handleSyncMeeting(undefined, tr.id)}
                                       disabled={syncingTrialId === tr.id}
                                       className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                                      title="Auto-detect recording from Google Drive"
+                                      title="Sync timing & recording from BigBlueButton"
                                     >
                                       <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${syncingTrialId === tr.id ? "animate-spin" : ""}`} />
-                                      <span>{syncingTrialId === tr.id ? "Syncing..." : "Sync Meet"}</span>
+                                      <span>{syncingTrialId === tr.id ? "Syncing..." : "Sync BBB"}</span>
                                     </button>
                                     {tr.studentId && (
                                       <button
@@ -3405,10 +3405,10 @@ function TutorDashboardContent() {
                                           title="Set or update classroom link"
                                         >
                                           <Video className="w-3.5 h-3.5 text-blue-600" />
-                                          <span>{tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) ? "Edit Link" : "Room Link"}</span>
+                                          <span>{tr.meetingLink && !isGenericMeetingLink(tr.meetingLink) ? "Edit Link" : "Room Link"}</span>
                                         </button>
 
-                                        {tr.meetingLink && !isGenericGoogleMeetNewLink(tr.meetingLink) && (
+                                        {tr.meetingLink && !isGenericMeetingLink(tr.meetingLink) && (
                                           <a
                                             href={getSafeMeetingLink(tr.meetingLink)}
                                             target="_blank"
@@ -3436,7 +3436,7 @@ function TutorDashboardContent() {
                                     <a
                                       href={buildGoogleCalendarUrl({
                                         title: `30-Min Trial: ${tr.studentName}`,
-                                        description: `1-on-1 Consultation for ${tr.course?.title || "London A/L"}\nMeet: ${tr.meetingLink || ""}`,
+                                        description: `1-on-1 Consultation for ${tr.course?.title || "London A/L"}\nMeeting: ${tr.meetingLink || ""}`,
                                         dueDate: tr.preferredDate,
                                       })}
                                       target="_blank"
@@ -4265,7 +4265,7 @@ function TutorDashboardContent() {
                 <p className="text-[11px] text-emerald-900 leading-relaxed">
                   A unique, secure BigBlueButton classroom is automatically created with full moderator controls, whiteboard tools, and automatic server-side recording.
                 </p>
-                {startSessionTarget.currentLink && !isGenericGoogleMeetNewLink(startSessionTarget.currentLink) && (
+                {startSessionTarget.currentLink && !isGenericMeetingLink(startSessionTarget.currentLink) && (
                   <div className="text-[11px] font-mono bg-white/80 p-2 rounded-lg border border-emerald-200 text-emerald-800 truncate">
                     Ready Room: {startSessionTarget.currentLink}
                   </div>
@@ -4398,7 +4398,7 @@ function TutorDashboardContent() {
                   Recording Playback URL (BigBlueButton / YouTube / Cloud Storage)
                 </label>
                 <Input
-                  placeholder="https://drive.google.com/file/d/... or https://youtu.be/..."
+                  placeholder="https://.../playback or https://youtu.be/..."
                   value={recordingInputUrl}
                   onChange={(e) => setRecordingInputUrl(e.target.value)}
                   className="rounded-xl h-10 text-xs font-mono"

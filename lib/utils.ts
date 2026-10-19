@@ -19,26 +19,13 @@ export function normalizeMeetingLink(link?: string | null): string {
 export function isGenericMeetingLink(link?: string | null): boolean {
   if (!link || typeof link !== "string") return true;
   const trimmed = link.trim().toLowerCase();
-  return (
-    !trimmed ||
-    trimmed === "https://meet.google.com/new" ||
-    trimmed === "http://meet.google.com/new" ||
-    trimmed === "https://meet.google.com/new/" ||
-    trimmed === "meet.google.com/new" ||
-    trimmed === "/new"
-  );
+  return !trimmed || trimmed === "/new";
 }
-
-// Deprecated aliases kept for backward compatibility
-export const normalizeGoogleMeetLink = normalizeMeetingLink;
-export const isGenericGoogleMeetNewLink = isGenericMeetingLink;
 
 export function isValidMeetingRoom(link?: string | null): boolean {
   if (!link || typeof link !== "string" || isGenericMeetingLink(link)) return false;
   return link.trim().length > 4;
 }
-
-export const isValidGoogleMeetRoom = isValidMeetingRoom;
 
 export function getSafeMeetingLink(link?: string | null): string {
   return normalizeMeetingLink(link);

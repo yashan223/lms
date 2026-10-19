@@ -467,13 +467,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (action === "provision_workspace_tutor") {
-      return NextResponse.json({
-        success: true,
-        message: "Google Workspace provisioning is disabled. PulseEDU uses BigBlueButton for live classroom conferencing.",
-      });
-    }
-
     if (action === "update_user") {
       const { userId, name, email, phone, role, headline, bio, password, hourlyRate, hourlyRateAL, hourlyRateOL, isALTutor, isOLTutor, timezone, country } = body;
 
@@ -836,7 +829,7 @@ export async function POST(request: NextRequest) {
 
       const tempId = `class-${Date.now()}`;
       let meetLink =
-        meetingLink?.trim() && !isGenericMeetingLink(meetingLink) && !meetingLink.includes("meet.google.com")
+        meetingLink?.trim() && !isGenericMeetingLink(meetingLink)
           ? getSafeMeetingLink(meetingLink)
           : getUniversalJoinLink({ eventId: tempId });
 
@@ -974,7 +967,7 @@ export async function POST(request: NextRequest) {
 
       const rawCandidate = meetingLink || existing.meetingLink;
       const effectiveStudentLink =
-        rawCandidate && !isGenericMeetingLink(rawCandidate) && !rawCandidate.includes("meet.google.com")
+        rawCandidate && !isGenericMeetingLink(rawCandidate)
           ? getSafeMeetingLink(rawCandidate)
           : studentJoinLink;
 
@@ -1159,7 +1152,7 @@ export async function POST(request: NextRequest) {
       const eventTitle = `30-Min Free Trial: ${courseTitle} (${updated.studentName})`;
       const bbbId = updated.meetingSpaceId || getBBBMeetingId({ trialId });
       const link =
-        updated.meetingLink && !isGenericMeetingLink(updated.meetingLink) && !updated.meetingLink.includes("meet.google.com")
+        updated.meetingLink && !isGenericMeetingLink(updated.meetingLink)
           ? getSafeMeetingLink(updated.meetingLink)
           : getUniversalJoinLink({ trialId });
 

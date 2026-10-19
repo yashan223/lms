@@ -512,7 +512,7 @@ export async function POST(request: NextRequest) {
       const targetStatus = (status as TrialStatus) || TrialStatus.CONFIRMED;
       const bbbId = existingTrial.meetingSpaceId || getBBBMeetingId({ trialId: existingTrial.id });
       const link =
-        meetingLink?.trim() && !isGenericMeetingLink(meetingLink) && !meetingLink.includes("meet.google.com")
+        meetingLink?.trim() && !isGenericMeetingLink(meetingLink)
           ? getSafeMeetingLink(meetingLink)
           : getUniversalJoinLink({ trialId: existingTrial.id });
 
@@ -779,7 +779,7 @@ export async function POST(request: NextRequest) {
 
       const bbbId = existing.meetingSpaceId || getBBBMeetingId({ trialId: existing.id });
       const link =
-        meetingLink?.trim() && !isGenericMeetingLink(meetingLink) && !meetingLink.includes("meet.google.com")
+        meetingLink?.trim() && !isGenericMeetingLink(meetingLink)
           ? getSafeMeetingLink(meetingLink)
           : getUniversalJoinLink({ trialId: existing.id });
 

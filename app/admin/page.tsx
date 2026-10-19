@@ -8629,7 +8629,7 @@ export default function AdminDashboardPage() {
                   Recording Playback URL (BigBlueButton / YouTube / Cloud Storage)
                 </label>
                 <Input
-                  placeholder="https://drive.google.com/file/d/... or https://youtu.be/..."
+                  placeholder="https://.../playback or https://youtu.be/..."
                   value={recordingInputUrl}
                   onChange={(e) => setRecordingInputUrl(e.target.value)}
                   className="rounded-xl h-10 text-xs font-mono"

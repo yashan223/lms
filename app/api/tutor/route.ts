@@ -666,7 +666,7 @@ export async function POST(request: NextRequest) {
 
       const rawCandidate = meetingLink || existingEvent?.meetingLink || existingTrial?.meetingLink;
       const effectiveStudentLink =
-        rawCandidate && !isGenericMeetingLink(rawCandidate) && !rawCandidate.includes("meet.google.com")
+        rawCandidate && !isGenericMeetingLink(rawCandidate)
           ? getSafeMeetingLink(rawCandidate)
           : defaultStudentJoinLink;
 
@@ -1111,7 +1111,7 @@ export async function POST(request: NextRequest) {
       const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
       const bbbMeetingId = existingTrial.meetingSpaceId || getBBBMeetingId({ trialId: existingTrial.id });
       const link =
-        meetingLink?.trim() && !isGenericMeetingLink(meetingLink) && !meetingLink.includes("meet.google.com")
+        meetingLink?.trim() && !isGenericMeetingLink(meetingLink)
           ? getSafeMeetingLink(meetingLink)
           : getUniversalJoinLink({ trialId: existingTrial.id });
 
@@ -1336,7 +1336,7 @@ export async function POST(request: NextRequest) {
       const eventTitle = `1-on-1 Trial: ${courseTitle} (${updatedTrial.studentName || "Student"})`;
       const bbbMeetingId = updatedTrial.meetingSpaceId || getBBBMeetingId({ trialId: updatedTrial.id });
       const link =
-        updatedTrial.meetingLink && !isGenericMeetingLink(updatedTrial.meetingLink) && !updatedTrial.meetingLink.includes("meet.google.com")
+        updatedTrial.meetingLink && !isGenericMeetingLink(updatedTrial.meetingLink)
           ? getSafeMeetingLink(updatedTrial.meetingLink)
           : getUniversalJoinLink({ trialId: updatedTrial.id });
 

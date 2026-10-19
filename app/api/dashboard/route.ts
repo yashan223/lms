@@ -308,7 +308,7 @@ export async function GET(request: NextRequest) {
           const eventTitle = `1-on-1 Trial: ${courseTitle} (${trial.studentName || user.name})`;
           const bbbMeetingId = trial.meetingSpaceId || getBBBMeetingId({ trialId: trial.id });
           const link =
-            trial.meetingLink && !isGenericMeetingLink(trial.meetingLink) && !trial.meetingLink.includes("meet.google.com")
+            trial.meetingLink && !isGenericMeetingLink(trial.meetingLink)
               ? getSafeMeetingLink(trial.meetingLink)
               : getUniversalJoinLink({ trialId: trial.id });
 

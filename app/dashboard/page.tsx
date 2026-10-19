@@ -61,7 +61,7 @@ import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
-import { getSafeMeetingLink, isGenericGoogleMeetNewLink } from "@/lib/utils";
+import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 import {
@@ -1513,7 +1513,7 @@ function DashboardContent() {
                                 <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                                 <span>Waiting for Tutor to Start</span>
                               </span>
-                              {ev.meetingLink && !isGenericGoogleMeetNewLink(ev.meetingLink) && (
+                              {ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) && (
                                 <a
                                   href={getSafeMeetingLink(ev.meetingLink)}
                                   target="_blank"

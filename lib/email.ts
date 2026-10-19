@@ -123,9 +123,9 @@ async function dispatchSmtpEmail(
   }
 
   const pass = rawPass.replace(/\s+/g, "");
-  const host = process.env.SMTP_HOST?.trim() || process.env.GOOGLE_SMTP_HOST?.trim() || "smtp.gmail.com";
-  const port = parseInt(process.env.SMTP_PORT || process.env.GOOGLE_SMTP_PORT || "465", 10);
-  const secure = (process.env.SMTP_SECURE ?? process.env.GOOGLE_SMTP_SECURE ?? "true") === "true" || port === 465;
+  const host = process.env.SMTP_HOST?.trim() || "smtp.gmail.com";
+  const port = parseInt(process.env.SMTP_PORT || "465", 10);
+  const secure = (process.env.SMTP_SECURE ?? "true") === "true" || port === 465;
 
   const { sender, replyTo } = getSmtpSender(user);
 

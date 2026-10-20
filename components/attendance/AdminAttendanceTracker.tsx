@@ -13,7 +13,6 @@ import {
   Users,
   RefreshCw,
   Video,
-  Check,
   ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +57,7 @@ interface RosterStudent {
   studentEmail: string;
   studentAvatar: string | null;
   studentRegId: string | null;
-  status: "PRESENT" | "LATE" | "ABSENT" | "EXCUSED";
+  status: "PRESENT" | "LATE" | "ABSENT" | "EXCUSED" | "SCHEDULED" | string;
   joinedAt: string | null;
   durationMinutes: number;
   markedBy: string;
@@ -80,7 +79,6 @@ export function AdminAttendanceTracker() {
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [rosterData, setRosterData] = useState<any>(null);
   const [loadingRoster, setLoadingRoster] = useState(false);
-  const [savingStudentId, setSavingStudentId] = useState<string | null>(null);
 
   const fetchAttendance = async () => {
     try {
@@ -144,72 +142,6 @@ export function AdminAttendanceTracker() {
       fetchRoster(selectedEventId);
     }
   }, [activeSubTab, selectedEventId]);
-
-  const handleUpdateStudentStatus = async (
-    studentUserId: string,
-    newStatus: "PRESENT" | "LATE" | "ABSENT" | "EXCUSED",
-    attendanceId?: string | null
-  ) => {
-    if (!selectedEventId) return;
-    try {
-      setSavingStudentId(studentUserId);
-      const res = await fetch("/api/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: selectedEventId,
-          userId: studentUserId,
-          attendanceId: attendanceId || undefined,
-          status: newStatus,
-        }),
-      });
-
-      if (res.ok) {
-        setRosterData((prev: any) => {
-          if (!prev) return prev;
-          const updatedRoster = prev.roster.map((s: RosterStudent) =>
-            s.studentId === studentUserId ? { ...s, status: newStatus } : s
-          );
-          return {
-            ...prev,
-            roster: updatedRoster,
-          };
-        });
-      }
-    } catch (err) {
-      console.error("[AdminAttendanceTracker] Error updating student status:", err);
-    } finally {
-      setSavingStudentId(null);
-    }
-  };
-
-  const handleMarkAllPresent = async () => {
-    if (!selectedEventId || !rosterData || rosterData.roster.length === 0) return;
-    try {
-      setLoadingRoster(true);
-      const updates = rosterData.roster.map((s: RosterStudent) => ({
-        userId: s.studentId,
-        status: "PRESENT",
-      }));
-
-      const res = await fetch("/api/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: selectedEventId,
-          updates,
-        }),
-      });
-
-      if (res.ok) {
-        await fetchRoster(selectedEventId);
-      }
-    } catch (err) {
-      console.error("[AdminAttendanceTracker] Error marking all present:", err);
-    } finally {
-      setLoadingRoster(false);
-    }
-  };
 
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
@@ -553,30 +485,17 @@ export function AdminAttendanceTracker() {
               </select>
             </div>
 
-            {rosterData && (
+            {rosterData?.event?.meetingLink && (
               <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleMarkAllPresent}
-                  disabled={loadingRoster}
-                  className="rounded-xl border-emerald-300 text-emerald-800 hover:bg-emerald-50 text-xs font-bold gap-1.5 h-9 cursor-pointer"
+                <a
+                  href={rosterData.event.meetingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  Mark All Present
-                </Button>
-
-                {rosterData.event?.meetingLink && (
-                  <a
-                    href={rosterData.event.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
-                  >
-                    <Video className="w-3.5 h-3.5" />
-                    Enter Room
-                  </a>
-                )}
+                  <Video className="w-3.5 h-3.5" />
+                  Enter Room
+                </a>
               </div>
             )}
           </div>
@@ -661,31 +580,37 @@ export function AdminAttendanceTracker() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {(["PRESENT", "LATE", "ABSENT", "EXCUSED"] as const).map((st) => (
-                          <button
-                            key={st}
-                            type="button"
-                            disabled={savingStudentId === student.studentId}
-                            onClick={() => handleUpdateStudentStatus(student.studentId, st, student.attendanceId)}
-                            className={`px-2 py-1 text-xs rounded-lg font-medium transition cursor-pointer ${
-                              student.status === st
-                                ? st === "PRESENT"
-                                  ? "bg-emerald-600 text-white font-bold"
-                                  : st === "LATE"
-                                  ? "bg-amber-600 text-white font-bold"
-                                  : st === "ABSENT"
-                                  ? "bg-red-600 text-white font-bold"
-                                  : "bg-blue-600 text-white font-bold"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                            }`}
-                          >
-                            {st === "PRESENT" && "Present"}
-                            {st === "LATE" && "Late"}
-                            {st === "ABSENT" && "Absent"}
-                            {st === "EXCUSED" && "Excused"}
-                          </button>
-                        ))}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {student.status === "PRESENT" && (
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Present
+                          </span>
+                        )}
+                        {student.status === "LATE" && (
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            Late
+                          </span>
+                        )}
+                        {student.status === "ABSENT" && (
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-50 text-red-700 border border-red-200 inline-flex items-center gap-1.5">
+                            <XCircle className="w-3.5 h-3.5 text-red-600" />
+                            Absent
+                          </span>
+                        )}
+                        {student.status === "EXCUSED" && (
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-blue-600" />
+                            Excused
+                          </span>
+                        )}
+                        {(student.status === "SCHEDULED" || (!["PRESENT", "LATE", "ABSENT", "EXCUSED"].includes(student.status))) && (
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 inline-flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            Scheduled
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}

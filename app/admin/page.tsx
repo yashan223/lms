@@ -2246,8 +2246,8 @@ export default function AdminDashboardPage() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-center relative">
+          <Link href="/" className="flex items-center justify-center gap-2 group">
             <img
               src="/logo-wide.png"
               alt="PulseEDU Global"
@@ -2257,7 +2257,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-slate-600 p-1"
+            className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+            title="Close sidebar"
           >
             <X className="w-5 h-5" />
           </button>

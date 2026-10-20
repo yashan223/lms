@@ -78,6 +78,7 @@ import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
 import { UserProfileHistoryModal } from "@/components/admin/UserProfileHistoryModal";
+import { Footer } from "@/components/layout/Footer";
 import {
   getRegionalTimezone,
   DEFAULT_TIMEZONE,
@@ -6099,6 +6100,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </main>
+        <Footer />
       </div>
 
       {showAddUserModal && (

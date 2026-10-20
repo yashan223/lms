@@ -2314,23 +2314,6 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex items-center gap-2.5">
-              {adminId && (
-                <button
-                  type="button"
-                  onClick={() => handleCopyAdminId(adminId)}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-900 text-[11px] font-bold font-mono transition-colors shadow-2xs cursor-pointer group"
-                  title="Click to copy your Official Admin ID"
-                >
-                  <span className="text-[10px] text-rose-600 font-sans font-extrabold uppercase">ID:</span>
-                  <span>{adminId}</span>
-                  {copiedAdminId ? (
-                    <Check className="w-3 h-3 text-emerald-600" />
-                  ) : (
-                    <Copy className="w-3 h-3 text-rose-500 opacity-60 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </button>
-              )}
-
               <Button
                 size="sm"
                 variant="outline"

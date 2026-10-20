@@ -28,6 +28,7 @@ import {
 } from "@/lib/bigbluebutton";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 import { generateUniqueTutorId, backfillExistingTutors } from "@/lib/tutor-id";
+import { generateUniqueAdminId, backfillExistingAdmins, ensureAdminIdForUser } from "@/lib/admin-id";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest) {
 
     try {
       await backfillExistingTutors();
+      await backfillExistingAdmins();
       allUsers = await prisma.user.findMany({
         include: {
           tokenWallet: {
@@ -325,8 +327,14 @@ export async function GET(request: NextRequest) {
       process.env.DEFAULT_ADMIN_NAME ||
       "Administrator";
 
+    let adminId = auth.user.adminId;
+    if (!adminId && auth.user.role === Role.ADMIN) {
+      adminId = await ensureAdminIdForUser(auth.user.id);
+    }
+
     const adminProfile = {
       id: auth.user.id,
+      adminId: adminId || null,
       name: adminName,
       email: auth.user.email,
       role: auth.user.role,
@@ -443,13 +451,17 @@ export async function POST(request: NextRequest) {
       const primaryUserEmail = email.trim().toLowerCase();
 
       let assignedTutorId: string | null = null;
+      let assignedAdminId: string | null = null;
       if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
         assignedTutorId = await generateUniqueTutorId();
+      } else if (assignedRole === Role.ADMIN) {
+        assignedAdminId = await generateUniqueAdminId();
       }
 
       const newUser = await prisma.user.create({
         data: {
           tutorId: assignedTutorId,
+          adminId: assignedAdminId,
           name,
           email: primaryUserEmail,
           passwordHash: hashedPassword,

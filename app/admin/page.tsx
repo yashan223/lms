@@ -178,6 +178,15 @@ export default function AdminDashboardPage() {
     process.env.DEFAULT_ADMIN_NAME || "Administrator"
   );
   const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
+  const [adminId, setAdminId] = useState<string | null>(null);
+  const [copiedAdminId, setCopiedAdminId] = useState(false);
+
+  const handleCopyAdminId = (idStr: string) => {
+    if (!idStr) return;
+    navigator.clipboard.writeText(idStr);
+    setCopiedAdminId(true);
+    setTimeout(() => setCopiedAdminId(false), 2000);
+  };
 
   const getAdminInitials = (nameStr: string) => {
     const parts = (nameStr || "").trim().split(/\s+/).filter(Boolean);
@@ -262,11 +271,13 @@ export default function AdminDashboardPage() {
     password?: string;
     role: string;
     tutorId?: string | null;
+    adminId?: string | null;
     message?: string;
   } | null>(null);
   const [copiedSuccessEmail, setCopiedSuccessEmail] = useState(false);
   const [copiedSuccessPassword, setCopiedSuccessPassword] = useState(false);
   const [copiedSuccessTutorId, setCopiedSuccessTutorId] = useState(false);
+  const [copiedSuccessAdminId, setCopiedSuccessAdminId] = useState(false);
   const [showSuccessPassword, setShowSuccessPassword] = useState(false);
 
   const [showGrantTokensModal, setShowGrantTokensModal] = useState(false);
@@ -658,6 +669,9 @@ export default function AdminDashboardPage() {
           if (data.adminProfile.avatar) {
             setAdminAvatar(data.adminProfile.avatar);
           }
+          if (data.adminProfile.adminId) {
+            setAdminId(data.adminProfile.adminId);
+          }
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -718,6 +732,7 @@ export default function AdminDashboardPage() {
         u.email.toLowerCase().includes(q) ||
         (u.studentId && u.studentId.toLowerCase().includes(q)) ||
         (u.tutorId && u.tutorId.toLowerCase().includes(q)) ||
+        (u.adminId && u.adminId.toLowerCase().includes(q)) ||
         (u.headline && u.headline.toLowerCase().includes(q));
       const matchesRole = userRoleFilter === "ALL" || u.role === userRoleFilter;
       return matchesSearch && matchesRole;
@@ -834,6 +849,7 @@ export default function AdminDashboardPage() {
           password: formUserPassword,
           role: formUserRole,
           tutorId: data.user?.tutorId || null,
+          adminId: data.user?.adminId || null,
           message: data.message || "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time.",
         });
         setCopiedSuccessEmail(false);
@@ -2206,7 +2222,7 @@ export default function AdminDashboardPage() {
 
         <div className="p-3.5 border-t border-slate-200 space-y-3 bg-slate-50/70">
           <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
-            <Avatar className="w-8 h-8 ring-1 ring-blue-200">
+            <Avatar className="w-8 h-8 ring-1 ring-blue-200 shrink-0">
               {adminAvatar && <AvatarImage src={adminAvatar} alt={adminName} />}
               <AvatarFallback className="bg-[#0c2461] text-white font-bold text-xs">
                 {getAdminInitials(adminName)}
@@ -2214,7 +2230,19 @@ export default function AdminDashboardPage() {
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-slate-900 truncate">{adminName}</div>
-              <div className="text-[10px] text-blue-500 font-semibold truncate">System Administrator</div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[10px] text-blue-500 font-semibold truncate">System Admin</span>
+                {adminId && (
+                  <button
+                    type="button"
+                    onClick={() => handleCopyAdminId(adminId)}
+                    className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer"
+                    title="Click to copy Admin ID"
+                  >
+                    {copiedAdminId ? "Copied" : adminId}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -2286,6 +2314,23 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex items-center gap-2.5">
+              {adminId && (
+                <button
+                  type="button"
+                  onClick={() => handleCopyAdminId(adminId)}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-900 text-[11px] font-bold font-mono transition-colors shadow-2xs cursor-pointer group"
+                  title="Click to copy your Official Admin ID"
+                >
+                  <span className="text-[10px] text-rose-600 font-sans font-extrabold uppercase">ID:</span>
+                  <span>{adminId}</span>
+                  {copiedAdminId ? (
+                    <Check className="w-3 h-3 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-rose-500 opacity-60 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </button>
+              )}
+
               <Button
                 size="sm"
                 variant="outline"
@@ -2477,6 +2522,11 @@ export default function AdminDashboardPage() {
                                   {(u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR") && u.tutorId && (
                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-100 text-indigo-900 border border-indigo-200" title="Official Tutor ID">
                                       {u.tutorId}
+                                    </span>
+                                  )}
+                                  {u.role === "ADMIN" && u.adminId && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-100 text-rose-900 border border-rose-200" title="Official Admin ID">
+                                      {u.adminId}
                                     </span>
                                   )}
                                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
@@ -3081,6 +3131,11 @@ export default function AdminDashboardPage() {
                                   {(u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR") && u.tutorId && (
                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-100 text-indigo-900 border border-indigo-200" title="Official Tutor ID">
                                       {u.tutorId}
+                                    </span>
+                                  )}
+                                  {u.role === "ADMIN" && u.adminId && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-100 text-rose-900 border border-rose-200" title="Official Admin ID">
+                                      {u.adminId}
                                     </span>
                                   )}
                                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
@@ -6160,6 +6215,33 @@ export default function AdminDashboardPage() {
                       title="Copy Tutor ID"
                     >
                       {copiedSuccessTutorId ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {createdUserSuccess.adminId && (
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
+                  <span className="text-slate-500 text-[11px] shrink-0">Official Admin ID</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded text-[11px] truncate">
+                      {createdUserSuccess.adminId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdUserSuccess.adminId || "");
+                        setCopiedSuccessAdminId(true);
+                        setTimeout(() => setCopiedSuccessAdminId(false), 2000);
+                      }}
+                      className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors cursor-pointer shrink-0"
+                      title="Copy Admin ID"
+                    >
+                      {copiedSuccessAdminId ? (
                         <Check className="w-3.5 h-3.5 text-emerald-600" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />

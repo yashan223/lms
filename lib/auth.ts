@@ -121,6 +121,7 @@ export type AuthUser = {
   id: string;
   studentId?: string | null;
   tutorId?: string | null;
+  adminId?: string | null;
   name: string;
   email: string;
   role: Role;
@@ -140,6 +141,7 @@ const USER_SELECT_FIELDS = {
   id: true,
   studentId: true,
   tutorId: true,
+  adminId: true,
   name: true,
   email: true,
   role: true,

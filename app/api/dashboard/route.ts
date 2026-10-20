@@ -10,6 +10,7 @@ import { formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 import { getBBBMeetingId, getUniversalJoinLink, createBBBMeeting, isBigBlueButtonConfigured } from "@/lib/bigbluebutton";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { ensureStudentIdForUser } from "@/lib/student-id";
+import { ensureAdminIdForUser } from "@/lib/admin-id";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -175,6 +176,8 @@ export async function GET(request: NextRequest) {
 
       if (user.role === Role.STUDENT && !user.studentId) {
         user.studentId = await ensureStudentIdForUser(user.id);
+      } else if (user.role === Role.ADMIN && !user.adminId) {
+        user.adminId = await ensureAdminIdForUser(user.id);
       }
     }
 

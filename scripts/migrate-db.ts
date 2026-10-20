@@ -15,9 +15,11 @@ async function main() {
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS "users_studentId_key" ON "users"("studentId");`);
     await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "tutorId" TEXT;`);
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS "users_tutorId_key" ON "users"("tutorId");`);
-    console.log("✅ Ensured studentId & tutorId columns and unique indexes exist on users");
+    await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "adminId" TEXT;`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS "users_adminId_key" ON "users"("adminId");`);
+    console.log("✅ Ensured studentId, tutorId & adminId columns and unique indexes exist on users");
   } catch (e: any) {
-    console.log("Note on studentId/tutorId:", e.message);
+    console.log("Note on studentId/tutorId/adminId:", e.message);
   }
 
   try {

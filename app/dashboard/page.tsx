@@ -1127,7 +1127,7 @@ function DashboardContent() {
                           className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
                         >
                           <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
-                          <span>Browse all individual classes...</span>
+                          <span>Find my class</span>
                         </Link>
                       </div>
                     )}

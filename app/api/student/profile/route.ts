@@ -11,6 +11,7 @@ import {
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { ensureStudentIdForUser } from "@/lib/student-id";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
       where: { id: auth.user.id },
       select: {
         id: true,
+        studentId: true,
         name: true,
         email: true,
         role: true,
@@ -69,10 +71,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Student profile not found." }, { status: 404 });
     }
 
+    let finalStudentId = student.studentId;
+    if (!finalStudentId && student.role === "STUDENT") {
+      finalStudentId = await ensureStudentIdForUser(student.id);
+    }
+
     return NextResponse.json({
       success: true,
       student: {
         ...student,
+        studentId: finalStudentId,
         walletBalance: student.tokenWallet?.balance || 0,
         enrollmentsCount: student.enrollments.length,
       },
@@ -207,6 +215,7 @@ export async function PUT(request: NextRequest) {
       data: updateData,
       select: {
         id: true,
+        studentId: true,
         name: true,
         email: true,
         role: true,

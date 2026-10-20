@@ -710,10 +710,12 @@ export default function AdminDashboardPage() {
 
   const filteredUsers = useMemo(() => {
     return allUsersList.filter((u) => {
+      const q = userSearch.toLowerCase();
       const matchesSearch =
-        u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-        u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-        (u.headline && u.headline.toLowerCase().includes(userSearch.toLowerCase()));
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.studentId && u.studentId.toLowerCase().includes(q)) ||
+        (u.headline && u.headline.toLowerCase().includes(q));
       const matchesRole = userRoleFilter === "ALL" || u.role === userRoleFilter;
       return matchesSearch && matchesRole;
     });
@@ -2058,6 +2060,7 @@ export default function AdminDashboardPage() {
           id: enr.id,
           enrollmentId: enr.id,
           userId: student?.id || enr.userId,
+          studentId: student?.studentId || null,
           studentName: student?.name || "Enrolled Student",
           studentEmail: student?.email || "student@edupulse.uk",
           studentPhone: student?.phone || null,
@@ -2080,6 +2083,7 @@ export default function AdminDashboardPage() {
         !purchaseSearch ||
         p.studentName.toLowerCase().includes(purchaseSearch.toLowerCase()) ||
         p.studentEmail.toLowerCase().includes(purchaseSearch.toLowerCase()) ||
+        (p.studentId && p.studentId.toLowerCase().includes(purchaseSearch.toLowerCase())) ||
         p.courseTitle.toLowerCase().includes(purchaseSearch.toLowerCase()) ||
         p.courseSubjectCode.toLowerCase().includes(purchaseSearch.toLowerCase());
 
@@ -2459,8 +2463,13 @@ export default function AdminDashboardPage() {
                               title="Click to view full profile & complete history"
                             >
                               <div>
-                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5 flex-wrap">
                                   <span>{u.name}</span>
+                                  {u.role === "STUDENT" && u.studentId && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200" title="Official Student ID">
+                                      {u.studentId}
+                                    </span>
+                                  )}
                                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
                                 </div>
                                 <div className="text-[11px] text-slate-400">{u.email}</div>
@@ -2978,7 +2987,7 @@ export default function AdminDashboardPage() {
                   <div className="relative w-full sm:w-80">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <Input
-                      placeholder="Search user by name, email, or role..."
+                      placeholder="Search user by name, student ID, email, or role..."
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
                       className="pl-9 h-10 text-xs border-slate-200 rounded-xl focus-visible:ring-blue-400"
@@ -3053,8 +3062,13 @@ export default function AdminDashboardPage() {
                                 <AvatarFallback>{u.name.charAt(0)}</AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5 flex-wrap">
                                   <span>{u.name}</span>
+                                  {u.role === "STUDENT" && u.studentId && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200" title="Official Student ID">
+                                      {u.studentId}
+                                    </span>
+                                  )}
                                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
                                 </div>
                                 <div className="text-[11px] text-slate-500">{u.email}</div>
@@ -4299,7 +4313,14 @@ export default function AdminDashboardPage() {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0">
-                                  <div className="font-bold text-slate-900">{tx.studentName}</div>
+                                  <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                                    <span>{tx.studentName}</span>
+                                    {tx.studentId && (
+                                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200" title="Official Student ID">
+                                        {tx.studentId}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-[11px] text-slate-400 truncate">{tx.studentEmail}</div>
                                   {tx.studentPhone && (
                                     <div className="text-[10px] text-slate-400">{tx.studentPhone}</div>

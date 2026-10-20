@@ -126,6 +126,7 @@ interface EnrolledCourseInfo {
 
 interface StudentRecord {
   id: string;
+  studentId?: string;
   name: string;
   email: string;
   phone: string;
@@ -773,6 +774,7 @@ function TutorDashboardContent() {
       const matchQuery =
         st.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
         st.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
+        (st.studentId && st.studentId.toLowerCase().includes(studentSearch.toLowerCase())) ||
         (st.phone && st.phone.includes(studentSearch));
 
       const matchCourse =
@@ -2896,7 +2898,14 @@ function TutorDashboardContent() {
                                 {st.name.charAt(0)}
                               </div>
                               <div>
-                                <h4 className="font-bold text-xs text-slate-900">{st.name}</h4>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <h4 className="font-bold text-xs text-slate-900">{st.name}</h4>
+                                  {st.studentId && (
+                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                      {st.studentId}
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-[10px] text-slate-500">{st.headline || "Enrolled Student"}</p>
                               </div>
                             </div>
@@ -4856,9 +4865,16 @@ function TutorDashboardContent() {
                   {selectedStudentForModal.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900">
-                    {selectedStudentForModal.name}
-                  </h3>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h3 className="font-bold text-sm text-slate-900">
+                      {selectedStudentForModal.name}
+                    </h3>
+                    {selectedStudentForModal.studentId && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                        {selectedStudentForModal.studentId}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-slate-500">
                     {selectedStudentForModal.headline || "London A/L Student"}
                   </p>

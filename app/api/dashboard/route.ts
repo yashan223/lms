@@ -9,6 +9,7 @@ import { EventType, EventStatus, TrialStatus, Role } from "@prisma/client";
 import { formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 import { getBBBMeetingId, getUniversalJoinLink, createBBBMeeting, isBigBlueButtonConfigured } from "@/lib/bigbluebutton";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
+import { ensureStudentIdForUser } from "@/lib/student-id";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -170,6 +171,10 @@ export async function GET(request: NextRequest) {
         if (freshWallet) {
           user.tokenWallet = freshWallet;
         }
+      }
+
+      if (user.role === Role.STUDENT && !user.studentId) {
+        user.studentId = await ensureStudentIdForUser(user.id);
       }
     }
 

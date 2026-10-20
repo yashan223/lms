@@ -52,6 +52,8 @@ import {
   ShoppingBag,
   CalendarClock,
   Play,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -78,6 +80,7 @@ import {
 
 interface UserProfile {
   id: string;
+  studentId?: string | null;
   name: string;
   email: string;
   avatar: string | null;
@@ -234,6 +237,13 @@ function DashboardContent() {
   const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
 
   const [studentAvailabilitiesCount, setStudentAvailabilitiesCount] = useState<number | null>(null);
+  const [copiedStudentId, setCopiedStudentId] = useState(false);
+
+  const handleCopyStudentId = (idStr: string) => {
+    navigator.clipboard.writeText(idStr);
+    setCopiedStudentId(true);
+    setTimeout(() => setCopiedStudentId(false), 2000);
+  };
 
   useEffect(() => {
     if (user?.id && user?.role === "STUDENT") {
@@ -887,6 +897,7 @@ function DashboardContent() {
       title: user?.headline || "London A/L Student",
       badge: "Student",
       avatar: user?.avatar || "",
+      studentId: user?.studentId || null,
     };
   };
 
@@ -978,6 +989,23 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {user?.studentId && (
+              <button
+                type="button"
+                onClick={() => handleCopyStudentId(user.studentId!)}
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-[11px] font-bold font-mono transition-colors shadow-2xs cursor-pointer group"
+                title="Click to copy your Official Student ID"
+              >
+                <span className="text-[10px] text-blue-600 font-sans font-extrabold uppercase">ID:</span>
+                <span>{user.studentId}</span>
+                {copiedStudentId ? (
+                  <Check className="w-3 h-3 text-emerald-600" />
+                ) : (
+                  <Copy className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 transition-opacity" />
+                )}
+              </button>
+            )}
+
             <Badge
               variant={
                 userRole === "INSTRUCTOR"
@@ -1004,8 +1032,8 @@ function DashboardContent() {
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wide group-hover:text-blue-700 transition-colors block leading-tight">
                   {currentProfile.name}
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium block leading-tight">
-                  Profile & Settings
+                <span className="text-[10px] text-slate-500 font-mono font-medium block leading-tight">
+                  {user?.studentId ? user.studentId : "Profile & Settings"}
                 </span>
               </div>
               <div className="w-8 h-8 rounded-full bg-[#0c2461] text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden ring-2 ring-transparent group-hover:ring-blue-500 transition-all shrink-0">
@@ -1034,6 +1062,64 @@ function DashboardContent() {
       </header>
 
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1">
+        {/* STUDENT WELCOME & ID BANNER */}
+        {user?.role === "STUDENT" && (
+          <div className="bg-gradient-to-r from-[#0c2461] via-[#103080] to-[#1e3a8a] text-white rounded-3xl p-5 sm:p-6 shadow-md border border-blue-900/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/10 ring-2 ring-white/20 flex items-center justify-center font-black text-xl text-white shadow-inner shrink-0 overflow-hidden">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user.name.charAt(0)
+                )}
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg sm:text-xl font-black text-white">
+                    Welcome back, {shortGreetingName}!
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/15 text-blue-100 border border-white/20">
+                    London {user.academicLevel || "AL"} Student
+                  </span>
+                </div>
+                <p className="text-xs text-blue-200/90 mt-0.5">
+                  Manage your enrolled classes, BigBlueButton live sessions, and study schedules.
+                </p>
+              </div>
+            </div>
+
+            {user.studentId && (
+              <div className="bg-white/10 backdrop-blur-xs rounded-2xl p-3 border border-white/15 flex items-center gap-3.5 self-stretch md:self-auto justify-between md:justify-start shadow-inner">
+                <div>
+                  <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
+                    Official Student ID
+                  </span>
+                  <span className="font-mono font-black text-base sm:text-lg text-amber-300 tracking-wider">
+                    {user.studentId}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopyStudentId(user.studentId!)}
+                  className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-white/20"
+                  title="Copy Student ID"
+                >
+                  {copiedStudentId ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-300" />
+                      <span className="text-emerald-300">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-blue-200" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {user?.role === "STUDENT" && studentAvailabilitiesCount === 0 && (
           <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
             <div className="flex items-start gap-3">
@@ -1131,6 +1217,36 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+
+            {user?.role === "STUDENT" && user?.studentId && (
+              <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Student Identity</span>
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                    Verified
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Official Student ID</span>
+                    <span className="text-sm font-black font-mono text-[#0c2461] tracking-wide select-all">
+                      {user.studentId}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyStudentId(user.studentId!)}
+                    className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-blue-700 transition-colors cursor-pointer"
+                    title="Copy Student ID"
+                  >
+                    {copiedStudentId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">

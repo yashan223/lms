@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
         if (!studentMap.has(student.id)) {
           studentMap.set(student.id, {
             id: student.id,
+            studentId: student.studentId || null,
             name: student.name,
             email: student.email,
             phone: student.phone || "Not provided",

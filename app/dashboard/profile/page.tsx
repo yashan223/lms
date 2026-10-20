@@ -24,6 +24,7 @@ import {
   Users,
   Save,
   Check,
+  Copy,
   Coins,
   AlertTriangle,
   X,
@@ -59,6 +60,14 @@ export default function StudentProfilePage() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
+
+  const handleCopyStudentId = (idStr: string) => {
+    if (!idStr) return;
+    navigator.clipboard.writeText(idStr);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
 
   const fetchProfile = async () => {
     try {
@@ -298,7 +307,31 @@ export default function StudentProfilePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs text-slate-500 font-semibold">Official Student ID</div>
+                <div className="text-sm sm:text-base font-black font-mono text-[#0c2461] tracking-wide truncate">
+                  {student?.studentId || "—"}
+                </div>
+              </div>
+            </div>
+            {student?.studentId && (
+              <button
+                type="button"
+                onClick={() => handleCopyStudentId(student.studentId)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-blue-700 transition-colors cursor-pointer shrink-0"
+                title="Copy Student ID"
+              >
+                {copiedId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              </button>
+            )}
+          </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
               <Coins className="w-5 h-5" />
@@ -321,13 +354,13 @@ export default function StudentProfilePage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5" />
+              <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
               <div className="text-xs text-slate-500 font-semibold">Account Status</div>
               <div className="text-xs font-bold text-blue-700 flex items-center gap-1 mt-0.5">
                 <Check className="w-3.5 h-3.5" />
-                {student?.emailVerified ? "Verified" : "Active"}
+                {student?.emailVerified ? "Verified Student" : "Active"}
               </div>
             </div>
           </div>
@@ -422,6 +455,42 @@ export default function StudentProfilePage() {
               Keep your syllabus track and contact details current so your tutors can tailor their lesson walkthroughs.
             </p>
           </div>
+
+          {student?.studentId && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-blue-50/40 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-blue-200" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold text-blue-900 uppercase tracking-wider block">
+                    Verified Student ID
+                  </span>
+                  <span className="font-mono font-black text-sm sm:text-base text-[#0c2461] tracking-wider select-all">
+                    {student.studentId}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCopyStudentId(student.studentId)}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold font-mono transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                title="Copy Student ID"
+              >
+                {copiedId ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 font-sans">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="font-sans">Copy ID</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSaveProfile} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

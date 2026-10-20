@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { sendVerificationEmail } from "@/lib/email";
 import { getRegionalTimezone, DEFAULT_TIMEZONE } from "@/lib/timezones";
+import { generateUniqueStudentId } from "@/lib/student-id";
 
 export const dynamic = "force-dynamic";
 
@@ -101,8 +102,11 @@ export async function POST(request: Request) {
       ? getRegionalTimezone(country).id
       : DEFAULT_TIMEZONE;
 
+    const assignedStudentId = await generateUniqueStudentId();
+
     const newUser = await prisma.user.create({
       data: {
+        studentId: assignedStudentId,
         name: name.trim(),
         email: normalizedEmail,
         passwordHash: hashedPassword,

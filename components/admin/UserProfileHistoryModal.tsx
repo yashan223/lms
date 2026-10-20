@@ -280,6 +280,11 @@ export function UserProfileHistoryModal({
                   >
                     {isTutor ? "Tutor / Instructor" : fullUser.role}
                   </span>
+                  {isStudent && fullUser.studentId && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black font-mono bg-amber-400 text-slate-900 shadow-xs flex items-center gap-1">
+                      <span>ID: {fullUser.studentId}</span>
+                    </span>
+                  )}
                   {isStudent && fullUser.academicLevel && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-blue-100 border border-white/20">
                       London {fullUser.academicLevel}
@@ -603,6 +608,26 @@ export function UserProfileHistoryModal({
                   </h3>
 
                   <div className="space-y-3 text-xs">
+                    {isStudent && fullUser.studentId && (
+                      <div>
+                        <span className="text-slate-500 font-bold block text-[11px] uppercase tracking-wide">
+                          Official Student ID
+                        </span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <code className="bg-amber-50 text-amber-950 font-bold px-2 py-1 rounded-lg border border-amber-200 font-mono text-xs flex-1 truncate shadow-2xs">
+                            {fullUser.studentId}
+                          </code>
+                          <button
+                            onClick={() => handleCopy(fullUser.studentId, "student_id")}
+                            className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 transition-colors cursor-pointer"
+                            title="Copy Student ID"
+                          >
+                            {copiedKey === "student_id" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <span className="text-slate-400 font-medium block text-[11px]">System User ID</span>
                       <div className="flex items-center gap-2 mt-0.5">

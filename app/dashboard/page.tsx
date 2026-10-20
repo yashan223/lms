@@ -63,7 +63,6 @@ import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
-import { Footer } from "@/components/layout/Footer";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
@@ -2594,8 +2593,6 @@ function DashboardContent() {
           }}
         />
       )}
-
-      <Footer />
     </div>
   );
 }

@@ -72,7 +72,6 @@ import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
-import { Footer } from "@/components/layout/Footer";
 import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
 import { CountryFlag } from "@/components/ui/CountryFlag";
@@ -5326,8 +5325,6 @@ function TutorDashboardContent() {
         }
         initialRecipientId={activeChatRecipientId}
       />
-
-      <Footer />
     </div>
   );
 }

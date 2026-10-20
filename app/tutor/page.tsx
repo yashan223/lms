@@ -4219,7 +4219,7 @@ function TutorDashboardContent() {
                             minute: "2-digit",
                           })}
                         </span>
-                        <span className="text-blue-600 font-semibold">Live Seminar</span>
+                        <span className="text-blue-600 font-semibold">Live Class</span>
                       </div>
                     </div>
                   ))
@@ -4501,7 +4501,7 @@ function TutorDashboardContent() {
                     Schedule Live Classroom Session
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Broadcast an interactive live seminar to students
+                    Broadcast an interactive live class to students
                   </p>
                 </div>
               </div>

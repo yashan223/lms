@@ -556,7 +556,7 @@ export function UserProfileHistoryModal({
                 <div className="text-base sm:text-lg font-black font-mono text-[#0c2461] tracking-wide truncate">
                   {fullUser.tutorId || "—"}
                 </div>
-                <div className="text-[10px] text-slate-500 font-medium">Faculty Identity</div>
+                <div className="text-[10px] text-slate-500 font-medium">Tutor Identity</div>
               </div>
 
               <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-2xs space-y-1">

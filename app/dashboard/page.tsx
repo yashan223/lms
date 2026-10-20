@@ -470,7 +470,7 @@ function DashboardContent() {
           const formatted = {
             ...data.course,
             instructor: {
-              name: data.course.instructor?.name || "Faculty Tutor",
+              name: data.course.instructor?.name || "Tutor",
               avatar: data.course.instructor?.avatar || "",
               roleTitle: data.course.instructor?.headline || "Academic Tutor",
               bio: data.course.instructor?.bio || "",

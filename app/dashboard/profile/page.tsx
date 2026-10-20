@@ -373,7 +373,7 @@ export default function StudentProfilePage() {
               <span>Student Profile Photo</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Upload a clear photo or portrait. Your tutors and faculty leads will see this on class rosters and 1-on-1 consultations.
+              Upload a clear photo or portrait. Your tutors and administrators will see this on class rosters and 1-on-1 consultations.
             </p>
           </div>
 

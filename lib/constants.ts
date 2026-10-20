@@ -98,7 +98,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       "16 tokens (1 token = 1 hour learning credit)",
       "Weekly 1-on-1 sessions with Tutors",
-      "Access all subject live seminar individual classes",
+      "Access all subject live class individual classes",
       "Priority scheduling & reschedule flexibility",
       "Comprehensive worked past paper clinics",
       "Direct encrypted messaging with Subject Tutors",

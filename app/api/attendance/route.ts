@@ -261,7 +261,7 @@ export async function GET(request: NextRequest) {
         classTitle: r.event?.title || (r.trial ? `1-on-1: ${r.trial.course?.title || "Consultation"}` : "Online Class"),
         courseTitle: r.event?.course?.title || r.trial?.course?.title || "Curriculum",
         courseId: r.courseId || r.event?.courseId || r.trial?.courseId || null,
-        tutorName: r.event?.course?.tutor?.name || r.trial?.tutor?.name || "Faculty Tutor",
+        tutorName: r.event?.course?.tutor?.name || r.trial?.tutor?.name || "Tutor",
         status: r.status,
         joinedAt: r.joinedAt,
         durationMinutes: r.durationMinutes || 0,

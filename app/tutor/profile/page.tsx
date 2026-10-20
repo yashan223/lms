@@ -398,7 +398,7 @@ function TutorProfileContent() {
 
           <div className="flex items-center gap-2">
             <Badge className="bg-[#0c2461] text-white font-bold text-[11px] px-2.5 py-0.5">
-              London O/L &amp; A/L Faculty
+              London O/L &amp; A/L Tutor
             </Badge>
           </div>
         </div>
@@ -483,7 +483,7 @@ function TutorProfileContent() {
               <div className="text-xs text-slate-500 font-semibold">Account Status</div>
               <div className="text-xs font-bold text-blue-700 flex items-center gap-1 mt-0.5">
                 <Check className="w-3.5 h-3.5" />
-                {tutor?.emailVerified ? "Verified Faculty" : "Active Faculty"}
+                {tutor?.emailVerified ? "Verified Tutor" : "Active Tutor"}
               </div>
             </div>
           </div>
@@ -612,7 +612,7 @@ function TutorProfileContent() {
                       <CheckCircle2 className="w-3 h-3" /> Verified
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-slate-500">Active Faculty</span>
+                    <span className="text-[10px] font-bold text-slate-500">Active Tutor</span>
                   )}
                 </label>
                 <div className="relative">

@@ -156,7 +156,7 @@ export function TermsAndPolicyModal({
                   All curriculum materials, live class stream recordings, topical revision notes,
                   worked past paper walkthroughs, and downloadable documents hosted on the platform
                   are the exclusive intellectual property of PulseEDU Global and its certified
-                  faculty tutors. Downloading for redistribution, re-recording, screen sharing to
+                  tutors. Downloading for redistribution, re-recording, screen sharing to
                   unauthorized parties, or public dissemination is illegal and will result in
                   immediate account termination and legal action.
                 </p>
@@ -169,7 +169,7 @@ export function TermsAndPolicyModal({
                 </h3>
                 <p>
                   Each registered student is granted a quota of up to 5 free 30-minute trial
-                  sessions across different faculty tutors (maximum 1 free trial per individual tutor).
+                  sessions across different tutors (maximum 1 free trial per individual tutor).
                   For scheduled 1-on-1 tutoring sessions, rescheduling requests must be submitted at
                   least 12 hours prior to the session start time. Unattended sessions without prior notice
                   forfeit the allocated booking tokens.
@@ -215,7 +215,7 @@ export function TermsAndPolicyModal({
                 <p>
                   Upon purchasing tokens or completing class enrollment, students receive immediate,
                   unrestricted access to proprietary curriculum content, recorded video libraries,
-                  faculty scheduling slots, and academic infrastructure. Because these digital
+                  tutor scheduling slots, and academic infrastructure. Because these digital
                   assets and instructor reservations are provisioned instantly, fees paid cannot be
                   reversed, refunded, or credited back to original payment methods.
                 </p>
@@ -229,7 +229,7 @@ export function TermsAndPolicyModal({
                 <p>
                   To ensure complete satisfaction and instructional alignment, PulseEDU Global
                   provides students with <strong>up to 5 free 30-minute 1-on-1 trial classes</strong>{" "}
-                  with our accredited faculty tutors prior to purchasing tokens. Students are strongly
+                  with our accredited tutors prior to purchasing tokens. Students are strongly
                   encouraged to utilize these complimentary trials to experience tutor methodology
                   and curriculum depth before committing funds.
                 </p>

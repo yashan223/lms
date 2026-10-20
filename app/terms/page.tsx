@@ -103,7 +103,7 @@ export default function TermsPage() {
                     Academic Terms & Conditions
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Governing student enrollments, faculty interactions, and platform usage
+                    Governing student enrollments, tutor interactions, and platform usage
                   </p>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export default function TermsPage() {
                     Intellectual Property Rights
                   </h3>
                   <p className="text-xs sm:text-sm">
-                    All course syllabi, video lectures, live seminar recordings, formula sheets, mock
+                    All course syllabi, video lectures, live class recordings, formula sheets, mock
                     exam papers, and pedagogical materials available on PulseEDU Global are proprietary
                     works protected by international copyright laws. Students are granted a personal,
                     non-exclusive, non-transferable license to view and review materials solely for their
@@ -249,7 +249,7 @@ export default function TermsPage() {
                   </h3>
                   <p className="text-xs sm:text-sm">
                     To eliminate uncertainty, PulseEDU Global offers <strong>up to 5 free 30-minute
-                    1-on-1 trial classes</strong> with our accredited faculty tutors before students
+                    1-on-1 trial classes</strong> with our accredited tutors before students
                     make any financial commitment. Students are expected to use these free trial
                     opportunities to evaluate teaching style, course compatibility, and platform
                     features prior to purchasing token packages.

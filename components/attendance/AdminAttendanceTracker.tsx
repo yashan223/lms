@@ -510,7 +510,7 @@ export function AdminAttendanceTracker() {
                   </h4>
                   <div className="text-[11px] text-slate-500 flex items-center gap-2 flex-wrap mt-0.5">
                     <span>
-                      Faculty Tutor: <strong className="text-slate-800">{rosterData.event.tutorName}</strong>
+                      Tutor: <strong className="text-slate-800">{rosterData.event.tutorName}</strong>
                     </span>
                     {rosterData.event.tutorAttendance ? (
                       <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">

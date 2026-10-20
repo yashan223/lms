@@ -121,7 +121,7 @@ export default function CoursesPage() {
                 ) || 0,
               instructor: {
                 id: c.instructor?.id,
-                name: c.instructor?.name || "Faculty Tutor",
+                name: c.instructor?.name || "Tutor",
                 avatar: c.instructor?.avatar || "",
                 roleTitle: c.instructor?.headline || "Academic Tutor",
               },

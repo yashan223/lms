@@ -1713,23 +1713,6 @@ function TutorDashboardContent() {
           </div>
 
           <div className="flex items-center gap-3">
-            {tutor?.tutorId && (
-              <button
-                type="button"
-                onClick={() => handleCopyTutorId(tutor.tutorId)}
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 text-[11px] font-bold font-mono transition-colors shadow-2xs cursor-pointer group"
-                title="Click to copy your Official Tutor ID"
-              >
-                <span className="text-[10px] text-indigo-600 font-sans font-extrabold uppercase">ID:</span>
-                <span>{tutor.tutorId}</span>
-                {copiedTutorId ? (
-                  <Check className="w-3 h-3 text-emerald-600" />
-                ) : (
-                  <Copy className="w-3 h-3 text-indigo-500 opacity-60 group-hover:opacity-100 transition-opacity" />
-                )}
-              </button>
-            )}
-
             <Badge variant="roleTutor" className="text-[11px] px-2.5 py-1 font-bold">
               Tutor
             </Badge>

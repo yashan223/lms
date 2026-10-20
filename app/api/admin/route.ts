@@ -1159,10 +1159,15 @@ export async function POST(request: NextRequest) {
       }
 
       const rawCandidate = meetingLink || existing.meetingLink;
-      const effectiveStudentLink =
-        rawCandidate && !isGenericMeetingLink(rawCandidate)
-          ? getSafeMeetingLink(rawCandidate)
-          : studentJoinLink;
+      const isCustomExternalLink =
+        rawCandidate &&
+        !isGenericMeetingLink(rawCandidate) &&
+        !rawCandidate.includes("/api/meetings/join") &&
+        !rawCandidate.includes("bigbluebutton");
+
+      const effectiveStudentLink = isCustomExternalLink
+        ? getSafeMeetingLink(rawCandidate)
+        : studentJoinLink;
 
       const updated = await prisma.event.update({
         where: { id: eventId },

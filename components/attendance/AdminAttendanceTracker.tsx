@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface AttendanceRecord {
   id: string;
@@ -119,7 +120,24 @@ export function AdminAttendanceTracker() {
 
   useEffect(() => {
     fetchAttendance();
-  }, []);
+    const interval = setInterval(() => {
+      fetchAttendance();
+      if (selectedEventId) {
+        fetchRoster(selectedEventId);
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [selectedEventId]);
+
+  useRealtimeSync({
+    events: ["ATTENDANCE_CHANGED", "EVENTS_CHANGED"],
+    onSync: () => {
+      fetchAttendance();
+      if (selectedEventId) {
+        fetchRoster(selectedEventId);
+      }
+    },
+  });
 
   useEffect(() => {
     if (activeSubTab === "roster" && selectedEventId) {
@@ -388,6 +406,7 @@ export function AdminAttendanceTracker() {
                 <option value="ALL">All Roles</option>
                 <option value="STUDENT">Students Only</option>
                 <option value="TUTOR">Tutors Only</option>
+                <option value="ADMIN">Admins / Observers</option>
               </select>
 
               <select
@@ -570,12 +589,30 @@ export function AdminAttendanceTracker() {
                   <h4 className="text-xs font-bold text-slate-900">
                     {rosterData.event.title} — {rosterData.event.courseTitle}
                   </h4>
-                  <div className="text-[11px] text-slate-500">
-                    Faculty Tutor: <strong className="text-slate-700">{rosterData.event.tutorName}</strong>
+                  <div className="text-[11px] text-slate-500 flex items-center gap-2 flex-wrap mt-0.5">
+                    <span>
+                      Faculty Tutor: <strong className="text-slate-800">{rosterData.event.tutorName}</strong>
+                    </span>
                     {rosterData.event.tutorAttendance ? (
-                      <span className="text-emerald-700 ml-2 font-medium">✓ Tutor Joined</span>
+                      <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Tutor Joined ({rosterData.event.tutorAttendance.status})
+                        {rosterData.event.tutorAttendance.joinedAt && (
+                          <span className="text-emerald-800 font-normal">
+                            • {new Date(rosterData.event.tutorAttendance.joinedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        )}
+                        {rosterData.event.tutorAttendance.durationMinutes ? (
+                          <span className="text-emerald-800 font-normal">
+                            ({rosterData.event.tutorAttendance.durationMinutes}m)
+                          </span>
+                        ) : null}
+                      </span>
                     ) : (
-                      <span className="text-amber-700 ml-2 font-medium">⏳ Tutor Pending</span>
+                      <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        Tutor Attendance: Pending Join
+                      </span>
                     )}
                   </div>
                 </div>

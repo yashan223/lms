@@ -3,6 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
+import { broadcastLMSEvent } from "@/lib/events";
 import {
   createBBBMeeting,
   getBBBJoinUrl,
@@ -89,31 +90,53 @@ export async function GET(request: NextRequest) {
         const isLate = event.dueDate && now.getTime() - new Date(event.dueDate).getTime() > 15 * 60 * 1000;
         const initialStatus = isLate ? "LATE" : "PRESENT";
 
-        await prisma.classAttendance.upsert({
+        const existingAtt = await prisma.classAttendance.findUnique({
           where: {
             eventId_userId: {
               eventId,
               userId: user.id,
             },
           },
-          update: {
-            joinedAt: now,
-            status: initialStatus,
-            userRole: user.role,
-            markedBy: "AUTO_ONLINE_JOIN",
-            notes: isModerator ? "Instructor joined online live session" : "Student joined online live session",
-          },
-          create: {
-            eventId,
-            courseId: associatedCourseId,
-            userId: user.id,
-            userRole: user.role,
-            status: initialStatus,
-            joinedAt: now,
-            markedBy: "AUTO_ONLINE_JOIN",
-            notes: isModerator ? "Instructor joined online live session" : "Student joined online live session",
-          },
         });
+
+        let resolvedTrialId: string | null = trialId || null;
+        if (!resolvedTrialId && event.description) {
+          const match = event.description.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/i);
+          if (match?.[1]) resolvedTrialId = match[1];
+        }
+
+        if (existingAtt) {
+          // If student or instructor was already marked PRESENT, retain it (do not downgrade to LATE on reconnect)
+          const preservedStatus = existingAtt.status === "PRESENT" ? "PRESENT" : initialStatus;
+          await prisma.classAttendance.update({
+            where: { id: existingAtt.id },
+            data: {
+              joinedAt: existingAtt.joinedAt || now,
+              status: preservedStatus,
+              userRole: user.role,
+              trialId: resolvedTrialId || existingAtt.trialId,
+              courseId: associatedCourseId || existingAtt.courseId,
+              markedBy: "AUTO_ONLINE_JOIN",
+              notes: isModerator
+                ? (existingAtt.joinedAt ? "Instructor reconnected to live session" : "Instructor joined online live session")
+                : (existingAtt.joinedAt ? "Student reconnected to live session" : "Student joined online live session"),
+            },
+          });
+        } else {
+          await prisma.classAttendance.create({
+            data: {
+              eventId,
+              trialId: resolvedTrialId,
+              courseId: associatedCourseId,
+              userId: user.id,
+              userRole: user.role,
+              status: initialStatus,
+              joinedAt: now,
+              markedBy: "AUTO_ONLINE_JOIN",
+              notes: isModerator ? "Instructor joined online live session" : "Student joined online live session",
+            },
+          });
+        }
 
         if (user.role === Role.STUDENT) {
           const count = await prisma.classAttendance.count({
@@ -124,6 +147,8 @@ export async function GET(request: NextRequest) {
             data: { attendanceCount: count },
           });
         }
+
+        broadcastLMSEvent("ATTENDANCE_CHANGED", { eventId, userId: user.id, userRole: user.role });
       } catch (attErr) {
         console.warn("[join] classAttendance record notice:", attErr);
       }
@@ -168,11 +193,14 @@ export async function GET(request: NextRequest) {
           await prisma.classAttendance.update({
             where: { id: existingTrialAtt.id },
             data: {
-              joinedAt: now,
+              joinedAt: existingTrialAtt.joinedAt || now,
               status: "PRESENT",
               userRole: user.role,
+              courseId: associatedCourseId || existingTrialAtt.courseId,
               markedBy: "AUTO_ONLINE_JOIN",
-              notes: isModerator ? "Tutor joined trial consultation" : "Student joined trial consultation",
+              notes: isModerator
+                ? (existingTrialAtt.joinedAt ? "Tutor reconnected to trial consultation" : "Tutor joined trial consultation")
+                : (existingTrialAtt.joinedAt ? "Student reconnected to trial consultation" : "Student joined trial consultation"),
             },
           });
         } else {
@@ -189,6 +217,8 @@ export async function GET(request: NextRequest) {
             },
           });
         }
+
+        broadcastLMSEvent("ATTENDANCE_CHANGED", { trialId, userId: user.id, userRole: user.role });
       } catch (attErr) {
         console.warn("[join] trialAttendance record notice:", attErr);
       }

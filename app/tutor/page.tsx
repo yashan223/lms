@@ -2475,7 +2475,7 @@ function TutorDashboardContent() {
                               {isLive ? (
                                 <>
                                   <a
-                                    href={getSafeMeetingLink(ev.meetingLink)}
+                                    href={`/api/meetings/join?eventId=${ev.id}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
@@ -3374,7 +3374,7 @@ function TutorDashboardContent() {
                                     {isTrialLive ? (
                                       <>
                                         <a
-                                          href={getSafeMeetingLink(tr.meetingLink)}
+                                          href={`/api/meetings/join?trialId=${tr.id}`}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs animate-pulse cursor-pointer"

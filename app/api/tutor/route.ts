@@ -695,10 +695,15 @@ export async function POST(request: NextRequest) {
       });
 
       const rawCandidate = meetingLink || existingEvent?.meetingLink || existingTrial?.meetingLink;
-      const effectiveStudentLink =
-        rawCandidate && !isGenericMeetingLink(rawCandidate)
-          ? getSafeMeetingLink(rawCandidate)
-          : defaultStudentJoinLink;
+      const isCustomExternalLink =
+        rawCandidate &&
+        !isGenericMeetingLink(rawCandidate) &&
+        !rawCandidate.includes("/api/meetings/join") &&
+        !rawCandidate.includes("bigbluebutton");
+
+      const effectiveStudentLink = isCustomExternalLink
+        ? getSafeMeetingLink(rawCandidate)
+        : defaultStudentJoinLink;
 
       const now = new Date();
 
@@ -731,6 +736,86 @@ export async function POST(request: NextRequest) {
           },
           include: { course: true, user: true },
         });
+      }
+
+      // Automatically record attendance for the tutor starting/joining the session
+      try {
+        if (existingEvent?.id) {
+          const isLate =
+            existingEvent.dueDate &&
+            now.getTime() - new Date(existingEvent.dueDate).getTime() > 15 * 60 * 1000;
+          const tutorStatus = isLate ? "LATE" : "PRESENT";
+
+          await prisma.classAttendance.upsert({
+            where: {
+              eventId_userId: {
+                eventId: existingEvent.id,
+                userId: tutor.id,
+              },
+            },
+            update: {
+              joinedAt: now,
+              status: tutorStatus,
+              userRole: tutor.role || Role.TUTOR,
+              courseId: existingEvent.courseId || null,
+              trialId: existingTrial?.id || null,
+              markedBy: "AUTO_ONLINE_JOIN",
+              notes: "Instructor started and joined online live session",
+            },
+            create: {
+              eventId: existingEvent.id,
+              courseId: existingEvent.courseId || null,
+              trialId: existingTrial?.id || null,
+              userId: tutor.id,
+              userRole: tutor.role || Role.TUTOR,
+              status: tutorStatus,
+              joinedAt: now,
+              markedBy: "AUTO_ONLINE_JOIN",
+              notes: "Instructor started and joined online live session",
+            },
+          });
+        }
+
+        if (existingTrial?.id) {
+          const existingTrialAtt = await prisma.classAttendance.findFirst({
+            where: { trialId: existingTrial.id, userId: tutor.id },
+          });
+          if (existingTrialAtt) {
+            await prisma.classAttendance.update({
+              where: { id: existingTrialAtt.id },
+              data: {
+                joinedAt: now,
+                status: "PRESENT",
+                userRole: tutor.role || Role.TUTOR,
+                courseId: existingTrial.courseId || null,
+                markedBy: "AUTO_ONLINE_JOIN",
+                notes: "Instructor started and joined trial consultation",
+              },
+            });
+          } else {
+            await prisma.classAttendance.create({
+              data: {
+                trialId: existingTrial.id,
+                courseId: existingTrial.courseId || null,
+                userId: tutor.id,
+                userRole: tutor.role || Role.TUTOR,
+                status: "PRESENT",
+                joinedAt: now,
+                markedBy: "AUTO_ONLINE_JOIN",
+                notes: "Instructor started and joined trial consultation",
+              },
+            });
+          }
+        }
+
+        broadcastLMSEvent("ATTENDANCE_CHANGED", {
+          eventId: existingEvent?.id,
+          trialId: existingTrial?.id,
+          userId: tutor.id,
+          userRole: Role.TUTOR,
+        });
+      } catch (attErr) {
+        console.warn("[start_class] Automated tutor attendance error:", attErr);
       }
 
       if (existingTrial) {

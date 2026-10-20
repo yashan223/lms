@@ -97,7 +97,10 @@ export async function GET(request: NextRequest) {
       }
 
       const tutorRecord = event.attendanceRecords.find(
-        (a) => a.userRole === Role.TUTOR || a.userId === event.course?.tutorId
+        (a) =>
+          a.userRole === Role.TUTOR ||
+          (event.course?.tutorId && a.userId === event.course.tutorId) ||
+          (event.requestedBy && a.userId === event.requestedBy)
       );
 
       return NextResponse.json({
@@ -196,6 +199,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             title: true,
+            tutorId: true,
             tutor: { select: { id: true, name: true } },
           },
         },
@@ -215,7 +219,12 @@ export async function GET(request: NextRequest) {
 
     const sessions = allEvents.map((ev) => {
       const studentAtt = ev.attendanceRecords.filter((a) => a.userRole === Role.STUDENT);
-      const tutorAtt = ev.attendanceRecords.find((a) => a.userRole === Role.TUTOR);
+      const tutorAtt = ev.attendanceRecords.find(
+        (a) =>
+          a.userRole === Role.TUTOR ||
+          (ev.course?.tutorId && a.userId === ev.course.tutorId) ||
+          (ev.requestedBy && a.userId === ev.requestedBy)
+      );
       return {
         eventId: ev.id,
         title: ev.title,

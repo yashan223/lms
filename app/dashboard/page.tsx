@@ -436,9 +436,14 @@ function DashboardContent() {
     );
     if (liveEv) {
       setSeenLiveEventIds((prev) => new Set(prev).add(liveEv.id));
+      const studentJoinHref = liveEv.id
+        ? `/api/meetings/join?eventId=${liveEv.id}${liveEv.trialId ? `&trialId=${liveEv.trialId}` : ""}`
+        : liveEv.trialId
+        ? `/api/meetings/join?trialId=${liveEv.trialId}`
+        : getSafeMeetingLink(liveEv.meetingLink);
       setLiveClassBanner({
         title: liveEv.title,
-        meetingLink: getSafeMeetingLink(liveEv.meetingLink),
+        meetingLink: studentJoinHref,
       });
       setBannerVisible(true);
     }
@@ -1481,7 +1486,13 @@ function DashboardContent() {
                         <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                           {ev.status === "LIVE" ? (
                             <a
-                              href={getSafeMeetingLink(ev.meetingLink || `/api/meetings/join?eventId=${ev.id}`)}
+                              href={
+                                ev.id
+                                  ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                  : ev.trialId
+                                  ? `/api/meetings/join?trialId=${ev.trialId}`
+                                  : getSafeMeetingLink(ev.meetingLink || `/api/meetings/join?eventId=${ev.id}`)
+                              }
                               target="_blank"
                               rel="noreferrer"
                               className="h-8.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 animate-pulse whitespace-nowrap"
@@ -1521,7 +1532,13 @@ function DashboardContent() {
                               </span>
                               {ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) && (
                                 <a
-                                  href={getSafeMeetingLink(ev.meetingLink)}
+                                  href={
+                                    ev.id
+                                      ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                      : ev.trialId
+                                      ? `/api/meetings/join?trialId=${ev.trialId}`
+                                      : getSafeMeetingLink(ev.meetingLink)
+                                  }
                                   target="_blank"
                                   rel="noreferrer"
                                   className="h-8.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all shadow-2xs"
@@ -1534,7 +1551,13 @@ function DashboardContent() {
                             </div>
                           ) : (ev.description?.includes("http") || ev.meetingLink) ? (
                             <a
-                              href={getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])}
+                              href={
+                                ev.id
+                                  ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                  : ev.trialId
+                                  ? `/api/meetings/join?trialId=${ev.trialId}`
+                                  : getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])
+                              }
                               target="_blank"
                               rel="noreferrer"
                               className="h-8.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"

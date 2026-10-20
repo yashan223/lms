@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
+import { Role } from "@prisma/client";
 
 export interface BBBConfig {
   url: string;
@@ -90,6 +91,31 @@ export function extractAllXmlTags(xml: string, tag: string): string[] {
     matches.push(m[1].trim());
   }
   return matches;
+}
+
+export function extractBBBAttendees(xml: string): Array<{
+  userId: string;
+  fullName: string;
+  role: string;
+  isPresenter: boolean;
+}> {
+  const attendees: Array<{ userId: string; fullName: string; role: string; isPresenter: boolean }> = [];
+  const attendeeBlocks = extractAllXmlTags(xml, "attendee");
+  for (const block of attendeeBlocks) {
+    const userId = extractXmlTag(block, "userID");
+    const fullName = extractXmlTag(block, "fullName");
+    const role = extractXmlTag(block, "role");
+    const isPresenter = extractXmlTag(block, "isPresenter") === "true";
+    if (userId) {
+      attendees.push({
+        userId,
+        fullName: fullName || "",
+        role: role || "VIEWER",
+        isPresenter,
+      });
+    }
+  }
+  return attendees;
 }
 
 export interface BBBMeetingCreationResult {
@@ -566,6 +592,80 @@ export async function syncClassMeetingSession(
 
   broadcastLMSEvent("EVENTS_CHANGED", { eventId, recordingUrl, completed: true });
 
+  // Finalize attendance durations and record absentees for this class event
+  try {
+    const attendees = await prisma.classAttendance.findMany({
+      where: { eventId, joinedAt: { not: null } },
+    });
+    for (const att of attendees) {
+      if (att.joinedAt) {
+        const joinTime = new Date(att.joinedAt).getTime();
+        const endTime = (actualEnd || new Date()).getTime();
+        const diffMinutes = Math.max(1, Math.round((endTime - joinTime) / (60 * 1000)));
+        await prisma.classAttendance.update({
+          where: { id: att.id },
+          data: {
+            leftAt: actualEnd || new Date(),
+            durationMinutes: diffMinutes,
+          },
+        });
+      }
+    }
+
+    // For any enrolled students in this course who NEVER joined, mark as ABSENT
+    if (event.courseId && event.course?.enrollments) {
+      const existingAttUserIds = new Set(attendees.map((a) => a.userId));
+      for (const enr of event.course.enrollments) {
+        if (!existingAttUserIds.has(enr.userId)) {
+          await prisma.classAttendance.create({
+            data: {
+              eventId,
+              courseId: event.courseId,
+              userId: enr.userId,
+              userRole: Role.STUDENT,
+              status: "ABSENT",
+              markedBy: "AUTO_SYSTEM",
+              notes: "Automated: Student did not join online live session",
+            },
+          }).catch(() => {});
+        }
+      }
+    }
+
+    // If tutor never joined, record ABSENT for tutor
+    if (event.course?.tutorId) {
+      const tutorAtt = await prisma.classAttendance.findUnique({
+        where: { eventId_userId: { eventId, userId: event.course.tutorId } },
+      });
+      if (!tutorAtt) {
+        await prisma.classAttendance.create({
+          data: {
+            eventId,
+            courseId: event.courseId,
+            userId: event.course.tutorId,
+            userRole: Role.TUTOR,
+            status: "ABSENT",
+            markedBy: "AUTO_SYSTEM",
+            notes: "Automated: Instructor did not join online live session",
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // Recalculate and update event attendanceCount
+    const presentStudentsCount = await prisma.classAttendance.count({
+      where: { eventId, userRole: Role.STUDENT, status: { in: ["PRESENT", "LATE"] } },
+    });
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { attendanceCount: presentStudentsCount },
+    }).catch(() => {});
+
+    broadcastLMSEvent("ATTENDANCE_CHANGED", { eventId, completed: true });
+  } catch (attFinalErr) {
+    console.warn("[BBB] Error finalizing attendance in syncClassMeetingSession:", attFinalErr);
+  }
+
   return {
     success: true,
     event: updatedEvent,
@@ -653,6 +753,71 @@ export async function syncTrialSession(
 
   broadcastLMSEvent("TRIALS_CHANGED", { trialId, recordingUrl, completed: true });
 
+  // Finalize attendance durations and record absentees for trial consultation
+  try {
+    const trialAttendees = await prisma.classAttendance.findMany({
+      where: { trialId, joinedAt: { not: null } },
+    });
+    for (const att of trialAttendees) {
+      if (att.joinedAt) {
+        const joinTime = new Date(att.joinedAt).getTime();
+        const endTime = (actualEnd || new Date()).getTime();
+        const diffMinutes = Math.max(1, Math.round((endTime - joinTime) / (60 * 1000)));
+        await prisma.classAttendance.update({
+          where: { id: att.id },
+          data: {
+            leftAt: actualEnd || new Date(),
+            durationMinutes: diffMinutes,
+          },
+        });
+      }
+    }
+
+    // If student never joined, mark ABSENT
+    if (trial.studentId) {
+      const studentAtt = await prisma.classAttendance.findFirst({
+        where: { trialId, userId: trial.studentId },
+      });
+      if (!studentAtt) {
+        await prisma.classAttendance.create({
+          data: {
+            trialId,
+            courseId: trial.courseId || null,
+            userId: trial.studentId,
+            userRole: Role.STUDENT,
+            status: "ABSENT",
+            markedBy: "AUTO_SYSTEM",
+            notes: "Automated: Student did not join trial consultation",
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // If tutor never joined, mark ABSENT
+    if (trial.tutorId) {
+      const tutorAtt = await prisma.classAttendance.findFirst({
+        where: { trialId, userId: trial.tutorId },
+      });
+      if (!tutorAtt) {
+        await prisma.classAttendance.create({
+          data: {
+            trialId,
+            courseId: trial.courseId || null,
+            userId: trial.tutorId,
+            userRole: Role.TUTOR,
+            status: "ABSENT",
+            markedBy: "AUTO_SYSTEM",
+            notes: "Automated: Tutor did not join trial consultation",
+          },
+        }).catch(() => {});
+      }
+    }
+
+    broadcastLMSEvent("ATTENDANCE_CHANGED", { trialId, completed: true });
+  } catch (attFinalErr) {
+    console.warn("[BBB] Error finalizing trial attendance in syncTrialSession:", attFinalErr);
+  }
+
   return {
     success: true,
     trial: updatedTrial,
@@ -703,6 +868,50 @@ export async function autoSyncActiveBBBMeetings(): Promise<{
         if (ev.status === "LIVE" && !running) {
           await syncClassMeetingSession(ev.id);
           syncedEvents++;
+        } else if (ev.status === "LIVE" && running) {
+          // If running, query getBBBMeetingInfo to discover active attendees and record attendance
+          try {
+            const meetingInfo = await getBBBMeetingInfo(bbbId);
+            if (meetingInfo?.rawXml) {
+              const attendees = extractBBBAttendees(meetingInfo.rawXml);
+              for (const att of attendees) {
+                if (att.userId) {
+                  const u = await prisma.user.findUnique({
+                    where: { id: att.userId },
+                    select: { id: true, role: true },
+                  });
+                  if (u) {
+                    const now = new Date();
+                    const isLate =
+                      ev.dueDate && now.getTime() - new Date(ev.dueDate).getTime() > 15 * 60 * 1000;
+                    const initialStatus = isLate ? "LATE" : "PRESENT";
+                    const isMod =
+                      att.role === "MODERATOR" || u.role === Role.TUTOR || u.role === Role.ADMIN;
+                    const existingAtt = await prisma.classAttendance.findUnique({
+                      where: { eventId_userId: { eventId: ev.id, userId: u.id } },
+                    });
+                    if (!existingAtt) {
+                      await prisma.classAttendance.create({
+                        data: {
+                          eventId: ev.id,
+                          courseId: ev.courseId || null,
+                          userId: u.id,
+                          userRole: u.role,
+                          status: initialStatus,
+                          joinedAt: meetingInfo.startTime || now,
+                          markedBy: "AUTO_ONLINE_JOIN",
+                          notes: isMod
+                            ? "Instructor active in online live session"
+                            : "Student active in online live session",
+                        },
+                      });
+                      broadcastLMSEvent("ATTENDANCE_CHANGED", { eventId: ev.id, userId: u.id });
+                    }
+                  }
+                }
+              }
+            }
+          } catch {}
         } else if (ev.status === "COMPLETED" && !ev.recordingUrl) {
           // Check for newly rendered recording
           const recordings = await getBBBRecordings({ meetingId: bbbId });
@@ -741,6 +950,47 @@ export async function autoSyncActiveBBBMeetings(): Promise<{
           // Meeting ended
           await syncTrialSession(tr.id);
           syncedTrials++;
+        } else if (tr.status === "CONFIRMED" && running) {
+          // If running, query getBBBMeetingInfo to discover active attendees in trial
+          try {
+            const meetingInfo = await getBBBMeetingInfo(bbbId);
+            if (meetingInfo?.rawXml) {
+              const attendees = extractBBBAttendees(meetingInfo.rawXml);
+              for (const att of attendees) {
+                if (att.userId) {
+                  const u = await prisma.user.findUnique({
+                    where: { id: att.userId },
+                    select: { id: true, role: true },
+                  });
+                  if (u) {
+                    const now = new Date();
+                    const existingAtt = await prisma.classAttendance.findFirst({
+                      where: { trialId: tr.id, userId: u.id },
+                    });
+                    if (!existingAtt) {
+                      const isMod =
+                        att.role === "MODERATOR" || u.role === Role.TUTOR || u.role === Role.ADMIN;
+                      await prisma.classAttendance.create({
+                        data: {
+                          trialId: tr.id,
+                          courseId: tr.courseId || null,
+                          userId: u.id,
+                          userRole: u.role,
+                          status: "PRESENT",
+                          joinedAt: meetingInfo.startTime || now,
+                          markedBy: "AUTO_ONLINE_JOIN",
+                          notes: isMod
+                            ? "Instructor active in trial consultation"
+                            : "Student active in trial consultation",
+                        },
+                      });
+                      broadcastLMSEvent("ATTENDANCE_CHANGED", { trialId: tr.id, userId: u.id });
+                    }
+                  }
+                }
+              }
+            }
+          } catch {}
         } else if (tr.status === "COMPLETED" && !tr.recordingUrl) {
           const recordings = await getBBBRecordings({ meetingId: bbbId });
           const found = recordings.find((r) => r.published && r.playbackUrl);

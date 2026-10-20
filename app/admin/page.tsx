@@ -2246,12 +2246,20 @@ export default function AdminDashboardPage() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 border-b border-slate-200 flex items-center justify-center relative">
-          <Link href="/" className="flex items-center justify-center gap-2 group">
+        <div
+          className="w-full p-4 border-b border-slate-200 flex items-center justify-center text-center relative"
+          style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}
+        >
+          <Link
+            href="/"
+            className="w-full flex items-center justify-center text-center mx-auto group"
+            style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", margin: "0 auto" }}
+          >
             <img
               src="/logo-wide.png"
               alt="PulseEDU Global"
-              className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+              className="h-10 sm:h-11 w-auto mx-auto block object-contain transition-transform group-hover:scale-[1.02]"
+              style={{ margin: "0 auto", display: "block" }}
             />
           </Link>
 

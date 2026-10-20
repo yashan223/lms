@@ -1062,64 +1062,6 @@ function DashboardContent() {
       </header>
 
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1">
-        {/* STUDENT WELCOME & ID BANNER */}
-        {user?.role === "STUDENT" && (
-          <div className="bg-gradient-to-r from-[#0c2461] via-[#103080] to-[#1e3a8a] text-white rounded-3xl p-5 sm:p-6 shadow-md border border-blue-900/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/10 ring-2 ring-white/20 flex items-center justify-center font-black text-xl text-white shadow-inner shrink-0 overflow-hidden">
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                ) : (
-                  user.name.charAt(0)
-                )}
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-black text-white">
-                    Welcome back, {shortGreetingName}!
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/15 text-blue-100 border border-white/20">
-                    London {user.academicLevel || "AL"} Student
-                  </span>
-                </div>
-                <p className="text-xs text-blue-200/90 mt-0.5">
-                  Manage your enrolled classes, BigBlueButton live sessions, and study schedules.
-                </p>
-              </div>
-            </div>
-
-            {user.studentId && (
-              <div className="bg-white/10 backdrop-blur-xs rounded-2xl p-3 border border-white/15 flex items-center gap-3.5 self-stretch md:self-auto justify-between md:justify-start shadow-inner">
-                <div>
-                  <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
-                    Official Student ID
-                  </span>
-                  <span className="font-mono font-black text-base sm:text-lg text-amber-300 tracking-wider">
-                    {user.studentId}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopyStudentId(user.studentId!)}
-                  className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-white/20"
-                  title="Copy Student ID"
-                >
-                  {copiedStudentId ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-300" />
-                      <span className="text-emerald-300">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-blue-200" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
         {user?.role === "STUDENT" && studentAvailabilitiesCount === 0 && (
           <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
             <div className="flex items-start gap-3">

@@ -1775,63 +1775,6 @@ function TutorDashboardContent() {
 
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1">
 
-        {/* TUTOR WELCOME & ID BANNER */}
-        <div className="bg-gradient-to-r from-[#0c2461] via-[#103080] to-[#1e3a8a] text-white rounded-3xl p-5 sm:p-6 shadow-md border border-blue-900/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 ring-2 ring-white/20 flex items-center justify-center font-black text-xl text-white shadow-inner shrink-0 overflow-hidden">
-              {tutor?.avatar ? (
-                <img src={tutor.avatar} alt={tutorName} className="w-full h-full object-cover" />
-              ) : (
-                tutorName.charAt(0)
-              )}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-white">
-                  Welcome back, {tutorName}!
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/15 text-blue-100 border border-white/20">
-                  {tutor?.headline || "London O/L & A/L Tutor"}
-                </span>
-              </div>
-              <p className="text-xs text-blue-200/90 mt-0.5">
-                Manage your syllabus, live BigBlueButton lectures, trials, and student rosters.
-              </p>
-            </div>
-          </div>
-
-          {tutor?.tutorId && (
-            <div className="bg-white/10 backdrop-blur-xs rounded-2xl p-3 border border-white/15 flex items-center gap-3.5 self-stretch md:self-auto justify-between md:justify-start shadow-inner">
-              <div>
-                <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
-                  Official Tutor ID
-                </span>
-                <span className="font-mono font-black text-base sm:text-lg text-amber-300 tracking-wider">
-                  {tutor.tutorId}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleCopyTutorId(tutor.tutorId)}
-                className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-white/20"
-                title="Copy Tutor ID"
-              >
-                {copiedTutorId ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-300" />
-                    <span className="text-emerald-300">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-blue-200" />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-
         <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
             { id: "courses", label: "Individual Classes", icon: BookOpen, count: courses.length },

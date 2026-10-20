@@ -237,13 +237,6 @@ function DashboardContent() {
   const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
 
   const [studentAvailabilitiesCount, setStudentAvailabilitiesCount] = useState<number | null>(null);
-  const [copiedStudentId, setCopiedStudentId] = useState(false);
-
-  const handleCopyStudentId = (idStr: string) => {
-    navigator.clipboard.writeText(idStr);
-    setCopiedStudentId(true);
-    setTimeout(() => setCopiedStudentId(false), 2000);
-  };
 
   useEffect(() => {
     if (user?.id && user?.role === "STUDENT") {
@@ -1143,35 +1136,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {user?.role === "STUDENT" && user?.studentId && (
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Student Identity</span>
-                  </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-                    Verified
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-medium block">Official Student ID</span>
-                    <span className="text-sm font-black font-mono text-[#0c2461] tracking-wide select-all">
-                      {user.studentId}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyStudentId(user.studentId!)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-blue-700 transition-colors cursor-pointer"
-                    title="Copy Student ID"
-                  >
-                    {copiedStudentId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-            )}
 
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">

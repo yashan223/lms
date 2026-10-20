@@ -2232,16 +2232,6 @@ export default function AdminDashboardPage() {
               <div className="text-xs font-bold text-slate-900 truncate">{adminName}</div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-[10px] text-blue-500 font-semibold truncate">System Admin</span>
-                {adminId && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyAdminId(adminId)}
-                    className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer"
-                    title="Click to copy Admin ID"
-                  >
-                    {copiedAdminId ? "Copied" : adminId}
-                  </button>
-                )}
               </div>
             </div>
           </div>

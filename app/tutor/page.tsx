@@ -190,14 +190,6 @@ function TutorDashboardContent() {
 
   const [loading, setLoading] = useState(true);
   const [tutor, setTutor] = useState<any>(null);
-  const [copiedTutorId, setCopiedTutorId] = useState(false);
-
-  const handleCopyTutorId = (idStr: string) => {
-    if (!idStr) return;
-    navigator.clipboard.writeText(idStr);
-    setCopiedTutorId(true);
-    setTimeout(() => setCopiedTutorId(false), 2000);
-  };
   const tutorTimezone: string = tutor?.timezone || (typeof window !== "undefined" ? getUserBrowserTimezone() : DEFAULT_TIMEZONE) || DEFAULT_TIMEZONE;
   const [courses, setCourses] = useState<TutorCourse[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -1927,35 +1919,6 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-            {tutor?.tutorId && (
-              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Faculty Identity</span>
-                  </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-                    Verified
-                  </span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-medium block">Official Tutor ID</span>
-                    <span className="text-xs font-black font-mono text-[#0c2461] tracking-wide select-all">
-                      {tutor.tutorId}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyTutorId(tutor.tutorId)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-blue-700 transition-colors cursor-pointer"
-                    title="Copy Tutor ID"
-                  >
-                    {copiedTutorId ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-            )}
 
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">

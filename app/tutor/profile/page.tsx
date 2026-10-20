@@ -579,42 +579,6 @@ function TutorProfileContent() {
             </p>
           </div>
 
-          {tutor?.tutorId && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-slate-50 to-indigo-50/40 border border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0c2461] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-indigo-200" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-extrabold text-indigo-900 uppercase tracking-wider block">
-                    Verified Tutor ID
-                  </span>
-                  <span className="font-mono font-black text-sm sm:text-base text-[#0c2461] tracking-wider select-all">
-                    {tutor.tutorId}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleCopyTutorId(tutor.tutorId)}
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold font-mono transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-                title="Copy Tutor ID"
-              >
-                {copiedId ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-700 font-sans">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-indigo-600" />
-                    <span className="font-sans">Copy ID</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-
           <form onSubmit={handleSaveProfile} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">

@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   FileText,
   PlayCircle,
+  BookOpen,
   Award,
   Video,
   Loader2,
@@ -212,7 +213,7 @@ export function CoursePurchaseModal({
                 You&apos;re Enrolled in {course.title}!
               </h4>
               <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-                You have successfully allocated <strong className="text-slate-900">{price} Tokens</strong> to enroll. All verified study handbooks, formula sheets, video lessons, and live tuition sessions are now unlocked.
+                You have successfully allocated <strong className="text-slate-900">{price} Tokens</strong> to enroll. All verified study handbooks, formula sheets, syllabus curriculum units, and live tuition sessions are now unlocked.
               </p>
             </div>
 
@@ -227,8 +228,8 @@ export function CoursePurchaseModal({
                   <span>Download all study materials</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <PlayCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span>Full syllabus video lessons</span>
+                  <BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span>Full syllabus topic curriculum</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />

@@ -283,7 +283,10 @@ export function TutorCourseWorkspaceContent({
     }
     if (!silent) setLoading(true);
     try {
-      const res = await fetch("/api/tutor", { cache: "no-store" });
+      const res = await fetch("/api/tutor", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tutor data");
 

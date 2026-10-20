@@ -471,7 +471,10 @@ function TutorDashboardContent() {
       if (isInitial === true && !tutor) {
         setLoading(true);
       }
-      const res = await fetch("/api/tutor");
+      const res = await fetch("/api/tutor", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           router.push("/login");
@@ -544,6 +547,7 @@ function TutorDashboardContent() {
       }
       setCourses(data.courses || []);
       setStudents(data.students || []);
+      setEvents(data.events || []);
       const rawTrials = data.trials || [];
       const sortedTrials = [...rawTrials].sort((a: any, b: any) => {
         const timeA = new Date(a.createdAt || a.preferredDate || 0).getTime();

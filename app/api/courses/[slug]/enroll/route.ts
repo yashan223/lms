@@ -152,13 +152,29 @@ export async function POST(
         },
       });
 
+      if (course.tutorId) {
+        await tx.notification.create({
+          data: {
+            userId: course.tutorId,
+            title: "🎓 New Student Enrolled!",
+            message: `${user.name || "A student"} (${user.email}) has enrolled in your class "${course.title}".`,
+            type: "SUCCESS",
+            link: `/tutor?tab=students`,
+          },
+        });
+      }
+
       return { newEnrollment: enrollment, updatedBalance: currentBal };
     });
 
     broadcastLMSEvent("ENROLLMENTS_CHANGED");
     broadcastLMSEvent("COURSES_CHANGED");
     broadcastLMSEvent("EVENTS_CHANGED");
+    broadcastLMSEvent("USERS_CHANGED");
     broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: user.id });
+    if (course.tutorId) {
+      broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: course.tutorId });
+    }
 
     return NextResponse.json({
       success: true,

@@ -33,8 +33,11 @@ export async function GET(request: NextRequest) {
 
     const tutor = auth.user;
 
+    const courseWhere =
+      tutor.role === Role.ADMIN ? {} : { tutorId: tutor.id };
+
     let courses: any[] = await prisma.course.findMany({
-      where: { tutorId: tutor.id },
+      where: courseWhere,
       include: {
         modules: {
           include: { lessons: true },
@@ -122,21 +125,29 @@ export async function GET(request: NextRequest) {
             subjectCode: course.subjectCode,
             enrolledAt: enrollment.enrolledAt,
           });
+          if (new Date(enrollment.enrolledAt) > new Date(existing.latestEnrollment)) {
+            existing.latestEnrollment = enrollment.enrolledAt;
+          }
         }
       });
     });
 
     const students = Array.from(studentMap.values());
 
+    const eventsWhere =
+      tutor.role === Role.ADMIN
+        ? {}
+        : {
+            OR: [
+              { userId: tutor.id },
+              { requestedBy: tutor.id },
+              { courseId: { in: courseIds } },
+              { course: { tutorId: tutor.id } },
+            ],
+          };
+
     const events = await prisma.event.findMany({
-      where: {
-        OR: [
-          { userId: tutor.id },
-          { requestedBy: tutor.id },
-          { courseId: { in: courseIds } },
-          { course: { tutorId: tutor.id } },
-        ],
-      },
+      where: eventsWhere,
       include: {
         course: true,
         user: true,
@@ -146,13 +157,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    const trialsWhere =
+      tutor.role === Role.ADMIN
+        ? {}
+        : {
+            OR: [
+              { tutorId: tutor.id },
+              { courseId: { in: courseIds } },
+            ],
+          };
+
     const trials = await prisma.trialRequest.findMany({
-      where: {
-        OR: [
-          { tutorId: tutor.id },
-          { courseId: { in: courseIds } },
-        ],
-      },
+      where: trialsWhere,
       include: {
         course: true,
         student: true,
@@ -163,24 +179,31 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    return NextResponse.json({
-      tutor: {
-        id: tutor.id,
-        name: tutor.name,
-        email: tutor.email,
-        headline: tutor.headline || "Senior Tutor",
-        bio: tutor.bio || "Subject Lead with specialized expertise in London A/L & O/L specifications.",
-        phone: tutor.phone || "",
-        avatar: tutor.avatar || null,
-        role: tutor.role,
-        timezone: tutor.timezone || "Asia/Colombo",
-        createdAt: tutor.createdAt,
+    return NextResponse.json(
+      {
+        tutor: {
+          id: tutor.id,
+          name: tutor.name,
+          email: tutor.email,
+          headline: tutor.headline || "Senior Tutor",
+          bio: tutor.bio || "Subject Lead with specialized expertise in London A/L & O/L specifications.",
+          phone: tutor.phone || "",
+          avatar: tutor.avatar || null,
+          role: tutor.role,
+          timezone: tutor.timezone || "Asia/Colombo",
+          createdAt: tutor.createdAt,
+        },
+        courses,
+        students,
+        events,
+        trials,
       },
-      courses,
-      students,
-      events,
-      trials,
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Tutor API GET error:", error);
     return NextResponse.json(

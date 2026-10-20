@@ -155,6 +155,18 @@ export async function fulfillPayment(
               link: `/classes/${course.slug}`,
             },
           });
+
+          if (course.tutorId) {
+            await tx.notification.create({
+              data: {
+                userId: course.tutorId,
+                title: "🎓 New Student Enrolled!",
+                message: `${payment.user?.name || "A student"} (${payment.user?.email || ""}) has enrolled in your class "${course.title}".`,
+                type: "SUCCESS",
+                link: `/tutor?tab=students`,
+              },
+            });
+          }
         }
       }
     }
@@ -162,8 +174,19 @@ export async function fulfillPayment(
 
   try {
     broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: payment.userId });
+    if (payment.itemType === "COURSE") {
+      const c = await prisma.course.findFirst({
+        where: { OR: [{ id: payment.itemId }, { slug: payment.itemId }] },
+        select: { tutorId: true },
+      });
+      if (c?.tutorId) {
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: c.tutorId });
+      }
+    }
     broadcastLMSEvent("ENROLLMENTS_CHANGED");
     broadcastLMSEvent("COURSES_CHANGED");
+    broadcastLMSEvent("EVENTS_CHANGED");
+    broadcastLMSEvent("USERS_CHANGED");
   } catch (err) {
     console.error("Failed to broadcast LMS event after fulfillment:", err);
   }

@@ -636,10 +636,39 @@ export async function POST(request: NextRequest) {
         await prisma.enrollment.create({
           data: { userId, courseId },
         });
+
+        const course = await prisma.course.findUnique({ where: { id: courseId } });
+        const enrolledUser = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (course) {
+          await prisma.event.create({
+            data: {
+              title: `Welcome to ${course.title}`,
+              description: `Enrolled by administrator. All class modules and study handbooks are now unlocked.`,
+              dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+              courseId: course.id,
+              userId,
+            },
+          });
+
+          if (course.tutorId) {
+            await prisma.notification.create({
+              data: {
+                userId: course.tutorId,
+                title: "🎓 New Student Enrolled!",
+                message: `${enrolledUser?.name || "A student"} (${enrolledUser?.email || ""}) has been enrolled in your class "${course.title}".`,
+                type: "SUCCESS",
+                link: `/tutor?tab=students`,
+              },
+            });
+            broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: course.tutorId });
+          }
+        }
       }
       broadcastLMSEvent("ENROLLMENTS_CHANGED");
       broadcastLMSEvent("USERS_CHANGED");
       broadcastLMSEvent("COURSES_CHANGED");
+      broadcastLMSEvent("EVENTS_CHANGED");
       return NextResponse.json({ success: true });
     }
 

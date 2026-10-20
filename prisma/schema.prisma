@@ -55,6 +55,7 @@ enum TransactionType {
 model User {
   id            String         @id @default(cuid())
   studentId     String?        @unique
+  tutorId       String?        @unique
   name          String
   email         String         @unique
   passwordHash  String

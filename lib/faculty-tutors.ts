@@ -11,6 +11,7 @@ export interface TutorSubject {
 
 export interface FacultyTutor {
   id: string;
+  tutorId?: string | null;
   name: string;
   avatar: string;
   headline: string;
@@ -72,6 +73,7 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
 
     return {
       id: dbTutor.id,
+      tutorId: dbTutor.tutorId || null,
       name: dbTutor.name || "Academic Tutor",
       avatar: dbTutor.avatar || "",
       headline: dbTutor.headline || "Verified Academic Tutor",

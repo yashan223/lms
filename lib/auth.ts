@@ -120,6 +120,7 @@ export function verifySessionToken(token: string): SessionPayload | null {
 export type AuthUser = {
   id: string;
   studentId?: string | null;
+  tutorId?: string | null;
   name: string;
   email: string;
   role: Role;
@@ -138,6 +139,7 @@ export type AuthResult =
 const USER_SELECT_FIELDS = {
   id: true,
   studentId: true,
+  tutorId: true,
   name: true,
   email: true,
   role: true,

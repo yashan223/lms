@@ -297,6 +297,23 @@ export function UserProfileHistoryModal({
                     </button>
                   )}
 
+                  {isTutor && fullUser.tutorId && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(fullUser.tutorId, "top_tutor_id")}
+                      className="px-2.5 py-0.5 rounded-full text-[10px] font-black font-mono bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300 shadow-2xs flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Click to copy Tutor ID"
+                    >
+                      <ShieldCheck className="w-3 h-3 text-indigo-600" />
+                      <span>{fullUser.tutorId}</span>
+                      {copiedKey === "top_tutor_id" ? (
+                        <Check className="w-3 h-3 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-2.5 h-2.5 text-indigo-700/60" />
+                      )}
+                    </button>
+                  )}
+
                   {isStudent && fullUser.academicLevel && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                       London {fullUser.academicLevel}
@@ -513,6 +530,21 @@ export function UserProfileHistoryModal({
               <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-2xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Tutor ID
+                  </span>
+                  <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="text-base sm:text-lg font-black font-mono text-[#0c2461] tracking-wide truncate">
+                  {fullUser.tutorId || "—"}
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">Faculty Identity</div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-2xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Assigned Courses
                   </span>
                   <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -573,34 +605,18 @@ export function UserProfileHistoryModal({
               <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-2xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Live Classes
+                    Live Classes & Rating
                   </span>
                   <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <Video className="w-3.5 h-3.5" />
                   </div>
                 </div>
-                <div className="text-base sm:text-lg font-black text-emerald-700">
-                  {tutorCombinedEvents.length} <span className="text-xs font-semibold text-slate-500">Held</span>
+                <div className="text-base sm:text-lg font-black text-emerald-700 flex items-center gap-1.5">
+                  <span>{tutorCombinedEvents.length}</span>
+                  <span className="text-xs font-semibold text-slate-500">Held</span>
+                  <span className="text-xs text-amber-600 font-bold ml-1">★ {avgRating}</span>
                 </div>
-                <div className="text-[10px] text-slate-500 font-medium">Conducted Sessions</div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-2xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Rating Score
-                  </span>
-                  <div className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  </div>
-                </div>
-                <div className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-1">
-                  <span>{avgRating}</span>
-                  <span className="text-xs text-slate-400 font-normal">/ 5.0</span>
-                </div>
-                <div className="text-[10px] text-slate-500 font-medium">
-                  {allTutorReviews.length} Student Reviews
-                </div>
+                <div className="text-[10px] text-slate-500 font-medium">{allTutorReviews.length} Student Reviews</div>
               </div>
             </>
           ) : (
@@ -775,6 +791,27 @@ export function UserProfileHistoryModal({
                           title="Copy Student ID"
                         >
                           {copiedKey === "student_id_box" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Official Tutor ID */}
+                  {isTutor && fullUser.tutorId && (
+                    <div className="p-3 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 space-y-1">
+                      <span className="text-indigo-900 font-extrabold block text-[10px] uppercase tracking-wider">
+                        Official Tutor ID
+                      </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono font-black text-sm text-[#0c2461] tracking-wide select-all">
+                          {fullUser.tutorId}
+                        </span>
+                        <button
+                          onClick={() => handleCopy(fullUser.tutorId, "tutor_id_box")}
+                          className="p-1 rounded-lg hover:bg-indigo-100 text-indigo-800 transition-colors cursor-pointer"
+                          title="Copy Tutor ID"
+                        >
+                          {copiedKey === "tutor_id_box" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     </div>
@@ -1876,6 +1913,11 @@ export function UserProfileHistoryModal({
           {fullUser.studentId && (
             <span className="font-mono text-amber-900 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
               {fullUser.studentId}
+            </span>
+          )}
+          {fullUser.tutorId && (
+            <span className="font-mono text-indigo-900 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+              {fullUser.tutorId}
             </span>
           )}
         </div>

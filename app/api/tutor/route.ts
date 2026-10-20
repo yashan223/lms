@@ -20,6 +20,7 @@ import {
 } from "@/lib/bigbluebutton";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
+import { ensureTutorIdForUser } from "@/lib/tutor-id";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,6 +33,10 @@ export async function GET(request: NextRequest) {
     }
 
     const tutor = auth.user;
+
+    if (!tutor.tutorId && (tutor.role === Role.TUTOR || (tutor.role as any) === "INSTRUCTOR")) {
+      tutor.tutorId = await ensureTutorIdForUser(tutor.id);
+    }
 
     const courseWhere =
       tutor.role === Role.ADMIN ? {} : { tutorId: tutor.id };
@@ -184,6 +189,7 @@ export async function GET(request: NextRequest) {
       {
         tutor: {
           id: tutor.id,
+          tutorId: tutor.tutorId || null,
           name: tutor.name,
           email: tutor.email,
           headline: tutor.headline || "Senior Tutor",

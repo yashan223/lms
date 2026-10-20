@@ -261,10 +261,12 @@ export default function AdminDashboardPage() {
     email: string;
     password?: string;
     role: string;
+    tutorId?: string | null;
     message?: string;
   } | null>(null);
   const [copiedSuccessEmail, setCopiedSuccessEmail] = useState(false);
   const [copiedSuccessPassword, setCopiedSuccessPassword] = useState(false);
+  const [copiedSuccessTutorId, setCopiedSuccessTutorId] = useState(false);
   const [showSuccessPassword, setShowSuccessPassword] = useState(false);
 
   const [showGrantTokensModal, setShowGrantTokensModal] = useState(false);
@@ -715,6 +717,7 @@ export default function AdminDashboardPage() {
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
         (u.studentId && u.studentId.toLowerCase().includes(q)) ||
+        (u.tutorId && u.tutorId.toLowerCase().includes(q)) ||
         (u.headline && u.headline.toLowerCase().includes(q));
       const matchesRole = userRoleFilter === "ALL" || u.role === userRoleFilter;
       return matchesSearch && matchesRole;
@@ -830,6 +833,7 @@ export default function AdminDashboardPage() {
           email: resolvedEmail,
           password: formUserPassword,
           role: formUserRole,
+          tutorId: data.user?.tutorId || null,
           message: data.message || "Tutor account created successfully. The verification email will be dispatched when the tutor logs in for the first time.",
         });
         setCopiedSuccessEmail(false);
@@ -2470,6 +2474,11 @@ export default function AdminDashboardPage() {
                                       {u.studentId}
                                     </span>
                                   )}
+                                  {(u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR") && u.tutorId && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-100 text-indigo-900 border border-indigo-200" title="Official Tutor ID">
+                                      {u.tutorId}
+                                    </span>
+                                  )}
                                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
                                 </div>
                                 <div className="text-[11px] text-slate-400">{u.email}</div>
@@ -3067,6 +3076,11 @@ export default function AdminDashboardPage() {
                                   {u.role === "STUDENT" && u.studentId && (
                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200" title="Official Student ID">
                                       {u.studentId}
+                                    </span>
+                                  )}
+                                  {(u.role === "TUTOR" || (u.role as any) === "INSTRUCTOR") && u.tutorId && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-100 text-indigo-900 border border-indigo-200" title="Official Tutor ID">
+                                      {u.tutorId}
                                     </span>
                                   )}
                                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
@@ -6127,6 +6141,33 @@ export default function AdminDashboardPage() {
                 <span className="text-slate-500 text-[11px]">Tutor</span>
                 <span className="font-bold text-slate-800">{createdUserSuccess.name}</span>
               </div>
+
+              {createdUserSuccess.tutorId && (
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
+                  <span className="text-slate-500 text-[11px] shrink-0">Official Tutor ID</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-[11px] truncate">
+                      {createdUserSuccess.tutorId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdUserSuccess.tutorId || "");
+                        setCopiedSuccessTutorId(true);
+                        setTimeout(() => setCopiedSuccessTutorId(false), 2000);
+                      }}
+                      className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors cursor-pointer shrink-0"
+                      title="Copy Tutor ID"
+                    >
+                      {copiedSuccessTutorId ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
                 <span className="text-slate-500 text-[11px] shrink-0">Tutor Email</span>

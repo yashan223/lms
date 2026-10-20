@@ -11,6 +11,16 @@ async function main() {
   console.log("Connecting to PostgreSQL database...");
 
   try {
+    await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "studentId" TEXT;`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS "users_studentId_key" ON "users"("studentId");`);
+    await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "tutorId" TEXT;`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS "users_tutorId_key" ON "users"("tutorId");`);
+    console.log("✅ Ensured studentId & tutorId columns and unique indexes exist on users");
+  } catch (e: any) {
+    console.log("Note on studentId/tutorId:", e.message);
+  }
+
+  try {
     await pool.query(`ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'TUTOR';`);
     console.log("✅ Ensured 'TUTOR' value exists in Role enum");
   } catch (e: any) {

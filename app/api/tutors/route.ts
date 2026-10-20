@@ -12,6 +12,7 @@ export async function GET() {
       },
       select: {
         id: true,
+        tutorId: true,
         name: true,
         email: true,
         role: true,

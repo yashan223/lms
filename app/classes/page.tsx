@@ -187,6 +187,7 @@ export default function CoursesPage() {
       const matchSearch =
         !q ||
         tutor.name?.toLowerCase().includes(q) ||
+        (tutor.tutorId && tutor.tutorId.toLowerCase().includes(q)) ||
         tutor.headline?.toLowerCase().includes(q) ||
         tutor.bio?.toLowerCase().includes(q) ||
         tutor.category?.toLowerCase().includes(q) ||
@@ -612,6 +613,11 @@ export default function CoursesPage() {
                               <h3 className="font-bold text-slate-900 text-base leading-snug">
                                 {tutor.name}
                               </h3>
+                              {tutor.tutorId && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                                  {tutor.tutorId}
+                                </span>
+                              )}
                               <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold py-0.5">
                                 Verified Tutor
                               </Badge>

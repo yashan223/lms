@@ -10,6 +10,7 @@ import {
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { ensureTutorIdForUser } from "@/lib/tutor-id";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
       where: { id: auth.user.id },
       select: {
         id: true,
+        tutorId: true,
         name: true,
         email: true,
         role: true,
@@ -44,6 +46,11 @@ export async function GET(request: NextRequest) {
 
     if (!tutor) {
       return NextResponse.json({ error: "Tutor profile not found." }, { status: 404 });
+    }
+
+    let finalTutorId = tutor.tutorId;
+    if (!finalTutorId && (tutor.role === "TUTOR" || (tutor.role as any) === "INSTRUCTOR")) {
+      finalTutorId = await ensureTutorIdForUser(tutor.id);
     }
 
     const coursesCount = await prisma.course.count({
@@ -75,6 +82,7 @@ export async function GET(request: NextRequest) {
       success: true,
       tutor: {
         ...tutor,
+        tutorId: finalTutorId,
         coursesCount,
         studentsCount: studentIds.size,
         sessionsCount,
@@ -170,6 +178,7 @@ export async function PUT(request: NextRequest) {
       data: updateData,
       select: {
         id: true,
+        tutorId: true,
         name: true,
         email: true,
         role: true,

@@ -27,6 +27,7 @@ import {
   isBigBlueButtonConfigured,
 } from "@/lib/bigbluebutton";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
+import { generateUniqueTutorId, backfillExistingTutors } from "@/lib/tutor-id";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -121,6 +122,7 @@ export async function GET(request: NextRequest) {
     let privateFiles: any[] = [];
 
     try {
+      await backfillExistingTutors();
       allUsers = await prisma.user.findMany({
         include: {
           tokenWallet: {
@@ -440,8 +442,14 @@ export async function POST(request: NextRequest) {
 
       const primaryUserEmail = email.trim().toLowerCase();
 
+      let assignedTutorId: string | null = null;
+      if (assignedRole === Role.TUTOR || (assignedRole as any) === "INSTRUCTOR") {
+        assignedTutorId = await generateUniqueTutorId();
+      }
+
       const newUser = await prisma.user.create({
         data: {
+          tutorId: assignedTutorId,
           name,
           email: primaryUserEmail,
           passwordHash: hashedPassword,

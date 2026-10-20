@@ -2258,7 +2258,7 @@ export default function AdminDashboardPage() {
             <img
               src="/logo-wide.png"
               alt="PulseEDU Global"
-              className="h-10 sm:h-11 w-auto mx-auto block object-contain transition-transform group-hover:scale-[1.02]"
+              className="h-10 sm:h-12 w-auto max-w-[200px] mx-auto block object-contain transition-transform group-hover:scale-[1.02]"
               style={{ margin: "0 auto", display: "block" }}
             />
           </Link>

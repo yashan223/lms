@@ -109,19 +109,9 @@ export function PricingSection({
   const displayPlans = bundles.length > 0 ? bundles : DEFAULT_BUNDLES;
 
   return (
-    <section id="pricing" className="py-20 bg-white border-t border-blue-100">
+    <section id="pricing" className="py-12 bg-white border-t border-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Flexible Learning Hours with{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-600">
-              Zero Hidden Constraints
-            </span>
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 mb-6 max-w-2xl mx-auto">
-            Purchase token packs based on your study goals. <strong>1 Token = 1 Hour</strong> of learning credit. You decide how to spend your hours across 1-on-1 private tutoring, interactive individual classes, and past paper clinics.
-          </p>
-
+        <div className="text-center max-w-3xl mx-auto mb-8">
           <div className="w-full max-w-md mx-auto space-y-2">
             {userAcademicLevel && !isTutorUser ? (
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-50 border border-blue-200/80 shadow-2xs">

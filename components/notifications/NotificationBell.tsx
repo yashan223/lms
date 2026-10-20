@@ -85,6 +85,12 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
 
       if (link) {
         setIsOpen(false);
+        if (typeof window !== "undefined" && (link.includes("chat=") || link.includes("conversationId="))) {
+          const match = link.match(/[?&](?:chat|conversationId)=([^&]+)/);
+          if (match && match[1]) {
+            window.dispatchEvent(new CustomEvent("open-chat", { detail: { conversationId: match[1] } }));
+          }
+        }
         router.push(link);
       }
     } catch (err) {

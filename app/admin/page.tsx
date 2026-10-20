@@ -226,7 +226,8 @@ export default function AdminDashboardPage() {
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
   const [isSubmittingReject, setIsSubmittingReject] = useState(false);
 
-  const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
+  const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED" | "RECORDINGS">("ALL");
+  const [isDeletingRecording, setIsDeletingRecording] = useState<string | null>(null);
   const [liveClassSearch, setLiveClassSearch] = useState("");
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
   const [purchaseSearch, setPurchaseSearch] = useState("");
@@ -1725,31 +1726,48 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleRemoveRecording = async () => {
-    if (!recordingModalTarget) return;
-    if (!confirm("Are you sure you want to remove the recording link from this session?")) return;
+  const handleAdminDeleteRecording = async (opts: { eventId?: string; trialId?: string; title: string }) => {
+    if (!confirm(`Are you sure you want to permanently delete the BigBlueButton recording for "${opts.title}"?\n\nThis will remove the playback recording from the database and BigBlueButton server. Only administrators can perform this action.`)) {
+      return;
+    }
 
     try {
-      setIsSavingRecording(true);
-      const res = await fetch("/api/meetings/sync", {
+      const idKey = opts.eventId || opts.trialId || "rec";
+      setIsDeletingRecording(idKey);
+
+      const res = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          eventId: recordingModalTarget.eventId,
-          trialId: recordingModalTarget.trialId,
-          manualRecordingUrl: "",
+          action: "delete_recording",
+          eventId: opts.eventId,
+          trialId: opts.trialId,
         }),
       });
 
+      const data = await res.json();
       if (res.ok) {
-        setShowRecordingModal(false);
+        if (showRecordingModal) {
+          setShowRecordingModal(false);
+        }
         await fetchAdminData();
+      } else {
+        alert(data.error || "Failed to delete recording.");
       }
     } catch {
-      alert("Network error removing recording.");
+      alert("Network error deleting recording.");
     } finally {
-      setIsSavingRecording(false);
+      setIsDeletingRecording(null);
     }
+  };
+
+  const handleRemoveRecording = async () => {
+    if (!recordingModalTarget) return;
+    await handleAdminDeleteRecording({
+      eventId: recordingModalTarget.eventId,
+      trialId: recordingModalTarget.trialId,
+      title: recordingModalTarget.title,
+    });
   };
 
   const handleAutoSyncInModal = async () => {
@@ -2141,6 +2159,8 @@ export default function AdminDashboardPage() {
         matchFilter = !isEnded && (ev.status === "SCHEDULED" || !ev.status) && new Date(ev.dueDate) >= new Date();
       } else if (liveClassFilter === "COMPLETED") {
         matchFilter = isEnded;
+      } else if (liveClassFilter === "RECORDINGS") {
+        matchFilter = Boolean(ev.recordingUrl);
       }
 
       return matchSearch && matchFilter;
@@ -2154,6 +2174,57 @@ export default function AdminDashboardPage() {
     return !isEnded && (e.status === "SCHEDULED" || !e.status) && new Date(e.dueDate) >= new Date();
   }).length;
   const completedCount = eventsList.filter((e) => e.status === "COMPLETED" || !!e.endedAt).length;
+
+  const recordedEvents = useMemo(() => {
+    return eventsList.filter((e) => Boolean(e.recordingUrl));
+  }, [eventsList]);
+
+  const recordedTrials = useMemo(() => {
+    return allTrialsList.filter((t) => Boolean(t.recordingUrl));
+  }, [allTrialsList]);
+
+  const allRecordings = useMemo(() => {
+    const evs = recordedEvents.map((e) => ({
+      id: e.id,
+      type: "CLASS" as const,
+      title: e.title,
+      courseTitle: e.course?.title || "Academic Class",
+      subjectCode: e.course?.subjectCode || "CLASS",
+      tutorName: e.user?.name || e.course?.tutor?.name || "Faculty Tutor",
+      tutorAvatar: e.user?.avatar || e.course?.tutor?.avatar,
+      date: e.dueDate || e.endedAt || e.createdAt,
+      recordingUrl: e.recordingUrl as string,
+      meetingId: e.meetingSpaceId || (e as any).meetingId || `class-${e.id}`,
+      eventId: e.id as string | undefined,
+      trialId: undefined as string | undefined,
+    }));
+    const trs = recordedTrials.map((t) => ({
+      id: t.id,
+      type: "TRIAL" as const,
+      title: `1-on-1 Trial: ${t.studentName || t.student?.name || "Student"}`,
+      courseTitle: t.course?.title || "Trial Consultation Session",
+      subjectCode: t.course?.subjectCode || "1-ON-1",
+      tutorName: t.tutor?.name || "Faculty Tutor",
+      tutorAvatar: t.tutor?.avatar,
+      date: t.preferredDate || t.updatedAt || t.createdAt,
+      recordingUrl: t.recordingUrl as string,
+      meetingId: t.meetingSpaceId || (t as any).meetingId || `trial-${t.id}`,
+      eventId: undefined as string | undefined,
+      trialId: t.id as string | undefined,
+    }));
+    return [...evs, ...trs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [recordedEvents, recordedTrials]);
+
+  const filteredRecordings = useMemo(() => {
+    if (!liveClassSearch.trim()) return allRecordings;
+    const q = liveClassSearch.toLowerCase();
+    return allRecordings.filter((rec) =>
+      rec.title.toLowerCase().includes(q) ||
+      rec.courseTitle.toLowerCase().includes(q) ||
+      rec.subjectCode.toLowerCase().includes(q) ||
+      rec.tutorName.toLowerCase().includes(q)
+    );
+  }, [allRecordings, liveClassSearch]);
 
   const navMenuItems = [
     { id: "overview", label: "Executive Overview", icon: Layers },
@@ -2537,7 +2608,7 @@ export default function AdminDashboardPage() {
 
           {activeTab === "live_classes" && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className={`p-4 rounded-2xl bg-white border shadow-2xs space-y-1 ${liveNowCount > 0 ? "border-red-300 ring-2 ring-red-500/20" : "border-slate-200"}`}>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-red-600 flex items-center gap-1.5">
@@ -2580,6 +2651,27 @@ export default function AdminDashboardPage() {
                   <div className="text-[11px] text-slate-500 font-medium">Archive & Logs</div>
                 </div>
 
+                <div
+                  onClick={() => setLiveClassFilter("RECORDINGS")}
+                  className={`p-4 rounded-2xl bg-white border shadow-2xs space-y-1 cursor-pointer transition-all hover:border-purple-300 ${
+                    liveClassFilter === "RECORDINGS" ? "border-purple-300 ring-2 ring-purple-500/20" : "border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-purple-700 flex items-center gap-1.5">
+                      <Play className="w-3.5 h-3.5 text-purple-600 fill-purple-600" />
+                      BBB Recordings
+                    </span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                      Admin Access
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                    {allRecordings.length} Recorded
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">Click to manage &amp; delete</div>
+                </div>
+
                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-blue-700">Authorized Tutors</span>
@@ -2612,6 +2704,7 @@ export default function AdminDashboardPage() {
                       { id: "LIVE", label: `Live Now (${liveNowCount})`, icon: Radio },
                       { id: "SCHEDULED", label: `Scheduled (${upcomingCount})`, icon: Calendar },
                       { id: "COMPLETED", label: `Completed (${completedCount})`, icon: CheckCircle2 },
+                      { id: "RECORDINGS", label: `BBB Recordings (${allRecordings.length})`, icon: Play },
                     ].map((tab) => {
                       const TabIcon = tab.icon;
                       return (
@@ -2738,248 +2831,407 @@ export default function AdminDashboardPage() {
               )}
 
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-0">
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-sm text-slate-900">
-                      Academic Class Schedule & BigBlueButton Directory
+                      {liveClassFilter === "RECORDINGS"
+                        ? "BigBlueButton Playback Recordings Directory"
+                        : "Academic Class Schedule & BigBlueButton Directory"}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Showing {liveClassesList.length} classes matching current filter
+                      {liveClassFilter === "RECORDINGS"
+                        ? `Showing ${filteredRecordings.length} BigBlueButton recordings (Classes & 1-on-1 Sessions)`
+                        : `Showing ${liveClassesList.length} classes matching current filter`}
                     </p>
                   </div>
+                  {liveClassFilter === "RECORDINGS" && (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1.5 w-fit">
+                      <ShieldCheck className="w-3.5 h-3.5 text-purple-700" />
+                      <span>Admin Exclusive: Deletion & Management</span>
+                    </span>
+                  )}
                 </div>
 
-                {liveClassesList.length > 0 ? (
-                  <div className="divide-y divide-slate-100">
-                    {liveClassesList.map((ev) => {
-                      const isLive = ev.status === "LIVE";
-                      const isCompleted = ev.status === "COMPLETED";
-                      const meetLink = ev.meetingLink || (ev.description?.match(/https?:\/\/[^\s]+/i)?.[0]);
+                {liveClassFilter === "RECORDINGS" ? (
+                  filteredRecordings.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                      {filteredRecordings.map((rec) => {
+                        const isTrial = rec.type === "TRIAL";
+                        const isDeleting = isDeletingRecording === (rec.eventId || rec.trialId);
 
-                      return (
-                        <div
-                          key={ev.id}
-                          className={`p-4 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
-                            isLive ? "bg-red-50/30" : "hover:bg-slate-50/70"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3 min-w-0">
-                            <div
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                                isLive
-                                  ? "bg-red-100 text-red-700 animate-pulse"
-                                  : isCompleted
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-blue-100 text-blue-700"
-                              }`}
-                            >
-                              <Video className="w-5 h-5" />
-                            </div>
-
-                            <div className="min-w-0 space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-bold text-xs sm:text-sm text-slate-900">
-                                  {ev.title}
-                                </h4>
-                                {isLive && (
-                                  <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
-                                    <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
-                                    <span>Live Now</span>
-                                  </Badge>
-                                )}
-                                {isCompleted && (
-                                  <Badge className="bg-blue-50 text-blue-800 border border-blue-200 text-[9px] font-bold flex items-center gap-1">
-                                    <CheckCircle2 className="w-2.5 h-2.5 text-blue-600" />
-                                    <span>Completed</span>
-                                  </Badge>
-                                )}
-                                {!isLive && !isCompleted && (
-                                  <Badge className="bg-blue-100 text-blue-800 text-[9px] font-bold">
-                                    Scheduled
-                                  </Badge>
-                                )}
+                        return (
+                          <div
+                            key={`${rec.type}-${rec.id}`}
+                            className="p-4 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50/70"
+                          >
+                            <div className="flex items-start gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                                <Play className="w-5 h-5 fill-purple-600 text-purple-600" />
                               </div>
 
-                              {ev.course && (
-                                <p className="text-xs text-blue-700 font-semibold truncate">
-                                  {ev.course.title} {ev.course.subjectCode ? `(${ev.course.subjectCode})` : ""}
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-bold text-xs sm:text-sm text-slate-900">
+                                    {rec.title}
+                                  </h4>
+                                  <Badge className={isTrial ? "bg-amber-100 text-amber-900 border-amber-200 text-[9px] font-bold" : "bg-blue-100 text-blue-900 border-blue-200 text-[9px] font-bold"}>
+                                    {isTrial ? "1-on-1 Trial Session" : "Academic Class"}
+                                  </Badge>
+                                  <Badge className="bg-purple-50 text-purple-800 border border-purple-200 text-[9px] font-bold flex items-center gap-1">
+                                    <Video className="w-2.5 h-2.5 text-purple-600" />
+                                    <span>BBB Recording Available</span>
+                                  </Badge>
+                                </div>
+
+                                <p className="text-xs text-purple-900/80 font-semibold truncate">
+                                  {rec.courseTitle} {rec.subjectCode ? `(${rec.subjectCode})` : ""}
                                 </p>
-                              )}
 
-                              <div className="flex items-center gap-4 text-[11px] text-slate-500 flex-wrap">
-                                <span className="flex items-center gap-1 font-semibold text-slate-700">
-                                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                  {formatForUser(ev.dueDate, adminTimezone, {
-                                    includeDate: true,
-                                    includeTime: true,
-                                    includeAbbr: true,
-                                  })}
-                                </span>
+                                <div className="flex items-center gap-4 text-[11px] text-slate-500 flex-wrap">
+                                  <span className="flex items-center gap-1 font-semibold text-slate-700">
+                                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                    {formatForUser(rec.date, adminTimezone, {
+                                      includeDate: true,
+                                      includeTime: true,
+                                      includeAbbr: true,
+                                    })}
+                                  </span>
 
-                                <span className="text-slate-500">
-                                  Instructor:{" "}
-                                  <strong className="text-slate-800">
-                                    {ev.course?.instructor?.name || ev.user?.name || "Senior Tutor"}
-                                  </strong>
-                                </span>
+                                  <span className="text-slate-500">
+                                    Instructor / Tutor:{" "}
+                                    <strong className="text-slate-800">{rec.tutorName}</strong>
+                                  </span>
 
-                                {meetLink && (
+                                  {rec.meetingId && (
+                                    <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                      Room: {rec.meetingId}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="pt-1">
                                   <a
-                                    href={meetLink}
+                                    href={rec.recordingUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 truncate max-w-[220px]"
+                                    className="text-[11px] text-purple-600 hover:text-purple-800 font-mono truncate max-w-md block hover:underline"
                                   >
-                                    <span>{meetLink}</span>
-                                    <ExternalLink className="w-3 h-3 shrink-0" />
+                                    {rec.recordingUrl}
                                   </a>
-                                )}
-                              </div>
-
-                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 mt-1 border-t border-slate-100 text-xs text-slate-600">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Started:</span>
-                                  <span className="font-mono text-[11px] font-semibold text-slate-700">
-                                    {ev.startedAt
-                                      ? formatForUser(ev.startedAt, adminTimezone, {
-                                          includeDate: true,
-                                          includeTime: true,
-                                          includeAbbr: true,
-                                        })
-                                      : "Not started yet"}
-                                  </span>
                                 </div>
-
-                                <span className="text-slate-200 hidden sm:inline">•</span>
-
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ended:</span>
-                                  <span className={`font-mono text-[11px] font-semibold ${isLive ? "text-blue-600 font-bold" : "text-slate-700"}`}>
-                                    {ev.endedAt
-                                      ? formatForUser(ev.endedAt, adminTimezone, {
-                                          includeDate: true,
-                                          includeTime: true,
-                                          includeAbbr: true,
-                                        })
-                                      : isLive
-                                      ? "● Live in Session"
-                                      : "—"}
-                                  </span>
-                                </div>
-
-                                <span className="text-slate-200 hidden sm:inline">•</span>
-
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration:</span>
-                                  <span className="font-mono text-[11px] font-semibold text-slate-800">
-                                    {formatSessionDuration(ev.startedAt, ev.endedAt)}
-                                  </span>
-                                </div>
-
-                                {ev.actualStartTime && ev.actualEndTime && (
-                                  <>
-                                    <span className="text-slate-200 hidden sm:inline">•</span>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meet Verified:</span>
-                                      <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                        {formatTimeInTimezone(ev.actualStartTime, adminTimezone)} - {formatTimeInTimezone(ev.actualEndTime, adminTimezone, { includeAbbr: true })}
-                                        {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
                               </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center gap-2 self-end lg:self-center shrink-0">
-                            {isLive ? (
-                              <>
-                                {meetLink && (
-                                  <a
-                                    href={meetLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
-                                  >
-                                    <Video className="w-3.5 h-3.5" />
-                                    <span>Observe Meet</span>
-                                  </a>
+                            <div className="flex items-center gap-2 self-end lg:self-center shrink-0 flex-wrap">
+                              <a
+                                href={rec.recordingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-current" />
+                                <span>Watch Recording</span>
+                              </a>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenRecordingModal({
+                                  eventId: rec.eventId,
+                                  trialId: rec.trialId,
+                                  title: rec.title,
+                                  currentUrl: rec.recordingUrl,
+                                })}
+                                className="text-xs font-semibold text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
+                                title="Edit recording URL or re-sync with BigBlueButton"
+                              >
+                                <Video className="w-3.5 h-3.5 text-purple-600" />
+                                <span>Edit Link</span>
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleAdminDeleteRecording({
+                                  eventId: rec.eventId,
+                                  trialId: rec.trialId,
+                                  title: rec.title,
+                                })}
+                                disabled={isDeleting}
+                                className="text-xs font-bold text-red-600 border-red-200 bg-red-50 hover:bg-red-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
+                                title="Permanently delete recording (Admin Only)"
+                              >
+                                {isDeleting ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
                                 )}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEndClass(ev)}
-                                  disabled={endingClassId === ev.id}
-                                  className="text-xs font-bold text-red-600 border-red-200 hover:bg-red-50 rounded-xl h-8"
-                                >
-                                  {endingClassId === ev.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    "End Class"
-                                  )}
-                                </Button>
-                              </>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                {ev.recordingUrl && (
-                                  <a
-                                    href={ev.recordingUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all"
-                                  >
-                                    <Play className="w-3.5 h-3.5 fill-current" />
-                                    <span>Recording</span>
-                                  </a>
-                                )}
-                                {isCompleted && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
-                                      className="text-xs font-semibold text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
-                                      title="Add or edit video recording link"
-                                    >
-                                      <Video className="w-3.5 h-3.5 text-purple-600" />
-                                      <span>{ev.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleSyncMeeting(ev.id)}
-                                      disabled={syncingEventId === ev.id}
-                                      className="text-xs font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl h-8 flex items-center gap-1 cursor-pointer"
-                                      title="Fetch verified times and BigBlueButton recording"
-                                    >
-                                      <RefreshCw className={`w-3.5 h-3.5 ${syncingEventId === ev.id ? "animate-spin text-blue-600" : "text-slate-500"}`} />
-                                      <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
-                                    </Button>
-                                  </>
-                                )}
-                                <button
-                                  onClick={() => handleDeleteLiveClass(ev)}
-                                  className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                                  title="Cancel / Delete Class"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
+                                <span>{isDeleting ? "Deleting..." : "Delete Recording"}</span>
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 space-y-3">
+                      <Play className="w-10 h-10 text-purple-300 mx-auto" />
+                      <h4 className="font-bold text-xs text-slate-700">No BigBlueButton Recordings Found</h4>
+                      <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                        No playback recordings match your search or have been attached yet. Completed classes and 1-on-1 trials will automatically appear here once BigBlueButton finishes processing.
+                      </p>
+                    </div>
+                  )
                 ) : (
-                  <div className="text-center py-12 space-y-3">
-                    <Video className="w-10 h-10 text-slate-300 mx-auto" />
-                    <h4 className="font-bold text-xs text-slate-700">No Classes Found</h4>
-                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                      No live classes match the selected filter.
-                    </p>
-                  </div>
+                  liveClassesList.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                      {liveClassesList.map((ev) => {
+                        const isLive = ev.status === "LIVE";
+                        const isCompleted = ev.status === "COMPLETED";
+                        const meetLink = ev.meetingLink || (ev.description?.match(/https?:\/\/[^\s]+/i)?.[0]);
+
+                        return (
+                          <div
+                            key={ev.id}
+                            className={`p-4 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+                              isLive ? "bg-red-50/30" : "hover:bg-slate-50/70"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3 min-w-0">
+                              <div
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                                  isLive
+                                    ? "bg-red-100 text-red-700 animate-pulse"
+                                    : isCompleted
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-blue-100 text-blue-700"
+                                }`}
+                              >
+                                <Video className="w-5 h-5" />
+                              </div>
+
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-bold text-xs sm:text-sm text-slate-900">
+                                    {ev.title}
+                                  </h4>
+                                  {isLive && (
+                                    <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
+                                      <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
+                                      <span>Live Now</span>
+                                    </Badge>
+                                  )}
+                                  {isCompleted && (
+                                    <Badge className="bg-blue-50 text-blue-800 border border-blue-200 text-[9px] font-bold flex items-center gap-1">
+                                      <CheckCircle2 className="w-2.5 h-2.5 text-blue-600" />
+                                      <span>Completed</span>
+                                    </Badge>
+                                  )}
+                                  {!isLive && !isCompleted && (
+                                    <Badge className="bg-blue-100 text-blue-800 text-[9px] font-bold">
+                                      Scheduled
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {ev.course && (
+                                  <p className="text-xs text-blue-700 font-semibold truncate">
+                                    {ev.course.title} {ev.course.subjectCode ? `(${ev.course.subjectCode})` : ""}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center gap-4 text-[11px] text-slate-500 flex-wrap">
+                                  <span className="flex items-center gap-1 font-semibold text-slate-700">
+                                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                    {formatForUser(ev.dueDate, adminTimezone, {
+                                      includeDate: true,
+                                      includeTime: true,
+                                      includeAbbr: true,
+                                    })}
+                                  </span>
+
+                                  <span className="text-slate-500">
+                                    Instructor:{" "}
+                                    <strong className="text-slate-800">
+                                      {ev.course?.instructor?.name || ev.user?.name || "Senior Tutor"}
+                                    </strong>
+                                  </span>
+
+                                  {meetLink && (
+                                    <a
+                                      href={meetLink}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 truncate max-w-[220px]"
+                                    >
+                                      <span>{meetLink}</span>
+                                      <ExternalLink className="w-3 h-3 shrink-0" />
+                                    </a>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 mt-1 border-t border-slate-100 text-xs text-slate-600">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Started:</span>
+                                    <span className="font-mono text-[11px] font-semibold text-slate-700">
+                                      {ev.startedAt
+                                        ? formatForUser(ev.startedAt, adminTimezone, {
+                                            includeDate: true,
+                                            includeTime: true,
+                                            includeAbbr: true,
+                                          })
+                                        : "Not started yet"}
+                                    </span>
+                                  </div>
+
+                                  <span className="text-slate-200 hidden sm:inline">•</span>
+
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ended:</span>
+                                    <span className={`font-mono text-[11px] font-semibold ${isLive ? "text-blue-600 font-bold" : "text-slate-700"}`}>
+                                      {ev.endedAt
+                                        ? formatForUser(ev.endedAt, adminTimezone, {
+                                            includeDate: true,
+                                            includeTime: true,
+                                            includeAbbr: true,
+                                          })
+                                        : isLive
+                                        ? "● Live in Session"
+                                        : "—"}
+                                    </span>
+                                  </div>
+
+                                  <span className="text-slate-200 hidden sm:inline">•</span>
+
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration:</span>
+                                    <span className="font-mono text-[11px] font-semibold text-slate-800">
+                                      {formatSessionDuration(ev.startedAt, ev.endedAt)}
+                                    </span>
+                                  </div>
+
+                                  {ev.actualStartTime && ev.actualEndTime && (
+                                    <>
+                                      <span className="text-slate-200 hidden sm:inline">•</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meet Verified:</span>
+                                        <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                          {formatTimeInTimezone(ev.actualStartTime, adminTimezone)} - {formatTimeInTimezone(ev.actualEndTime, adminTimezone, { includeAbbr: true })}
+                                          {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
+                                        </span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end lg:self-center shrink-0">
+                              {isLive ? (
+                                <>
+                                  {meetLink && (
+                                    <a
+                                      href={meetLink}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                                    >
+                                      <Video className="w-3.5 h-3.5" />
+                                      <span>Observe Meet</span>
+                                    </a>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEndClass(ev)}
+                                    disabled={endingClassId === ev.id}
+                                    className="text-xs font-bold text-red-600 border-red-200 hover:bg-red-50 rounded-xl h-8"
+                                  >
+                                    {endingClassId === ev.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      "End Class"
+                                    )}
+                                  </Button>
+                                </>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {ev.recordingUrl && (
+                                    <>
+                                      <a
+                                        href={ev.recordingUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                                      >
+                                        <Play className="w-3.5 h-3.5 fill-current" />
+                                        <span>Recording</span>
+                                      </a>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleAdminDeleteRecording({ eventId: ev.id, title: ev.title })}
+                                        disabled={isDeletingRecording === ev.id}
+                                        className="text-xs font-semibold text-red-600 border-red-200 bg-red-50 hover:bg-red-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
+                                        title="Delete BigBlueButton recording (Admin Only)"
+                                      >
+                                        {isDeletingRecording === ev.id ? (
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" />
+                                        ) : (
+                                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                        )}
+                                        <span>Delete Rec</span>
+                                      </Button>
+                                    </>
+                                  )}
+                                  {isCompleted && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
+                                        className="text-xs font-semibold text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
+                                        title="Add or edit video recording link"
+                                      >
+                                        <Video className="w-3.5 h-3.5 text-purple-600" />
+                                        <span>{ev.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSyncMeeting(ev.id)}
+                                        disabled={syncingEventId === ev.id}
+                                        className="text-xs font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl h-8 flex items-center gap-1 cursor-pointer"
+                                        title="Fetch verified times and BigBlueButton recording"
+                                      >
+                                        <RefreshCw className={`w-3.5 h-3.5 ${syncingEventId === ev.id ? "animate-spin text-blue-600" : "text-slate-500"}`} />
+                                        <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
+                                      </Button>
+                                    </>
+                                  )}
+                                  <button
+                                    onClick={() => handleDeleteLiveClass(ev)}
+                                    className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                    title="Cancel / Delete Class"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 space-y-3">
+                      <Video className="w-10 h-10 text-slate-300 mx-auto" />
+                      <h4 className="font-bold text-xs text-slate-700">No Classes Found</h4>
+                      <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                        No live classes match the selected filter.
+                      </p>
+                    </div>
+                  )
                 )}
               </div>
 
@@ -5046,15 +5298,33 @@ export default function AdminDashboardPage() {
                             {isCompleted && (
                               <>
                                 {tr.recordingUrl && (
-                                  <a
-                                    href={tr.recordingUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all"
-                                  >
-                                    <Play className="w-3.5 h-3.5 fill-current" />
-                                    <span>Watch</span>
-                                  </a>
+                                  <>
+                                    <a
+                                      href={tr.recordingUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                    >
+                                      <Play className="w-3.5 h-3.5 fill-current" />
+                                      <span>Watch</span>
+                                    </a>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleAdminDeleteRecording({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}` })}
+                                      disabled={isDeletingRecording === tr.id}
+                                      className="h-8.5 px-3 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all"
+                                      title="Delete BigBlueButton recording (Admin Only)"
+                                    >
+                                      {isDeletingRecording === tr.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" />
+                                      ) : (
+                                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                      )}
+                                      <span>Delete Rec</span>
+                                    </Button>
+                                  </>
                                 )}
                                 <Button
                                   type="button"
@@ -8516,15 +8786,32 @@ export default function AdminDashboardPage() {
                           {isCompleted && (
                             <>
                               {tr.recordingUrl && (
-                                <a
-                                  href={tr.recordingUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="h-8 px-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1 shadow-2xs transition-all"
-                                >
-                                  <Play className="w-3 h-3 fill-current" />
-                                  <span>Watch</span>
-                                </a>
+                                <>
+                                  <a
+                                    href={tr.recordingUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="h-8 px-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1 shadow-2xs transition-all"
+                                  >
+                                    <Play className="w-3 h-3 fill-current" />
+                                    <span>Watch</span>
+                                  </a>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleAdminDeleteRecording({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}` })}
+                                    disabled={isDeletingRecording === tr.id}
+                                    className="h-8 px-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+                                    title="Delete BigBlueButton recording (Admin Only)"
+                                  >
+                                    {isDeletingRecording === tr.id ? (
+                                      <Loader2 className="w-3 h-3 animate-spin text-red-600" />
+                                    ) : (
+                                      <Trash2 className="w-3 h-3 text-red-600" />
+                                    )}
+                                    <span>Delete</span>
+                                  </Button>
+                                </>
                               )}
                               <Button
                                 size="sm"
@@ -8804,10 +9091,16 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={handleRemoveRecording}
-                      disabled={isSavingRecording}
-                      className="px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-semibold text-xs cursor-pointer w-full sm:w-auto"
+                      disabled={isSavingRecording || isDeletingRecording !== null}
+                      className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto transition-colors"
+                      title="Permanently delete recording from BigBlueButton server and database"
                     >
-                      Remove
+                      {isDeletingRecording ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                      )}
+                      <span>{isDeletingRecording ? "Deleting..." : "Delete Recording (Admin Only)"}</span>
                     </button>
                   )}
                 </div>

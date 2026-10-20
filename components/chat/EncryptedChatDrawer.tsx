@@ -143,6 +143,29 @@ export function EncryptedChatDrawer({
     }
   }, [isOpen, initialRecipientId]);
 
+  useEffect(() => {
+    const handleOpenChatEvent = (e: any) => {
+      if (controlledOnOpen) {
+        controlledOnOpen();
+      } else {
+        setInternalIsOpen(true);
+      }
+      const targetConvId = e.detail?.conversationId;
+      if (targetConvId) {
+        const found = conversations.find((c) => c.id === targetConvId);
+        if (found) {
+          setActiveConversation(found);
+          fetchMessages(found.id, found.otherUser);
+        } else {
+          fetchMessages(targetConvId);
+        }
+      }
+    };
+
+    window.addEventListener("open-chat", handleOpenChatEvent);
+    return () => window.removeEventListener("open-chat", handleOpenChatEvent);
+  }, [conversations, controlledOnOpen]);
+
   useRealtimeSync({
     events: ["CHAT_MESSAGE"],
     onSync: (payload) => {
@@ -161,6 +184,11 @@ export function EncryptedChatDrawer({
         const data = await res.json();
         const rawMessages = data.messages || [];
         setMessages(rawMessages);
+
+        // Immediately clear unread status for this conversation in local list
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, unreadCount: 0 } : c))
+        );
 
         const resolvedOtherUser = data.conversation?.otherUser ?? otherUserHint;
         const myId = currentUser?.id;

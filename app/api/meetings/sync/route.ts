@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
   try {
     const internalSync = request.headers.get("x-internal-sync") === "1";
     let authed = internalSync;
+    let authUser: any = null;
 
     if (!authed) {
       const auth = await getAuthenticatedUser(request, [Role.ADMIN, Role.TUTOR]);
@@ -71,11 +72,22 @@ export async function POST(request: NextRequest) {
           { status: auth.status || 401 }
         );
       }
+      authUser = auth.user;
       authed = true;
     }
 
     const body = await request.json();
     const { action, eventId, trialId, manualStartTime, manualEndTime, manualRecordingUrl } = body;
+
+    // Only administrators can delete or remove recording URLs
+    if (manualRecordingUrl === "" || manualRecordingUrl === null) {
+      if (authUser?.role !== Role.ADMIN) {
+        return NextResponse.json(
+          { error: "Forbidden: Recordings can only be deleted or removed by an Administrator." },
+          { status: 403 }
+        );
+      }
+    }
 
     if (action === "auto_sync_all" || action === "sync_all") {
       const result = await autoSyncActiveBBBMeetings();

@@ -185,7 +185,7 @@ export async function GET(req: NextRequest) {
         take: 150,
       });
 
-      await prisma.message.updateMany({
+      const readResult = await prisma.message.updateMany({
         where: {
           conversationId,
           receiverId: currentUserId,
@@ -193,6 +193,35 @@ export async function GET(req: NextRequest) {
         },
         data: { isRead: true },
       });
+
+      // Also mark corresponding chat notifications as read
+      await prisma.notification.updateMany({
+        where: {
+          userId: currentUserId,
+          type: "CHAT_MESSAGE",
+          isRead: false,
+          OR: [
+            { link: { contains: conversationId } },
+            { title: { contains: otherUser.name } },
+          ],
+        },
+        data: { isRead: true },
+      }).catch(() => {});
+
+      // If user has zero unread messages left overall, mark any remaining chat notifications as read
+      const remainingUnread = await prisma.message.count({
+        where: { receiverId: currentUserId, isRead: false },
+      }).catch(() => 0);
+      if (remainingUnread === 0) {
+        await prisma.notification.updateMany({
+          where: { userId: currentUserId, type: "CHAT_MESSAGE", isRead: false },
+          data: { isRead: true },
+        }).catch(() => {});
+      }
+
+      if (readResult.count > 0 || remainingUnread === 0) {
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: currentUserId });
+      }
 
       return NextResponse.json({
         conversation: {
@@ -511,7 +540,7 @@ export async function POST(req: NextRequest) {
           title: `New Message from ${currentUserName}`,
           message: "You have a new message in your academic chat.",
           type: "CHAT_MESSAGE",
-          link: receiverLink,
+          link: `${receiverLink}?chat=${conversationId}`,
         },
       });
 

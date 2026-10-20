@@ -14,6 +14,18 @@ export async function GET(req: NextRequest) {
 
     const userId = auth.user.id;
 
+    // Auto-reconcile: If all chat messages for this user are already read, mark any stale CHAT_MESSAGE notifications as read
+    const unreadMessagesCount = await prisma.message.count({
+      where: { receiverId: userId, isRead: false },
+    }).catch(() => 0);
+
+    if (unreadMessagesCount === 0) {
+      await prisma.notification.updateMany({
+        where: { userId, type: "CHAT_MESSAGE", isRead: false },
+        data: { isRead: true },
+      }).catch(() => {});
+    }
+
     const [notifications, unreadCount] = await Promise.all([
       prisma.notification.findMany({
         where: { userId },

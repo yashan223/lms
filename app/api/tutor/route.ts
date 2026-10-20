@@ -885,7 +885,15 @@ export async function POST(request: NextRequest) {
     if (action === "update_recording") {
       const { eventId, trialId, recordingUrl } = body;
       const cleanUrl = typeof recordingUrl === "string" ? recordingUrl.trim() : null;
-      const recordingStatus = cleanUrl ? "AVAILABLE" : "NONE";
+
+      if (!cleanUrl) {
+        return NextResponse.json(
+          { error: "Forbidden: Recordings can only be deleted or removed by an Administrator." },
+          { status: 403 }
+        );
+      }
+
+      const recordingStatus = "AVAILABLE";
 
       if (eventId) {
         const ev = await prisma.event.update({

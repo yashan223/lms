@@ -25,6 +25,8 @@ import {
   getUniversalJoinLink,
   endBBBMeeting,
   isBigBlueButtonConfigured,
+  getBBBRecordings,
+  deleteBBBRecording,
 } from "@/lib/bigbluebutton";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 import { generateUniqueTutorId, backfillExistingTutors } from "@/lib/tutor-id";
@@ -47,7 +49,7 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
   reorder_schools: "COURSE", reset_schools: "COURSE",
   create_subject: "COURSE", update_subject: "COURSE", delete_subject: "COURSE",
   reorder_subjects: "COURSE", reset_subjects: "COURSE",
-  start_class: "CLASS", end_class: "CLASS",
+  start_class: "CLASS", end_class: "CLASS", delete_recording: "CLASS",
   approve_class: "CLASS", reject_class: "CLASS",
   delete_assessment: "CLASS", delete_event: "CLASS", create_mock_paper: "CLASS",
   approve_trial: "TRIAL", reject_trial: "TRIAL", reset_trial: "TRIAL", reset_student_trial: "TRIAL", reset_student_trials: "TRIAL", delete_trial: "TRIAL",
@@ -1214,6 +1216,87 @@ export async function POST(request: NextRequest) {
         success: true,
         message: syncResult.message || "Live class session marked as completed.",
         event: syncResult.event,
+      });
+    }
+
+    if (action === "delete_recording") {
+      const { eventId, trialId, recordId } = body;
+
+      if (!eventId && !trialId && !recordId) {
+        return NextResponse.json(
+          { error: "eventId, trialId, or recordId is required to delete a recording." },
+          { status: 400 }
+        );
+      }
+
+      // If BBB recordId is provided, delete recording archive directly from BigBlueButton server
+      if (recordId) {
+        await deleteBBBRecording(recordId);
+      }
+
+      if (eventId) {
+        const ev = await prisma.event.findUnique({ where: { id: eventId } });
+        const bbbMeetingId = ev?.meetingSpaceId || getBBBMeetingId({ eventId });
+        const bbbRecs = await getBBBRecordings({ meetingId: bbbMeetingId });
+        for (const r of bbbRecs) {
+          if (r.recordId) await deleteBBBRecording(r.recordId);
+        }
+        await prisma.event.update({
+          where: { id: eventId },
+          data: {
+            recordingUrl: null,
+            recordingStatus: "NONE",
+          },
+        });
+        broadcastLMSEvent("EVENTS_CHANGED", { eventId, recordingUrl: null });
+      }
+
+      if (trialId) {
+        const tr = await prisma.trialRequest.findUnique({ where: { id: trialId } });
+        const bbbMeetingId = tr?.meetingSpaceId || getBBBMeetingId({ trialId });
+        const bbbRecs = await getBBBRecordings({ meetingId: bbbMeetingId });
+        for (const r of bbbRecs) {
+          if (r.recordId) await deleteBBBRecording(r.recordId);
+        }
+        await prisma.trialRequest.update({
+          where: { id: trialId },
+          data: {
+            recordingUrl: null,
+            recordingStatus: "NONE",
+          },
+        });
+        await prisma.event.updateMany({
+          where: { description: { contains: trialId } },
+          data: {
+            recordingUrl: null,
+            recordingStatus: "NONE",
+          },
+        }).catch(() => {});
+        broadcastLMSEvent("TRIALS_CHANGED", { trialId, recordingUrl: null });
+        broadcastLMSEvent("EVENTS_CHANGED");
+      }
+
+      await writeAuditLog({
+        adminId: auth.user.id,
+        adminEmail: auth.user.email,
+        action: "delete_recording",
+        targetLabel: eventId ? `Class Event #${eventId}` : `Trial #${trialId}`,
+        targetId: eventId || trialId || recordId,
+        details: { eventId, trialId, recordId, deletedAt: new Date().toISOString() },
+        ipAddress: request.headers.get("x-forwarded-for") || undefined,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "BigBlueButton recording successfully deleted by Administrator.",
+      });
+    }
+
+    if (action === "get_bbb_recordings") {
+      const recordings = await getBBBRecordings();
+      return NextResponse.json({
+        success: true,
+        recordings,
       });
     }
 

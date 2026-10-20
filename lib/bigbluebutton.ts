@@ -434,6 +434,23 @@ export async function getBBBRecordings(opts?: {
 }
 
 /**
+ * Deletes a recording archive from the BigBlueButton server
+ */
+export async function deleteBBBRecording(recordId: string): Promise<boolean> {
+  try {
+    if (!recordId || !recordId.trim()) return false;
+    const callUrl = buildBBBUrl("deleteRecordings", { recordID: recordId.trim() });
+    const res = await fetch(callUrl, { method: "GET" });
+    const text = await res.text();
+    const returncode = extractXmlTag(text, "returncode");
+    return returncode === "SUCCESS";
+  } catch (err) {
+    console.warn("[BigBlueButton] deleteRecordings error:", err);
+    return false;
+  }
+}
+
+/**
  * Returns the internal meeting ID slug for an event or trial
  */
 export function getBBBMeetingId(target: { eventId?: string; trialId?: string }): string {

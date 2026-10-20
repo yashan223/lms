@@ -4459,14 +4459,9 @@ function TutorDashboardContent() {
                     <span>{isAutoSyncingInModal ? "Syncing BBB..." : "Auto-sync Recording"}</span>
                   </button>
                   {recordingModalTarget.currentUrl && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveRecording}
-                      disabled={isSavingRecording}
-                      className="px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-semibold text-xs cursor-pointer w-full sm:w-auto"
-                    >
-                      Remove
-                    </button>
+                    <span className="text-[11px] text-slate-500 italic bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                      Recordings can only be deleted by an Administrator
+                    </span>
                   )}
                 </div>
 

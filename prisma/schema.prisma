@@ -100,6 +100,7 @@ model User {
 
   notifications  Notification[]
   payments       Payment[]
+  attendanceRecords ClassAttendance[] @relation("UserAttendance")
 
   @@map("users")
 }
@@ -175,6 +176,7 @@ model Course {
   events        Event[]
   trialRequests TrialRequest[]
   availabilities TutorAvailability[]
+  attendanceRecords ClassAttendance[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -265,6 +267,7 @@ model Event {
   requestedBy        String?
   approvalStatus     String?     @default("APPROVED")
   rejectionReason    String?
+  attendanceRecords  ClassAttendance[]
   createdAt          DateTime    @default(now()) @db.Timestamptz
 
   @@map("events")
@@ -395,6 +398,7 @@ model TrialRequest {
   notes              String?
   approvalStatus     String?      @default("APPROVED")
   rejectionReason    String?
+  attendanceRecords  ClassAttendance[]
   createdAt          DateTime     @default(now()) @db.Timestamptz
   updatedAt          DateTime     @updatedAt @db.Timestamptz
 
@@ -533,6 +537,13 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
 model Payment {
   id            String        @id @default(cuid())
   checkoutId    String?       @unique
@@ -570,4 +581,37 @@ model AcademicSchool {
   updatedAt   DateTime @updatedAt
 
   @@map("academic_schools")
+}
+
+model ClassAttendance {
+  id              String           @id @default(cuid())
+  eventId         String?
+  event           Event?           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  trialId         String?
+  trial           TrialRequest?    @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  courseId        String?
+  course          Course?          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User             @relation("UserAttendance", fields: [userId], references: [id], onDelete: Cascade)
+  userRole        Role             @default(STUDENT)
+  status          AttendanceStatus @default(PRESENT)
+  joinedAt        DateTime?        @db.Timestamptz
+  leftAt          DateTime?        @db.Timestamptz
+  durationMinutes Int?             @default(0)
+  ipAddress       String?
+  notes           String?
+  markedBy        String?          @default("AUTO_ONLINE_JOIN")
+  createdAt       DateTime         @default(now()) @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @db.Timestamptz
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([trialId])
+  @@index([trialId, userId])
+  @@index([courseId])
+  @@index([userRole])
+  @@index([status])
+  @@index([createdAt])
+  @@map("class_attendance")
 }

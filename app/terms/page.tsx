@@ -27,7 +27,7 @@ export default function TermsPage() {
     <div className="min-h-screen flex flex-col bg-white text-slate-800">
       <Navbar />
 
-      <main className="flex-1 bg-slate-50/60 pb-16">
+      <main className="flex-1 bg-slate-50/60 pb-16 min-h-[calc(100vh-4rem)]">
         <section className="bg-gradient-to-b from-[#0c2461] to-[#12366b] text-white py-14 px-4 sm:px-6 lg:px-8 shadow-inner">
           <div className="max-w-4xl mx-auto space-y-4 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-blue-200">

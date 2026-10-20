@@ -42,7 +42,7 @@ export default async function HomePage() {
     <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900">
       <Navbar />
 
-      <main className="flex-1">
+      <main className="flex-1 min-h-[calc(100vh-4rem)]">
         <Hero />
 
         <AboutSection />

@@ -226,7 +226,7 @@ export default function CoursesPage() {
     <div className="min-h-screen flex flex-col bg-white text-slate-900">
       <Navbar />
 
-      <main className="flex-1 py-8 bg-slate-50 border-b border-slate-200">
+      <main className="flex-1 py-8 bg-slate-50 border-b border-slate-200 min-h-[calc(100vh-4rem)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">

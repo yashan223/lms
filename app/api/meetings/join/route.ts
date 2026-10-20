@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     let bbbMeetingId = "";
     let isModerator = user.role === Role.ADMIN;
     let courseTitle = "";
+    let associatedCourseId: string | null = null;
 
     if (eventId) {
       const event = await prisma.event.findUnique({
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
 
       meetingTitle = event.title;
       courseTitle = event.course?.title || "";
+      associatedCourseId = event.courseId || null;
       bbbMeetingId = event.meetingSpaceId || getBBBMeetingId({ eventId });
 
       // Check moderator status: Admin or the course/event tutor
@@ -79,6 +81,51 @@ export async function GET(request: NextRequest) {
         event.requestedBy === user.id
       ) {
         isModerator = true;
+      }
+
+      // Record automated attendance for this class event
+      try {
+        const now = new Date();
+        const isLate = event.dueDate && now.getTime() - new Date(event.dueDate).getTime() > 15 * 60 * 1000;
+        const initialStatus = isLate ? "LATE" : "PRESENT";
+
+        await prisma.classAttendance.upsert({
+          where: {
+            eventId_userId: {
+              eventId,
+              userId: user.id,
+            },
+          },
+          update: {
+            joinedAt: now,
+            status: initialStatus,
+            userRole: user.role,
+            markedBy: "AUTO_ONLINE_JOIN",
+            notes: isModerator ? "Instructor joined online live session" : "Student joined online live session",
+          },
+          create: {
+            eventId,
+            courseId: associatedCourseId,
+            userId: user.id,
+            userRole: user.role,
+            status: initialStatus,
+            joinedAt: now,
+            markedBy: "AUTO_ONLINE_JOIN",
+            notes: isModerator ? "Instructor joined online live session" : "Student joined online live session",
+          },
+        });
+
+        if (user.role === Role.STUDENT) {
+          const count = await prisma.classAttendance.count({
+            where: { eventId, userRole: Role.STUDENT, status: { in: ["PRESENT", "LATE"] } },
+          });
+          await prisma.event.update({
+            where: { id: eventId },
+            data: { attendanceCount: count },
+          });
+        }
+      } catch (attErr) {
+        console.warn("[join] classAttendance record notice:", attErr);
       }
     } else if (trialId) {
       const trial = await prisma.trialRequest.findUnique({
@@ -98,6 +145,7 @@ export async function GET(request: NextRequest) {
 
       meetingTitle = `1-on-1 Consultation: ${trial.course?.title || "Class"} (${trial.studentName})`;
       courseTitle = trial.course?.title || "";
+      associatedCourseId = trial.courseId || null;
       bbbMeetingId = trial.meetingSpaceId || getBBBMeetingId({ trialId });
 
       if (
@@ -107,6 +155,42 @@ export async function GET(request: NextRequest) {
         trial.course?.tutorId === user.id
       ) {
         isModerator = true;
+      }
+
+      // Record automated attendance for trial session
+      try {
+        const now = new Date();
+        const existingTrialAtt = await prisma.classAttendance.findFirst({
+          where: { trialId, userId: user.id },
+        });
+
+        if (existingTrialAtt) {
+          await prisma.classAttendance.update({
+            where: { id: existingTrialAtt.id },
+            data: {
+              joinedAt: now,
+              status: "PRESENT",
+              userRole: user.role,
+              markedBy: "AUTO_ONLINE_JOIN",
+              notes: isModerator ? "Tutor joined trial consultation" : "Student joined trial consultation",
+            },
+          });
+        } else {
+          await prisma.classAttendance.create({
+            data: {
+              trialId,
+              courseId: associatedCourseId,
+              userId: user.id,
+              userRole: user.role,
+              status: "PRESENT",
+              joinedAt: now,
+              markedBy: "AUTO_ONLINE_JOIN",
+              notes: isModerator ? "Tutor joined trial consultation" : "Student joined trial consultation",
+            },
+          });
+        }
+      } catch (attErr) {
+        console.warn("[join] trialAttendance record notice:", attErr);
       }
     }
 

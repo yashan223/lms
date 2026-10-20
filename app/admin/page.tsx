@@ -78,6 +78,7 @@ import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
 import { UserProfileHistoryModal } from "@/components/admin/UserProfileHistoryModal";
+import { AdminAttendanceTracker } from "@/components/attendance/AdminAttendanceTracker";
 import { Footer } from "@/components/layout/Footer";
 import {
   getRegionalTimezone,
@@ -166,7 +167,7 @@ const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: s
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
+    "overview" | "live_classes" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log" | "attendance"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -2237,6 +2238,7 @@ export default function AdminDashboardPage() {
     { id: "chats", label: "Chat Conversations", icon: MessageSquareLock },
     { id: "finances", label: "Class Purchases & Revenue", icon: DollarSign },
     { id: "pricing", label: "Pricing & Token Bundles", icon: Coins },
+    { id: "attendance", label: "Attendance Registry", icon: CheckCircle2 },
     { id: "audit_log", label: "Audit Log & History", icon: FileText },
   ];
 
@@ -2475,7 +2477,7 @@ export default function AdminDashboardPage() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto min-h-[calc(100vh-4rem)]">
           {fetchError && (
             <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3 animate-in fade-in">
               <div className="flex items-center gap-2">
@@ -6097,6 +6099,11 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+          {activeTab === "attendance" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <AdminAttendanceTracker />
             </div>
           )}
         </main>

@@ -61,7 +61,8 @@ export function RegionalTimezoneSelector({
   const calculatePlacement = () => {
     if (!dropdownRef.current) return;
     const rect = dropdownRef.current.getBoundingClientRect();
-    const estimatedHeight = 360;
+    const estimatedHeight = 380;
+    const estimatedWidth = 390;
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
 
@@ -73,11 +74,9 @@ export function RegionalTimezoneSelector({
       setOpenUpwards(spaceBelow < estimatedHeight && spaceAbove > spaceBelow);
     }
 
-    if (compact) {
-      const estimatedWidth = 360;
-      const spaceRight = window.innerWidth - rect.left;
-      setAlignRight(spaceRight < estimatedWidth);
-    }
+    const spaceRight = window.innerWidth - rect.left;
+    const spaceLeft = rect.right;
+    setAlignRight(spaceRight < estimatedWidth && spaceLeft > spaceRight);
   };
 
   const handleToggle = () => {
@@ -130,7 +129,8 @@ export function RegionalTimezoneSelector({
         r.city.toLowerCase().includes(q) ||
         r.id.toLowerCase().includes(q) ||
         r.countryCode.toLowerCase().includes(q) ||
-        r.abbr.toLowerCase().includes(q)
+        r.abbr.toLowerCase().includes(q) ||
+        r.standardOffset.toLowerCase().includes(q)
     );
   }, [searchQuery]);
 
@@ -162,14 +162,14 @@ export function RegionalTimezoneSelector({
         }`}
         title={`Current Region: ${currentRegion.region} (${currentRegion.id})`}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <CountryFlag countryCode={currentRegion.countryCode} flagEmoji={currentRegion.flag} size={compact ? "sm" : "md"} />
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-800 truncate">
+          <div className="flex flex-col min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-semibold text-slate-900 truncate">
                 {currentRegion.region}
               </span>
-              <span className="text-[11px] font-medium text-sky-700 bg-sky-100/80 px-1.5 py-0.5 rounded">
+              <span className="text-[11px] font-mono font-medium text-sky-700 bg-sky-100/80 px-1.5 py-0.5 rounded shrink-0">
                 {liveOffset}
               </span>
             </div>
@@ -206,10 +206,12 @@ export function RegionalTimezoneSelector({
           className={`absolute z-50 ${
             openUpwards ? "bottom-full mb-1.5" : "top-full mt-1.5"
           } ${
+            alignRight ? "right-0" : "left-0"
+          } ${
             compact
-              ? `w-80 sm:w-96 ${alignRight ? "right-0" : "left-0"}`
-              : "w-full left-0 right-0 min-w-[280px]"
-          } max-h-[min(26rem,calc(100vh-120px))] flex flex-col rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95`}
+              ? "w-[340px] sm:w-[400px] max-w-[calc(100vw-2rem)]"
+              : "w-full min-w-[340px] sm:min-w-[400px] max-w-[calc(100vw-2rem)]"
+          } max-h-[min(28rem,calc(100vh-120px))] flex flex-col rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95`}
         >
           <div className="shrink-0 mb-2 flex items-center justify-between border-b border-slate-100 pb-2 px-1">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
@@ -235,7 +237,7 @@ export function RegionalTimezoneSelector({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search region, city, country..."
+              placeholder="Search region, city, country, offset..."
               className="w-full rounded-lg border border-slate-200 bg-slate-50/70 py-1.5 pl-8 pr-7 text-xs text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
             {searchQuery && (
@@ -262,7 +264,7 @@ export function RegionalTimezoneSelector({
                     onClick={() => handleSelect(pop)}
                     className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition ${
                       currentRegion.id === pop.id
-                        ? "bg-sky-600 text-white font-medium"
+                        ? "bg-sky-600 text-white font-medium shadow-xs"
                         : "bg-slate-100 text-slate-700 hover:bg-sky-50 hover:text-sky-700"
                     }`}
                   >
@@ -274,7 +276,7 @@ export function RegionalTimezoneSelector({
             </div>
           )}
 
-          <div className="flex-1 min-h-[120px] max-h-52 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
+          <div className="flex-1 min-h-[120px] max-h-64 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
             {filteredRegions.length === 0 ? (
               <div className="py-6 text-center text-xs text-slate-400">
                 No matching regions found for &quot;{searchQuery}&quot;
@@ -289,36 +291,41 @@ export function RegionalTimezoneSelector({
                     key={region.id}
                     type="button"
                     onClick={() => handleSelect(region)}
-                    className={`group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs transition ${
+                    className={`group flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition ${
                       isSelected
                         ? "bg-sky-50 text-sky-900 font-medium"
                         : "hover:bg-slate-50 text-slate-700"
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <CountryFlag countryCode={region.countryCode} flagEmoji={region.flag} size="md" />
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-800 truncate">
-                            {region.region}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            • {region.city}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 truncate">
-                          {region.id}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="shrink-0 flex items-center justify-center">
+                        <CountryFlag
+                          countryCode={region.countryCode}
+                          flagEmoji={region.flag}
+                          size="md"
+                        />
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-xs font-semibold text-slate-900 truncate leading-snug">
+                          {region.region}
                         </span>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 truncate leading-snug">
+                          <span className="font-medium text-slate-600 truncate">{region.city}</span>
+                          <span className="text-slate-300 shrink-0">•</span>
+                          <span className="text-[10px] font-mono text-slate-400 truncate shrink-0">{region.id}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                      <span className="text-[11px] font-mono font-medium text-slate-500 bg-slate-100 group-hover:bg-sky-100/60 px-1.5 py-0.5 rounded">
+                    <div className="flex items-center gap-2 shrink-0 pl-2">
+                      <span className="text-[11px] font-mono font-medium text-slate-600 bg-slate-100 group-hover:bg-sky-100/70 group-hover:text-sky-800 px-2 py-0.5 rounded-md transition-colors">
                         {offset}
                       </span>
-                      {isSelected && (
-                        <Check className="h-4 w-4 text-sky-600 shrink-0" />
-                      )}
+                      <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-sky-600 stroke-[2.5]" />
+                        )}
+                      </div>
                     </div>
                   </button>
                 );

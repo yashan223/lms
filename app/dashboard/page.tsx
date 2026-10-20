@@ -63,7 +63,6 @@ import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
-import { StudentAttendanceTracker } from "@/components/attendance/StudentAttendanceTracker";
 import { Footer } from "@/components/layout/Footer";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
@@ -188,7 +187,6 @@ function DashboardContent() {
 
   const [navCoursesOpen, setNavCoursesOpen] = useState(true);
   const [navSitePagesOpen, setNavSitePagesOpen] = useState(false);
-  const [dashboardView, setDashboardView] = useState<"overview" | "attendance">("overview");
 
   const [timelinePeriod, setTimelinePeriod] = useState("all");
   const [timelineSort, setTimelineSort] = useState("date");
@@ -1082,37 +1080,15 @@ function DashboardContent() {
                   <span>Dashboard</span>
                 </div>
 
-                <div className="pl-4 space-y-2 text-slate-600">
-                  <button
-                    type="button"
-                    onClick={() => setDashboardView("overview")}
-                    className={`w-full flex items-center gap-1.5 transition-colors cursor-pointer text-left ${
-                      dashboardView === "overview" ? "text-blue-700 font-bold" : "hover:text-blue-700 text-slate-600"
-                    }`}
-                  >
+                <div className="pl-4 space-y-1.5 text-slate-600">
+                  <Link href="/" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
                     <Home className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Dashboard Home</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDashboardView("attendance")}
-                    className={`w-full flex items-center justify-between transition-colors cursor-pointer text-left ${
-                      dashboardView === "attendance" ? "text-blue-700 font-bold" : "hover:text-blue-700 text-slate-600"
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Attendance Tracker</span>
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                      Live
-                    </span>
-                  </button>
+                    <span>Site home</span>
+                  </Link>
 
                   <Link href="/dashboard/profile" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
                     <User className="w-3.5 h-3.5 text-slate-400" />
-                    <span>My Profile &amp; Settings</span>
+                    <span>My Profile & Settings</span>
                   </Link>
 
                   <div>
@@ -1367,42 +1343,6 @@ function DashboardContent() {
           </aside>
 
           <section className="lg:col-span-9 space-y-5 order-1 lg:order-2">
-            {/* Top View Selector: Timeline / Attendance Tracker */}
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl w-full sm:w-auto self-start shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setDashboardView("overview")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-                  dashboardView === "overview"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5 text-blue-600" />
-                <span>My Courses &amp; Timeline</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDashboardView("attendance")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-                  dashboardView === "attendance"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
-                <span>Attendance Tracker</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                  Live
-                </span>
-              </button>
-            </div>
-
-            {dashboardView === "attendance" ? (
-              <StudentAttendanceTracker studentId={user?.id} />
-            ) : (
-              <>
             <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -1819,8 +1759,6 @@ function DashboardContent() {
                 </div>
               )}
             </div>
-            </>
-            )}
           </section>
         </div>
       </main>

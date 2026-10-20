@@ -75,7 +75,6 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Footer } from "@/components/layout/Footer";
 import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
-import { TutorAttendanceTracker } from "@/components/attendance/TutorAttendanceTracker";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
   getUserBrowserTimezone,
@@ -217,7 +216,7 @@ function TutorDashboardContent() {
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
 
   const [centerTab, setCenterTab] = useState<
-    "courses" | "classes" | "attendance" | "history" | "students" | "trials" | "earnings" | "profile" | "availability"
+    "courses" | "classes" | "history" | "students" | "trials" | "earnings" | "profile" | "availability"
   >("courses");
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState<"ALL" | "CLASSES" | "STUDENTS">("ALL");
@@ -231,7 +230,6 @@ function TutorDashboardContent() {
     if (
       tab === "courses" ||
       tab === "classes" ||
-      tab === "attendance" ||
       tab === "history" ||
       tab === "students" ||
       tab === "trials" ||
@@ -1756,7 +1754,6 @@ function TutorDashboardContent() {
           {[
             { id: "courses", label: "Individual Classes", icon: BookOpen, count: courses.length },
             { id: "classes", label: "Live Classes", icon: Video, count: events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length },
-            { id: "attendance", label: "Attendance", icon: GraduationCap },
             { id: "history", label: "History", icon: History, count: completedSessions.length },
             { id: "students", label: "Students", icon: Users, count: students.length },
             { id: "trials", label: "Trials", icon: CalendarCheck, count: trials.length },
@@ -1835,23 +1832,6 @@ function TutorDashboardContent() {
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
                     {events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setCenterTab("attendance")}
-                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
-                    centerTab === "attendance"
-                      ? "bg-blue-50 text-blue-700 font-bold"
-                      : "text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Attendance Tracker</span>
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                    Live
                   </span>
                 </button>
 
@@ -2649,12 +2629,6 @@ function TutorDashboardContent() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {centerTab === "attendance" && (
-              <div className="animate-in fade-in duration-300">
-                <TutorAttendanceTracker tutorId={tutor?.id} />
               </div>
             )}
 

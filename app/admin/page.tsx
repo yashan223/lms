@@ -78,6 +78,7 @@ import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
 import { UserProfileHistoryModal } from "@/components/admin/UserProfileHistoryModal";
+import { AdminAttendanceTracker } from "@/components/attendance/AdminAttendanceTracker";
 import {
   getRegionalTimezone,
   DEFAULT_TIMEZONE,
@@ -165,7 +166,7 @@ const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: s
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
+    "overview" | "live_classes" | "attendance" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -226,7 +227,7 @@ export default function AdminDashboardPage() {
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
   const [isSubmittingReject, setIsSubmittingReject] = useState(false);
 
-  const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED" | "RECORDINGS">("ALL");
+  const [liveClassFilter, setLiveClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED" | "RECORDINGS" | "ATTENDANCE">("ALL");
   const [isDeletingRecording, setIsDeletingRecording] = useState<string | null>(null);
   const [liveClassSearch, setLiveClassSearch] = useState("");
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
@@ -2230,6 +2231,7 @@ export default function AdminDashboardPage() {
     { id: "overview", label: "Executive Overview", icon: Layers },
     { id: "approvals", label: "Tutor Approvals", icon: ShieldCheck },
     { id: "live_classes", label: "Live Classes & Meets", icon: Video },
+    { id: "attendance", label: "Attendance Tracker", icon: Users },
     { id: "users", label: "User Management", icon: Users },
     { id: "courses", label: "Class Management", icon: BookOpen },
     { id: "subjects", label: "Academic Subjects", icon: GraduationCap },
@@ -2714,6 +2716,7 @@ export default function AdminDashboardPage() {
                       { id: "SCHEDULED", label: `Scheduled (${upcomingCount})`, icon: Calendar },
                       { id: "COMPLETED", label: `Completed (${completedCount})`, icon: CheckCircle2 },
                       { id: "RECORDINGS", label: `BBB Recordings (${allRecordings.length})`, icon: Play },
+                      { id: "ATTENDANCE", label: `Attendance Tracker`, icon: Users },
                     ].map((tab) => {
                       const TabIcon = tab.icon;
                       return (
@@ -2845,11 +2848,15 @@ export default function AdminDashboardPage() {
                     <h3 className="font-bold text-sm text-slate-900">
                       {liveClassFilter === "RECORDINGS"
                         ? "BigBlueButton Playback Recordings Directory"
+                        : liveClassFilter === "ATTENDANCE"
+                        ? "Online Class Attendance Tracker"
                         : "Academic Class Schedule & BigBlueButton Directory"}
                     </h3>
                     <p className="text-xs text-slate-500">
                       {liveClassFilter === "RECORDINGS"
                         ? `Showing ${filteredRecordings.length} BigBlueButton recordings (Classes & 1-on-1 Sessions)`
+                        : liveClassFilter === "ATTENDANCE"
+                        ? "Real-time attendance tracking for students and tutors across all online sessions"
                         : `Showing ${liveClassesList.length} classes matching current filter`}
                     </p>
                   </div>
@@ -2861,7 +2868,11 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
 
-                {liveClassFilter === "RECORDINGS" ? (
+                {liveClassFilter === "ATTENDANCE" ? (
+                  <div className="p-4 sm:p-5">
+                    <AdminAttendanceTracker />
+                  </div>
+                ) : liveClassFilter === "RECORDINGS" ? (
                   filteredRecordings.length > 0 ? (
                     <div className="divide-y divide-slate-100">
                       {filteredRecordings.map((rec) => {
@@ -3244,6 +3255,12 @@ export default function AdminDashboardPage() {
                 )}
               </div>
 
+            </div>
+          )}
+
+          {activeTab === "attendance" && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <AdminAttendanceTracker />
             </div>
           )}
 

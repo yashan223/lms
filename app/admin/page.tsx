@@ -78,7 +78,6 @@ import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
 import { UserProfileHistoryModal } from "@/components/admin/UserProfileHistoryModal";
-import { AdminAttendanceTracker } from "@/components/attendance/AdminAttendanceTracker";
 import {
   getRegionalTimezone,
   DEFAULT_TIMEZONE,
@@ -166,7 +165,7 @@ const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: s
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log" | "attendance"
+    "overview" | "live_classes" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -2237,7 +2236,6 @@ export default function AdminDashboardPage() {
     { id: "chats", label: "Chat Conversations", icon: MessageSquareLock },
     { id: "finances", label: "Class Purchases & Revenue", icon: DollarSign },
     { id: "pricing", label: "Pricing & Token Bundles", icon: Coins },
-    { id: "attendance", label: "Attendance Registry", icon: CheckCircle2 },
     { id: "audit_log", label: "Audit Log & History", icon: FileText },
   ];
 
@@ -6098,11 +6096,6 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
               </div>
-            </div>
-          )}
-          {activeTab === "attendance" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <AdminAttendanceTracker />
             </div>
           )}
         </main>

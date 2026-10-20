@@ -687,6 +687,145 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Student unenrolled successfully." });
     }
 
+    if (action === "get_user_full_history") {
+      const { userId } = body;
+      if (!userId) {
+        return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          tokenWallet: {
+            include: {
+              transactions: {
+                orderBy: { createdAt: "desc" },
+              },
+            },
+          },
+          payments: {
+            orderBy: { createdAt: "desc" },
+          },
+          enrollments: {
+            include: {
+              course: {
+                include: {
+                  tutor: { select: { id: true, name: true, email: true, avatar: true } },
+                  modules: {
+                    select: {
+                      id: true,
+                      title: true,
+                      lessons: { select: { id: true, title: true } },
+                    },
+                  },
+                  events: {
+                    orderBy: { dueDate: "desc" },
+                  },
+                },
+              },
+            },
+            orderBy: { enrolledAt: "desc" },
+          },
+          progress: {
+            include: {
+              lesson: { select: { id: true, title: true, moduleId: true } },
+            },
+            orderBy: { updatedAt: "desc" },
+          },
+          certificates: {
+            include: {
+              course: { select: { id: true, title: true, subjectCode: true } },
+            },
+            orderBy: { issuedAt: "desc" },
+          },
+          badges: {
+            orderBy: { awardedAt: "desc" },
+          },
+          reviews: {
+            include: {
+              course: { select: { id: true, title: true, slug: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          events: {
+            include: {
+              course: { select: { id: true, title: true, slug: true, subjectCode: true } },
+            },
+            orderBy: { dueDate: "desc" },
+          },
+          studentTrials: {
+            include: {
+              tutor: { select: { id: true, name: true, email: true, avatar: true } },
+              course: { select: { id: true, title: true, subjectCode: true } },
+            },
+            orderBy: { preferredDate: "desc" },
+          },
+          tutorTrials: {
+            include: {
+              student: { select: { id: true, name: true, email: true, avatar: true, phone: true } },
+              course: { select: { id: true, title: true, subjectCode: true } },
+            },
+            orderBy: { preferredDate: "desc" },
+          },
+          createdCourses: {
+            include: {
+              modules: {
+                include: { lessons: true },
+                orderBy: { position: "asc" },
+              },
+              materials: true,
+              enrollments: {
+                include: {
+                  user: { select: { id: true, name: true, email: true, avatar: true, phone: true } },
+                },
+                orderBy: { enrolledAt: "desc" },
+              },
+              events: {
+                orderBy: { dueDate: "desc" },
+              },
+              reviews: {
+                include: {
+                  user: { select: { id: true, name: true, email: true, avatar: true } },
+                },
+                orderBy: { createdAt: "desc" },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          tutorAvailabilities: {
+            orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+          },
+          studentAvailabilities: {
+            orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+          },
+        },
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: "User not found." }, { status: 404 });
+      }
+
+      const taughtEvents = await prisma.event.findMany({
+        where: {
+          OR: [
+            { requestedBy: user.id },
+            { course: { tutorId: user.id } },
+          ],
+        },
+        include: {
+          course: { select: { id: true, title: true, slug: true, subjectCode: true } },
+          user: { select: { id: true, name: true, email: true, avatar: true } },
+        },
+        orderBy: { dueDate: "desc" },
+      });
+
+      return NextResponse.json({
+        success: true,
+        user,
+        taughtEvents,
+      });
+    }
+
     if (action === "create_course") {
       const { title, slug, subtitle, description, category, subjectCode, price, olPrice, tokens, tutorId, instructorId, level, status, thumbnail, featured } = body;
 

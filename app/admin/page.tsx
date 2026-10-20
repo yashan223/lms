@@ -77,6 +77,7 @@ import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
 import { formatStudentPrice } from "@/lib/currency";
 import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import { UserProfileHistoryModal } from "@/components/admin/UserProfileHistoryModal";
 import {
   getRegionalTimezone,
   DEFAULT_TIMEZONE,
@@ -230,6 +231,13 @@ export default function AdminDashboardPage() {
   const [isEditUserFullScreen, setIsEditUserFullScreen] = useState(true);
   const [showEnrollUserModal, setShowEnrollUserModal] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
+  const [selectedUserForProfile, setSelectedUserForProfile] = useState<any | null>(null);
+  const [showUserProfileModal, setShowUserProfileModal] = useState(false);
+
+  const handleOpenUserProfile = (user: any) => {
+    setSelectedUserForProfile(user);
+    setShowUserProfileModal(true);
+  };
 
   const [formUserName, setFormUserName] = useState("");
   const [formUserEmail, setFormUserEmail] = useState("");
@@ -2438,14 +2446,26 @@ export default function AdminDashboardPage() {
                         <th className="py-3 px-4">Academic Title</th>
                         <th className="py-3 px-4">Enrolled Classes</th>
                         <th className="py-3 px-4">Registered Date</th>
+                        <th className="py-3 px-4 text-right">Profile</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {allUsersList.slice(0, 5).map((u) => (
-                        <tr key={u.id} className="hover:bg-blue-50/30">
+                        <tr key={u.id} className="hover:bg-blue-50/40 transition-colors">
                           <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900">{u.name}</div>
-                            <div className="text-[11px] text-slate-400">{u.email}</div>
+                            <div
+                              onClick={() => handleOpenUserProfile(u)}
+                              className="cursor-pointer group flex items-center gap-2"
+                              title="Click to view full profile & complete history"
+                            >
+                              <div>
+                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                                  <span>{u.name}</span>
+                                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
+                                </div>
+                                <div className="text-[11px] text-slate-400">{u.email}</div>
+                              </div>
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
@@ -2455,6 +2475,16 @@ export default function AdminDashboardPage() {
                           <td className="py-3 px-4 text-slate-700">{u.headline || "Enrolled Student"}</td>
                           <td className="py-3 px-4 font-semibold text-slate-800">{u.enrollments?.length || 0} Classes</td>
                           <td className="py-3 px-4 text-slate-400">{new Date(u.createdAt).toLocaleDateString("en-US")}</td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => handleOpenUserProfile(u)}
+                              className="h-7 px-2.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-200 font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                              title="Inspect User Profile & History"
+                            >
+                              <Eye className="w-3 h-3 text-blue-600" />
+                              <span>View</span>
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -3013,13 +3043,20 @@ export default function AdminDashboardPage() {
                       {filteredUsers.map((u) => (
                         <tr key={u.id} className="hover:bg-blue-50/40 transition-colors">
                           <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-8 h-8 ring-1 ring-slate-200">
+                            <div
+                              onClick={() => handleOpenUserProfile(u)}
+                              className="flex items-center gap-3 cursor-pointer group"
+                              title="Click to view full profile & complete history"
+                            >
+                              <Avatar className="w-8 h-8 ring-1 ring-slate-200 group-hover:ring-blue-400 group-hover:shadow-xs transition-all">
                                 <AvatarImage src={u.avatar || undefined} />
                                 <AvatarFallback>{u.name.charAt(0)}</AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className="font-bold text-slate-900">{u.name}</div>
+                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                                  <span>{u.name}</span>
+                                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
+                                </div>
                                 <div className="text-[11px] text-slate-500">{u.email}</div>
 
                                 {u.phone && (
@@ -3102,6 +3139,14 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenUserProfile(u)}
+                                className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
+                                title="View Full Profile & Complete History"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                <span>Profile</span>
+                              </button>
                               {u.role === "STUDENT" && (
                                 <>
                                   <button
@@ -3467,6 +3512,15 @@ export default function AdminDashboardPage() {
                             </div>
 
                             <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                              <button
+                                onClick={() => handleOpenUserProfile(tutor)}
+                                className="h-8 px-2.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                                title="View Tutor Full Profile & Complete History"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Profile</span>
+                              </button>
+
                               <Link
                                 href="/admin/courses/new"
                                 className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 h-8 rounded-xl cursor-pointer transition-colors shadow-2xs"
@@ -4284,6 +4338,23 @@ export default function AdminDashboardPage() {
 
                             <td className="py-3.5 px-4 text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    const studentUser = allUsersList.find((u) => u.id === tx.userId) || {
+                                      id: tx.userId,
+                                      name: tx.studentName,
+                                      email: tx.studentEmail,
+                                      phone: tx.studentPhone,
+                                      role: "STUDENT",
+                                    };
+                                    handleOpenUserProfile(studentUser);
+                                  }}
+                                  className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
+                                  title="View Student Full Profile & Complete History"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+                                  <span>Profile</span>
+                                </button>
                                 <Link
                                   href={`/classes/${tx.courseSlug}`}
                                   target="_blank"
@@ -8655,6 +8726,31 @@ export default function AdminDashboardPage() {
         title={confirmModalData.title}
         description={confirmModalData.description}
         variant={confirmModalData.variant}
+      />
+
+      <UserProfileHistoryModal
+        isOpen={showUserProfileModal}
+        onClose={() => {
+          setShowUserProfileModal(false);
+          setSelectedUserForProfile(null);
+        }}
+        user={selectedUserForProfile}
+        onGrantTokens={(u) => {
+          setShowUserProfileModal(false);
+          handleOpenGrantTokens(u);
+        }}
+        onEnrollUser={(u) => {
+          setShowUserProfileModal(false);
+          handleOpenEnrollUser(u);
+        }}
+        onManageTrials={(u) => {
+          setShowUserProfileModal(false);
+          handleOpenStudentTrials(u);
+        }}
+        onEditUser={(u) => {
+          setShowUserProfileModal(false);
+          handleOpenEditUser(u);
+        }}
       />
     </div>
   );

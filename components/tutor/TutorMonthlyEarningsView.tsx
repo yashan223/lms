@@ -556,9 +556,14 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
             </button>
           </div>
 
-          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
-            <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <span>Earnings credit instantly when class is marked "Done / Completed"</span>
+          <div className="text-[11px] text-slate-500 flex items-center gap-2 font-medium flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span>Earnings credit for completed enrolled 1-hour classes.</span>
+            </span>
+            <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[10px] font-semibold">
+              Free 30-min trials are non-billable (0 tokens)
+            </span>
           </div>
         </div>
 
@@ -572,7 +577,7 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
                 </div>
                 <h4 className="text-sm font-bold text-slate-700">No Class Sessions Logged for {current?.monthLabel || "This Month"}</h4>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  When you complete a scheduled 1-hour class session, 1 token is subtracted from the student and the converted local currency (750 LKR for IGCSE, 850 LKR for IAL/IAS) will appear here instantly.
+                  When you complete a scheduled 1-hour enrolled class session, 1 token is subtracted from the student and the converted local currency (750 LKR for IGCSE, 850 LKR for IAL/IAS) will appear here instantly. (30-Minute trial sessions are free consultations with zero token deduction and zero tutor payout).
                 </p>
               </div>
             ) : (

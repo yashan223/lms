@@ -469,6 +469,61 @@ export async function completeClassAndProcessEcosystem(
     },
   });
 
+  // Check if this event represents a 30-Minute Free Trial session
+  const isTrialSession = Boolean(
+    event.title?.toLowerCase().includes("trial") ||
+    event.description?.toLowerCase().includes("trial")
+  );
+
+  let linkedTrial: any = null;
+  if (isTrialSession || event.description) {
+    const trialIdMatch = event.description?.match(/Trial ID:\s*([a-zA-Z0-9_-]+)/i);
+    const candidateTrialId = trialIdMatch ? trialIdMatch[1] : null;
+    if (candidateTrialId) {
+      linkedTrial = await prisma.trialRequest.findUnique({
+        where: { id: candidateTrialId },
+      });
+    } else {
+      linkedTrial = await prisma.trialRequest.findFirst({
+        where: {
+          OR: [
+            ...(event.meetingSpaceId ? [{ meetingSpaceId: event.meetingSpaceId }] : []),
+            ...(event.meetingLink ? [{ meetingLink: event.meetingLink }] : []),
+            ...(event.userId ? [{ studentId: event.userId }] : []),
+          ],
+        },
+      });
+    }
+  }
+
+  // 🎯 Hard business rule:
+  // 30-Minute Trial sessions are 100% free for students (0 tokens deducted).
+  // Tutors receive NO payment or income for trial sessions (only paid for completed enrolled 1-hour classes).
+  if (isTrialSession || linkedTrial) {
+    if (linkedTrial && linkedTrial.status !== "COMPLETED") {
+      await prisma.trialRequest.update({
+        where: { id: linkedTrial.id },
+        data: {
+          status: "COMPLETED",
+          actualEndTime: opts?.manualEndTime || now,
+          ...(opts?.manualStartTime ? { actualStartTime: opts.manualStartTime } : {}),
+          ...(opts?.recordingUrl ? { recordingUrl: opts.recordingUrl, recordingStatus: "AVAILABLE" } : {}),
+        },
+      });
+      broadcastLMSEvent("TRIALS_CHANGED", { trialId: linkedTrial.id, completed: true });
+    }
+
+    broadcastLMSEvent("EVENTS_CHANGED", { eventId: event.id, ended: true });
+    broadcastLMSEvent("USERS_CHANGED");
+
+    return {
+      success: true,
+      tokenDeducted: false,
+      earningsCredited: false,
+      message: "30-Minute Free Trial concluded. No tokens deducted and no tutor payment credited (trials are free).",
+    };
+  }
+
   // If tokens already deducted for this event, do not double-deduct
   if (event.tokenDeducted) {
     return {
@@ -672,8 +727,13 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
     orderBy: { createdAt: "desc" },
   });
 
-  const igcseRecords = currentRecords.filter((r) => r.tier === "IGCSE");
-  const ialRecords = currentRecords.filter((r) => r.tier !== "IGCSE");
+  // Enrolled 1-hour classes only (filter out any trial sessions from billable earnings)
+  const billableRecords = currentRecords.filter(
+    (r) => !r.description?.toLowerCase().includes("trial")
+  );
+
+  const igcseRecords = billableRecords.filter((r) => r.tier === "IGCSE");
+  const ialRecords = billableRecords.filter((r) => r.tier !== "IGCSE");
 
   const igcseHours = igcseRecords.reduce((acc, r) => acc + r.tokenCount, 0);
   const igcseEarningsLkr = igcseRecords.reduce((acc, r) => acc + r.amountLkr, 0);
@@ -693,11 +753,15 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
       tutorId,
       monthKey: { not: currentMonthKey },
     },
-    select: { monthKey: true, amountLkr: true, tokenCount: true, tier: true },
+    select: { monthKey: true, amountLkr: true, tokenCount: true, tier: true, description: true },
   });
 
+  const billablePastMonthRecords = pastMonthRecords.filter(
+    (r) => !r.description?.toLowerCase().includes("trial")
+  );
+
   const pastMonthsMap = new Map<string, { totalAmount: number; totalHours: number; igcseHours: number; ialHours: number }>();
-  for (const r of pastMonthRecords) {
+  for (const r of billablePastMonthRecords) {
     const cur = pastMonthsMap.get(r.monthKey) || { totalAmount: 0, totalHours: 0, igcseHours: 0, ialHours: 0 };
     cur.totalAmount += r.amountLkr;
     cur.totalHours += r.tokenCount;
@@ -847,7 +911,9 @@ export async function getAdminTutorPayoutOverview(): Promise<{
       primaryRate = paySettings.ialRateLkr;
     }
 
-    const earningsRecords = t.tutorEarnings || [];
+    const earningsRecords = (t.tutorEarnings || []).filter(
+      (r: any) => !r.description?.toLowerCase().includes("trial")
+    );
     const igcseHours = earningsRecords
       .filter((r: { tier: string }) => r.tier === "IGCSE")
       .reduce((sum: number, r: { tokenCount: number }) => sum + r.tokenCount, 0);

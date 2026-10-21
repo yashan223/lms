@@ -223,7 +223,7 @@ function TutorDashboardContent() {
     "courses" | "classes" | "history" | "students" | "trials" | "earnings" | "profile" | "availability" | "enrollments"
   >("courses");
   const [historySearch, setHistorySearch] = useState("");
-  const [historyFilter, setHistoryFilter] = useState<"ALL" | "CLASSES" | "STUDENTS">("ALL");
+  const [historyFilter, setHistoryFilter] = useState<"ALL" | "ENROLLED" | "TRIALS" | "CLASSES" | "STUDENTS">("ALL");
   const [historySubTab, setHistorySubTab] = useState<"earnings" | "logs">("earnings");
   const [monthlyEarnings, setMonthlyEarnings] = useState<any>(null);
   const [pendingEnrollmentsCount, setPendingEnrollmentsCount] = useState(0);
@@ -282,9 +282,11 @@ function TutorDashboardContent() {
   }, [totalEarnings]);
 
   const totalTeachingMinutes = useMemo(() => {
-
-    const classMins = events.length * 90;
-    const trialMins = trials.length * 30;
+    // 1-Hour enrolled classes = 60 mins each, 30-min trial sessions = 30 mins each
+    const enrolledClasses = events.filter((e) => !e.title?.toLowerCase().includes("trial") && !e.description?.toLowerCase().includes("trial"));
+    const trialEvents = events.filter((e) => e.title?.toLowerCase().includes("trial") || e.description?.toLowerCase().includes("trial"));
+    const classMins = enrolledClasses.length * 60;
+    const trialMins = (trialEvents.length + trials.length) * 30;
     return classMins + trialMins;
   }, [events, trials]);
 
@@ -293,8 +295,14 @@ function TutorDashboardContent() {
   }, [totalTeachingMinutes]);
 
   const completedTeachingHours = useMemo(() => {
-    const completedClasses = events.filter((e) => e.status === "COMPLETED" || Boolean(e.endedAt)).length;
-    return ((completedClasses * 90) / 60).toFixed(1);
+    // Hard rule: Tutors are only paid for completed enrolled 1-hour classes.
+    // 30-min trial sessions are free (non-billable).
+    const completedPaidClasses = events.filter((e) => 
+      (e.status === "COMPLETED" || Boolean(e.endedAt)) &&
+      !e.title?.toLowerCase().includes("trial") &&
+      !e.description?.toLowerCase().includes("trial")
+    ).length;
+    return completedPaidClasses.toFixed(1);
   }, [events]);
 
   const completedSessions = useMemo(() => {
@@ -303,6 +311,13 @@ function TutorDashboardContent() {
 
   const filteredHistory = useMemo(() => {
     return completedSessions.filter((ev) => {
+      const isTrial = Boolean(
+        ev.title?.toLowerCase().includes("trial") ||
+        ev.description?.toLowerCase().includes("trial")
+      );
+
+      if (historyFilter === "ENROLLED" && isTrial) return false;
+      if (historyFilter === "TRIALS" && !isTrial) return false;
       if (historyFilter === "CLASSES" && !ev.courseId) return false;
       if (historyFilter === "STUDENTS" && !ev.userId) return false;
 
@@ -2776,7 +2791,7 @@ function TutorDashboardContent() {
                     </div>
 
                     <div className="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs">
-                      {(["ALL", "CLASSES", "STUDENTS"] as const).map((f) => (
+                      {(["ALL", "ENROLLED", "TRIALS", "STUDENTS"] as const).map((f) => (
                         <button
                           key={f}
                           onClick={() => setHistoryFilter(f)}
@@ -2787,25 +2802,38 @@ function TutorDashboardContent() {
                           }`}
                         >
                           {f === "ALL" && `All Ended (${completedSessions.length})`}
-                          {f === "CLASSES" && `Classes (${completedSessions.filter((e) => Boolean(e.courseId)).length})`}
+                          {f === "ENROLLED" && `1-Hr Classes (${completedSessions.filter((e) => !e.title?.toLowerCase().includes("trial") && !e.description?.toLowerCase().includes("trial")).length})`}
+                          {f === "TRIALS" && `30-Min Trials (${completedSessions.filter((e) => e.title?.toLowerCase().includes("trial") || e.description?.toLowerCase().includes("trial")).length})`}
                           {f === "STUDENTS" && `1-on-1 (${completedSessions.filter((e) => Boolean(e.userId)).length})`}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Sessions Completed</span>
                       <span className="text-lg font-black text-slate-900">{completedSessions.length}</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Classes & Trials combined</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100">
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">Logged Teaching Hours</span>
-                      <span className="text-lg font-black text-blue-950">{completedTeachingHours} hrs</span>
+                    <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/80">
+                      <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Paid Enrolled Classes</span>
+                      <span className="text-lg font-black text-blue-950">
+                        {completedSessions.filter((e) => !e.title?.toLowerCase().includes("trial") && !e.description?.toLowerCase().includes("trial")).length}
+                      </span>
+                      <span className="text-[10px] text-blue-600 font-semibold block mt-0.5">1-Hour Paid Sessions</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-blue-100/50 border border-blue-200">
-                      <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Completed 1-on-1 Sessions</span>
-                      <span className="text-lg font-black text-blue-950">{completedSessions.filter((e) => Boolean(e.userId)).length}</span>
+                    <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/80">
+                      <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">30-Min Free Trials</span>
+                      <span className="text-lg font-black text-amber-950">
+                        {completedSessions.filter((e) => e.title?.toLowerCase().includes("trial") || e.description?.toLowerCase().includes("trial")).length}
+                      </span>
+                      <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">Free (0 Tokens • Unpaid)</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
+                      <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">Billable Teaching Hours</span>
+                      <span className="text-lg font-black text-emerald-950">{completedTeachingHours} hrs</span>
+                      <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">Tutor Income Eligible</span>
                     </div>
                   </div>
 
@@ -2830,45 +2858,92 @@ function TutorDashboardContent() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {filteredHistory.map((ev) => (
-                        <div
-                          key={ev.id}
-                          className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-200 transition-all space-y-3.5 shadow-2xs"
-                        >
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-bold text-sm sm:text-base text-slate-900 leading-snug break-words">
-                                {ev.title}
-                              </h4>
-                              <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
-                                {ev.classCode || formatClassId(ev)}
-                              </span>
-                              <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold shrink-0">
-                                ✓ Completed
-                              </Badge>
-                              {ev.course?.subjectCode && (
-                                <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold shrink-0">
-                                  {ev.course.subjectCode}
+                      {filteredHistory.map((ev) => {
+                        const isTrial = Boolean(
+                          ev.title?.toLowerCase().includes("trial") ||
+                          ev.description?.toLowerCase().includes("trial")
+                        );
+
+                        return (
+                          <div
+                            key={ev.id}
+                            className={`p-4 sm:p-5 rounded-2xl border transition-all space-y-3.5 shadow-2xs ${
+                              isTrial
+                                ? "border-amber-200/80 bg-gradient-to-br from-amber-50/20 via-white to-white hover:border-amber-300"
+                                : "border-slate-200 bg-white hover:border-blue-200"
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-bold text-sm sm:text-base text-slate-900 leading-snug break-words">
+                                  {ev.title}
+                                </h4>
+                                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
+                                  {ev.classCode || formatClassId(ev)}
+                                </span>
+
+                                {isTrial ? (
+                                  <>
+                                    <Badge className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold shrink-0">
+                                      🎯 30-Min Free Trial
+                                    </Badge>
+                                    <Badge className="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-medium shrink-0">
+                                      Free Session (0 Tokens)
+                                    </Badge>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Badge className="bg-blue-100 text-blue-900 border border-blue-300 text-[10px] font-bold shrink-0">
+                                      📚 Enrolled 1-Hour Class
+                                    </Badge>
+                                    <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold shrink-0">
+                                      💰 Paid Class
+                                    </Badge>
+                                  </>
+                                )}
+
+                                <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold shrink-0">
+                                  ✓ Completed
                                 </Badge>
-                              )}
+                                {ev.course?.subjectCode && (
+                                  <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold shrink-0">
+                                    {ev.course.subjectCode}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-slate-500 flex items-center gap-4 flex-wrap">
+                                <span className="flex items-center gap-1.5 text-slate-600 font-medium">
+                                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>Scheduled:</span>
+                                  <strong className="text-slate-800 font-mono">
+                                    {new Date(ev.dueDate).toLocaleDateString("en-US", {
+                                      weekday: "short",
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </strong>
+                                </span>
+
+                                <span className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>Session Type:</span>
+                                  <strong className={`font-semibold ${isTrial ? "text-amber-800" : "text-blue-800"}`}>
+                                    {isTrial ? "30 Minutes (Free Consultation)" : "60 Minutes (1-Hour Class)"}
+                                  </strong>
+                                </span>
+
+                                <span className="flex items-center gap-1.5">
+                                  <Coins className={`w-3.5 h-3.5 ${isTrial ? "text-slate-400" : "text-emerald-600"} shrink-0`} />
+                                  <span>Tutor Income:</span>
+                                  <strong className={`font-bold ${isTrial ? "text-slate-500 font-mono" : "text-emerald-700"}`}>
+                                    {isTrial ? "Rs. 0 (Free Trial)" : "Credited to Monthly Ledger"}
+                                  </strong>
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                              <span className="flex items-center gap-1.5 text-slate-600 font-medium">
-                                <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                <span>Scheduled:</span>
-                                <strong className="text-slate-800 font-mono">
-                                  {new Date(ev.dueDate).toLocaleDateString("en-US", {
-                                    weekday: "short",
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </strong>
-                              </span>
-                            </div>
-                          </div>
 
                           <div className="flex items-center gap-2 flex-wrap pt-1">
                             {ev.recordingUrl && (
@@ -2959,6 +3034,15 @@ function TutorDashboardContent() {
                               <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">
                                 {formatSessionDuration(ev.startedAt, ev.endedAt)}
                               </span>
+                              {isTrial ? (
+                                <span className="text-[10px] text-amber-800 font-semibold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                  30-Min Free Trial
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-blue-800 font-semibold bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+                                  1-Hour Class
+                                </span>
+                              )}
                             </div>
 
                             {ev.actualStartTime && ev.actualEndTime && (
@@ -2975,7 +3059,8 @@ function TutorDashboardContent() {
                             )}
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   )}
                 </div>

@@ -1974,9 +1974,8 @@ function TutorDashboardContent() {
                     <Clock className="w-3.5 h-3.5 text-blue-600" />
                     <span>Availability &amp; Timeslots</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center gap-1">
-                    <span>New Page</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold">
+                    New Page
                   </span>
                 </button>
 

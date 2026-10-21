@@ -849,12 +849,6 @@ export function TrialRequestModal({
                           <span>1st Choice (Primary) <span className="text-red-500">*</span></span>
                         </span>
                       </div>
-                      {preferredDate1 && (
-                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate inline-flex items-center gap-1.5">
-                          <span>{formatTimeInTimezone(new Date(preferredDate1), selectedTimezone, { includeAbbr: false })}</span>
-                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
-                        </div>
-                      )}
                       <input
                         type="datetime-local"
                         required
@@ -877,12 +871,6 @@ export function TrialRequestModal({
                           <span>2nd Choice (Alternative) <span className="text-red-500">*</span></span>
                         </span>
                       </div>
-                      {preferredDate2 && (
-                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate inline-flex items-center gap-1.5">
-                          <span>{formatTimeInTimezone(new Date(preferredDate2), selectedTimezone, { includeAbbr: false })}</span>
-                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
-                        </div>
-                      )}
                       <input
                         type="datetime-local"
                         required
@@ -905,12 +893,6 @@ export function TrialRequestModal({
                           <span>3rd Choice (Alternative) <span className="text-red-500">*</span></span>
                         </span>
                       </div>
-                      {preferredDate3 && (
-                        <div className="text-[11px] font-bold text-blue-700 font-mono mb-1 truncate inline-flex items-center gap-1.5">
-                          <span>{formatTimeInTimezone(new Date(preferredDate3), selectedTimezone, { includeAbbr: false })}</span>
-                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
-                        </div>
-                      )}
                       <input
                         type="datetime-local"
                         required

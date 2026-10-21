@@ -41,10 +41,9 @@ export async function GET(request: NextRequest) {
       tutor.tutorId = await ensureTutorIdForUser(tutor.id);
     }
 
-    const courseWhere =
-      tutor.role === Role.ADMIN ? {} : { tutorId: tutor.id };
+    const courseWhere = { tutorId: tutor.id };
 
-    let courses: any[] = await prisma.course.findMany({
+    const courses: any[] = await prisma.course.findMany({
       where: courseWhere,
       include: {
         modules: {
@@ -70,34 +69,6 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: "desc" },
     });
-
-    if (courses.length === 0) {
-      courses = await prisma.course.findMany({
-        include: {
-          modules: {
-            include: { lessons: true },
-            orderBy: { position: "asc" },
-          },
-          materials: {
-            orderBy: { createdAt: "desc" },
-          },
-          enrollments: {
-            include: {
-              user: true,
-            },
-            orderBy: { enrolledAt: "desc" },
-          },
-          events: {
-            orderBy: { dueDate: "desc" },
-          },
-          reviews: {
-            include: { user: true },
-            orderBy: { createdAt: "desc" },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-    }
 
     const courseIds = courses.map((c) => c.id);
 
@@ -143,17 +114,13 @@ export async function GET(request: NextRequest) {
 
     const students = Array.from(studentMap.values());
 
-    const eventsWhere =
-      tutor.role === Role.ADMIN
-        ? {}
-        : {
-            OR: [
-              { userId: tutor.id },
-              { requestedBy: tutor.id },
-              { courseId: { in: courseIds } },
-              { course: { tutorId: tutor.id } },
-            ],
-          };
+    const eventsWhere = {
+      OR: [
+        { requestedBy: tutor.id },
+        { courseId: { in: courseIds } },
+        { course: { tutorId: tutor.id } },
+      ],
+    };
 
     const events = await prisma.event.findMany({
       where: eventsWhere,
@@ -166,15 +133,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const trialsWhere =
-      tutor.role === Role.ADMIN
-        ? {}
-        : {
-            OR: [
-              { tutorId: tutor.id },
-              { courseId: { in: courseIds } },
-            ],
-          };
+    const trialsWhere = {
+      OR: [
+        { tutorId: tutor.id },
+        { courseId: { in: courseIds } },
+      ],
+    };
 
     const trials = await prisma.trialRequest.findMany({
       where: trialsWhere,

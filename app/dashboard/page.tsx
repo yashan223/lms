@@ -2073,13 +2073,13 @@ function DashboardContent() {
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="max-h-[340px] overflow-y-auto overscroll-contain pr-0.5 space-y-2">
                 {upcomingEvents.length === 0 ? (
                   <p className="text-xs text-slate-400 italic text-center py-2">
                     No scheduled sessions.
                   </p>
                 ) : (
-                  upcomingEvents.slice(0, 4).map((ev) => (
+                  upcomingEvents.map((ev) => (
                     <div
                       key={ev.id}
                       className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs space-y-1"

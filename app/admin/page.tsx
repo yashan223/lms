@@ -6206,9 +6206,12 @@ export default function AdminDashboardPage() {
                                 href={cls.meetingLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline font-mono truncate block"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-colors mt-0.5"
+                                title={cls.meetingLink}
                               >
-                                {cls.meetingLink}
+                                <Video className="w-3.5 h-3.5 shrink-0" />
+                                Open Classroom
+                                <ExternalLink className="w-3 h-3 shrink-0 text-blue-400" />
                               </a>
                             </div>
                           )}

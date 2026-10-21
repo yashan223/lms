@@ -2453,7 +2453,7 @@ function TutorDashboardContent() {
                       No live sessions found for this filter.
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="max-h-[600px] sm:max-h-[660px] overflow-y-auto overscroll-contain pr-1 space-y-3">
                       {filteredEvents.map((ev) => {
                         const isLive = ev.status === "LIVE";
                         const isCompleted = ev.status === "COMPLETED";
@@ -2531,9 +2531,12 @@ function TutorDashboardContent() {
                                     href={getSafeMeetingLink(ev.meetingLink)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline truncate max-w-[180px]"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[10px] font-bold transition-colors whitespace-nowrap"
+                                    title={ev.meetingLink}
                                   >
-                                    {ev.meetingLink}
+                                    <Video className="w-3 h-3 shrink-0" />
+                                    Room Link
+                                    <ExternalLink className="w-2.5 h-2.5 shrink-0 text-blue-400" />
                                   </a>
                                 )}
                                 {ev.actualStartTime && ev.actualEndTime ? (
@@ -2903,12 +2906,12 @@ function TutorDashboardContent() {
                                   href={getSafeMeetingLink(ev.meetingLink)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="h-8.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-xs font-semibold inline-flex items-center gap-1.5 transition-all whitespace-nowrap"
+                                  className="h-8.5 px-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all whitespace-nowrap"
                                   title={ev.meetingLink}
                                 >
-                                  <Video className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                                  <span className="truncate max-w-[130px] sm:max-w-[180px]">{ev.meetingLink.replace(/^https?:\/\//, "")}</span>
-                                  <ExternalLink className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <Video className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                  <span>Meeting Room</span>
+                                  <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
                                 </a>
                               )}
                               <button

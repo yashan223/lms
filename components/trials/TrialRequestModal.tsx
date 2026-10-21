@@ -21,6 +21,8 @@ import {
   Award,
   Globe,
   Lock,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -189,6 +191,7 @@ export function TrialRequestModal({
       timeDisplay: string;
       tutorTimeDisplay?: string;
       dateLabel: string;
+      date?: string;
       matchesStudent?: boolean;
       isMutualMatch?: boolean;
       isAvailable?: boolean;
@@ -202,12 +205,68 @@ export function TrialRequestModal({
     }>
   >([]);
 
+  const [availabilityDays, setAvailabilityDays] = useState<any[]>([]);
+  const [selectedDayKey, setSelectedDayKey] = useState<string>("RECOMMENDED");
+  const [showAllMatches, setShowAllMatches] = useState(false);
+
   useEffect(() => {
     const accTz = resolveAccountTimezone(currentUser?.timezone);
     if (accTz) {
       setSelectedTimezone(accTz);
     }
   }, [currentUser?.timezone]);
+
+  const handleAutoFillBest = () => {
+    const allMatches = openSlots.filter((s) => s.isMutualMatch && !s.isLocked);
+    const pool =
+      allMatches.length >= 3
+        ? allMatches
+        : [...allMatches, ...openSlots.filter((s) => s.isAvailable && !s.isLocked)];
+    if (pool[0]) setPreferredDate1(formatForDateTimeInput(pool[0].startTime, selectedTimezone));
+    if (pool[1]) setPreferredDate2(formatForDateTimeInput(pool[1].startTime, selectedTimezone));
+    if (pool[2]) setPreferredDate3(formatForDateTimeInput(pool[2].startTime, selectedTimezone));
+    setError(null);
+  };
+
+  const daysWithSlots = useMemo(() => {
+    return availabilityDays.filter((d: any) => Array.isArray(d.slots) && d.slots.some((s: any) => !s.isPast));
+  }, [availabilityDays]);
+
+  const allMutualMatches = useMemo(() => {
+    return openSlots.filter((s) => s.isMutualMatch && !s.isLocked);
+  }, [openSlots]);
+
+  const currentDisplaySlots = useMemo(() => {
+    if (selectedDayKey === "RECOMMENDED") {
+      if (allMutualMatches.length > 0) {
+        return showAllMatches ? allMutualMatches : allMutualMatches.slice(0, 8);
+      }
+      const availableOnly = openSlots.filter((s) => s.isAvailable && !s.isLocked);
+      return availableOnly.slice(0, 8);
+    }
+    const day = availabilityDays.find((d: any) => d.date === selectedDayKey);
+    if (!day || !day.slots) return [];
+    return day.slots
+      .filter((s: any) => !s.isPast)
+      .map((s: any) => {
+        const isLocked = Boolean(s.conflict);
+        const isMutual = Boolean(!isLocked && (s.matchesStudentAvailability || s.isMutualMatch));
+        const isAvail = Boolean(s.isAvailable && !isLocked);
+        return {
+          startTime: s.startTime,
+          timeDisplay: s.timeDisplay,
+          tutorTimeDisplay: s.tutorTimeDisplay,
+          dateLabel: day.dateLabel,
+          date: day.date,
+          matchesStudent: isMutual,
+          isMutualMatch: isMutual,
+          isAvailable: isAvail,
+          isLocked,
+          conflict: s.conflict || null,
+          dualTime: s.dualTime,
+        };
+      });
+  }, [selectedDayKey, allMutualMatches, showAllMatches, openSlots, availabilityDays]);
 
   const fetchTutorSlots = (
     tutorIdParam?: string,
@@ -236,6 +295,7 @@ export function TrialRequestModal({
           setTutorBaseTimezone(d.tutorTimezone);
         }
         if (d.days) {
+          setAvailabilityDays(d.days);
           const mutualMatchSlots: any[] = [];
           const availableSlots: any[] = [];
           const lockedSlots: any[] = [];
@@ -253,6 +313,7 @@ export function TrialRequestModal({
                 timeDisplay: s.timeDisplay,
                 tutorTimeDisplay: s.tutorTimeDisplay,
                 dateLabel: day.dateLabel,
+                date: day.date,
                 matchesStudent: isMutual,
                 isMutualMatch: isMutual,
                 isAvailable: isAvail,
@@ -271,11 +332,10 @@ export function TrialRequestModal({
             }
           }
 
-          // Prioritize: Mutual Match slots first, then probable tutor available slots, then locked/busy slots
           const prioritizedSlots = [
             ...mutualMatchSlots,
-            ...availableSlots.slice(0, Math.max(4, 12 - mutualMatchSlots.length)),
-            ...lockedSlots.slice(0, 3), // Show up to 3 locked slots in red
+            ...availableSlots,
+            ...lockedSlots,
           ];
 
           setOpenSlots(prioritizedSlots);
@@ -994,42 +1054,123 @@ export function TrialRequestModal({
                   </div>
 
                   {openSlots.length > 0 && (
-                    <div className="space-y-2 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="space-y-3 p-3.5 sm:p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
+                      {/* Navigation & Action Header */}
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
-                            Quick Tutor Slots (Click to fill Choice {activeSlotTarget}):
+                          <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Quick Slots</span>
                           </span>
-                          {openSlots.some((s) => s.isMutualMatch || s.matchesStudent) && (
-                            <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                              ★ Mutual Matches Available
+                          {allMutualMatches.length > 0 && (
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-emerald-600" />
+                              <span>{allMutualMatches.length} Mutual Matches</span>
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
-                          Targeting Choice {activeSlotTarget}
-                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                            Clicking fills Choice {activeSlotTarget}
+                          </span>
+                          {openSlots.some((s) => s.isAvailable && !s.isLocked) && (
+                            <button
+                              type="button"
+                              onClick={handleAutoFillBest}
+                              className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
+                              title="Automatically fills 1st, 2nd, and 3rd choices with the best mutual matching slots"
+                            >
+                              <Sparkles className="w-3 h-3 text-emerald-600" />
+                              <span>Auto-fill 3</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {openSlots.map((s, idx) => {
+
+                      {/* Day Tabs */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDayKey("RECOMMENDED")}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border ${
+                            selectedDayKey === "RECOMMENDED"
+                              ? "bg-emerald-700 text-white border-emerald-700 shadow-xs"
+                              : "bg-white text-emerald-900 hover:bg-emerald-50 border-emerald-200"
+                          }`}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Best Matches</span>
+                          {allMutualMatches.length > 0 && (
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                              selectedDayKey === "RECOMMENDED" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"
+                            }`}>
+                              {allMutualMatches.length}
+                            </span>
+                          )}
+                        </button>
+
+                        {daysWithSlots.map((d: any) => {
+                          const isSelected = selectedDayKey === d.date;
+                          const mutualCount = d.slots.filter((s: any) => !s.isPast && !s.conflict && (s.isMutualMatch || s.matchesStudentAvailability)).length;
+                          const [dayName, ...restDate] = d.dateLabel.split(",");
+                          const dateSub = restDate.join(",").trim();
+
+                          return (
+                            <button
+                              key={d.date}
+                              type="button"
+                              onClick={() => setSelectedDayKey(d.date)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border ${
+                                isSelected
+                                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                                  : "bg-white text-slate-700 hover:bg-slate-100 border-slate-200"
+                              }`}
+                            >
+                              <span>{dayName}</span>
+                              {dateSub && (
+                                <span className={`text-[10px] ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+                                  {dateSub}
+                                </span>
+                              )}
+                              {mutualCount > 0 && (
+                                <span
+                                  title={`${mutualCount} mutual matches`}
+                                  className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? "bg-emerald-300 ring-1 ring-white/50" : "bg-emerald-500"}`}
+                                />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Grid of Slots */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-1">
+                        {currentDisplaySlots.map((s: any, idx: number) => {
                           const isLocked = Boolean(s.isLocked || s.conflict);
                           const isMutual = Boolean(s.isMutualMatch || s.matchesStudent);
+                          const slotIsoFormatted = formatForDateTimeInput(s.startTime, selectedTimezone);
+                          const isChoice1 = preferredDate1 === slotIsoFormatted;
+                          const isChoice2 = preferredDate2 === slotIsoFormatted;
+                          const isChoice3 = preferredDate3 === slotIsoFormatted;
+                          const choiceNum = isChoice1 ? 1 : isChoice2 ? 2 : isChoice3 ? 3 : null;
 
                           if (isLocked) {
                             const party = s.conflict?.conflictParty === "TUTOR" ? "Tutor Busy" : "Student Busy";
-                            const conflictTitle = s.conflict?.title ? `Session: ${s.conflict.title}` : "Session in progress";
                             return (
                               <div
                                 key={idx}
-                                title={`${conflictTitle} (${party}). This time slot is locked and unavailable.`}
-                                className="px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs font-medium cursor-not-allowed inline-flex items-center gap-1.5 opacity-90 select-none shadow-2xs"
+                                title={`Locked: ${s.conflict?.title || "Session scheduled"} (${party}). Unavailable.`}
+                                className="px-2.5 py-2 rounded-xl border border-red-200/80 bg-red-50/70 text-red-700 text-xs font-medium cursor-not-allowed flex items-center justify-between gap-1.5 opacity-80 select-none shadow-2xs"
                               >
-                                <Lock className="w-3 h-3 text-red-500 shrink-0" />
-                                <span className="line-through decoration-red-400">
-                                  {s.dateLabel.split(",")[0]}: {s.timeDisplay}
-                                </span>
-                                <span className="text-[9px] text-red-800 font-bold bg-red-100 border border-red-200 px-1.5 py-0.2 rounded shrink-0">
-                                  Locked ({party})
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <Lock className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                  <span className="font-mono text-xs line-through decoration-red-400 truncate">
+                                    {selectedDayKey === "RECOMMENDED" ? `${s.dateLabel.split(",")[0]} ` : ""}{s.timeDisplay}
+                                  </span>
+                                </div>
+                                <span className="text-[9px] font-bold text-red-700 bg-red-100/90 border border-red-200 px-1 py-0.2 rounded shrink-0">
+                                  Locked
                                 </span>
                               </div>
                             );
@@ -1040,29 +1181,78 @@ export function TrialRequestModal({
                               key={idx}
                               type="button"
                               onClick={() => applyTutorSlot(s.startTime)}
-                              className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
-                                isMutual
-                                  ? "bg-emerald-50 hover:bg-emerald-100/90 border-emerald-400 text-emerald-950 shadow-xs ring-1 ring-emerald-400/60 font-bold"
-                                  : "bg-white hover:bg-blue-50 border-slate-200 text-slate-700"
+                              className={`group px-2.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer flex items-center justify-between gap-1.5 text-left ${
+                                choiceNum !== null
+                                  ? "bg-blue-600 text-white border-blue-600 shadow-xs ring-2 ring-blue-500/30 font-bold"
+                                  : isMutual
+                                  ? "bg-emerald-50/80 hover:bg-emerald-100/90 border-emerald-300 hover:border-emerald-400 text-emerald-950 font-bold shadow-2xs"
+                                  : "bg-white hover:bg-blue-50/80 border-slate-200 hover:border-blue-300 text-slate-700 shadow-2xs"
                               }`}
                             >
-                              <Clock className={`w-3 h-3 ${isMutual ? "text-emerald-700" : "text-blue-600"}`} />
-                              <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
-                              {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
-                                <span className="text-[10px] text-slate-500 font-medium inline-flex items-center gap-1">
-                                  <span>({s.tutorTimeDisplay}</span>
-                                  <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                                  <span>)</span>
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <Clock className={`w-3.5 h-3.5 shrink-0 ${choiceNum ? "text-white" : isMutual ? "text-emerald-700" : "text-blue-600"}`} />
+                                <div className="flex flex-col min-w-0 leading-tight">
+                                  <span className="font-mono truncate">
+                                    {selectedDayKey === "RECOMMENDED" ? `${s.dateLabel.split(",")[0]} ` : ""}{s.timeDisplay}
+                                  </span>
+                                  {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
+                                    <span className={`text-[10px] font-normal truncate inline-flex items-center gap-0.5 ${
+                                      choiceNum ? "text-blue-100" : "text-slate-500"
+                                    }`}>
+                                      <span>{s.tutorTimeDisplay}</span>
+                                      <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {choiceNum !== null ? (
+                                <span className="text-[9px] font-extrabold bg-white text-blue-700 px-1.5 py-0.5 rounded-full shrink-0 shadow-2xs">
+                                  #{choiceNum}
                                 </span>
-                              )}
-                              {isMutual && (
-                                <span className="text-[9px] text-emerald-800 font-extrabold bg-emerald-200/90 border border-emerald-300 px-1.5 py-0.2 rounded-full inline-flex items-center gap-0.5">
-                                  ★ Mutual Match
+                              ) : isMutual ? (
+                                <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-200/90 border border-emerald-300 px-1.5 py-0.2 rounded-full shrink-0">
+                                  ★ Match
                                 </span>
-                              )}
+                              ) : null}
                             </button>
                           );
                         })}
+                      </div>
+
+                      {/* Toggle show all matches if in RECOMMENDED mode */}
+                      {selectedDayKey === "RECOMMENDED" && allMutualMatches.length > 8 && (
+                        <div className="text-center pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowAllMatches(!showAllMatches)}
+                            className="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <span>{showAllMatches ? "Show Fewer Matches" : `View All ${allMutualMatches.length} Mutual Matches`}</span>
+                            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showAllMatches ? "-rotate-90" : "rotate-90"}`} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Legend Footer */}
+                      <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 flex-wrap gap-2">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <span className="font-semibold text-emerald-900">★ Mutual Match</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-slate-300 border border-slate-400" />
+                            <span>Tutor Available</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-red-400" />
+                            <span>🔒 Locked</span>
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 italic">
+                          Times adjust to your account timezone
+                        </span>
                       </div>
                     </div>
                   )}

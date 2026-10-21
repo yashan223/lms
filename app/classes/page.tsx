@@ -46,6 +46,7 @@ export default function CoursesPage() {
   const [showPermanentEnrollmentModal, setShowPermanentEnrollmentModal] = useState(false);
   const [selectedPurchaseCourse, setSelectedPurchaseCourse] = useState<any | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
   const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(null);
 
@@ -78,6 +79,7 @@ export default function CoursesPage() {
         const dashData = await dashRes.json();
         if (dashData.user) {
           setIsLoggedIn(true);
+          setCurrentUser(dashData.user);
           if (dashData.user.role === "STUDENT") {
             const lvl = getStudentAcademicLevel(dashData.user);
             setStudentLevel(lvl || "AL");
@@ -785,6 +787,7 @@ export default function CoursesPage() {
         initialCourseId={selectedTrialCourseId}
         initialTutorId={selectedTrialTutorId}
         allCourses={courses}
+        currentUser={currentUser}
         onSuccess={() => {
           loadCourses(false);
         }}

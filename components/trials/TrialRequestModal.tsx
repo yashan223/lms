@@ -70,6 +70,7 @@ interface TrialRequestModalProps {
     email: string;
     academicLevel?: string | null;
     headline?: string | null;
+    timezone?: string | null;
   } | null;
   onSuccess?: (trial: any) => void;
 }
@@ -108,7 +109,26 @@ export function TrialRequestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdTrial, setCreatedTrial] = useState<any | null>(null);
-  const [selectedTimezone, setSelectedTimezone] = useState<string>(DEFAULT_TIMEZONE);
+  const resolveAccountTimezone = (tz?: string | null): string | null => {
+    if (!tz) return null;
+    try {
+      return getRegionalTimezone(tz).id;
+    } catch {
+      return tz;
+    }
+  };
+
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(() => {
+    const accTz = resolveAccountTimezone(currentUser?.timezone);
+    if (accTz) return accTz;
+    if (typeof window !== "undefined") {
+      try {
+        const browserTz = getUserBrowserTimezone();
+        if (browserTz) return browserTz;
+      } catch {}
+    }
+    return DEFAULT_TIMEZONE;
+  });
   const [tutorBaseTimezone, setTutorBaseTimezone] = useState<string>(DEFAULT_TIMEZONE);
   const [openSlots, setOpenSlots] = useState<
     Array<{
@@ -131,10 +151,16 @@ export function TrialRequestModal({
   }, [allCourses, userAcademicTrack]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setSelectedTimezone(getUserBrowserTimezone());
+    const accTz = resolveAccountTimezone(currentUser?.timezone);
+    if (accTz) {
+      setSelectedTimezone(accTz);
+    } else if (typeof window !== "undefined") {
+      try {
+        const browserTz = getUserBrowserTimezone();
+        if (browserTz) setSelectedTimezone(browserTz);
+      } catch {}
     }
-  }, []);
+  }, [currentUser?.timezone]);
 
   const fetchTutorSlots = (
     tutorIdParam?: string,
@@ -213,6 +239,13 @@ export function TrialRequestModal({
         setCourseId(trackCourses[0].id);
       }
 
+      // Default to account timezone if known
+      const accTz = resolveAccountTimezone(currentUser?.timezone);
+      const activeTz = accTz || selectedTimezone;
+      if (accTz && accTz !== selectedTimezone) {
+        setSelectedTimezone(accTz);
+      }
+
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(10, 0, 0, 0);
@@ -225,9 +258,9 @@ export function TrialRequestModal({
       slot3Date.setDate(slot3Date.getDate() + 2);
       slot3Date.setHours(11, 0, 0, 0);
 
-      setPreferredDate1(formatForDateTimeInput(tomorrow, selectedTimezone));
-      setPreferredDate2(formatForDateTimeInput(slot2Date, selectedTimezone));
-      setPreferredDate3(formatForDateTimeInput(slot3Date, selectedTimezone));
+      setPreferredDate1(formatForDateTimeInput(tomorrow, activeTz));
+      setPreferredDate2(formatForDateTimeInput(slot2Date, activeTz));
+      setPreferredDate3(formatForDateTimeInput(slot3Date, activeTz));
 
       setError(null);
       setCreatedTrial(null);
@@ -238,6 +271,13 @@ export function TrialRequestModal({
       fetch(`/api/student/availability${studentQuery}`)
         .then((r) => r.json())
         .then((data) => {
+          if (data.timezone) {
+            const fetchedAccTz = resolveAccountTimezone(data.timezone);
+            if (fetchedAccTz) {
+              setSelectedTimezone(fetchedAccTz);
+              fetchTutorSlots(undefined, undefined, undefined, fetchedAccTz);
+            }
+          }
           if (data.availabilities && Array.isArray(data.availabilities)) {
             setStudentAvailabilities(data.availabilities);
             if (data.availabilities.length === 0) {
@@ -256,6 +296,21 @@ export function TrialRequestModal({
           setCheckingAvailability(false);
           fetchTutorSlots();
         });
+
+      if (!accTz) {
+        fetch("/api/dashboard")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            if (d?.user?.timezone) {
+              const dashAccTz = resolveAccountTimezone(d.user.timezone);
+              if (dashAccTz) {
+                setSelectedTimezone(dashAccTz);
+                fetchTutorSlots(undefined, undefined, undefined, dashAccTz);
+              }
+            }
+          })
+          .catch(() => {});
+      }
 
       const trialsQuery = currentUser?.id ? `?studentId=${currentUser.id}` : "";
       fetch(`/api/trials${trialsQuery}`)
@@ -766,7 +821,12 @@ export function TrialRequestModal({
 
                   <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2">
                     <div className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center justify-between">
-                      <span>Your Regional Timezone</span>
+                      <span className="flex items-center gap-1.5">
+                        <span>Your Regional Timezone</span>
+                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full lowercase first-letter:uppercase">
+                          Account Default
+                        </span>
+                      </span>
                       <span className="text-[10px] text-sky-700 font-medium">Slots adjust automatically</span>
                     </div>
                     <RegionalTimezoneSelector

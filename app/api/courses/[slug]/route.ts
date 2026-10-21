@@ -72,12 +72,21 @@ export async function GET(
     let isEnrolled = false;
     let isLoggedIn = false;
     let academicLevel: string | null = "AL";
+    let currentUser: any = null;
     try {
       const auth = await getAuthenticatedUser(request);
       if (auth.user) {
         isLoggedIn = true;
         isEnrolled = course.enrollments.some((e) => e.userId === auth.user.id);
         academicLevel = getStudentAcademicLevel(auth.user);
+        currentUser = {
+          id: auth.user.id,
+          name: auth.user.name,
+          email: auth.user.email,
+          role: auth.user.role,
+          timezone: auth.user.timezone || null,
+          academicLevel: academicLevel || null,
+        };
       }
     } catch {
     }
@@ -88,6 +97,7 @@ export async function GET(
         isEnrolled,
         isLoggedIn,
         academicLevel,
+        user: currentUser,
       },
       {
         headers: {

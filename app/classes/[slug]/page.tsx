@@ -92,6 +92,7 @@ export default function CourseDetailPage({
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showPermanentEnrollmentModal, setShowPermanentEnrollmentModal] = useState(false);
@@ -169,6 +170,10 @@ export default function CourseDetailPage({
 
           if (typeof data.isLoggedIn === "boolean") {
             setIsLoggedIn(data.isLoggedIn);
+          }
+
+          if (data.user) {
+            setCurrentUser(data.user);
           }
 
           if (data.academicLevel) {
@@ -1008,6 +1013,7 @@ export default function CourseDetailPage({
         initialCourseId={course?.id}
         initialTutorId={course?.instructorId || (course as any)?.tutorId || (course as any)?.instructor?.id}
         allCourses={course ? [course] : []}
+        currentUser={currentUser}
       />
 
       {/* Permanent Class Enrollment Modal with Availability Matching */}

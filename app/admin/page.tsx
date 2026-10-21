@@ -3052,9 +3052,11 @@ export default function AdminDashboardPage() {
                                     href={rec.recordingUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-[11px] text-purple-600 hover:text-purple-800 font-mono truncate max-w-md block hover:underline"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold text-[11px] transition-colors"
                                   >
-                                    {rec.recordingUrl}
+                                    <Play className="w-3 h-3 fill-purple-700 shrink-0" />
+                                    <span>Recording Link</span>
+                                    <ExternalLink className="w-2.5 h-2.5 opacity-60 shrink-0" />
                                   </a>
                                 </div>
                               </div>
@@ -3200,10 +3202,12 @@ export default function AdminDashboardPage() {
                                       href={meetLink}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 truncate max-w-[220px]"
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs shadow-2xs transition-all"
+                                      title={meetLink}
                                     >
-                                      <span>{meetLink}</span>
-                                      <ExternalLink className="w-3 h-3 shrink-0" />
+                                      <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                      <span>Join Room</span>
+                                      <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
                                     </a>
                                   )}
                                 </div>
@@ -6029,10 +6033,22 @@ export default function AdminDashboardPage() {
                               <span className="font-bold text-slate-800">{tutorName}</span>
                             </div>
                             <div>
-                              <span className="text-[11px] font-medium text-slate-400 block">Meeting Room:</span>
-                              <span className="text-blue-600 font-mono text-[11px] truncate block">
-                                {tr.meetingLink ? tr.meetingLink : "—"}
-                              </span>
+                              <span className="text-[11px] font-medium text-slate-400 block mb-1">Meeting Room:</span>
+                              {tr.meetingLink ? (
+                                <a
+                                  href={tr.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-colors"
+                                  title={tr.meetingLink}
+                                >
+                                  <Video className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                                  <span>Join Room</span>
+                                  <ExternalLink className="w-3 h-3 shrink-0 text-blue-400" />
+                                </a>
+                              ) : (
+                                <span className="text-slate-400 font-mono text-[11px] block">—</span>
+                              )}
                             </div>
                             {tr.notes && (
                               <div className="sm:col-span-3 pt-1 border-t border-slate-200/50">
@@ -6316,10 +6332,24 @@ export default function AdminDashboardPage() {
                             <span className="font-bold text-slate-800">{tutorName}</span>
                           </div>
                           <div>
-                            <span className="text-[11px] font-medium text-slate-400 block">Meeting Room:</span>
-                            <span className="text-blue-600 font-mono text-[11px] truncate block">
-                              {trial.meetingLink && !trial.meetingLink.includes("/new") ? trial.meetingLink : "✨ Auto-generated on approval"}
-                            </span>
+                            <span className="text-[11px] font-medium text-slate-400 block mb-1">Meeting Room:</span>
+                            {trial.meetingLink && !trial.meetingLink.includes("/new") ? (
+                              <a
+                                href={trial.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-colors"
+                                title={trial.meetingLink}
+                              >
+                                <Video className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                                <span>Join Room</span>
+                                <ExternalLink className="w-3 h-3 shrink-0 text-blue-400" />
+                              </a>
+                            ) : (
+                              <span className="text-blue-600 font-mono text-[11px] truncate block">
+                                ✨ Auto-generated on approval
+                              </span>
+                            )}
                           </div>
                           {trial.notes && (
                             <div className="sm:col-span-3 pt-1 border-t border-slate-200/50">

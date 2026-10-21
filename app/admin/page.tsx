@@ -2992,7 +2992,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : liveClassFilter === "RECORDINGS" ? (
                   filteredRecordings.length > 0 ? (
-                    <div className="divide-y divide-slate-100">
+                    <div className="max-h-[620px] overflow-y-auto overscroll-contain divide-y divide-slate-100">
                       {filteredRecordings.map((rec) => {
                         const isTrial = rec.type === "TRIAL";
                         const isDeleting = isDeletingRecording === (rec.eventId || rec.trialId);

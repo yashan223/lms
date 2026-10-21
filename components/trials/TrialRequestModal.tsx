@@ -1088,28 +1088,6 @@ export function TrialRequestModal({
                         onChange={(e) => setPreferredDate1(e.target.value)}
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
-                      {preferredDate1 && (
-                        <div className="mt-2 flex items-center justify-between gap-1 text-[11px] text-slate-500 font-medium flex-wrap">
-                          <span className="inline-flex items-center gap-1.5">
-                            <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                            <span>
-                              Tutor ({baseRegion.region}):{" "}
-                              <strong className="text-slate-700">
-                                {formatForUser(parseDateTimeInputInTimezone(preferredDate1, selectedTimezone), tutorBaseTimezone, {
-                                  includeDate: false,
-                                  includeTime: true,
-                                  includeAbbr: true,
-                                })}
-                              </strong>
-                            </span>
-                          </span>
-                          {openSlots.some((s) => s.startTime && formatForDateTimeInput(s.startTime, selectedTimezone) === preferredDate1 && (s.isMutualMatch || s.matchesStudent)) && (
-                            <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded-full">
-                              ★ Mutual Match
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
 
                     <div
@@ -1132,28 +1110,6 @@ export function TrialRequestModal({
                         onChange={(e) => setPreferredDate2(e.target.value)}
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
-                      {preferredDate2 && (
-                        <div className="mt-2 flex items-center justify-between gap-1 text-[11px] text-slate-500 font-medium flex-wrap">
-                          <span className="inline-flex items-center gap-1.5">
-                            <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                            <span>
-                              Tutor ({baseRegion.region}):{" "}
-                              <strong className="text-slate-700">
-                                {formatForUser(parseDateTimeInputInTimezone(preferredDate2, selectedTimezone), tutorBaseTimezone, {
-                                  includeDate: false,
-                                  includeTime: true,
-                                  includeAbbr: true,
-                                })}
-                              </strong>
-                            </span>
-                          </span>
-                          {openSlots.some((s) => s.startTime && formatForDateTimeInput(s.startTime, selectedTimezone) === preferredDate2 && (s.isMutualMatch || s.matchesStudent)) && (
-                            <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded-full">
-                              ★ Mutual Match
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
 
                     <div
@@ -1176,28 +1132,6 @@ export function TrialRequestModal({
                         onChange={(e) => setPreferredDate3(e.target.value)}
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
-                      {preferredDate3 && (
-                        <div className="mt-2 flex items-center justify-between gap-1 text-[11px] text-slate-500 font-medium flex-wrap">
-                          <span className="inline-flex items-center gap-1.5">
-                            <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                            <span>
-                              Tutor ({baseRegion.region}):{" "}
-                              <strong className="text-slate-700">
-                                {formatForUser(parseDateTimeInputInTimezone(preferredDate3, selectedTimezone), tutorBaseTimezone, {
-                                  includeDate: false,
-                                  includeTime: true,
-                                  includeAbbr: true,
-                                })}
-                              </strong>
-                            </span>
-                          </span>
-                          {openSlots.some((s) => s.startTime && formatForDateTimeInput(s.startTime, selectedTimezone) === preferredDate3 && (s.isMutualMatch || s.matchesStudent)) && (
-                            <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded-full">
-                              ★ Mutual Match
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

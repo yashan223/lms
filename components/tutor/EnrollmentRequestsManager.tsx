@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { mergeConsecutiveSlots } from "@/lib/scheduling";
 
 interface EnrollmentRequestItem {
   id: string;
@@ -445,11 +446,39 @@ export function EnrollmentRequestsManager({
                       </div>
                     </div>
 
+                    {/* Merged 2-Hour Continuous Class Notice */}
+                    {(() => {
+                      const mergedChosenGroups = mergeConsecutiveSlots(chosenSlots, undefined, tutorTimezone);
+                      const hasMergedChosen = mergedChosenGroups.some((g) => g.isMerged);
+                      if (!hasMergedChosen) return null;
+                      return (
+                        <div className="p-3 rounded-xl bg-blue-50/90 border border-blue-200 text-xs text-blue-950 space-y-1">
+                          <div className="flex items-center gap-1.5 font-bold text-blue-900">
+                            <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                            <span>2-Hour Continuous Class Detected</span>
+                          </div>
+                          <p className="text-[11px] text-blue-800 leading-relaxed">
+                            You selected consecutive slots next to each other (
+                            {mergedChosenGroups
+                              .filter((g) => g.isMerged)
+                              .map((g) => g.tutorTimeDisplay || g.timeDisplay)
+                              .join(", ")}
+                            ). These will be scheduled together as a single <strong>2-hour continuous class session</strong>.
+                            You will be credited for <strong>2 teaching hours</strong> (2 × hourly rate) and 2 tokens will be deducted from the student upon completion.
+                          </p>
+                        </div>
+                      );
+                    })()}
+
                     {/* Slots Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                       {req.selectedSlots.map((slot, idx) => {
                         const isChosen = chosenSlots.some((s) => s.startTime === slot.startTime);
                         const slotDate = new Date(slot.startTime);
+                        const mergedChosenGroups = mergeConsecutiveSlots(chosenSlots, undefined, tutorTimezone);
+                        const isPartMerged = isChosen && mergedChosenGroups.some(
+                          (g) => g.isMerged && g.originalSlots.some((s) => s.startTime === slot.startTime)
+                        );
 
                         return (
                           <button
@@ -472,8 +501,8 @@ export function EnrollmentRequestsManager({
                                 })}
                               </span>
                               {isChosen ? (
-                                <span className="bg-white text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold flex items-center gap-1">
-                                  <Check className="w-3 h-3" /> Selected
+                                <span className="bg-white text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold flex items-center gap-1 shadow-2xs">
+                                  <Check className="w-3 h-3" /> {isPartMerged ? "Merged 2h" : "Selected"}
                                 </span>
                               ) : (
                                 <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">
@@ -490,7 +519,7 @@ export function EnrollmentRequestsManager({
                                 isChosen ? "text-blue-100" : "text-slate-400"
                               }`}
                             >
-                              1-Hour Weekly Slot
+                              {isPartMerged ? "Merged 2-Hour Class (2 Tokens • 2h Payout)" : "1-Hour Weekly Slot"}
                             </div>
                           </button>
                         );
@@ -559,36 +588,39 @@ export function EnrollmentRequestsManager({
                 )}
 
                 {/* Finalized slots review for confirmed requests */}
-                {isConfirmed && req.acceptedSlots && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs space-y-2">
-                    <span className="font-bold text-emerald-900 block">
-                      Confirmed Weekly Schedule:
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {req.acceptedSlots.map((s, sIdx) => {
-                        const sDate = new Date(s.startTime);
-                        return (
-                          <span
-                            key={sIdx}
-                            className="bg-white border border-emerald-300 text-emerald-900 px-3 py-1 rounded-lg font-bold font-mono text-xs flex items-center gap-1.5 shadow-2xs"
-                          >
-                            <CalendarClock className="w-3.5 h-3.5 text-emerald-600" />
-                            {sDate.toLocaleDateString("en-US", {
-                              weekday: "short",
-                              timeZone: tutorTimezone,
-                            })}{" "}
-                            at{" "}
-                            {sDate.toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              timeZone: tutorTimezone,
-                            })}
-                          </span>
-                        );
-                      })}
+                {isConfirmed && req.acceptedSlots && (() => {
+                  const confirmedGroups = mergeConsecutiveSlots(req.acceptedSlots, undefined, tutorTimezone);
+                  return (
+                    <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs space-y-2">
+                      <span className="font-bold text-emerald-900 block">
+                        Confirmed Weekly Schedule:
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {confirmedGroups.map((g, gIdx) => {
+                          const sDate = new Date(g.startTime);
+                          return (
+                            <span
+                              key={gIdx}
+                              className="bg-white border border-emerald-300 text-emerald-900 px-3 py-1 rounded-lg font-bold font-mono text-xs flex items-center gap-1.5 shadow-2xs"
+                            >
+                              <CalendarClock className="w-3.5 h-3.5 text-emerald-600" />
+                              {sDate.toLocaleDateString("en-US", {
+                                weekday: "short",
+                                timeZone: tutorTimezone,
+                              })}{" "}
+                              at {g.tutorTimeDisplay || g.timeDisplay}
+                              {g.isMerged && (
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.2 rounded font-sans font-bold">
+                                  2-Hour Class (2 Tokens • 2h Payout)
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {isRejected && (
                   <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">

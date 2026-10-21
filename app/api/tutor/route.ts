@@ -17,12 +17,15 @@ import {
   syncClassMeetingSession,
   syncTrialSession,
   isBigBlueButtonConfigured,
+  getBBBMeetingInfo,
+  extractBBBAttendees,
 } from "@/lib/bigbluebutton";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 import { ensureTutorIdForUser } from "@/lib/tutor-id";
 import { generateUniqueClassCode } from "@/lib/class-id";
 import { getTutorMonthlyEarnings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
+import { getEventDurationHours } from "@/lib/scheduling";
 import { getTutorPendingReschedules, acceptRescheduleRequest, declineRescheduleRequest } from "@/lib/reschedule";
 
 export const dynamic = "force-dynamic";
@@ -894,14 +897,148 @@ export async function POST(request: NextRequest) {
       }
 
       if (resolvedEventId) {
-        const bbbId = getBBBMeetingId({ eventId: resolvedEventId });
+        const event = await prisma.event.findUnique({
+          where: { id: resolvedEventId },
+          include: { course: true, user: true },
+        });
+
+        if (!event) {
+          return NextResponse.json({ error: "Class event not found." }, { status: 404 });
+        }
+
+        const isTrial = Boolean(
+          trialId ||
+          event.title?.toLowerCase().includes("trial") ||
+          event.description?.toLowerCase().includes("trial")
+        );
+
+        const bbbId = event.meetingSpaceId || getBBBMeetingId({ eventId: resolvedEventId });
         endBBBMeeting(bbbId).catch(() => {});
 
-        // Step 1: Complete class, deduct 1 token from student, notify low balance, and credit tutor earnings ledger
-        await completeClassAndProcessEcosystem(resolvedEventId, {
+        // 🎯 15-Minute Stay & Student No-Show Policy for enrolled classes
+        let isNoShow = Boolean(body.isNoShow);
+        let studentAttended = false;
+
+        if (!isTrial) {
+          // Check student attendance records in DB
+          const studentAttRecord = await prisma.classAttendance.findFirst({
+            where: {
+              eventId: resolvedEventId,
+              userRole: Role.STUDENT,
+              status: { in: ["PRESENT", "LATE"] },
+              joinedAt: { not: null },
+            },
+          });
+          studentAttended = Boolean(studentAttRecord);
+
+          // If no record found yet, check active BigBlueButton meeting attendees
+          if (!studentAttended && isBigBlueButtonConfigured()) {
+            try {
+              const meetingInfo = await getBBBMeetingInfo(bbbId);
+              if (meetingInfo?.rawXml) {
+                const attendees = extractBBBAttendees(meetingInfo.rawXml);
+                studentAttended = attendees.some(
+                  (att) => att.role?.toLowerCase() !== "moderator" && att.userId !== tutor.id
+                );
+              }
+            } catch {}
+          }
+
+          const tutorStartTime = event.startedAt || event.actualStartTime || manualStartTime;
+          const waitMinutes = tutorStartTime
+            ? (now.getTime() - new Date(tutorStartTime).getTime()) / (60 * 1000)
+            : 0;
+
+          // If student did NOT attend:
+          if (!studentAttended) {
+            // Tutor is bound by policy to stay at least 15 minutes
+            if (waitMinutes < 15) {
+              const minutesRemaining = Math.max(1, Math.ceil(15 - waitMinutes));
+              return NextResponse.json(
+                {
+                  error: `Class Policy Enforcement: According to LMS policy, you must remain in the live session for at least 15 minutes before ending the class as a student No-Show. You have been in the room for ${Math.floor(waitMinutes)} minute(s) (${minutesRemaining} minute(s) remaining).`,
+                  code: "MANDATORY_WAIT_TIME_NOT_MET",
+                  waitMinutes: Math.floor(waitMinutes),
+                  minutesRemaining,
+                },
+                { status: 400 }
+              );
+            }
+
+            // Tutor waited for >= 15 minutes without student attending -> Official No-Show!
+            isNoShow = true;
+          }
+        }
+
+        // Process No-Show attendance records
+        if (isNoShow && !isTrial) {
+          const tutorStartTime = event.startedAt || event.actualStartTime || manualStartTime;
+          const waitMinutes = tutorStartTime
+            ? Math.round((now.getTime() - new Date(tutorStartTime).getTime()) / (60 * 1000))
+            : 15;
+
+          let studentId = event.userId;
+          if (!studentId && event.courseId) {
+            const firstEnr = await prisma.enrollment.findFirst({
+              where: { courseId: event.courseId },
+              select: { userId: true },
+            });
+            studentId = firstEnr?.userId || null;
+          }
+
+          if (studentId) {
+            await prisma.classAttendance.upsert({
+              where: { eventId_userId: { eventId: event.id, userId: studentId } },
+              create: {
+                eventId: event.id,
+                userId: studentId,
+                userRole: Role.STUDENT,
+                courseId: event.courseId,
+                status: "ABSENT",
+                notes: `Student No-Show: Tutor waited ${waitMinutes} minutes in live room`,
+              },
+              update: {
+                status: "ABSENT",
+                notes: `Student No-Show: Tutor waited ${waitMinutes} minutes in live room`,
+              },
+            });
+          }
+
+          await prisma.classAttendance.upsert({
+            where: { eventId_userId: { eventId: event.id, userId: tutor.id } },
+            create: {
+              eventId: event.id,
+              userId: tutor.id,
+              userRole: tutor.role || Role.TUTOR,
+              courseId: event.courseId,
+              status: "PRESENT",
+              joinedAt: tutorStartTime || now,
+              leftAt: now,
+              durationMinutes: waitMinutes,
+              notes: `Tutor completed mandatory 15-minute wait for student no-show`,
+            },
+            update: {
+              status: "PRESENT",
+              leftAt: now,
+              durationMinutes: waitMinutes,
+              notes: `Tutor completed mandatory 15-minute wait for student no-show`,
+            },
+          });
+
+          await prisma.event.update({
+            where: { id: event.id },
+            data: {
+              description: `${event.description || ""}\n⚠️ Student No-Show (Tutor completed 15-minute wait policy).`,
+            },
+          });
+        }
+
+        // Step 1: Complete class, deduct token(s) from student, and credit tutor earnings ledger
+        const ecoResult = await completeClassAndProcessEcosystem(resolvedEventId, {
           manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
           manualEndTime: manualEndTime ? new Date(manualEndTime) : now,
           recordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
+          isNoShow,
         });
 
         // Step 2: Sync with BigBlueButton
@@ -914,6 +1051,41 @@ export async function POST(request: NextRequest) {
         } catch (syncErr) {
           console.warn("[end_class] sync error:", syncErr);
         }
+
+        // Send specialized No-Show notifications if applicable
+        if (isNoShow && !isTrial && event.userId) {
+          const durationHours = getEventDurationHours(event.title, event.description);
+          await prisma.notification.create({
+            data: {
+              userId: event.userId,
+              title: "⚠️ Class Marked as No-Show",
+              message: `You did not attend your scheduled class "${event.title}" with ${tutor.name}. Your tutor waited in the live room for over 15 minutes. In accordance with LMS attendance policy, ${durationHours} token(s) have been deducted from your wallet.`,
+              type: "WARNING",
+              link: "/dashboard#classes",
+            },
+          });
+          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: event.userId });
+
+          const tutorEarningsAmount = ecoResult.earningRecord?.amountLkr || 0;
+          await prisma.notification.create({
+            data: {
+              userId: tutor.id,
+              title: "💰 Student No-Show Fee Credited",
+              message: `You completed the mandatory 15-minute wait for "${event.title}". In accordance with our policy, your teaching fee of Rs. ${tutorEarningsAmount.toLocaleString("en-LK")} LKR has been credited to your monthly ledger.`,
+              type: "SUCCESS",
+              link: "/tutor?tab=history",
+            },
+          });
+          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tutor.id });
+        }
+
+        return NextResponse.json({
+          success: true,
+          isNoShow,
+          message: isNoShow
+            ? "Class ended under No-Show Policy. Token deducted from student and teaching fee credited to your monthly ledger."
+            : "Session ended successfully.",
+        });
       }
 
       return NextResponse.json({

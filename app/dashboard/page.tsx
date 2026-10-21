@@ -83,6 +83,7 @@ import {
   formatForDateTimeInput,
   parseDateTimeInputInTimezone,
 } from "@/lib/timezones";
+import { getEventDurationHours } from "@/lib/scheduling";
 
 interface UserProfile {
   id: string;
@@ -1651,6 +1652,11 @@ function DashboardContent() {
                                       <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
                                         {ev.classCode || formatClassId(ev)}
                                       </span>
+                                      {getEventDurationHours(ev.title, ev.description) > 1 && (
+                                        <Badge className="bg-blue-100 text-blue-900 border border-blue-300 text-[9px] font-bold py-0 px-1.5 shrink-0">
+                                          2 Hours • 2 Tokens
+                                        </Badge>
+                                      )}
                                       {ev.status === "LIVE" && (
                                         <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
                                           <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
@@ -1912,6 +1918,11 @@ function DashboardContent() {
                                       <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
                                         {ev.classCode || formatClassId(ev)}
                                       </span>
+                                      {getEventDurationHours(ev.title, ev.description) > 1 && (
+                                        <Badge className="bg-blue-100 text-blue-900 border border-blue-300 text-[9px] font-bold py-0 px-1.5 shrink-0">
+                                          2 Hours • 2 Tokens
+                                        </Badge>
+                                      )}
                                       {ev.status === "LIVE" && (
                                         <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1 py-0 px-1.5 animate-pulse">
                                           <Radio className="w-2.5 h-2.5" />

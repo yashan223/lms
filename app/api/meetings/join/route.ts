@@ -17,14 +17,47 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const eventId = searchParams.get("eventId");
-    const trialId = searchParams.get("trialId");
+    let eventId = searchParams.get("eventId");
+    let trialId = searchParams.get("trialId");
+    const courseId = searchParams.get("courseId");
+    const slot = searchParams.get("slot");
+    const classCode = searchParams.get("classCode");
     const requestedRole = searchParams.get("role");
     const wantsJson = searchParams.get("json") === "1" || request.headers.get("accept")?.includes("application/json");
 
+    // Fallback resolver for legacy or parameter-based links
+    if (!eventId && !trialId) {
+      if (courseId && slot) {
+        const slotMs = parseInt(slot, 10);
+        if (!isNaN(slotMs)) {
+          const targetDate = new Date(slotMs);
+          const found = await prisma.event.findFirst({
+            where: {
+              courseId,
+              dueDate: {
+                gte: new Date(targetDate.getTime() - 4 * 60 * 60 * 1000),
+                lte: new Date(targetDate.getTime() + 4 * 60 * 60 * 1000),
+              },
+            },
+            orderBy: { dueDate: "asc" },
+          });
+          if (found) {
+            eventId = found.id;
+          }
+        }
+      } else if (classCode) {
+        const found = await prisma.event.findUnique({
+          where: { classCode },
+        });
+        if (found) {
+          eventId = found.id;
+        }
+      }
+    }
+
     if (!eventId && !trialId) {
       return NextResponse.json(
-        { error: "Either eventId or trialId is required to join a meeting." },
+        { error: "Could not find a valid class session or trial for the provided parameters. (eventId or trialId is required)" },
         { status: 400 }
       );
     }

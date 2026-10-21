@@ -5,6 +5,7 @@ import { broadcastLMSEvent } from "@/lib/events";
 import { createBBBMeeting, getUniversalJoinLink, isBigBlueButtonConfigured } from "@/lib/bigbluebutton";
 import { getSafeMeetingLink } from "@/lib/utils";
 import { generateUniqueClassCode } from "@/lib/class-id";
+import { mergeConsecutiveSlots } from "@/lib/scheduling";
 import { EventType, EventStatus, Role, EnrollmentRequestStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -394,22 +395,38 @@ export async function PATCH(request: NextRequest) {
           },
         });
 
-        // 3. Generate recurring 1-hour sessions on both calendars weekly
+        // 3. Generate recurring sessions on both calendars weekly
+        // If consecutive slots are selected (e.g. 1:30-2:30 and 2:30-3:30), merge them into a single 2-hour class session
         const createdEvents = [];
         const allocatedClassCodes = new Set<string>();
 
-        for (const slot of acceptedSlots) {
-          const baseStart = new Date(slot.startTime);
+        const timezoneForFormatting = student.timezone || enrollmentRequest.tutor.timezone || "Asia/Colombo";
+        const mergedSlots = mergeConsecutiveSlots(
+          acceptedSlots,
+          timezoneForFormatting,
+          enrollmentRequest.tutor.timezone || "Asia/Colombo"
+        );
+
+        for (const slotGroup of mergedSlots) {
+          const baseStart = new Date(slotGroup.startTime);
+          const durationHours = slotGroup.durationHours || 1;
+          const durationMinutes = slotGroup.durationMinutes || Math.round(durationHours * 60);
 
           for (let week = 0; week < numWeeks; week++) {
             const sessionStart = new Date(baseStart.getTime() + week * 7 * 24 * 60 * 60 * 1000);
-            const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000); // Strict 1-hour slot
+            const sessionEnd = new Date(sessionStart.getTime() + durationMinutes * 60 * 1000);
 
             const sessionClassCode = await generateUniqueClassCode(undefined, tx, allocatedClassCodes);
             allocatedClassCodes.add(sessionClassCode);
-            const title = `${course.title} - ${enrollmentRequest.classType}`;
+            const isMultiHour = durationHours > 1;
+            const title = isMultiHour
+              ? `${course.title} - ${enrollmentRequest.classType} (${durationHours}-Hour Class)`
+              : `${course.title} - ${enrollmentRequest.classType}`;
+
             const desc = [
-              `📚 1-Hour Permanent Class Session (${enrollmentRequest.classType})`,
+              `📚 ${durationHours}-Hour Permanent Class Session (${enrollmentRequest.classType})`,
+              `Duration: ${durationHours} Hour${durationHours > 1 ? "s" : ""} (${durationMinutes} Minutes)`,
+              `Tokens: ${durationHours} Token${durationHours > 1 ? "s" : ""}`,
               `Class ID: ${sessionClassCode}`,
               `Curriculum: ${course.title} ${course.subjectCode ? `(${course.subjectCode})` : ""}`,
               `Student: ${student.name} (${student.email})`,
@@ -417,29 +434,6 @@ export async function PATCH(request: NextRequest) {
               `Duration Track: ${enrollmentRequest.duration} (Session ${week + 1} of ${numWeeks})`,
               `Enrollment Request ID: ${enrollmentRequest.id}`,
             ].join("\n");
-
-            // Meeting Link
-            let meetingLink: string | null = null;
-            let meetingSpaceId: string | null = null;
-            if (isBigBlueButtonConfigured()) {
-              const bbbId = `class-${course.id}-${sessionStart.getTime()}`.substring(0, 50);
-              const bbb = await createBBBMeeting({
-                meetingId: bbbId,
-                name: `${course.title} Live Class`,
-                attendeePW: "student123",
-                moderatorPW: "tutor123",
-                welcome: `Welcome to ${course.title}! 1-on-1 permanent session.`,
-                record: true,
-                autoStartRecording: true,
-              });
-              if (bbb.success) {
-                meetingLink = `/api/meetings/join?courseId=${course.id}&slot=${sessionStart.getTime()}`;
-                meetingSpaceId = bbbId;
-              }
-            }
-            if (!meetingLink) {
-              meetingLink = `/api/meetings/join?courseId=${course.id}&slot=${sessionStart.getTime()}`;
-            }
 
             const ev = await tx.event.create({
               data: {
@@ -457,24 +451,38 @@ export async function PATCH(request: NextRequest) {
                 courseId: course.id,
                 userId: student.id,
                 requestedBy: enrollmentRequest.tutorId,
-                meetingLink: getSafeMeetingLink(meetingLink),
-                meetingSpaceId,
+                meetingLink: `/api/meetings/join?classCode=${sessionClassCode}`,
+                meetingSpaceId: null,
                 timezone: student.timezone || enrollmentRequest.tutor.timezone || "Asia/Colombo",
                 reminderSent: false,
                 enrollmentRequestId: enrollmentRequest.id,
               },
             });
 
-            createdEvents.push(ev);
+            // Set definitive BigBlueButton event room link and space ID
+            const updatedEv = await tx.event.update({
+              where: { id: ev.id },
+              data: {
+                meetingLink: `/api/meetings/join?eventId=${ev.id}`,
+                meetingSpaceId: `class-${ev.id}`,
+              },
+            });
+
+            createdEvents.push(updatedEv);
           }
         }
+
+        const hasMergedSlots = mergedSlots.some((s) => s.isMerged);
+        const sessionDescriptor = hasMergedSlots
+          ? `${createdEvents.length} weekly sessions (including merged 2-hour continuous classes)`
+          : `${createdEvents.length} weekly 1-hour sessions`;
 
         // 4. In-App Notification to Student
         await tx.notification.create({
           data: {
             userId: student.id,
             title: "🎉 Enrollment Confirmed & Schedule Finalized!",
-            message: `${enrollmentRequest.tutor.name} accepted your enrollment in "${course.title}". ${createdEvents.length} weekly 1-hour sessions have been populated on your study calendar.`,
+            message: `${enrollmentRequest.tutor.name} accepted your enrollment in "${course.title}". ${sessionDescriptor} have been populated on your study calendar.`,
             type: "SUCCESS",
             link: "/dashboard",
           },
@@ -485,7 +493,7 @@ export async function PATCH(request: NextRequest) {
           data: {
             userId: enrollmentRequest.tutorId,
             title: "✓ Permanent Schedule Finalized",
-            message: `You finalized ${student.name}'s schedule for "${course.title}". ${createdEvents.length} class sessions are now scheduled on your teaching roster.`,
+            message: `You finalized ${student.name}'s schedule for "${course.title}". ${sessionDescriptor} are now scheduled on your teaching roster.`,
             type: "SUCCESS",
             link: "/tutor?tab=classes",
           },

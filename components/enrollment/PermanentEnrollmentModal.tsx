@@ -29,6 +29,7 @@ import {
   getRegionalTimezone,
   getTimezoneOffsetString,
 } from "@/lib/timezones";
+import { mergeConsecutiveSlots } from "@/lib/scheduling";
 
 interface SlotItem {
   startTime: string;
@@ -247,6 +248,14 @@ export function PermanentEnrollmentModal({
     );
   }, [days]);
 
+  const mergedSelectedSlotGroups = useMemo(() => {
+    return mergeConsecutiveSlots(selectedSlots, userTimezone);
+  }, [selectedSlots, userTimezone]);
+
+  const hasMergedSlots = useMemo(() => {
+    return mergedSelectedSlotGroups.some((g) => g.isMerged);
+  }, [mergedSelectedSlotGroups]);
+
   const toggleSlotSelection = (slot: SlotItem) => {
     if (!slot.isAvailable) return;
 
@@ -400,7 +409,9 @@ export function PermanentEnrollmentModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 font-semibold">Offered Slots:</span>
-                  <span className="font-bold text-blue-700">{selectedSlots.length} 1-Hour Options</span>
+                  <span className="font-bold text-blue-700">
+                    {selectedSlots.length} Slots {hasMergedSlots ? "(Includes 2-Hour Class)" : "(1-Hour Options)"}
+                  </span>
                 </div>
               </div>
 
@@ -634,6 +645,9 @@ export function PermanentEnrollmentModal({
                               const isMatched = slot.isAvailable && slot.matchesStudentAvailability;
                               const isConflict = Boolean(slot.conflict);
                               const disabled = !slot.isAvailable || slot.isPast;
+                              const isPartMerged = selected && mergedSelectedSlotGroups.some(
+                                (g) => g.isMerged && g.originalSlots.some((s) => s.startTime === slot.startTime)
+                              );
 
                               return (
                                 <button
@@ -670,8 +684,8 @@ export function PermanentEnrollmentModal({
                                     </span>
 
                                     {selected ? (
-                                      <span className="bg-white text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase flex items-center gap-1">
-                                        <Check className="w-3 h-3" /> Selected
+                                      <span className="bg-white text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase flex items-center gap-1 shadow-2xs">
+                                        <Check className="w-3 h-3" /> {isPartMerged ? "Merged 2h" : "Selected"}
                                       </span>
                                     ) : isConflict ? (
                                       <span className="bg-rose-100 text-rose-800 border border-rose-200 px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-1">
@@ -733,6 +747,25 @@ export function PermanentEnrollmentModal({
                 )}
               </div>
 
+              {/* Consecutive 2-Hour Class Notice */}
+              {hasMergedSlots && (
+                <div className="p-3.5 rounded-xl bg-blue-50/90 border border-blue-200 text-xs text-blue-950 space-y-1.5 shadow-2xs">
+                  <div className="flex items-center gap-2 font-bold text-blue-900">
+                    <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>2-Hour Continuous Class Detected</span>
+                  </div>
+                  <p className="text-blue-800 text-[11px] leading-relaxed">
+                    You selected consecutive 1-hour slots next to each other (
+                    {mergedSelectedSlotGroups
+                      .filter((g) => g.isMerged)
+                      .map((g) => g.timeDisplay)
+                      .join(", ")}
+                    ). These will be scheduled together as a single <strong>2-hour class session</strong>.
+                    Upon completion of each 2-hour class, <strong>2 tokens</strong> will be deducted from your wallet, and your tutor will be paid for 2 teaching hours.
+                  </p>
+                </div>
+              )}
+
               {/* Optional Notes */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
@@ -760,6 +793,11 @@ export function PermanentEnrollmentModal({
                 <div className="text-xs text-slate-600">
                   Selected: <strong>{selectedSlots.length}</strong> favorable slot(s) for a{" "}
                   <strong>{hoursPerWeek} hour/week</strong> requirement.
+                  {hasMergedSlots && (
+                    <span className="text-blue-700 font-bold block sm:inline sm:ml-1">
+                      • Merged into 2-Hour continuous class
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 justify-end">

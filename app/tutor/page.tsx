@@ -91,6 +91,7 @@ import {
   getTimezoneCountryCode,
   DEFAULT_TIMEZONE,
 } from "@/lib/timezones";
+import { getEventDurationHours, getEventDurationMinutes } from "@/lib/scheduling";
 
 const formatSessionDuration = (startedAt?: string | Date | null, endedAt?: string | Date | null) => {
   if (!startedAt) return "—";
@@ -282,10 +283,10 @@ function TutorDashboardContent() {
   }, [totalEarnings]);
 
   const totalTeachingMinutes = useMemo(() => {
-    // 1-Hour enrolled classes = 60 mins each, 30-min trial sessions = 30 mins each
+    // Enrolled classes can be 1-hour (60 mins) or 2-hour (120 mins); 30-min trial sessions = 30 mins each
     const enrolledClasses = events.filter((e) => !e.title?.toLowerCase().includes("trial") && !e.description?.toLowerCase().includes("trial"));
     const trialEvents = events.filter((e) => e.title?.toLowerCase().includes("trial") || e.description?.toLowerCase().includes("trial"));
-    const classMins = enrolledClasses.length * 60;
+    const classMins = enrolledClasses.reduce((sum, e) => sum + getEventDurationMinutes(e.title, e.description), 0);
     const trialMins = (trialEvents.length + trials.length) * 30;
     return classMins + trialMins;
   }, [events, trials]);
@@ -295,14 +296,18 @@ function TutorDashboardContent() {
   }, [totalTeachingMinutes]);
 
   const completedTeachingHours = useMemo(() => {
-    // Hard rule: Tutors are only paid for completed enrolled 1-hour classes.
+    // Hard rule: Tutors are paid for completed enrolled classes according to duration (1 hour = 1h, 2 hours = 2h).
     // 30-min trial sessions are free (non-billable).
     const completedPaidClasses = events.filter((e) => 
       (e.status === "COMPLETED" || Boolean(e.endedAt)) &&
       !e.title?.toLowerCase().includes("trial") &&
       !e.description?.toLowerCase().includes("trial")
-    ).length;
-    return completedPaidClasses.toFixed(1);
+    );
+    const totalMinutes = completedPaidClasses.reduce(
+      (sum, e) => sum + getEventDurationMinutes(e.title, e.description),
+      0
+    );
+    return (totalMinutes / 60).toFixed(1);
   }, [events]);
 
   const completedSessions = useMemo(() => {
@@ -1148,7 +1153,7 @@ function TutorDashboardContent() {
     }
   };
 
-  const handleEndClass = async (eventId: string) => {
+  const handleEndClass = async (eventId: string, isNoShow?: boolean) => {
     try {
       setEndingClassId(eventId);
       const res = await fetch("/api/tutor", {
@@ -1157,15 +1162,65 @@ function TutorDashboardContent() {
         body: JSON.stringify({
           action: "end_class",
           eventId,
+          isNoShow: Boolean(isNoShow),
         }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to end class.");
+      } else {
+        if (data.isNoShow) {
+          alert("✓ Class ended under Student No-Show Policy. Token deducted from student and your teaching fee was credited to your earnings ledger.");
+        }
         fetchTutorData();
       }
     } catch (error) {
       console.error("Failed to end class:", error);
     } finally {
       setEndingClassId(null);
+    }
+  };
+
+  const promptEndClass = (ev: ScheduledClassEvent) => {
+    const isTrial = ev.title?.toLowerCase().includes("trial") || ev.description?.toLowerCase().includes("trial");
+    const liveStartTime = ev.actualStartTime || ev.startedAt;
+    const elapsedMinutes = liveStartTime
+      ? Math.floor((Date.now() - new Date(liveStartTime).getTime()) / 60000)
+      : 0;
+
+    if (isTrial) {
+      setConfirmModalData({
+        isOpen: true,
+        title: "End Consultation Session",
+        description: "Are you sure you want to conclude this 1-on-1 consultation session?",
+        variant: "warning",
+        onConfirm: async () => {
+          await handleEndClass(ev.id);
+        },
+      });
+      return;
+    }
+
+    if (elapsedMinutes < 15) {
+      setConfirmModalData({
+        isOpen: true,
+        title: "End Live Class Session",
+        description: `Are you sure you want to end "${ev.title}"? Note: If your student has not attended, LMS policy requires waiting at least 15 minutes in the classroom to qualify as a Student No-Show (waited ${elapsedMinutes} min, ${15 - elapsedMinutes} min remaining). If your student attended, you may end the class now.`,
+        variant: "warning",
+        onConfirm: async () => {
+          await handleEndClass(ev.id);
+        },
+      });
+    } else {
+      setConfirmModalData({
+        isOpen: true,
+        title: "End Class Session (15-Minute Policy Met)",
+        description: `You have been in the live session for ${elapsedMinutes} minutes. If your student did not attend, ending this class will apply the Student No-Show Policy: token(s) are deducted from the student and your teaching fee is credited to your monthly earnings.`,
+        variant: "success",
+        onConfirm: async () => {
+          await handleEndClass(ev.id);
+        },
+      });
     }
   };
 
@@ -2565,10 +2620,26 @@ function TutorDashboardContent() {
                                     Class: {formatTimeInTimezone(ev.startedAt, tutorTimezone)} - {formatTimeInTimezone(ev.endedAt, tutorTimezone, { includeAbbr: true })}
                                   </span>
                                 ) : ev.status === "LIVE" && (ev.actualStartTime || ev.startedAt) ? (
-                                  <span className="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 animate-pulse">
-                                    <Clock className="w-3 h-3 text-red-600" />
-                                    Live since {formatTimeInTimezone((ev.actualStartTime || ev.startedAt)!, tutorTimezone, { includeAbbr: true })}
-                                  </span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 animate-pulse">
+                                      <Clock className="w-3 h-3 text-red-600" />
+                                      Live since {formatTimeInTimezone((ev.actualStartTime || ev.startedAt)!, tutorTimezone, { includeAbbr: true })} (
+                                      {Math.floor((Date.now() - new Date((ev.actualStartTime || ev.startedAt)!).getTime()) / 60000)}m)
+                                    </span>
+                                    {!(ev.title?.toLowerCase().includes("trial") || ev.description?.toLowerCase().includes("trial")) && (
+                                      <span
+                                        className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                                          Math.floor((Date.now() - new Date((ev.actualStartTime || ev.startedAt)!).getTime()) / 60000) >= 15
+                                            ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                            : "bg-amber-50 text-amber-800 border-amber-200"
+                                        }`}
+                                      >
+                                        {Math.floor((Date.now() - new Date((ev.actualStartTime || ev.startedAt)!).getTime()) / 60000) >= 15
+                                          ? "✓ 15-Min Policy Met (No-Show Eligible)"
+                                          : `Policy Wait: ${Math.floor((Date.now() - new Date((ev.actualStartTime || ev.startedAt)!).getTime()) / 60000)}/15m (${Math.max(1, 15 - Math.floor((Date.now() - new Date((ev.actualStartTime || ev.startedAt)!).getTime()) / 60000))}m remaining)`}
+                                      </span>
+                                    )}
+                                  </div>
                                 ) : null}
                               </div>
                             </div>
@@ -2585,11 +2656,23 @@ function TutorDashboardContent() {
                                     Join Room
                                   </a>
                                   <button
-                                    onClick={() => handleEndClass(ev.id)}
+                                    onClick={() => promptEndClass(ev)}
                                     disabled={endingClassId === ev.id}
-                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold hover:bg-slate-50"
+                                    className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${
+                                      !(ev.title?.toLowerCase().includes("trial") || ev.description?.toLowerCase().includes("trial")) &&
+                                      (ev.actualStartTime || ev.startedAt) &&
+                                      Math.floor((Date.now() - new Date((ev.actualStartTime || ev.startedAt)!).getTime()) / 60000) >= 15
+                                        ? "bg-purple-50 text-purple-800 border-purple-300 hover:bg-purple-100"
+                                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                                    }`}
                                   >
-                                    End
+                                    {endingClassId === ev.id
+                                      ? "Ending..."
+                                      : !(ev.title?.toLowerCase().includes("trial") || ev.description?.toLowerCase().includes("trial")) &&
+                                        (ev.actualStartTime || ev.startedAt) &&
+                                        Math.floor((Date.now() - new Date((ev.actualStartTime || ev.startedAt)!).getTime()) / 60000) >= 15
+                                      ? "End (15m Met)"
+                                      : "End"}
                                   </button>
                                   <button
                                     onClick={() => handleDeleteClass(ev.id, ev.title)}
@@ -2894,10 +2977,10 @@ function TutorDashboardContent() {
                                 ) : (
                                   <>
                                     <Badge className="bg-blue-100 text-blue-900 border border-blue-300 text-[10px] font-bold shrink-0">
-                                      📚 Enrolled 1-Hour Class
+                                      📚 Enrolled {getEventDurationHours(ev.title, ev.description) > 1 ? `${getEventDurationHours(ev.title, ev.description)}-Hour` : "1-Hour"} Class
                                     </Badge>
                                     <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold shrink-0">
-                                      💰 Paid Class
+                                      💰 Paid Class ({getEventDurationHours(ev.title, ev.description)}h Payout)
                                     </Badge>
                                   </>
                                 )}
@@ -2931,7 +3014,9 @@ function TutorDashboardContent() {
                                   <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                   <span>Session Type:</span>
                                   <strong className={`font-semibold ${isTrial ? "text-amber-800" : "text-blue-800"}`}>
-                                    {isTrial ? "30 Minutes (Free Consultation)" : "60 Minutes (1-Hour Class)"}
+                                    {isTrial
+                                      ? "30 Minutes (Free Consultation)"
+                                      : `${getEventDurationMinutes(ev.title, ev.description)} Minutes (${getEventDurationHours(ev.title, ev.description)}-Hour Class)`}
                                   </strong>
                                 </span>
 
@@ -3040,7 +3125,9 @@ function TutorDashboardContent() {
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-blue-800 font-semibold bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
-                                  1-Hour Class
+                                  {getEventDurationHours(ev.title, ev.description) > 1
+                                    ? `${getEventDurationHours(ev.title, ev.description)}-Hour Class`
+                                    : "1-Hour Class"}
                                 </span>
                               )}
                             </div>

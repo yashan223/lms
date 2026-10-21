@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { sendLowTokenBalanceEmail } from "@/lib/email";
 import { TokenGrantStatus } from "@prisma/client";
+import { getEventDurationHours } from "@/lib/scheduling";
 
 export const DEFAULT_PAY_GRADES = {
   IGCSE: 750, // LKR per hour / token
@@ -434,6 +435,7 @@ export async function completeClassAndProcessEcosystem(
     manualStartTime?: Date;
     manualEndTime?: Date;
     recordingUrl?: string;
+    isNoShow?: boolean;
   }
 ): Promise<{
   success: boolean;
@@ -557,6 +559,10 @@ export async function completeClassAndProcessEcosystem(
   let tokenDeducted = false;
   let earningRecord: any = null;
 
+  // Determine duration in hours (e.g. 1 hour or 2-hour merged class)
+  const durationHours = getEventDurationHours(event.title, event.description);
+  const tokensToDeduct = Math.max(1, Math.round(durationHours));
+
   // Step 2: Automatic Token Deduction (1 Token = 1 Hour)
   if (studentId) {
     await expireOverdueTokenGrants(studentId);
@@ -571,7 +577,7 @@ export async function completeClassAndProcessEcosystem(
       });
     }
 
-    // Find earliest unexpired active grant
+    // Find earliest unexpired active grants
     const activeGrants = await prisma.tokenGrant.findMany({
       where: {
         userId: studentId,
@@ -582,9 +588,11 @@ export async function completeClassAndProcessEcosystem(
       orderBy: { expiresAt: "asc" },
     });
 
-    if (activeGrants.length > 0) {
-      const grant = activeGrants[0];
-      const newRemaining = grant.tokensRemaining - 1;
+    let remainingToDeduct = tokensToDeduct;
+    for (const grant of activeGrants) {
+      if (remainingToDeduct <= 0) break;
+      const deductFromThis = Math.min(grant.tokensRemaining, remainingToDeduct);
+      const newRemaining = grant.tokensRemaining - deductFromThis;
       await prisma.tokenGrant.update({
         where: { id: grant.id },
         data: {
@@ -592,22 +600,27 @@ export async function completeClassAndProcessEcosystem(
           status: newRemaining <= 0 ? TokenGrantStatus.EXHAUSTED : TokenGrantStatus.ACTIVE,
         },
       });
+      remainingToDeduct -= deductFromThis;
     }
 
     // Decrement wallet balance
     await prisma.tokenWallet.update({
       where: { id: wallet.id },
       data: {
-        balance: { decrement: 1 },
+        balance: { decrement: tokensToDeduct },
       },
     });
+
+    const txDesc = opts?.isNoShow
+      ? `Student No-Show Policy (-${tokensToDeduct} Token${tokensToDeduct > 1 ? "s" : ""}): ${event.title}`
+      : `Completed ${durationHours}-Hour Class: ${event.title} (-${tokensToDeduct} Token${tokensToDeduct > 1 ? "s" : ""})`;
 
     await prisma.tokenTransaction.create({
       data: {
         walletId: wallet.id,
-        amount: -1,
+        amount: -tokensToDeduct,
         type: "SPEND",
-        description: `Completed 1-Hour Class: ${event.title} (-1 Token)`,
+        description: txDesc,
         referenceId: event.id,
       },
     });
@@ -622,12 +635,17 @@ export async function completeClassAndProcessEcosystem(
   if (tutorId) {
     const payGrades = await getPayGradeSettings();
     const { tier, label: tierLabel } = determineClassTier(event.course, (event.user as any)?.academicLevel);
-    const amountLkr = tier === "IGCSE" ? payGrades.igcseRateLkr : payGrades.ialRateLkr;
+    const hourlyRate = tier === "IGCSE" ? payGrades.igcseRateLkr : payGrades.ialRateLkr;
+    const amountLkr = hourlyRate * durationHours;
 
     // Calendar month key (e.g. "2026-10")
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
     const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+
+    const earningDesc = opts?.isNoShow
+      ? `Student No-Show Policy (Tutor waited 15+ mins): ${event.title} (${tierLabel})`
+      : `Completed ${durationHours}-Hour Class: ${event.title} (${tierLabel})`;
 
     earningRecord = await prisma.tutorEarningRecord.create({
       data: {
@@ -637,8 +655,8 @@ export async function completeClassAndProcessEcosystem(
         studentId: studentId,
         tier,
         amountLkr,
-        tokenCount: 1,
-        description: `Completed 1-Hour Class: ${event.title} (${tierLabel})`,
+        tokenCount: durationHours,
+        description: earningDesc,
         monthKey,
         year,
         month,
@@ -646,11 +664,15 @@ export async function completeClassAndProcessEcosystem(
     });
 
     // Notify tutor of credited earnings
+    const notifMsg = opts?.isNoShow
+      ? `Rs. ${amountLkr.toLocaleString("en-LK")} LKR credited for student no-show after completing mandatory 15-minute wait: "${event.title}" (${tierLabel} @ Rs. ${hourlyRate}/hr).`
+      : `Rs. ${amountLkr.toLocaleString("en-LK")} LKR credited to your monthly earnings ledger for completed ${durationHours}-hour session: "${event.title}" (${tierLabel} @ Rs. ${hourlyRate}/hr).`;
+
     await prisma.notification.create({
       data: {
         userId: tutorId,
         title: "💰 Class Earnings Credited",
-        message: `Rs. ${amountLkr.toLocaleString("en-LK")} LKR credited to your monthly earnings ledger for completed 1-hour session: "${event.title}" (${tierLabel}).`,
+        message: notifMsg,
         type: "SUCCESS",
         link: "/tutor?tab=history",
       },
@@ -676,7 +698,7 @@ export async function completeClassAndProcessEcosystem(
     tokenDeducted,
     earningsCredited: Boolean(earningRecord),
     earningRecord,
-    message: "Class marked as Completed. 1 token deducted from student and earnings credited to tutor.",
+    message: `Class marked as Completed. ${tokensToDeduct} token${tokensToDeduct > 1 ? "s" : ""} deducted from student and Rs. ${earningRecord?.amountLkr || 0} LKR credited to tutor.`,
   };
 }
 

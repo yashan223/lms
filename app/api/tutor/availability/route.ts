@@ -12,29 +12,10 @@ import {
   formatDateInTimezone,
   getDualTimeDisplay,
 } from "@/lib/timezones";
+import { getEventDurationMinutes } from "@/lib/scheduling";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-function getEventDurationMinutes(title: string, description?: string | null): number {
-  const text = `${title} ${description || ""}`.toLowerCase();
-  if (text.includes("2h") || text.includes("2 hours") || text.includes("2-hour") || text.includes("120 min")) {
-    return 120;
-  }
-  if (text.includes("1.5h") || text.includes("1.5 hour") || text.includes("90 min")) {
-    return 90;
-  }
-  if (text.includes("1h") || text.includes("1 hour") || text.includes("60 min")) {
-    return 60;
-  }
-  if (text.includes("45 min") || text.includes("45m")) {
-    return 45;
-  }
-  if (text.includes("30 min") || text.includes("30m")) {
-    return 30;
-  }
-  return 60;
-}
 
 export async function GET(request: NextRequest) {
   try {

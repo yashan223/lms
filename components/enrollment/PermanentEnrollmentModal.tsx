@@ -112,6 +112,15 @@ export function PermanentEnrollmentModal({
     }
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Fetch 1-hour matched availability
   useEffect(() => {
     if (!isOpen || !course?.id) return;
@@ -254,49 +263,60 @@ export function PermanentEnrollmentModal({
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-50 w-full h-full overflow-hidden animate-in fade-in duration-200">
       <div className="relative w-full h-full bg-slate-50 flex flex-col overflow-hidden">
         
-        {/* Full-width Header */}
-        <div className="bg-gradient-to-r from-[#0c2461] to-[#1e3799] px-6 py-4 sm:px-8 sm:py-5 text-white shrink-0 relative shadow-md">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/15 border border-white/25 text-xs font-bold tracking-wide uppercase">
-                  <CalendarClock className="w-3.5 h-3.5 text-blue-200" />
-                  Permanent Class Enrollment
-                </span>
-                <span className="text-xs text-blue-200 font-semibold">• 1-Hour Recurring Slots</span>
-              </div>
-
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight">{course.title}</h2>
-              <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-blue-100 font-medium">
-                <span className="flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-blue-200" />
-                  Tutor: <strong>{course.tutor?.name || "Senior Academic Tutor"}</strong>
-                </span>
-                {course.subjectCode && (
-                  <span className="bg-white/20 px-2 py-0.5 rounded text-[11px] font-mono">
-                    {course.subjectCode}
-                  </span>
-                )}
-                <span className="bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  {totalMatchedSlotsCount} Mutual Availability Matches
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={onClose}
-              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0"
-              aria-label="Close"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
+        {/* Floating Top Right Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="fixed top-4 right-5 z-50 p-2.5 rounded-full bg-white/90 hover:bg-white text-slate-600 hover:text-slate-900 shadow-md border border-slate-200 backdrop-blur-xs transition-all cursor-pointer"
+          aria-label="Close"
+          title="Close modal (Esc)"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
         {/* Content Area */}
         <div className="overflow-y-auto flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-6 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+          <div className="max-w-7xl mx-auto space-y-6 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm relative">
+            
+            {/* Header with Title & Close Button */}
+            <div className="flex items-start justify-between gap-4 pb-5 border-b border-slate-200">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-bold text-blue-800 tracking-wide uppercase">
+                    <CalendarClock className="w-3.5 h-3.5 text-blue-600" />
+                    Permanent Class Enrollment
+                  </span>
+                  <span className="text-xs text-slate-500 font-semibold">• 1-Hour Recurring Slots</span>
+                </div>
+
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{course.title}</h2>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 text-slate-400" />
+                    Tutor: <strong className="text-slate-800">{course.tutor?.name || "Senior Academic Tutor"}</strong>
+                  </span>
+                  {course.subjectCode && (
+                    <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
+                      {course.subjectCode}
+                    </span>
+                  )}
+                  <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-emerald-600" />
+                    {totalMatchedSlotsCount} Mutual Availability Matches
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
+                aria-label="Close modal"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           {successData ? (
             <div className="text-center py-10 space-y-4">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">

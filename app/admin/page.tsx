@@ -70,6 +70,8 @@ import {
   ArrowDown,
   Globe,
   RotateCcw,
+  Trophy,
+  Target,
 } from "lucide-react";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { AcademicSchool, DEFAULT_SCHOOLS } from "@/lib/subjects";
@@ -298,16 +300,48 @@ export default function AdminDashboardPage() {
   const [isSavingBundles, setIsSavingBundles] = useState(false);
   const [bundleSaveMsg, setBundleSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const [payGrades, setPayGrades] = useState<{ igcseRateLkr: number; ialRateLkr: number }>({
+  const [payGrades, setPayGrades] = useState<{
+    igcseRateLkr: number;
+    ialRateLkr: number;
+    tier1MinHours: number;
+    tier1BonusLkr: number;
+    tier2MinHours: number;
+    tier2BonusLkr: number;
+    tier3MinHours: number;
+    tier3BonusLkr: number;
+  }>({
     igcseRateLkr: 750,
     ialRateLkr: 850,
+    tier1MinHours: 50,
+    tier1BonusLkr: 5000,
+    tier2MinHours: 75,
+    tier2BonusLkr: 7500,
+    tier3MinHours: 100,
+    tier3BonusLkr: 10000,
   });
-  const [payGradesInput, setPayGradesInput] = useState<{ igcse: string; ial: string }>({
+  const [payGradesInput, setPayGradesInput] = useState<{
+    igcse: string;
+    ial: string;
+    tier1MinHours: string;
+    tier1BonusLkr: string;
+    tier2MinHours: string;
+    tier2BonusLkr: string;
+    tier3MinHours: string;
+    tier3BonusLkr: string;
+  }>({
     igcse: "750",
     ial: "850",
+    tier1MinHours: "50",
+    tier1BonusLkr: "5000",
+    tier2MinHours: "75",
+    tier2BonusLkr: "7500",
+    tier3MinHours: "100",
+    tier3BonusLkr: "10000",
   });
   const [isSavingPayGrades, setIsSavingPayGrades] = useState(false);
   const [payGradesSaveMsg, setPayGradesSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [tutorPayoutOverview, setTutorPayoutOverview] = useState<any>(null);
+  const [tutorPayoutSearch, setTutorPayoutSearch] = useState<string>("");
 
   const [schoolsList, setSchoolsList] = useState<AcademicSchool[]>([]);
   const [showAddSchoolModal, setShowAddSchoolModal] = useState(false);
@@ -676,7 +710,16 @@ export default function AdminDashboardPage() {
           setPayGradesInput({
             igcse: String(data.payGrades.igcseRateLkr ?? 750),
             ial: String(data.payGrades.ialRateLkr ?? 850),
+            tier1MinHours: String(data.payGrades.tier1MinHours ?? 50),
+            tier1BonusLkr: String(data.payGrades.tier1BonusLkr ?? 5000),
+            tier2MinHours: String(data.payGrades.tier2MinHours ?? 75),
+            tier2BonusLkr: String(data.payGrades.tier2BonusLkr ?? 7500),
+            tier3MinHours: String(data.payGrades.tier3MinHours ?? 100),
+            tier3BonusLkr: String(data.payGrades.tier3BonusLkr ?? 10000),
           });
+        }
+        if (data.tutorPayoutOverview) {
+          setTutorPayoutOverview(data.tutorPayoutOverview);
         }
         const incomingSubjects = data.subjects || data.schools;
         if (incomingSubjects && Array.isArray(incomingSubjects)) {
@@ -1196,24 +1239,50 @@ export default function AdminDashboardPage() {
           action: "update_pay_grades",
           igcseRateLkr: Number(payGradesInput.igcse),
           ialRateLkr: Number(payGradesInput.ial),
+          tier1MinHours: Number(payGradesInput.tier1MinHours),
+          tier1BonusLkr: Number(payGradesInput.tier1BonusLkr),
+          tier2MinHours: Number(payGradesInput.tier2MinHours),
+          tier2BonusLkr: Number(payGradesInput.tier2BonusLkr),
+          tier3MinHours: Number(payGradesInput.tier3MinHours),
+          tier3BonusLkr: Number(payGradesInput.tier3BonusLkr),
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update pay grades.");
+      if (!res.ok) throw new Error(data.error || "Failed to update pay grades and bonus tiers.");
       if (data.payGrades) {
         setPayGrades(data.payGrades);
         setPayGradesInput({
           igcse: String(data.payGrades.igcseRateLkr),
           ial: String(data.payGrades.ialRateLkr),
+          tier1MinHours: String(data.payGrades.tier1MinHours),
+          tier1BonusLkr: String(data.payGrades.tier1BonusLkr),
+          tier2MinHours: String(data.payGrades.tier2MinHours),
+          tier2BonusLkr: String(data.payGrades.tier2BonusLkr),
+          tier3MinHours: String(data.payGrades.tier3MinHours),
+          tier3BonusLkr: String(data.payGrades.tier3BonusLkr),
         });
       }
-      setPayGradesSaveMsg({ type: "success", text: "Tutor hourly pay grades saved successfully!" });
+      setPayGradesSaveMsg({ type: "success", text: "Pay grades and bonus tier settings saved successfully!" });
       setTimeout(() => setPayGradesSaveMsg(null), 3500);
+      fetchAdminData();
     } catch (err: any) {
-      setPayGradesSaveMsg({ type: "error", text: err.message || "Failed to save pay grades." });
+      setPayGradesSaveMsg({ type: "error", text: err.message || "Failed to save settings." });
     } finally {
       setIsSavingPayGrades(false);
     }
+  };
+
+  const handleResetStandardPayGrades = () => {
+    setPayGradesInput({
+      igcse: "750",
+      ial: "850",
+      tier1MinHours: "50",
+      tier1BonusLkr: "5000",
+      tier2MinHours: "75",
+      tier2BonusLkr: "7500",
+      tier3MinHours: "100",
+      tier3BonusLkr: "10000",
+    });
   };
 
   const handleResetBundlesToDefault = async () => {
@@ -4924,12 +4993,12 @@ export default function AdminDashboardPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setPayGradesInput({ igcse: "750", ial: "850" })}
+                      onClick={handleResetStandardPayGrades}
                       disabled={isSavingPayGrades}
                       className="text-xs font-bold h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer"
                     >
                       <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Reset Standard (750/850)</span>
+                      <span>Reset Standard Defaults</span>
                     </Button>
                     <Button
                       size="sm"
@@ -4940,12 +5009,12 @@ export default function AdminDashboardPage() {
                       {isSavingPayGrades ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Saving Rates...</span>
+                          <span>Saving Settings...</span>
                         </>
                       ) : (
                         <>
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Save Pay Grades</span>
+                          <span>Save Pay Grades & Bonus Tiers</span>
                         </>
                       )}
                     </Button>
@@ -5065,6 +5134,442 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
                   </div>
+                </div>
+
+                {/* Performance-Based Tutor Bonus System Configuration */}
+                <div className="pt-6 border-t border-slate-100 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                        <h4 className="font-black text-sm text-slate-900">
+                          Performance-Based Monthly Bonus Tiers (Dynamic Controls)
+                        </h4>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 uppercase tracking-wider">
+                          Non-Stacking
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                        Adjust the hour requirements and monetary values awarded at month-end. The system strictly evaluates the final total of completed hours at the end of the month and awards only the value of the highest achieved tier.
+                      </p>
+                    </div>
+
+                    <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                      Default: 50h (5,000 LKR) • 75h (7,500 LKR) • 100h (10,000 LKR)
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Tier 1 Configuration */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800">Tier 1 Bonus</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
+                          Baseline Milestone
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block">
+                            Min Hours Required
+                          </label>
+                          <div className="relative mt-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={payGradesInput.tier1MinHours}
+                              onChange={(e) =>
+                                setPayGradesInput((prev) => ({ ...prev, tier1MinHours: e.target.value }))
+                              }
+                              className="w-full pl-3 pr-12 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                              placeholder="50"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                              Hours
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block">
+                            Monetary Bonus Award (LKR)
+                          </label>
+                          <div className="relative mt-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                              Rs.
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="500"
+                              value={payGradesInput.tier1BonusLkr}
+                              onChange={(e) =>
+                                setPayGradesInput((prev) => ({ ...prev, tier1BonusLkr: e.target.value }))
+                              }
+                              className="w-full pl-9 pr-12 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                              placeholder="5000"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                              LKR
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200/80 text-[10.5px] text-slate-600 flex items-center justify-between">
+                        <span className="font-semibold">Active:</span>
+                        <span className="font-black text-blue-700">
+                          {payGrades.tier1MinHours}h - {Number(payGrades.tier2MinHours) - 1}h = Rs. {payGrades.tier1BonusLkr.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tier 2 Configuration */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800">Tier 2 Bonus</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
+                          Intermediate Milestone
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block">
+                            Min Hours Required
+                          </label>
+                          <div className="relative mt-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={payGradesInput.tier2MinHours}
+                              onChange={(e) =>
+                                setPayGradesInput((prev) => ({ ...prev, tier2MinHours: e.target.value }))
+                              }
+                              className="w-full pl-3 pr-12 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                              placeholder="75"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                              Hours
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block">
+                            Monetary Bonus Award (LKR)
+                          </label>
+                          <div className="relative mt-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                              Rs.
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="500"
+                              value={payGradesInput.tier2BonusLkr}
+                              onChange={(e) =>
+                                setPayGradesInput((prev) => ({ ...prev, tier2BonusLkr: e.target.value }))
+                              }
+                              className="w-full pl-9 pr-12 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                              placeholder="7500"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                              LKR
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200/80 text-[10.5px] text-slate-600 flex items-center justify-between">
+                        <span className="font-semibold">Active:</span>
+                        <span className="font-black text-indigo-700">
+                          {payGrades.tier2MinHours}h - {Number(payGrades.tier3MinHours) - 1}h = Rs. {payGrades.tier2BonusLkr.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tier 3 Configuration */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-amber-50/40 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800">Tier 3 Bonus</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">
+                          Max Top Performer
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block">
+                            Min Hours Required
+                          </label>
+                          <div className="relative mt-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={payGradesInput.tier3MinHours}
+                              onChange={(e) =>
+                                setPayGradesInput((prev) => ({ ...prev, tier3MinHours: e.target.value }))
+                              }
+                              className="w-full pl-3 pr-12 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                              placeholder="100"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                              Hours
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block">
+                            Monetary Bonus Award (LKR)
+                          </label>
+                          <div className="relative mt-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                              Rs.
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="500"
+                              value={payGradesInput.tier3BonusLkr}
+                              onChange={(e) =>
+                                setPayGradesInput((prev) => ({ ...prev, tier3BonusLkr: e.target.value }))
+                              }
+                              className="w-full pl-9 pr-12 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                              placeholder="10000"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                              LKR
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200/80 text-[10.5px] text-slate-600 flex items-center justify-between">
+                        <span className="font-semibold">Active:</span>
+                        <span className="font-black text-amber-700">
+                          {payGrades.tier3MinHours}h+ = Rs. {payGrades.tier3BonusLkr.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tutor Payout & Performance Bonus Overview Table */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <h3 className="font-black text-lg text-slate-900">
+                        Tutor Payout & Performance Bonus Overview
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        {tutorPayoutOverview?.monthLabel || "Current Month"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                      Comprehensive admin ledger tracking each tutor's subject tier, hourly conversion rate, completed monthly hours, active unlocked bonuses, and estimated total payable amount.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const tutors = tutorPayoutOverview?.tutors || [];
+                        const headers = "Tutor Name,Email,Tutor ID,Subject Tier,Hourly Pay Grade,Total Hours This Month,Base Earnings LKR,Current Unlocked Bonus LKR,Bonus Tier,Total Estimated Payout LKR\n";
+                        const rows = tutors
+                          .map(
+                            (t: any) =>
+                              `"${t.name}","${t.email}","${t.tutorId || ""}","${t.subjectTier}","${t.hourlyPayGrade}",${t.totalHoursThisMonth},${t.baseEarningsLkr},${t.unlockedBonusLkr},"${t.bonusTierName || "None"}",${t.totalEstimatedPayoutLkr}`
+                          )
+                          .join("\n");
+                        const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.setAttribute("download", `tutor_payouts_overview_${tutorPayoutOverview?.monthKey || "current"}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="text-xs font-bold text-slate-700 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs border-slate-200 hover:bg-slate-50"
+                    >
+                      <Download className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Export Payouts CSV</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Filter and Stats Bar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Input
+                      placeholder="Search tutor by name, email, or ID..."
+                      value={tutorPayoutSearch}
+                      onChange={(e) => setTutorPayoutSearch(e.target.value)}
+                      className="pl-8 h-9 text-xs rounded-xl border-slate-200"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+                    <span>
+                      Total Tutors: <strong>{tutorPayoutOverview?.tutors?.length || 0}</strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Hours Logged: <strong>{tutorPayoutOverview?.tutors?.reduce((s: number, t: any) => s + (t.totalHoursThisMonth || 0), 0) || 0} hrs</strong>
+                    </span>
+                    <span>•</span>
+                    <span className="text-emerald-700">
+                      Total Payout: <strong>Rs. {(tutorPayoutOverview?.tutors?.reduce((s: number, t: any) => s + (t.totalEstimatedPayoutLkr || 0), 0) || 0).toLocaleString()} LKR</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Overview Table */}
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th className="py-3 px-4">Tutor Name</th>
+                        <th className="py-3 px-4">Subject Tier</th>
+                        <th className="py-3 px-4">Hourly Pay Grade</th>
+                        <th className="py-3 px-4">Total Hours This Month</th>
+                        <th className="py-3 px-4">Current Unlocked Bonus</th>
+                        <th className="py-3 px-4 text-right">Total Estimated Payout</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(tutorPayoutOverview?.tutors || [])
+                        .filter((t: any) => {
+                          if (!tutorPayoutSearch.trim()) return true;
+                          const q = tutorPayoutSearch.toLowerCase();
+                          return (
+                            t.name.toLowerCase().includes(q) ||
+                            t.email.toLowerCase().includes(q) ||
+                            (t.tutorId && t.tutorId.toLowerCase().includes(q))
+                          );
+                        })
+                        .map((t: any) => (
+                          <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
+                            {/* Tutor Name */}
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <Avatar className="w-7 h-7 ring-1 ring-slate-200">
+                                  <AvatarFallback className="text-[11px] font-bold bg-blue-100 text-blue-800">
+                                    {t.name.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span>{t.name}</span>
+                                    {t.tutorId && (
+                                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-indigo-100 text-indigo-900 border border-indigo-200">
+                                        {t.tutorId}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">{t.email}</div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Subject Tier */}
+                            <td className="py-3.5 px-4">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                t.subjectTier === "IAL_IAS"
+                                  ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
+                                  : t.subjectTier === "Both (IGCSE & IAL/IAS)"
+                                  ? "bg-purple-100 text-purple-800 border border-purple-200"
+                                  : "bg-blue-100 text-blue-800 border border-blue-200"
+                              }`}>
+                                {t.subjectTier === "IAL_IAS"
+                                  ? "IAL & IAS (A-Level)"
+                                  : t.subjectTier === "Both (IGCSE & IAL/IAS)"
+                                  ? "Both (O/L & A/L)"
+                                  : "IGCSE Level (O/L)"}
+                              </span>
+                            </td>
+
+                            {/* Hourly Pay Grade */}
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                              {t.hourlyPayGrade}
+                            </td>
+
+                            {/* Total Hours This Month */}
+                            <td className="py-3.5 px-4">
+                              <div className="space-y-0.5">
+                                <span className="font-mono font-black text-slate-900 text-xs">
+                                  {t.totalHoursThisMonth} Hours
+                                </span>
+                                <div className="text-[10.5px] text-slate-400">
+                                  {t.igcseHours > 0 && `${t.igcseHours}h IGCSE`}
+                                  {t.igcseHours > 0 && t.ialHours > 0 && " • "}
+                                  {t.ialHours > 0 && `${t.ialHours}h IAL`}
+                                  {t.totalHoursThisMonth === 0 && "0 tokens deducted"}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Current Unlocked Bonus */}
+                            <td className="py-3.5 px-4">
+                              {t.unlockedBonusLkr > 0 ? (
+                                <div className="space-y-0.5">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                    <Trophy className="w-3 h-3 text-amber-600" />
+                                    <span>+{t.unlockedBonusLkr.toLocaleString()} LKR ({t.bonusTierName})</span>
+                                  </span>
+                                  <div className="text-[10px] text-slate-400 font-semibold">
+                                    Highest tier unlocked (non-stacking)
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-0.5">
+                                  <span className="text-[11px] text-slate-400 font-medium">
+                                    Rs. 0 LKR
+                                  </span>
+                                  <div className="text-[10px] text-slate-400">
+                                    Need {t.nextTierHoursRemaining ?? 50} more hrs for Tier 1
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Total Estimated Payout */}
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="space-y-0.5">
+                                <span className="font-mono font-black text-sm text-emerald-700">
+                                  Rs. {t.totalEstimatedPayoutLkr.toLocaleString()} LKR
+                                </span>
+                                <div className="text-[10px] text-slate-400">
+                                  Base: Rs. {t.baseEarningsLkr.toLocaleString()}
+                                  {t.unlockedBonusLkr > 0 && ` + Bonus: Rs. ${t.unlockedBonusLkr.toLocaleString()}`}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+
+                      {(!tutorPayoutOverview?.tutors || tutorPayoutOverview.tutors.length === 0) && (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
+                            No active certified tutors registered yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

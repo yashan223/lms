@@ -691,7 +691,7 @@ function DashboardContent() {
       const pad = (n: number) => String(n).padStart(2, "0");
       const cellDateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       const events = studentTimelineEvents.filter((ev) => {
-        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
         if (isEnded) return false;
         const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === cellDateStr;
         if (!matchDate) return false;
@@ -716,7 +716,7 @@ function DashboardContent() {
       const pad = (n: number) => String(n).padStart(2, "0");
       const cellDateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       const events = studentTimelineEvents.filter((ev) => {
-        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
         if (isEnded) return false;
         const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === cellDateStr;
         if (!matchDate) return false;
@@ -742,7 +742,7 @@ function DashboardContent() {
       const pad = (n: number) => String(n).padStart(2, "0");
       const cellDateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       const events = studentTimelineEvents.filter((ev) => {
-        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
         if (isEnded) return false;
         const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === cellDateStr;
         if (!matchDate) return false;
@@ -769,7 +769,7 @@ function DashboardContent() {
     if (!selectedDate) return [];
     const selectedStr = getDatePartsInTimezone(selectedDate, userTimezone).dateStr;
     return studentTimelineEvents.filter((ev) => {
-      const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+      const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
       if (isEnded) return false;
       const matchDate = getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === selectedStr;
       if (!matchDate) return false;
@@ -791,7 +791,7 @@ function DashboardContent() {
     return list
       .filter((ev) => {
 
-        if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || ev.endedAt) return false;
+        if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED")) return false;
 
         if (ev.status === "LIVE") return true;
 
@@ -816,7 +816,7 @@ function DashboardContent() {
         const futureLimit = now + days * 24 * 60 * 60 * 1000;
         list = list.filter((ev) => {
           const t = new Date(ev.dueDate).getTime();
-          const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+          const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
           return !isEnded && t >= now && t <= futureLimit;
         });
       }

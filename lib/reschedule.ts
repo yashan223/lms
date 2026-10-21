@@ -365,6 +365,7 @@ export async function acceptRescheduleRequest(params: {
       dueDate: req.requestedDate,
       description: updatedDesc,
       status: "SCHEDULED",
+      startedAt: null,
       endedAt: null,
       actualStartTime: null,
       actualEndTime: null,

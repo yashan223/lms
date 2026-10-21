@@ -742,7 +742,10 @@ export async function POST(request: NextRequest) {
           status: EventStatus.SCHEDULED,
           approvalStatus: "APPROVED",
           rejectionReason: null,
+          startedAt: null,
           endedAt: null,
+          actualStartTime: null,
+          actualEndTime: null,
           ...(meetingLink ? { meetingLink: meetingLink.trim() } : {}),
         },
         include: {

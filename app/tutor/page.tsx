@@ -713,7 +713,7 @@ function TutorDashboardContent() {
 
       const matchedClasses = events
         .filter((ev) => {
-          const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+          const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
           if (isEnded) return false;
           const evDate = new Date(ev.dueDate);
           return (
@@ -762,7 +762,7 @@ function TutorDashboardContent() {
       const m = date.getMonth();
       const d = date.getDate();
       const hasClass = events.some((ev) => {
-        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
         if (isEnded) return false;
         const evDate = new Date(ev.dueDate);
         return (
@@ -824,7 +824,7 @@ function TutorDashboardContent() {
   const filteredEvents = useMemo(() => {
     const now = Date.now();
     return events.filter((ev) => {
-      const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || !!ev.endedAt;
+      const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
       if (classFilter === "ALL") return !isEnded;
       if (classFilter === "LIVE") return ev.status === "LIVE" && !isEnded;
       if (classFilter === "SCHEDULED") {
@@ -840,7 +840,7 @@ function TutorDashboardContent() {
     return events
       .filter((ev) => {
 
-        if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || ev.endedAt) return false;
+        if (ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED")) return false;
 
         if (ev.status === "LIVE") return true;
 
@@ -2727,9 +2727,9 @@ function TutorDashboardContent() {
                     >
                       <Coins className="w-4 h-4 text-amber-400" />
                       <span>Monthly Earnings</span>
-                      {monthlyEarnings?.currentMonth?.totalAmountLkr ? (
+                      {monthlyEarnings?.currentMonth?.totalEstimatedPayoutLkr || monthlyEarnings?.currentMonth?.totalAmountLkr ? (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-black border border-emerald-400/30">
-                          Rs. {monthlyEarnings.currentMonth.totalAmountLkr.toLocaleString()}
+                          Rs. {(monthlyEarnings.currentMonth.totalEstimatedPayoutLkr ?? monthlyEarnings.currentMonth.totalAmountLkr).toLocaleString()}
                         </span>
                       ) : null}
                     </button>

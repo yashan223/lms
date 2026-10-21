@@ -701,10 +701,16 @@ model TokenGrant {
 }
 
 model PayGradeSetting {
-  id           String   @id @default("default_pay_grades")
-  igcseRateLkr Float    @default(750)
-  ialRateLkr   Float    @default(850)
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default("default_pay_grades")
+  igcseRateLkr  Float    @default(750)
+  ialRateLkr    Float    @default(850)
+  tier1MinHours Float    @default(50)
+  tier1BonusLkr Float    @default(5000)
+  tier2MinHours Float    @default(75)
+  tier2BonusLkr Float    @default(7500)
+  tier3MinHours Float    @default(100)
+  tier3BonusLkr Float    @default(10000)
+  updatedAt     DateTime @updatedAt
 
   @@map("pay_grade_settings")
 }
@@ -745,6 +751,8 @@ model TutorMonthlyPayoutArchive {
   totalHours     Float
   igcseHours     Float    @default(0)
   ialHours       Float    @default(0)
+  bonusAmountLkr Float    @default(0)
+  bonusTier      String?
   status         String   @default("PAYABLE") // "PAYABLE", "PAID"
   closedAt       DateTime @default(now()) @db.Timestamptz
 

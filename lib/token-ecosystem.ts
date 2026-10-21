@@ -8,18 +8,44 @@ export const DEFAULT_PAY_GRADES = {
   IAL_IAS: 850, // LKR per hour / token
 };
 
+export const DEFAULT_BONUS_TIERS = {
+  tier1MinHours: 50,
+  tier1BonusLkr: 5000,
+  tier2MinHours: 75,
+  tier2BonusLkr: 7500,
+  tier3MinHours: 100,
+  tier3BonusLkr: 10000,
+};
+
+export interface PayGradeAndBonusSettings {
+  igcseRateLkr: number;
+  ialRateLkr: number;
+  tier1MinHours: number;
+  tier1BonusLkr: number;
+  tier2MinHours: number;
+  tier2BonusLkr: number;
+  tier3MinHours: number;
+  tier3BonusLkr: number;
+}
+
 /**
- * Returns current Admin Pay Grade rates from the DB or defaults.
+ * Returns current Admin Pay Grade rates and Bonus tier settings from the DB or defaults.
  */
-export async function getPayGradeSettings(): Promise<{ igcseRateLkr: number; ialRateLkr: number }> {
+export async function getPayGradeSettings(): Promise<PayGradeAndBonusSettings> {
   try {
     const setting = await prisma.payGradeSetting.findUnique({
       where: { id: "default_pay_grades" },
     });
     if (setting) {
       return {
-        igcseRateLkr: setting.igcseRateLkr,
-        ialRateLkr: setting.ialRateLkr,
+        igcseRateLkr: setting.igcseRateLkr ?? DEFAULT_PAY_GRADES.IGCSE,
+        ialRateLkr: setting.ialRateLkr ?? DEFAULT_PAY_GRADES.IAL_IAS,
+        tier1MinHours: setting.tier1MinHours ?? DEFAULT_BONUS_TIERS.tier1MinHours,
+        tier1BonusLkr: setting.tier1BonusLkr ?? DEFAULT_BONUS_TIERS.tier1BonusLkr,
+        tier2MinHours: setting.tier2MinHours ?? DEFAULT_BONUS_TIERS.tier2MinHours,
+        tier2BonusLkr: setting.tier2BonusLkr ?? DEFAULT_BONUS_TIERS.tier2BonusLkr,
+        tier3MinHours: setting.tier3MinHours ?? DEFAULT_BONUS_TIERS.tier3MinHours,
+        tier3BonusLkr: setting.tier3BonusLkr ?? DEFAULT_BONUS_TIERS.tier3BonusLkr,
       };
     }
   } catch (err) {
@@ -29,16 +55,28 @@ export async function getPayGradeSettings(): Promise<{ igcseRateLkr: number; ial
   return {
     igcseRateLkr: DEFAULT_PAY_GRADES.IGCSE,
     ialRateLkr: DEFAULT_PAY_GRADES.IAL_IAS,
+    tier1MinHours: DEFAULT_BONUS_TIERS.tier1MinHours,
+    tier1BonusLkr: DEFAULT_BONUS_TIERS.tier1BonusLkr,
+    tier2MinHours: DEFAULT_BONUS_TIERS.tier2MinHours,
+    tier2BonusLkr: DEFAULT_BONUS_TIERS.tier2BonusLkr,
+    tier3MinHours: DEFAULT_BONUS_TIERS.tier3MinHours,
+    tier3BonusLkr: DEFAULT_BONUS_TIERS.tier3BonusLkr,
   };
 }
 
 /**
- * Updates Admin Pay Grade rates in the database.
+ * Updates Admin Pay Grade rates and Bonus tier settings in the database.
  */
 export async function updatePayGradeSettings(rates: {
   igcseRateLkr?: number;
   ialRateLkr?: number;
-}): Promise<{ igcseRateLkr: number; ialRateLkr: number }> {
+  tier1MinHours?: number;
+  tier1BonusLkr?: number;
+  tier2MinHours?: number;
+  tier2BonusLkr?: number;
+  tier3MinHours?: number;
+  tier3BonusLkr?: number;
+}): Promise<PayGradeAndBonusSettings> {
   const current = await getPayGradeSettings();
   const updated = await prisma.payGradeSetting.upsert({
     where: { id: "default_pay_grades" },
@@ -46,16 +84,127 @@ export async function updatePayGradeSettings(rates: {
       id: "default_pay_grades",
       igcseRateLkr: rates.igcseRateLkr ?? current.igcseRateLkr,
       ialRateLkr: rates.ialRateLkr ?? current.ialRateLkr,
+      tier1MinHours: rates.tier1MinHours ?? current.tier1MinHours,
+      tier1BonusLkr: rates.tier1BonusLkr ?? current.tier1BonusLkr,
+      tier2MinHours: rates.tier2MinHours ?? current.tier2MinHours,
+      tier2BonusLkr: rates.tier2BonusLkr ?? current.tier2BonusLkr,
+      tier3MinHours: rates.tier3MinHours ?? current.tier3MinHours,
+      tier3BonusLkr: rates.tier3BonusLkr ?? current.tier3BonusLkr,
     },
     update: {
       ...(rates.igcseRateLkr !== undefined ? { igcseRateLkr: rates.igcseRateLkr } : {}),
       ...(rates.ialRateLkr !== undefined ? { ialRateLkr: rates.ialRateLkr } : {}),
+      ...(rates.tier1MinHours !== undefined ? { tier1MinHours: rates.tier1MinHours } : {}),
+      ...(rates.tier1BonusLkr !== undefined ? { tier1BonusLkr: rates.tier1BonusLkr } : {}),
+      ...(rates.tier2MinHours !== undefined ? { tier2MinHours: rates.tier2MinHours } : {}),
+      ...(rates.tier2BonusLkr !== undefined ? { tier2BonusLkr: rates.tier2BonusLkr } : {}),
+      ...(rates.tier3MinHours !== undefined ? { tier3MinHours: rates.tier3MinHours } : {}),
+      ...(rates.tier3BonusLkr !== undefined ? { tier3BonusLkr: rates.tier3BonusLkr } : {}),
     },
   });
 
   return {
     igcseRateLkr: updated.igcseRateLkr,
     ialRateLkr: updated.ialRateLkr,
+    tier1MinHours: updated.tier1MinHours,
+    tier1BonusLkr: updated.tier1BonusLkr,
+    tier2MinHours: updated.tier2MinHours,
+    tier2BonusLkr: updated.tier2BonusLkr,
+    tier3MinHours: updated.tier3MinHours,
+    tier3BonusLkr: updated.tier3BonusLkr,
+  };
+}
+
+/**
+ * Calculates non-stacking monthly bonus according to highest achieved tier.
+ * Tiers strictly evaluate the final total of completed hours in the month.
+ * Rule: Only the single highest tier is awarded (Example: 85 hours gives Tier 2 only, not Tier 1 + 2).
+ */
+export function calculateTutorMonthlyBonus(
+  totalHours: number,
+  config?: Partial<PayGradeAndBonusSettings>
+) {
+  const t1Min = config?.tier1MinHours ?? DEFAULT_BONUS_TIERS.tier1MinHours;
+  const t1Bonus = config?.tier1BonusLkr ?? DEFAULT_BONUS_TIERS.tier1BonusLkr;
+  const t2Min = config?.tier2MinHours ?? DEFAULT_BONUS_TIERS.tier2MinHours;
+  const t2Bonus = config?.tier2BonusLkr ?? DEFAULT_BONUS_TIERS.tier2BonusLkr;
+  const t3Min = config?.tier3MinHours ?? DEFAULT_BONUS_TIERS.tier3MinHours;
+  const t3Bonus = config?.tier3BonusLkr ?? DEFAULT_BONUS_TIERS.tier3BonusLkr;
+
+  let unlockedBonusLkr = 0;
+  let currentTier: "Tier 1" | "Tier 2" | "Tier 3" | null = null;
+  let nextTier: "Tier 1" | "Tier 2" | "Tier 3" | null = null;
+  let nextTierMinHours = t1Min;
+  let hoursToNextTier = Math.max(0, t1Min - totalHours);
+
+  if (totalHours >= t3Min) {
+    unlockedBonusLkr = t3Bonus;
+    currentTier = "Tier 3";
+    nextTier = null;
+    nextTierMinHours = t3Min;
+    hoursToNextTier = 0;
+  } else if (totalHours >= t2Min) {
+    unlockedBonusLkr = t2Bonus;
+    currentTier = "Tier 2";
+    nextTier = "Tier 3";
+    nextTierMinHours = t3Min;
+    hoursToNextTier = Math.max(0, t3Min - totalHours);
+  } else if (totalHours >= t1Min) {
+    unlockedBonusLkr = t1Bonus;
+    currentTier = "Tier 1";
+    nextTier = "Tier 2";
+    nextTierMinHours = t2Min;
+    hoursToNextTier = Math.max(0, t2Min - totalHours);
+  } else {
+    unlockedBonusLkr = 0;
+    currentTier = null;
+    nextTier = "Tier 1";
+    nextTierMinHours = t1Min;
+    hoursToNextTier = Math.max(0, t1Min - totalHours);
+  }
+
+  // Progress relative to highest tier (100 hours)
+  const progressPercent = Math.min(100, Math.round((totalHours / t3Min) * 100));
+
+  const tiers = [
+    {
+      id: "tier1",
+      name: "Tier 1",
+      minHours: t1Min,
+      maxHours: t2Min - 1,
+      bonusLkr: t1Bonus,
+      achieved: totalHours >= t1Min,
+      active: currentTier === "Tier 1",
+    },
+    {
+      id: "tier2",
+      name: "Tier 2",
+      minHours: t2Min,
+      maxHours: t3Min - 1,
+      bonusLkr: t2Bonus,
+      achieved: totalHours >= t2Min,
+      active: currentTier === "Tier 2",
+    },
+    {
+      id: "tier3",
+      name: "Tier 3",
+      minHours: t3Min,
+      maxHours: null,
+      bonusLkr: t3Bonus,
+      achieved: totalHours >= t3Min,
+      active: currentTier === "Tier 3",
+    },
+  ];
+
+  return {
+    totalHours,
+    unlockedBonusLkr,
+    currentTier,
+    nextTier,
+    nextTierMinHours,
+    hoursToNextTier,
+    progressPercent,
+    tiers,
   };
 }
 
@@ -491,6 +640,8 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
     igcseEarningsLkr: number;
     ialHours: number;
     ialEarningsLkr: number;
+    bonus: ReturnType<typeof calculateTutorMonthlyBonus>;
+    totalEstimatedPayoutLkr: number;
     records: any[];
   };
   archivedMonths: any[];
@@ -505,6 +656,8 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
     "July", "August", "September", "October", "November", "December"
   ];
   const currentMonthLabel = `${monthNames[currentMonthNum - 1]} ${currentYear}`;
+
+  const paySettings = await getPayGradeSettings();
 
   // Current month records
   const currentRecords = await prisma.tutorEarningRecord.findMany({
@@ -531,6 +684,9 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
   const totalAmountLkr = igcseEarningsLkr + ialEarningsLkr;
   const totalHours = igcseHours + ialHours;
 
+  // Calculate monthly bonus (non-stacking, highest achieved tier)
+  const bonus = calculateTutorMonthlyBonus(totalHours, paySettings);
+
   // Archive previous months if not already archived
   const pastMonthRecords = await prisma.tutorEarningRecord.findMany({
     where: {
@@ -551,6 +707,7 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
   }
 
   for (const [mKey, stats] of pastMonthsMap.entries()) {
+    const pastBonus = calculateTutorMonthlyBonus(stats.totalHours, paySettings);
     await prisma.tutorMonthlyPayoutArchive.upsert({
       where: {
         tutorId_monthKey: {
@@ -565,6 +722,8 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
         totalHours: stats.totalHours,
         igcseHours: stats.igcseHours,
         ialHours: stats.ialHours,
+        bonusAmountLkr: pastBonus.unlockedBonusLkr,
+        bonusTier: pastBonus.currentTier,
         status: "PAYABLE",
       },
       update: {
@@ -572,6 +731,8 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
         totalHours: stats.totalHours,
         igcseHours: stats.igcseHours,
         ialHours: stats.ialHours,
+        bonusAmountLkr: pastBonus.unlockedBonusLkr,
+        bonusTier: pastBonus.currentTier,
       },
     });
   }
@@ -591,8 +752,137 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
       igcseEarningsLkr,
       ialHours,
       ialEarningsLkr,
+      bonus,
+      totalEstimatedPayoutLkr: totalAmountLkr + bonus.unlockedBonusLkr,
       records: currentRecords,
     },
     archivedMonths,
+  };
+}
+
+/**
+ * Returns comprehensive overview of tutor payouts & performance bonuses for Admin Portal.
+ * Columns: Tutor Name, Subject Tier, Hourly Pay Grade, Total Hours This Month, Current Unlocked Bonus.
+ */
+export async function getAdminTutorPayoutOverview(): Promise<{
+  monthKey: string;
+  monthLabel: string;
+  payGrades: PayGradeAndBonusSettings;
+  tutors: Array<{
+    id: string;
+    name: string;
+    email: string;
+    tutorId?: string | null;
+    subjectTier: "IGCSE" | "IAL_IAS" | "Both (IGCSE & IAL/IAS)";
+    hourlyPayGrade: string;
+    hourlyRateLkr: number;
+    totalHoursThisMonth: number;
+    igcseHours: number;
+    ialHours: number;
+    baseEarningsLkr: number;
+    unlockedBonusLkr: number;
+    bonusTierName: string | null;
+    totalEstimatedPayoutLkr: number;
+    nextTierHoursRemaining: number;
+    progressPercent: number;
+  }>;
+}> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthNum = now.getMonth() + 1;
+  const currentMonthKey = `${currentYear}-${String(currentMonthNum).padStart(2, "0")}`;
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const currentMonthLabel = `${monthNames[currentMonthNum - 1]} ${currentYear}`;
+
+  const paySettings = await getPayGradeSettings();
+
+  // Find all tutors
+  const tutors = await prisma.user.findMany({
+    where: {
+      role: { in: ["TUTOR", "INSTRUCTOR"] as any },
+    },
+    include: {
+      createdCourses: {
+        select: { id: true, title: true, category: true, subjectCode: true, level: true },
+      },
+      tutorEarnings: {
+        where: { monthKey: currentMonthKey },
+        select: { amountLkr: true, tokenCount: true, tier: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const rows = tutors.map((t) => {
+    // Determine subject tier based on taught courses
+    let hasIgcse = false;
+    let hasIal = false;
+
+    if (t.createdCourses && t.createdCourses.length > 0) {
+      for (const c of t.createdCourses) {
+        const { tier } = determineClassTier(c);
+        if (tier === "IAL_IAS") hasIal = true;
+        else hasIgcse = true;
+      }
+    } else {
+      // Default to IGCSE if no courses yet
+      hasIgcse = true;
+    }
+
+    let subjectTier: "IGCSE" | "IAL_IAS" | "Both (IGCSE & IAL/IAS)" = "IGCSE";
+    let hourlyPayGrade = `Rs. ${paySettings.igcseRateLkr} / hr`;
+    let primaryRate = paySettings.igcseRateLkr;
+
+    if (hasIal && hasIgcse) {
+      subjectTier = "Both (IGCSE & IAL/IAS)";
+      hourlyPayGrade = `Rs. ${paySettings.igcseRateLkr} (O/L) • Rs. ${paySettings.ialRateLkr} (A/L)`;
+      primaryRate = paySettings.ialRateLkr;
+    } else if (hasIal) {
+      subjectTier = "IAL_IAS";
+      hourlyPayGrade = `Rs. ${paySettings.ialRateLkr} / hr`;
+      primaryRate = paySettings.ialRateLkr;
+    }
+
+    const earningsRecords = t.tutorEarnings || [];
+    const igcseHours = earningsRecords
+      .filter((r: { tier: string }) => r.tier === "IGCSE")
+      .reduce((sum: number, r: { tokenCount: number }) => sum + r.tokenCount, 0);
+    const ialHours = earningsRecords
+      .filter((r: { tier: string }) => r.tier !== "IGCSE")
+      .reduce((sum: number, r: { tokenCount: number }) => sum + r.tokenCount, 0);
+    const totalHoursThisMonth = igcseHours + ialHours;
+    const baseEarningsLkr = earningsRecords.reduce((sum: number, r: { amountLkr: number }) => sum + r.amountLkr, 0);
+
+    const bonus = calculateTutorMonthlyBonus(totalHoursThisMonth, paySettings);
+
+    return {
+      id: t.id,
+      name: t.name,
+      email: t.email,
+      tutorId: t.tutorId,
+      subjectTier,
+      hourlyPayGrade,
+      hourlyRateLkr: primaryRate,
+      totalHoursThisMonth,
+      igcseHours,
+      ialHours,
+      baseEarningsLkr,
+      unlockedBonusLkr: bonus.unlockedBonusLkr,
+      bonusTierName: bonus.currentTier,
+      totalEstimatedPayoutLkr: baseEarningsLkr + bonus.unlockedBonusLkr,
+      nextTierHoursRemaining: bonus.hoursToNextTier,
+      progressPercent: bonus.progressPercent,
+    };
+  });
+
+  return {
+    monthKey: currentMonthKey,
+    monthLabel: currentMonthLabel,
+    payGrades: paySettings,
+    tutors: rows,
   };
 }

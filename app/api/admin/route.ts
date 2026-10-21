@@ -31,7 +31,7 @@ import {
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 import { generateUniqueTutorId, backfillExistingTutors } from "@/lib/tutor-id";
 import { generateUniqueAdminId, backfillExistingAdmins, ensureAdminIdForUser } from "@/lib/admin-id";
-import { getPayGradeSettings, updatePayGradeSettings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
+import { getPayGradeSettings, updatePayGradeSettings, completeClassAndProcessEcosystem, getAdminTutorPayoutOverview } from "@/lib/token-ecosystem";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -364,6 +364,7 @@ export async function GET(request: NextRequest) {
       totalPendingApprovals,
       bundles: await getBundles(),
       payGrades: await getPayGradeSettings(),
+      tutorPayoutOverview: await getAdminTutorPayoutOverview(),
       schools: await getSchools(false),
       subjects: await getSchools(false),
     });
@@ -1836,17 +1837,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "update_pay_grades") {
-      const { igcseRateLkr, ialRateLkr } = body;
+      const {
+        igcseRateLkr,
+        ialRateLkr,
+        tier1MinHours,
+        tier1BonusLkr,
+        tier2MinHours,
+        tier2BonusLkr,
+        tier3MinHours,
+        tier3BonusLkr,
+      } = body;
       const updated = await updatePayGradeSettings({
-        igcseRateLkr: typeof igcseRateLkr === "number" ? igcseRateLkr : Number(igcseRateLkr),
-        ialRateLkr: typeof ialRateLkr === "number" ? ialRateLkr : Number(ialRateLkr),
+        igcseRateLkr: igcseRateLkr !== undefined ? Number(igcseRateLkr) : undefined,
+        ialRateLkr: ialRateLkr !== undefined ? Number(ialRateLkr) : undefined,
+        tier1MinHours: tier1MinHours !== undefined ? Number(tier1MinHours) : undefined,
+        tier1BonusLkr: tier1BonusLkr !== undefined ? Number(tier1BonusLkr) : undefined,
+        tier2MinHours: tier2MinHours !== undefined ? Number(tier2MinHours) : undefined,
+        tier2BonusLkr: tier2BonusLkr !== undefined ? Number(tier2BonusLkr) : undefined,
+        tier3MinHours: tier3MinHours !== undefined ? Number(tier3MinHours) : undefined,
+        tier3BonusLkr: tier3BonusLkr !== undefined ? Number(tier3BonusLkr) : undefined,
       });
 
       broadcastLMSEvent("USERS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        message: "Hourly pay grade settings updated successfully.",
+        message: "Pay grade rates and performance bonus settings updated successfully.",
         payGrades: updated,
       });
     }

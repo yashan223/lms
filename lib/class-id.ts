@@ -3,7 +3,7 @@
  * Do NOT import this file in Client Components — use @/lib/class-id-client instead.
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma as defaultPrisma } from "@/lib/prisma";
 
 // Re-export the pure formatting helper from the client-safe module.
 export { formatClassId } from "@/lib/class-id-client";
@@ -11,13 +11,23 @@ export { formatClassId } from "@/lib/class-id-client";
 /**
  * Generates a collision-free sequential/formatted Class ID.
  * Standard format: CLS-YYYY-NNNN (e.g., CLS-2026-0001)
+ *
+ * @param overrideYear Optional year override
+ * @param client Optional PrismaClient or TransactionClient (tx)
+ * @param allocatedCodes Optional Set or array of class codes already allocated in the current batch
  */
-export async function generateUniqueClassCode(overrideYear?: number): Promise<string> {
+export async function generateUniqueClassCode(
+  overrideYear?: number,
+  client?: any,
+  allocatedCodes?: Set<string> | string[]
+): Promise<string> {
+  const db = client || defaultPrisma;
   const year = overrideYear || new Date().getFullYear();
   const prefix = `CLS-${year}-`;
+  const allocatedSet = allocatedCodes instanceof Set ? allocatedCodes : new Set(allocatedCodes || []);
 
   try {
-    const existingWithPrefix = await prisma.event.findMany({
+    const existingWithPrefix = await db.event.findMany({
       where: {
         classCode: {
           startsWith: prefix,
@@ -39,28 +49,53 @@ export async function generateUniqueClassCode(overrideYear?: number): Promise<st
       }
     }
 
+    // Factor in any codes already allocated in the current batch/transaction
+    for (const code of allocatedSet) {
+      if (code && code.startsWith(prefix)) {
+        const parts = code.split("-");
+        const num = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+
     let nextSeq = maxSeq + 1;
     let candidate = `${prefix}${String(nextSeq).padStart(4, "0")}`;
 
-    let exists = await prisma.event.findFirst({
-      where: { classCode: candidate },
-      select: { id: true },
-    });
-
-    while (exists) {
-      nextSeq++;
-      candidate = `${prefix}${String(nextSeq).padStart(4, "0")}`;
-      exists = await prisma.event.findFirst({
+    let isTaken = allocatedSet.has(candidate);
+    if (!isTaken) {
+      const exists = await db.event.findFirst({
         where: { classCode: candidate },
         select: { id: true },
       });
+      isTaken = Boolean(exists);
     }
 
+    while (isTaken) {
+      nextSeq++;
+      candidate = `${prefix}${String(nextSeq).padStart(4, "0")}`;
+      isTaken = allocatedSet.has(candidate);
+      if (!isTaken) {
+        const exists = await db.event.findFirst({
+          where: { classCode: candidate },
+          select: { id: true },
+        });
+        isTaken = Boolean(exists);
+      }
+    }
+
+    allocatedSet.add(candidate);
     return candidate;
   } catch (error) {
     console.error("[generateUniqueClassCode] Fallback to random code due to error:", error);
-    const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
-    return `CLS-${year}-${rand}`;
+    let randCandidate = "";
+    do {
+      const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+      randCandidate = `CLS-${year}-${rand}`;
+    } while (allocatedSet.has(randCandidate));
+    allocatedSet.add(randCandidate);
+    return randCandidate;
   }
 }
 

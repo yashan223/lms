@@ -396,6 +396,8 @@ export async function PATCH(request: NextRequest) {
 
         // 3. Generate recurring 1-hour sessions on both calendars weekly
         const createdEvents = [];
+        const allocatedClassCodes = new Set<string>();
+
         for (const slot of acceptedSlots) {
           const baseStart = new Date(slot.startTime);
 
@@ -403,7 +405,8 @@ export async function PATCH(request: NextRequest) {
             const sessionStart = new Date(baseStart.getTime() + week * 7 * 24 * 60 * 60 * 1000);
             const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000); // Strict 1-hour slot
 
-            const sessionClassCode = await generateUniqueClassCode();
+            const sessionClassCode = await generateUniqueClassCode(undefined, tx, allocatedClassCodes);
+            allocatedClassCodes.add(sessionClassCode);
             const title = `${course.title} - ${enrollmentRequest.classType}`;
             const desc = [
               `📚 1-Hour Permanent Class Session (${enrollmentRequest.classType})`,

@@ -44,6 +44,7 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
   const [userAcademicLevel, setUserAcademicLevel] = useState<"OL" | "AL" | null>(
     initialAcademicLevel || null
   );
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialTutorId, setSelectedTrialTutorId] = useState<string | undefined>(undefined);
@@ -76,6 +77,7 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
           const dashData = await dashRes.json();
           if (dashData.user) {
             setIsLoggedIn(true);
+            setCurrentUser(dashData.user);
             if (dashData.user.role === "STUDENT") {
               const lvl = getStudentAcademicLevel(dashData.user);
               setUserAcademicLevel(lvl);
@@ -649,6 +651,7 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
           initialTutorId={selectedTrialTutorId}
           initialCourseId={selectedTrialCourseId}
           allCourses={courses}
+          currentUser={currentUser}
         />
       </div>
     </section>

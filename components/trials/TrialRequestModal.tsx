@@ -19,16 +19,16 @@ import {
   CalendarDays,
   ShieldCheck,
   Award,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
-import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
-  getUserBrowserTimezone,
   getRegionalTimezone,
   DEFAULT_TIMEZONE,
+  getTimezoneOffsetString,
   formatTimeInTimezone,
   formatDateInTimezone,
   formatForUser,
@@ -120,16 +120,24 @@ export function TrialRequestModal({
 
   const [selectedTimezone, setSelectedTimezone] = useState<string>(() => {
     const accTz = resolveAccountTimezone(currentUser?.timezone);
-    if (accTz) return accTz;
-    if (typeof window !== "undefined") {
-      try {
-        const browserTz = getUserBrowserTimezone();
-        if (browserTz) return browserTz;
-      } catch {}
-    }
-    return DEFAULT_TIMEZONE;
+    return accTz || DEFAULT_TIMEZONE;
   });
   const [tutorBaseTimezone, setTutorBaseTimezone] = useState<string>(DEFAULT_TIMEZONE);
+
+  const currentRegion = useMemo(
+    () => getRegionalTimezone(selectedTimezone),
+    [selectedTimezone]
+  );
+  const baseRegion = useMemo(
+    () => getRegionalTimezone(tutorBaseTimezone),
+    [tutorBaseTimezone]
+  );
+  const liveOffset = useMemo(
+    () => getTimezoneOffsetString(new Date(), currentRegion.id),
+    [currentRegion.id]
+  );
+  const isDifferentFromBase = currentRegion.id !== baseRegion.id;
+
   const [openSlots, setOpenSlots] = useState<
     Array<{
       startTime: string;
@@ -154,11 +162,6 @@ export function TrialRequestModal({
     const accTz = resolveAccountTimezone(currentUser?.timezone);
     if (accTz) {
       setSelectedTimezone(accTz);
-    } else if (typeof window !== "undefined") {
-      try {
-        const browserTz = getUserBrowserTimezone();
-        if (browserTz) setSelectedTimezone(browserTz);
-      } catch {}
     }
   }, [currentUser?.timezone]);
 
@@ -820,24 +823,42 @@ export function TrialRequestModal({
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2">
-                    <div className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
+                    <div className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <span>Your Regional Timezone</span>
-                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full lowercase first-letter:uppercase">
+                        <span className="text-[9px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                           Account Default
                         </span>
-                      </span>
-                      <span className="text-[10px] text-sky-700 font-medium">Slots adjust automatically</span>
+                      </div>
+                      <span className="text-[10px] text-sky-700 font-medium shrink-0">Slots adjust automatically</span>
                     </div>
-                    <RegionalTimezoneSelector
-                      selectedTimezone={selectedTimezone}
-                      onChange={(tz) => {
-                        setSelectedTimezone(tz);
-                        fetchTutorSlots(undefined, undefined, undefined, tz);
-                      }}
-                      tutorBaseTimezone={tutorBaseTimezone}
-                      compact
-                    />
+
+                    <div className="flex items-center justify-between gap-2.5 rounded-xl border border-sky-200 bg-white/95 px-3.5 py-2 text-xs shadow-xs">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <CountryFlag countryCode={currentRegion.countryCode} flagEmoji={currentRegion.flag} size="sm" />
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-semibold text-slate-900 truncate">
+                            {currentRegion.region}
+                          </span>
+                          <span className="text-[11px] font-mono font-medium text-sky-700 bg-sky-100/80 px-1.5 py-0.5 rounded shrink-0">
+                            {liveOffset}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isDifferentFromBase && (
+                      <div className="mt-1 flex items-center gap-1.5 px-0.5 text-[11px] text-amber-800">
+                        <Globe className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span>Slots converted to your account time. Tutor base:</span>
+                          <strong className="font-medium text-slate-800 inline-flex items-center gap-1">
+                            <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                            <span>{baseRegion.region}</span>
+                          </strong>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

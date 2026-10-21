@@ -228,28 +228,30 @@ export function EnrollmentRequestsManager({
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="p-2 rounded-xl bg-blue-50 text-[#0c2461] border border-blue-200">
-              <CalendarClock className="w-5 h-5" />
-            </span>
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">
-              Class Enrollment &amp; Permanent Scheduling
-            </h2>
-            {pendingCount > 0 && (
-              <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs">
-                {pendingCount} Action Required
-              </Badge>
-            )}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-start gap-3.5">
+          <span className="p-2.5 rounded-xl bg-blue-50 text-[#0c2461] border border-blue-200 shrink-0 mt-0.5">
+            <CalendarClock className="w-5 h-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                Class Enrollment &amp; Permanent Scheduling
+              </h2>
+              {pendingCount > 0 && (
+                <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs shrink-0">
+                  {pendingCount} Action Required
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed mt-1">
+              Review incoming permanent class requests from students. Select the exact number of weekly 1-hour slots requested to automatically populate recurring sessions across both calendars.
+            </p>
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">
-            Review incoming permanent class requests from students. Select the exact number of weekly 1-hour slots requested to automatically populate recurring sessions across both calendars.
-          </p>
         </div>
 
         {/* Filter buttons */}
-        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
           {[
             { key: "PENDING", label: "Pending Review", count: pendingCount },
             { key: "CONFIRMED", label: "Finalized", count: confirmedCount },

@@ -1067,9 +1067,9 @@ function RescheduleContent() {
                                       ? "text-blue-200"
                                       : "text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60"
                                   }`}
-                                  title={`Tutor base time: ${slot.tutorTimeDisplay} Sri Lanka`}
+                                  title={`Tutor base time: ${slot.tutorTimeDisplay} ${getRegionalTimezone(tutorTimezone).region}`}
                                 >
-                                  <CountryFlag countryCode="LK" flagEmoji="🇱🇰" size="xs" />
+                                  <CountryFlag countryCode={getRegionalTimezone(tutorTimezone).countryCode} flagEmoji={getRegionalTimezone(tutorTimezone).flag} size="xs" />
                                   <span>{slot.tutorTimeDisplay}</span>
                                 </span>
                               )}

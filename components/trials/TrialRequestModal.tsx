@@ -36,6 +36,8 @@ import {
   parseDateTimeInputInTimezone,
   getDualTimeDisplay,
   getTimezoneAbbr,
+  getDatePartsInTimezone,
+  createDateFromTimezoneParts,
 } from "@/lib/timezones";
 import { getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 
@@ -56,12 +58,16 @@ interface TrialRequestModalProps {
       name: string;
       headline?: string | null;
       avatar?: string | null;
+      timezone?: string | null;
+      country?: string | null;
     } | null;
     instructor?: {
       id: string;
       name: string;
       headline?: string | null;
       avatar?: string | null;
+      timezone?: string | null;
+      country?: string | null;
     } | null;
   }>;
   currentUser?: {
@@ -122,7 +128,45 @@ export function TrialRequestModal({
     const accTz = resolveAccountTimezone(currentUser?.timezone);
     return accTz || DEFAULT_TIMEZONE;
   });
-  const [tutorBaseTimezone, setTutorBaseTimezone] = useState<string>(DEFAULT_TIMEZONE);
+
+  const userAcademicTrack = currentUser ? getStudentAcademicLevel(currentUser) : null;
+  const trackCourses = useMemo(() => {
+    if (!userAcademicTrack) return allCourses;
+    const filtered = allCourses.filter((c) =>
+      userAcademicTrack === "OL" ? isCourseOL(c) : isCourseAL(c)
+    );
+    return filtered.length > 0 ? filtered : allCourses;
+  }, [allCourses, userAcademicTrack]);
+
+  const currentSelectedCourse = useMemo(() => {
+    return (
+      allCourses.find((c) => c.id === (courseId || initialCourseId)) ||
+      trackCourses[0] ||
+      allCourses[0]
+    );
+  }, [allCourses, courseId, initialCourseId, trackCourses]);
+
+  const currentCourseTutor = useMemo(() => {
+    return currentSelectedCourse?.tutor || currentSelectedCourse?.instructor;
+  }, [currentSelectedCourse]);
+
+  const initialResolvedTutorTimezone = useMemo(() => {
+    if (currentCourseTutor?.timezone) return currentCourseTutor.timezone;
+    if (currentCourseTutor?.country) {
+      try {
+        return getRegionalTimezone(currentCourseTutor.country).id;
+      } catch {}
+    }
+    return DEFAULT_TIMEZONE;
+  }, [currentCourseTutor]);
+
+  const [tutorBaseTimezone, setTutorBaseTimezone] = useState<string>(() => initialResolvedTutorTimezone);
+
+  useEffect(() => {
+    if (initialResolvedTutorTimezone && initialResolvedTutorTimezone !== DEFAULT_TIMEZONE) {
+      setTutorBaseTimezone(initialResolvedTutorTimezone);
+    }
+  }, [initialResolvedTutorTimezone]);
 
   const currentRegion = useMemo(
     () => getRegionalTimezone(selectedTimezone),
@@ -148,15 +192,6 @@ export function TrialRequestModal({
       dualTime?: any;
     }>
   >([]);
-
-  const userAcademicTrack = currentUser ? getStudentAcademicLevel(currentUser) : null;
-  const trackCourses = useMemo(() => {
-    if (!userAcademicTrack) return allCourses;
-    const filtered = allCourses.filter((c) =>
-      userAcademicTrack === "OL" ? isCourseOL(c) : isCourseAL(c)
-    );
-    return filtered.length > 0 ? filtered : allCourses;
-  }, [allCourses, userAcademicTrack]);
 
   useEffect(() => {
     const accTz = resolveAccountTimezone(currentUser?.timezone);
@@ -215,6 +250,17 @@ export function TrialRequestModal({
             }
           }
           setOpenSlots(collected);
+
+          // Automatically match the 3 choices with the tutor's actual available slots
+          if (collected.length >= 1) {
+            setPreferredDate1(formatForDateTimeInput(collected[0].startTime, tz));
+          }
+          if (collected.length >= 2) {
+            setPreferredDate2(formatForDateTimeInput(collected[1].startTime, tz));
+          }
+          if (collected.length >= 3) {
+            setPreferredDate3(formatForDateTimeInput(collected[2].startTime, tz));
+          }
         }
       })
       .catch(() => {});
@@ -249,21 +295,21 @@ export function TrialRequestModal({
         setSelectedTimezone(accTz);
       }
 
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(10, 0, 0, 0);
+      const activeTutorTz = initialResolvedTutorTimezone || tutorBaseTimezone;
 
-      const slot2Date = new Date();
-      slot2Date.setDate(slot2Date.getDate() + 1);
-      slot2Date.setHours(14, 0, 0, 0);
+      // Base default slot times strictly in the TUTOR'S region (10:00, 14:00, 11:00) then convert to student's account timezone
+      const now = new Date();
+      const tomorrowTutor = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const tutorParts = getDatePartsInTimezone(tomorrowTutor, activeTutorTz);
+      const defaultSlot1 = createDateFromTimezoneParts(tutorParts.dateStr, "10:00", activeTutorTz);
+      const defaultSlot2 = createDateFromTimezoneParts(tutorParts.dateStr, "14:00", activeTutorTz);
+      const dayAfterTutor = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      const dayAfterParts = getDatePartsInTimezone(dayAfterTutor, activeTutorTz);
+      const defaultSlot3 = createDateFromTimezoneParts(dayAfterParts.dateStr, "11:00", activeTutorTz);
 
-      const slot3Date = new Date();
-      slot3Date.setDate(slot3Date.getDate() + 2);
-      slot3Date.setHours(11, 0, 0, 0);
-
-      setPreferredDate1(formatForDateTimeInput(tomorrow, activeTz));
-      setPreferredDate2(formatForDateTimeInput(slot2Date, activeTz));
-      setPreferredDate3(formatForDateTimeInput(slot3Date, activeTz));
+      setPreferredDate1(formatForDateTimeInput(defaultSlot1, activeTz));
+      setPreferredDate2(formatForDateTimeInput(defaultSlot2, activeTz));
+      setPreferredDate3(formatForDateTimeInput(defaultSlot3, activeTz));
 
       setError(null);
       setCreatedTrial(null);
@@ -670,16 +716,25 @@ export function TrialRequestModal({
                           <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold inline-flex items-center justify-center">{idx + 1}</span>
                           <span>Choice {idx + 1}</span>
                         </span>
-                        <span className="font-mono text-blue-800 font-bold text-xs inline-flex items-center gap-1.5">
-                          <span>
-                            {formatForUser(dStr, selectedTimezone, {
-                              includeDate: true,
-                              includeTime: true,
-                              includeAbbr: false,
-                            })}
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          <span className="font-mono text-blue-800 font-bold text-xs inline-flex items-center gap-1.5">
+                            <span>
+                              {formatForUser(dStr, selectedTimezone, {
+                                includeDate: true,
+                                includeTime: true,
+                                includeAbbr: false,
+                              })}
+                            </span>
+                            <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
                           </span>
-                          <CountryFlag countryCode={getRegionalTimezone(selectedTimezone).countryCode} flagEmoji={getRegionalTimezone(selectedTimezone).flag} size="xs" />
-                        </span>
+                          {isDifferentFromBase && (
+                            <span className="text-[10px] text-slate-500 font-normal inline-flex items-center gap-1">
+                              <span>(Tutor: {formatTimeInTimezone(dStr, tutorBaseTimezone)}</span>
+                              <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                              <span>)</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -906,7 +961,7 @@ export function TrialRequestModal({
                             {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
                               <span className="text-[10px] text-slate-500 font-medium inline-flex items-center gap-1">
                                 <span>({s.tutorTimeDisplay}</span>
-                                <CountryFlag countryCode="LK" flagEmoji="🇱🇰" size="xs" />
+                                <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
                                 <span>)</span>
                               </span>
                             )}
@@ -938,6 +993,21 @@ export function TrialRequestModal({
                         onChange={(e) => setPreferredDate1(e.target.value)}
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
+                      {preferredDate1 && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                          <span>
+                            Tutor ({baseRegion.region}):{" "}
+                            <strong className="text-slate-700">
+                              {formatForUser(parseDateTimeInputInTimezone(preferredDate1, selectedTimezone), tutorBaseTimezone, {
+                                includeDate: false,
+                                includeTime: true,
+                                includeAbbr: true,
+                              })}
+                            </strong>
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div
@@ -960,6 +1030,21 @@ export function TrialRequestModal({
                         onChange={(e) => setPreferredDate2(e.target.value)}
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
+                      {preferredDate2 && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                          <span>
+                            Tutor ({baseRegion.region}):{" "}
+                            <strong className="text-slate-700">
+                              {formatForUser(parseDateTimeInputInTimezone(preferredDate2, selectedTimezone), tutorBaseTimezone, {
+                                includeDate: false,
+                                includeTime: true,
+                                includeAbbr: true,
+                              })}
+                            </strong>
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div
@@ -982,6 +1067,21 @@ export function TrialRequestModal({
                         onChange={(e) => setPreferredDate3(e.target.value)}
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
+                      {preferredDate3 && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                          <span>
+                            Tutor ({baseRegion.region}):{" "}
+                            <strong className="text-slate-700">
+                              {formatForUser(parseDateTimeInputInTimezone(preferredDate3, selectedTimezone), tutorBaseTimezone, {
+                                includeDate: false,
+                                includeTime: true,
+                                includeAbbr: true,
+                              })}
+                            </strong>
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

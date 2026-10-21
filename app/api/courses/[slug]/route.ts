@@ -18,6 +18,8 @@ async function findCourseBySlugOrId(rawSlug: string) {
         avatar: true,
         headline: true,
         bio: true,
+        country: true,
+        timezone: true,
       },
     },
     modules: {

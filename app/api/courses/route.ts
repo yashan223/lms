@@ -16,6 +16,8 @@ export async function GET() {
               avatar: true,
               headline: true,
               bio: true,
+              country: true,
+              timezone: true,
             },
           },
           modules: {
@@ -40,6 +42,8 @@ export async function GET() {
           avatar: true,
           headline: true,
           bio: true,
+          country: true,
+          timezone: true,
           createdCourses: {
             where: { status: "PUBLISHED" },
           },

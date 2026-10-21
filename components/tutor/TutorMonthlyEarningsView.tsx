@@ -145,67 +145,47 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
   return (
     <div className="space-y-6">
       {/* Monthly Cycle Status Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-[#0c2461] to-slate-900 rounded-3xl p-6 text-white shadow-lg space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="space-y-2">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
-                <CalendarDays className="w-3.5 h-3.5 text-blue-300" />
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
                 {current?.monthLabel || "Current Month"}
               </span>
               {bonus?.currentTier && (
-                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
-                  <Trophy className="w-3 h-3 text-amber-400" />
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                  <Trophy className="w-3 h-3 text-amber-600" />
                   {bonus.currentTier} Unlocked (+{formatLkr(unlockedBonusLkr)})
                 </span>
               )}
             </div>
 
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider">
-                Total Estimated Monthly Payout (Hourly + Performance Bonus)
+              <span className="text-xs font-bold text-slate-500 block uppercase tracking-wider">
+                Total Estimated Monthly Payout
               </span>
               <div className="flex items-baseline gap-3 flex-wrap">
-                <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+                <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
                   {formatLkr(totalEstimatedPayoutLkr)}
                 </h2>
                 <div className="flex items-center gap-2 text-xs font-bold">
-                  <span className="text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg">
+                  <span className="text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
                     Base Hourly: {formatLkr(baseEarningsLkr)}
                   </span>
-                  <span className={`px-2.5 py-1 rounded-lg border ${
-                    unlockedBonusLkr > 0
-                      ? "bg-amber-400/20 text-amber-300 border-amber-400/30 font-black"
-                      : "bg-white/5 text-slate-400 border-white/10"
-                  }`}>
-                    Bonus: {unlockedBonusLkr > 0 ? `+${formatLkr(unlockedBonusLkr)} (${bonus?.currentTier})` : "Rs. 0 (Need 50h)"}
+                  <span
+                    className={`px-2.5 py-1 rounded-lg border ${
+                      unlockedBonusLkr > 0
+                        ? "bg-amber-50 text-amber-800 border-amber-200 font-black"
+                        : "bg-slate-50 text-slate-500 border-slate-200"
+                    }`}
+                  >
+                    Bonus:{" "}
+                    {unlockedBonusLkr > 0
+                      ? `+${formatLkr(unlockedBonusLkr)} (${bonus?.currentTier})`
+                      : "Rs. 0 (Need 50h)"}
                   </span>
                 </div>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
-              Real-time converted earnings for this calendar month. Standard hourly earnings accumulate per completed token (1 token = 1 hour), and performance bonuses unlock dynamically as monthly hours increase.
-            </p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 text-xs space-y-2 shrink-0">
-            <div className="flex items-center gap-2 font-bold text-slate-200">
-              <Clock className="w-4 h-4 text-emerald-400" />
-              <span>Monthly Reset & Payout Cycle</span>
-            </div>
-            <div className="text-[11px] text-slate-300 space-y-1.5">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-400">Cycle Window:</span>
-                <span className="font-semibold text-white">1st day – Last day</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-400">Next Reset:</span>
-                <span className="font-semibold text-emerald-300">00:00 on 1st of next month</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-400">Archive Policy:</span>
-                <span className="font-semibold text-white">Auto-locks as Final Payable</span>
               </div>
             </div>
           </div>

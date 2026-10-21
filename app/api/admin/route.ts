@@ -31,6 +31,7 @@ import {
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 import { generateUniqueTutorId, backfillExistingTutors } from "@/lib/tutor-id";
 import { generateUniqueAdminId, backfillExistingAdmins, ensureAdminIdForUser } from "@/lib/admin-id";
+import { getPayGradeSettings, updatePayGradeSettings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -53,7 +54,7 @@ const ACTION_CATEGORY_MAP: Record<string, string> = {
   approve_class: "CLASS", reject_class: "CLASS",
   delete_assessment: "CLASS", delete_event: "CLASS", create_mock_paper: "CLASS",
   approve_trial: "TRIAL", reject_trial: "TRIAL", reset_trial: "TRIAL", reset_student_trial: "TRIAL", reset_student_trials: "TRIAL", delete_trial: "TRIAL",
-  update_bundles: "PRICING",
+  update_bundles: "PRICING", update_pay_grades: "PRICING",
   clear_all_data: "GENERAL",
 };
 
@@ -362,6 +363,7 @@ export async function GET(request: NextRequest) {
       pendingCourses,
       totalPendingApprovals,
       bundles: await getBundles(),
+      payGrades: await getPayGradeSettings(),
       schools: await getSchools(false),
       subjects: await getSchools(false),
     });
@@ -1211,6 +1213,13 @@ export async function POST(request: NextRequest) {
         endBBBMeeting(bbbId).catch(() => {});
       }
 
+      // Complete class, deduct 1 token from student, notify low balance, and credit tutor earnings ledger
+      await completeClassAndProcessEcosystem(eventId, {
+        manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
+        manualEndTime: manualEndTime ? new Date(manualEndTime) : new Date(),
+        recordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
+      });
+
       const syncResult = await syncClassMeetingSession(eventId, {
         manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
         manualEndTime: manualEndTime ? new Date(manualEndTime) : new Date(),
@@ -1823,6 +1832,22 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Token bundle packages updated successfully!",
         bundles: cleanBundles,
+      });
+    }
+
+    if (action === "update_pay_grades") {
+      const { igcseRateLkr, ialRateLkr } = body;
+      const updated = await updatePayGradeSettings({
+        igcseRateLkr: typeof igcseRateLkr === "number" ? igcseRateLkr : Number(igcseRateLkr),
+        ialRateLkr: typeof ialRateLkr === "number" ? ialRateLkr : Number(ialRateLkr),
+      });
+
+      broadcastLMSEvent("USERS_CHANGED");
+
+      return NextResponse.json({
+        success: true,
+        message: "Hourly pay grade settings updated successfully.",
+        payGrades: updated,
       });
     }
 

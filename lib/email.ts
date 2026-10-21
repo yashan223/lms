@@ -455,3 +455,294 @@ PulseEDU Global • London A/L & O/L LMS
     directUrl: resetUrl,
   });
 }
+
+// ==========================================
+// 6. Automated 30-Minute Class Reminder Email
+// ==========================================
+
+export interface SendClassReminderEmailParams {
+  email: string;
+  name: string;
+  classTitle: string;
+  courseTitle?: string;
+  tutorName: string;
+  startTimeFormatted: string;
+  meetingLink?: string | null;
+  classType?: string;
+}
+
+export async function sendClassReminderEmail({
+  email,
+  name,
+  classTitle,
+  courseTitle,
+  tutorName,
+  startTimeFormatted,
+  meetingLink,
+  classType,
+}: SendClassReminderEmailParams): Promise<{ success: boolean; error?: string; provider?: string }> {
+  const joinUrl = meetingLink?.startsWith("http") ? meetingLink : `${getAppUrl()}/dashboard`;
+
+  console.log(`\n========================================`);
+  console.log(`⏰ [30-MIN CLASS REMINDER] To: ${email}`);
+  console.log(`📚 Class: ${classTitle} | Tutor: ${tutorName}`);
+  console.log(`🕒 Starts: ${startTimeFormatted}`);
+  console.log(`🔗 Link: ${joinUrl}`);
+  console.log(`========================================\n`);
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Reminder: 30 Minutes Until Session — PulseEDU Global</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 560px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);" cellspacing="0" cellpadding="0">
+          
+          <tr>
+            <td style="background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%); padding: 32px 24px; text-align: center;">
+              <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; padding: 6px 16px; margin-bottom: 12px;">
+                <span style="font-size: 12px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">⏰ 30-Minute Class Alert</span>
+              </div>
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Your Class Starts in 30 Minutes</h1>
+              <p style="margin: 6px 0 0 0; font-size: 13px; color: #93c5fd; font-weight: 500;">PulseEDU Global Academic Session Reminder</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 36px 28px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #334155;">
+                Hi <strong>${name}</strong>,
+              </p>
+              <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+                This is a quick automated reminder that your scheduled permanent class session will begin in <strong>30 minutes</strong>. Please ensure your study environment is prepared and join your live room on time.
+              </p>
+
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin: 24px 0;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="padding-bottom: 10px; font-size: 13px; color: #64748b;">Class / Topic:</td>
+                    <td style="padding-bottom: 10px; font-size: 14px; font-weight: 700; color: #0f172a; text-align: right;">${classTitle}</td>
+                  </tr>
+                  ${courseTitle ? `
+                  <tr>
+                    <td style="padding-bottom: 10px; font-size: 13px; color: #64748b;">Curriculum:</td>
+                    <td style="padding-bottom: 10px; font-size: 13px; font-weight: 600; color: #1e293b; text-align: right;">${courseTitle}</td>
+                  </tr>` : ""}
+                  ${classType ? `
+                  <tr>
+                    <td style="padding-bottom: 10px; font-size: 13px; color: #64748b;">Format:</td>
+                    <td style="padding-bottom: 10px; font-size: 13px; font-weight: 600; color: #2563eb; text-align: right;">${classType}</td>
+                  </tr>` : ""}
+                  <tr>
+                    <td style="padding-bottom: 10px; font-size: 13px; color: #64748b;">Instructor:</td>
+                    <td style="padding-bottom: 10px; font-size: 13px; font-weight: 600; color: #1e293b; text-align: right;">${tutorName}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 13px; color: #64748b;">Start Time:</td>
+                    <td style="font-size: 14px; font-weight: 700; color: #0c2461; text-align: right;">${startTimeFormatted}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${joinUrl}" style="display: inline-block; background-color: #0c2461; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 12px; box-shadow: 0 4px 12px rgba(12, 36, 97, 0.25);">
+                      Enter Classroom / Dashboard &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="background-color: #eff6ff; border-radius: 12px; padding: 14px 18px; margin-top: 24px; border-left: 4px solid #2563eb;">
+                <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #1e40af;">
+                  💡 <strong>Tip:</strong> Join a few minutes early to test your audio, microphone, and camera. If you need to make future changes, you can request a reschedule directly from your dashboard.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 28px; text-align: center; border-top: 1px solid #f1f5f9;">
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                &copy; 2026 PulseEDU Global • London A/L &amp; O/L LMS. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const textContent = `
+Hello ${name},
+
+Your permanent class session is starting in 30 minutes!
+
+Class: ${classTitle}
+${courseTitle ? `Course: ${courseTitle}\n` : ""}${classType ? `Format: ${classType}\n` : ""}Tutor: ${tutorName}
+Start Time: ${startTimeFormatted}
+
+Join the session or view your schedule:
+${joinUrl}
+
+—
+PulseEDU Global • London A/L & O/L LMS
+  `.trim();
+
+  return await dispatchAcademicEmail({
+    to: email,
+    subject: `⏰ Reminder: "${classTitle}" starts in 30 minutes — PulseEDU Global`,
+    html: htmlContent,
+    text: textContent,
+    directUrl: joinUrl,
+  });
+}
+
+// ==========================================
+// 7. Low / Zero Token Balance Notification Email
+// ==========================================
+
+export interface SendLowTokenBalanceEmailParams {
+  email: string;
+  name: string;
+  currentBalance: number;
+  upcomingClassesCount?: number;
+}
+
+export async function sendLowTokenBalanceEmail({
+  email,
+  name,
+  currentBalance,
+  upcomingClassesCount = 0,
+}: SendLowTokenBalanceEmailParams): Promise<{ success: boolean; error?: string; provider?: string }> {
+  const topUpUrl = `${getAppUrl()}/dashboard#tokens`;
+
+  console.log(`\n========================================`);
+  console.log(`⚠️ [TOKEN BALANCE ALERT] To: ${email}`);
+  console.log(`🪙 Balance: ${currentBalance} Tokens | Upcoming Sessions: ${upcomingClassesCount}`);
+  console.log(`🔗 Top Up: ${topUpUrl}`);
+  console.log(`========================================\n`);
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Your Tokens — PulseEDU Global</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 560px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);" cellspacing="0" cellpadding="0">
+          
+          <tr>
+            <td style="background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%); padding: 32px 24px; text-align: center;">
+              <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; padding: 6px 16px; margin-bottom: 12px;">
+                <span style="font-size: 12px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">🪙 Token Balance Notification</span>
+              </div>
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Update Your Tokens</h1>
+              <p style="margin: 6px 0 0 0; font-size: 13px; color: #fecaca; font-weight: 500;">Action required to ensure uninterrupted learning</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 36px 28px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #334155;">
+                Hi <strong>${name}</strong>,
+              </p>
+              <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin: 16px 0 24px 0;">
+                <p style="margin: 0; font-size: 16px; font-weight: 800; color: #991b1b;">
+                  &ldquo;Update your tokens to continue your scheduled classes.&rdquo;
+                </p>
+              </div>
+
+              <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+                Following your recent completed class session, your learning token balance has decreased to <strong>${currentBalance} Token${currentBalance === 1 ? "" : "s"}</strong>.
+                ${
+                  upcomingClassesCount > 0
+                    ? `You currently have <strong>${upcomingClassesCount} upcoming session${upcomingClassesCount > 1 ? "s" : ""}</strong> scheduled on your calendar.`
+                    : ""
+                }
+              </p>
+
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin: 24px 0;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="padding-bottom: 10px; font-size: 13px; color: #64748b;">Current Active Balance:</td>
+                    <td style="padding-bottom: 10px; font-size: 14px; font-weight: 800; color: ${currentBalance <= 0 ? "#dc2626" : "#d97706"}; text-align: right;">${currentBalance} Tokens</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 13px; color: #64748b;">Scheduled Upcoming Classes:</td>
+                    <td style="font-size: 14px; font-weight: 700; color: #0f172a; text-align: right;">${upcomingClassesCount} Classes</td>
+                  </tr>
+                </table>
+              </div>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${topUpUrl}" style="display: inline-block; background-color: #0c2461; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 12px; box-shadow: 0 4px 12px rgba(12, 36, 97, 0.25);">
+                      Purchase Token Package &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+                ℹ️ <em>Each token is valid for a full 365 days (1 year) from purchase date. Keeping your balance topped up guarantees seamless attendance for your permanent weekly 1-on-1 sessions.</em>
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 28px; text-align: center; border-top: 1px solid #f1f5f9;">
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                &copy; 2026 PulseEDU Global • London A/L &amp; O/L LMS. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const textContent = `
+Hello ${name},
+
+Update your tokens to continue your scheduled classes.
+
+Your current active balance is ${currentBalance} Token(s).
+${upcomingClassesCount > 0 ? `You have ${upcomingClassesCount} scheduled class(es) coming up.` : ""}
+
+Please visit your academic dashboard to top up your token package:
+${topUpUrl}
+
+—
+PulseEDU Global • London A/L & O/L LMS
+  `.trim();
+
+  return await dispatchAcademicEmail({
+    to: email,
+    subject: "Update your tokens to continue your scheduled classes — PulseEDU Global",
+    html: htmlContent,
+    text: textContent,
+    directUrl: topUpUrl,
+  });
+}

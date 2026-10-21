@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     const eventId = searchParams.get("eventId");
     const requestedTimezone = searchParams.get("timezone") || searchParams.get("targetTimezone");
     const daysCount = Math.min(Math.max(parseInt(searchParams.get("days") || "14", 10), 1), 30);
+    const slotMinutes = Math.max(15, parseInt(searchParams.get("slotMinutes") || searchParams.get("duration") || "30", 10));
 
     let resolvedTutorId = reqTutorId;
     let resolvedStudentId = reqStudentId;
@@ -95,9 +96,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (!resolvedTutorId) {
-      const auth = await getAuthenticatedUser(request);
+      const auth = await getAuthenticatedUser(request).catch(() => ({ user: null }));
       if (auth.user && (auth.user.role === Role.TUTOR || auth.user.role === Role.INSTRUCTOR)) {
         resolvedTutorId = auth.user.id;
+      }
+    }
+
+    if (!resolvedStudentId) {
+      const auth = await getAuthenticatedUser(request).catch(() => ({ user: null }));
+      if (auth.user && auth.user.role === Role.STUDENT) {
+        resolvedStudentId = auth.user.id;
       }
     }
 
@@ -245,6 +253,7 @@ export async function GET(request: NextRequest) {
       title: string;
       id: string;
       courseTitle?: string;
+      conflictParty?: "TUTOR" | "STUDENT";
     }> = [];
 
     scheduledClasses.forEach((ev) => {
@@ -258,6 +267,7 @@ export async function GET(request: NextRequest) {
         title: ev.title,
         id: ev.id,
         courseTitle: ev.course?.title,
+        conflictParty: "TUTOR",
       });
     });
 
@@ -271,8 +281,60 @@ export async function GET(request: NextRequest) {
         title: `1-on-1 Free Trial: ${tr.studentName}`,
         id: tr.id,
         courseTitle: tr.course?.title,
+        conflictParty: "TUTOR",
       });
     });
+
+    if (resolvedStudentId) {
+      const studentScheduledClasses = await prisma.event.findMany({
+        where: {
+          userId: resolvedStudentId,
+          dueDate: { gte: rangeStart, lte: rangeEnd },
+          status: { notIn: ["CANCELLED", "REJECTED"] as any },
+          ...(eventId ? { id: { not: eventId } } : {}),
+        },
+        include: { course: { select: { id: true, title: true } } },
+      });
+
+      const studentScheduledTrials = await prisma.trialRequest.findMany({
+        where: {
+          studentId: resolvedStudentId,
+          preferredDate: { gte: rangeStart, lte: rangeEnd },
+          status: { notIn: ["CANCELLED", "REJECTED"] as any },
+          ...(trialId ? { id: { not: trialId } } : {}),
+        },
+        include: { course: { select: { id: true, title: true } } },
+      });
+
+      studentScheduledClasses.forEach((ev) => {
+        const start = new Date(ev.dueDate);
+        const durationMin = getEventDurationMinutes(ev.title, ev.description);
+        const end = new Date(start.getTime() + durationMin * 60 * 1000);
+        busyIntervals.push({
+          start,
+          end,
+          type: "CLASS",
+          title: `You have another class: ${ev.title}`,
+          id: ev.id,
+          courseTitle: ev.course?.title,
+          conflictParty: "STUDENT",
+        });
+      });
+
+      studentScheduledTrials.forEach((tr) => {
+        const start = new Date(tr.preferredDate);
+        const end = new Date(start.getTime() + 30 * 60 * 1000);
+        busyIntervals.push({
+          start,
+          end,
+          type: "TRIAL",
+          title: `You have a scheduled 1-on-1 trial`,
+          id: tr.id,
+          courseTitle: tr.course?.title,
+          conflictParty: "STUDENT",
+        });
+      });
+    }
 
     const viewerDaysMap = new Map<
       string,
@@ -342,12 +404,12 @@ export async function GET(request: NextRequest) {
         let curMinutes = startH * 60 + startM;
         const endMinutes = endH * 60 + endM;
 
-        while (curMinutes + 30 <= endMinutes) {
+        while (curMinutes + slotMinutes <= endMinutes) {
           const pad = (n: number) => String(n).padStart(2, "0");
           const curTimeStr = `${pad(Math.floor(curMinutes / 60))}:${pad(curMinutes % 60)}`;
 
           const slotStart = createDateFromTimezoneParts(tutorDateStr, curTimeStr, winTimezone);
-          const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
+          const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60 * 1000);
 
           const isPast = slotStart.getTime() < Date.now();
 
@@ -359,6 +421,7 @@ export async function GET(request: NextRequest) {
                 id: busy.id,
                 title: busy.title,
                 courseTitle: busy.courseTitle,
+                conflictParty: busy.conflictParty,
                 start: busy.start.toISOString(),
                 end: busy.end.toISOString(),
               };
@@ -389,7 +452,7 @@ export async function GET(request: NextRequest) {
                 const [eH, eM] = sAv.endTime.split(":").map(Number);
                 const sStartMin = sH * 60 + sM;
                 const sEndMin = eH * 60 + eM;
-                if (slotStudentMinutes >= sStartMin && slotStudentMinutes + 30 <= sEndMin) {
+                if (slotStudentMinutes >= sStartMin && slotStudentMinutes + slotMinutes <= sEndMin) {
                   matchesStudentAvailability = true;
                   break;
                 }
@@ -434,7 +497,7 @@ export async function GET(request: NextRequest) {
             windowTitle: win.title || undefined,
           });
 
-          curMinutes += 30;
+          curMinutes += slotMinutes;
         }
       }
     }

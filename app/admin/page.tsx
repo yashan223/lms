@@ -298,6 +298,17 @@ export default function AdminDashboardPage() {
   const [isSavingBundles, setIsSavingBundles] = useState(false);
   const [bundleSaveMsg, setBundleSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [payGrades, setPayGrades] = useState<{ igcseRateLkr: number; ialRateLkr: number }>({
+    igcseRateLkr: 750,
+    ialRateLkr: 850,
+  });
+  const [payGradesInput, setPayGradesInput] = useState<{ igcse: string; ial: string }>({
+    igcse: "750",
+    ial: "850",
+  });
+  const [isSavingPayGrades, setIsSavingPayGrades] = useState(false);
+  const [payGradesSaveMsg, setPayGradesSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const [schoolsList, setSchoolsList] = useState<AcademicSchool[]>([]);
   const [showAddSchoolModal, setShowAddSchoolModal] = useState(false);
   const [showEditSchoolModal, setShowEditSchoolModal] = useState(false);
@@ -659,6 +670,13 @@ export default function AdminDashboardPage() {
         setTotalPendingApprovals(data.totalPendingApprovals || 0);
         if (data.bundles && data.bundles.length > 0) {
           setBundlesList(data.bundles);
+        }
+        if (data.payGrades) {
+          setPayGrades(data.payGrades);
+          setPayGradesInput({
+            igcse: String(data.payGrades.igcseRateLkr ?? 750),
+            ial: String(data.payGrades.ialRateLkr ?? 850),
+          });
         }
         const incomingSubjects = data.subjects || data.schools;
         if (incomingSubjects && Array.isArray(incomingSubjects)) {
@@ -1164,6 +1182,37 @@ export default function AdminDashboardPage() {
       setBundleSaveMsg({ type: "error", text: err.message || "Network error." });
     } finally {
       setIsSavingBundles(false);
+    }
+  };
+
+  const handleSavePayGrades = async () => {
+    try {
+      setIsSavingPayGrades(true);
+      setPayGradesSaveMsg(null);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_pay_grades",
+          igcseRateLkr: Number(payGradesInput.igcse),
+          ialRateLkr: Number(payGradesInput.ial),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update pay grades.");
+      if (data.payGrades) {
+        setPayGrades(data.payGrades);
+        setPayGradesInput({
+          igcse: String(data.payGrades.igcseRateLkr),
+          ial: String(data.payGrades.ialRateLkr),
+        });
+      }
+      setPayGradesSaveMsg({ type: "success", text: "Tutor hourly pay grades saved successfully!" });
+      setTimeout(() => setPayGradesSaveMsg(null), 3500);
+    } catch (err: any) {
+      setPayGradesSaveMsg({ type: "error", text: err.message || "Failed to save pay grades." });
+    } finally {
+      setIsSavingPayGrades(false);
     }
   };
 
@@ -4847,6 +4896,174 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="text-[11px] text-blue-600 font-semibold">
                     Realtime DB & Client Sync
+                  </div>
+                </div>
+              </div>
+
+              {/* Tutor Hourly Pay Grades & Token Conversion Settings */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <CreditCard className="w-4 h-4" />
+                      </div>
+                      <h3 className="font-black text-lg text-slate-900">
+                        Tutor Hourly Pay Grades & Token Conversion
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Active Pay Rates
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                      Define the hourly pay rates for each academic tier. When a completed 1-hour class session deducts 1 token from a student, the tutor's internal earnings ledger is instantly credited with the corresponding monetary equivalent (LKR).
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPayGradesInput({ igcse: "750", ial: "850" })}
+                      disabled={isSavingPayGrades}
+                      className="text-xs font-bold h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Reset Standard (750/850)</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSavePayGrades}
+                      disabled={isSavingPayGrades}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-emerald-600/20 cursor-pointer"
+                    >
+                      {isSavingPayGrades ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Saving Rates...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Save Pay Grades</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {payGradesSaveMsg && (
+                  <div
+                    className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                      payGradesSaveMsg.type === "success"
+                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                        : "bg-rose-50 text-rose-800 border border-rose-200"
+                    }`}
+                  >
+                    {payGradesSaveMsg.type === "success" ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    )}
+                    <span>{payGradesSaveMsg.text}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* IGCSE Level Card */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                        <span className="text-sm font-black text-slate-900">IGCSE Level (O/L)</span>
+                      </div>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
+                        Standard: 750 LKR/hr
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-700 block">
+                        Hourly Rate per Token Deducted (LKR)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                          Rs.
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="10"
+                          value={payGradesInput.igcse}
+                          onChange={(e) =>
+                            setPayGradesInput((prev) => ({ ...prev, igcse: e.target.value }))
+                          }
+                          className="w-full pl-10 pr-16 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs"
+                          placeholder="750"
+                        />
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                          LKR / hr
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-white/80 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-700">Currently Active:</span>
+                        <span className="font-black text-blue-700">Rs. {payGrades.igcseRateLkr.toLocaleString()} LKR</span>
+                      </div>
+                      <p className="text-slate-500 text-[10.5px]">
+                        Applied to all O/L, IGCSE, GCSE course sessions and beginner/intermediate curriculum classes.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* IAL & IAS Level Card */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-slate-200 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                        <span className="text-sm font-black text-slate-900">IAL & IAS (A-Level)</span>
+                      </div>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
+                        Standard: 850 LKR/hr
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-700 block">
+                        Hourly Rate per Token Deducted (LKR)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                          Rs.
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="10"
+                          value={payGradesInput.ial}
+                          onChange={(e) =>
+                            setPayGradesInput((prev) => ({ ...prev, ial: e.target.value }))
+                          }
+                          className="w-full pl-10 pr-16 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs"
+                          placeholder="850"
+                        />
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                          LKR / hr
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-white/80 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-700">Currently Active:</span>
+                        <span className="font-black text-indigo-700">Rs. {payGrades.ialRateLkr.toLocaleString()} LKR</span>
+                      </div>
+                      <p className="text-slate-500 text-[10.5px]">
+                        Applied to all International A-Level (IAL & IAS / A2) syllabus courses and advanced curriculum sessions.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -666,6 +666,18 @@ export async function syncClassMeetingSession(
     console.warn("[BBB] Error finalizing attendance in syncClassMeetingSession:", attFinalErr);
   }
 
+  // Deduct token from student, notify low balance, and credit tutor earnings ledger
+  try {
+    const { completeClassAndProcessEcosystem } = await import("@/lib/token-ecosystem");
+    await completeClassAndProcessEcosystem(eventId, {
+      manualStartTime: actualStart || undefined,
+      manualEndTime: actualEnd || undefined,
+      recordingUrl: recordingUrl || undefined,
+    });
+  } catch (ecoErr) {
+    console.warn("[BBB] Token ecosystem processing warning:", ecoErr);
+  }
+
   return {
     success: true,
     event: updatedEvent,

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
+import { PermanentEnrollmentModal } from "@/components/enrollment/PermanentEnrollmentModal";
 import { FacultyTutor, formatDbTutors, parseTutorBio } from "@/lib/faculty-tutors";
 import { isCourseOL, isCourseAL, getStudentAcademicLevel } from "@/lib/currency";
 
@@ -42,6 +43,7 @@ export default function CoursesPage() {
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
   const [selectedTrialTutorId, setSelectedTrialTutorId] = useState<string | undefined>(undefined);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showPermanentEnrollmentModal, setShowPermanentEnrollmentModal] = useState(false);
   const [selectedPurchaseCourse, setSelectedPurchaseCourse] = useState<any | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
@@ -492,7 +494,7 @@ export default function CoursesPage() {
                               <button
                                 onClick={() => {
                                   setSelectedPurchaseCourse(course);
-                                  setShowPurchaseModal(true);
+                                  setShowPermanentEnrollmentModal(true);
                                 }}
                                 className="h-9 px-3 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                                 title="Enroll in individual class using tokens and unlock all study materials"
@@ -783,6 +785,18 @@ export default function CoursesPage() {
         initialCourseId={selectedTrialCourseId}
         initialTutorId={selectedTrialTutorId}
         allCourses={courses}
+        onSuccess={() => {
+          loadCourses(false);
+        }}
+      />
+
+      <PermanentEnrollmentModal
+        isOpen={showPermanentEnrollmentModal}
+        onClose={() => {
+          setShowPermanentEnrollmentModal(false);
+          setSelectedPurchaseCourse(null);
+        }}
+        course={selectedPurchaseCourse}
         onSuccess={() => {
           loadCourses(false);
         }}

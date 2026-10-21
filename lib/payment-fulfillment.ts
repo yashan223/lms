@@ -102,6 +102,23 @@ export async function fulfillPayment(
         },
       });
 
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 365 days lifespan
+      await tx.tokenGrant.create({
+        data: {
+          walletId: wallet.id,
+          userId: payment.userId,
+          packageName: payment.itemTitle || `${tokensToAdd} Hours Pack`,
+          tokensGranted: tokensToAdd,
+          tokensRemaining: tokensToAdd,
+          costLkr: payment.amountCents / 100,
+          purchasedAt: now,
+          expiresAt: expiresAt,
+          status: "ACTIVE",
+          referenceId: payment.reference,
+        },
+      });
+
       await tx.notification.create({
         data: {
           userId: payment.userId,

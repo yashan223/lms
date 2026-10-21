@@ -74,6 +74,8 @@ import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
+import { EnrollmentRequestsManager } from "@/components/tutor/EnrollmentRequestsManager";
+import { TutorMonthlyEarningsView } from "@/components/tutor/TutorMonthlyEarningsView";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
   getUserBrowserTimezone,
@@ -215,15 +217,39 @@ function TutorDashboardContent() {
   const [classFilter, setClassFilter] = useState<"ALL" | "LIVE" | "SCHEDULED" | "COMPLETED">("ALL");
 
   const [centerTab, setCenterTab] = useState<
-    "courses" | "classes" | "history" | "students" | "trials" | "earnings" | "profile" | "availability"
+    "courses" | "classes" | "history" | "students" | "trials" | "earnings" | "profile" | "availability" | "enrollments"
   >("courses");
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState<"ALL" | "CLASSES" | "STUDENTS">("ALL");
+  const [historySubTab, setHistorySubTab] = useState<"earnings" | "logs">("earnings");
+  const [monthlyEarnings, setMonthlyEarnings] = useState<any>(null);
+  const [pendingEnrollmentsCount, setPendingEnrollmentsCount] = useState(0);
+  const [enrollmentsCount, setEnrollmentsCount] = useState(0);
+
+  const fetchEnrollmentCounts = async () => {
+    try {
+      const res = await fetch("/api/enrollment-requests");
+      const data = await res.json();
+      if (res.ok && data.counts) {
+        setPendingEnrollmentsCount(data.counts.pending || 0);
+        setEnrollmentsCount(data.counts.total || 0);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchEnrollmentCounts();
+  }, [tutor?.id]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "profile") {
       router.push("/tutor/profile");
+      return;
+    }
+    if (tab === "earnings") {
+      setCenterTab("history");
+      setHistorySubTab("earnings");
       return;
     }
     if (
@@ -232,8 +258,8 @@ function TutorDashboardContent() {
       tab === "history" ||
       tab === "students" ||
       tab === "trials" ||
-      tab === "earnings" ||
-      tab === "availability"
+      tab === "availability" ||
+      tab === "enrollments"
     ) {
       setCenterTab(tab);
     }
@@ -556,6 +582,9 @@ function TutorDashboardContent() {
         return timeB - timeA;
       });
       setTrials(sortedTrials);
+      if (data.monthlyEarnings) {
+        setMonthlyEarnings(data.monthlyEarnings);
+      }
 
       if (data.courses && data.courses.length > 0 && !newClassCourseId) {
         setNewClassCourseId(data.courses[0].id);
@@ -643,12 +672,14 @@ function TutorDashboardContent() {
 
   useEffect(() => {
     fetchTutorData(true);
+    fetchEnrollmentCounts();
   }, []);
 
   useRealtimeSync({
-    events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED", "EVENTS_CHANGED", "USERS_CHANGED", "TRIALS_CHANGED", "MATERIALS_CHANGED", "TUTOR_AVAILABILITY_CHANGED", "NOTIFICATIONS_CHANGED"],
+    events: ["COURSES_CHANGED", "ENROLLMENTS_CHANGED", "EVENTS_CHANGED", "USERS_CHANGED", "TRIALS_CHANGED", "MATERIALS_CHANGED", "TUTOR_AVAILABILITY_CHANGED", "NOTIFICATIONS_CHANGED", "ENROLLMENT_REQUESTS_CHANGED"],
     onSync: () => {
       fetchTutorData(false);
+      fetchEnrollmentCounts();
     },
   });
 
@@ -1846,9 +1877,16 @@ function TutorDashboardContent() {
                     <History className="w-3.5 h-3.5 text-blue-600" />
                     <span>Session History & Logs</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
-                    {completedSessions.length}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {monthlyEarnings?.currentMonth?.totalAmountLkr ? (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black">
+                        Rs. {monthlyEarnings.currentMonth.totalAmountLkr.toLocaleString()}
+                      </span>
+                    ) : null}
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
+                      {completedSessions.length}
+                    </span>
+                  </div>
                 </button>
 
                 <button
@@ -1883,6 +1921,31 @@ function TutorDashboardContent() {
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold">
                     {trials.length}
                   </span>
+                </button>
+
+                <button
+                  onClick={() => setCenterTab("enrollments")}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer ${
+                    centerTab === "enrollments"
+                      ? "bg-blue-50 text-blue-700 font-bold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <CalendarClock className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Enrollment Requests</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {pendingEnrollmentsCount > 0 ? (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
+                        {pendingEnrollmentsCount} new
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
+                        {enrollmentsCount}
+                      </span>
+                    )}
+                  </div>
                 </button>
 
                 <button
@@ -2633,6 +2696,59 @@ function TutorDashboardContent() {
 
             {centerTab === "history" && (
               <div className="space-y-4 animate-in fade-in duration-300">
+                {/* Sub-Tabs: Monthly Earnings Tracker vs Session History & Duration Logs */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setHistorySubTab("earnings")}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                        historySubTab === "earnings"
+                          ? "bg-[#0c2461] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Coins className="w-4 h-4 text-amber-400" />
+                      <span>Monthly Earnings</span>
+                      {monthlyEarnings?.currentMonth?.totalAmountLkr ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-black border border-emerald-400/30">
+                          Rs. {monthlyEarnings.currentMonth.totalAmountLkr.toLocaleString()}
+                        </span>
+                      ) : null}
+                    </button>
+
+                    <button
+                      onClick={() => setHistorySubTab("logs")}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                        historySubTab === "logs"
+                          ? "bg-[#0c2461] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                    >
+                      <History className="w-4 h-4 text-blue-400" />
+                      <span>Session History & Duration Logs</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-black">
+                        {completedSessions.length}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 font-medium px-2">
+                    {historySubTab === "earnings" ? (
+                      <span className="text-emerald-700 font-semibold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Live Monthly Ledger: 1 Token = 1 Hour Class Session &rarr; LKR Payout
+                      </span>
+                    ) : (
+                      <span>Audit logs for all completed classes with BigBlueButton timestamps</span>
+                    )}
+                  </div>
+                </div>
+
+                {historySubTab === "earnings" && (
+                  <TutorMonthlyEarningsView earnings={monthlyEarnings} />
+                )}
+
+                {historySubTab === "logs" && (
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div>
@@ -2844,6 +2960,7 @@ function TutorDashboardContent() {
                     </div>
                   )}
                 </div>
+                )}
               </div>
             )}
 
@@ -3507,6 +3624,15 @@ function TutorDashboardContent() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {centerTab === "enrollments" && (
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <EnrollmentRequestsManager
+                  tutorId={tutor?.id || ""}
+                  tutorTimezone={tutorTimezone}
+                />
               </div>
             )}
 

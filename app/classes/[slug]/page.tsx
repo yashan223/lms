@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
+import { PermanentEnrollmentModal } from "@/components/enrollment/PermanentEnrollmentModal";
 import { parseTutorBio } from "@/lib/utils";
 
 interface CourseMaterial {
@@ -93,6 +94,7 @@ export default function CourseDetailPage({
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showPermanentEnrollmentModal, setShowPermanentEnrollmentModal] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({ "0": true });
 
@@ -451,7 +453,7 @@ export default function CourseDetailPage({
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => setShowPurchaseModal(true)}
+                        onClick={() => setShowPermanentEnrollmentModal(true)}
                         className="bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs rounded-xl h-9 px-4 gap-1.5 shadow-xs cursor-pointer"
                       >
                         <Lock className="w-3.5 h-3.5 text-blue-200" />
@@ -1006,6 +1008,16 @@ export default function CourseDetailPage({
         initialCourseId={course?.id}
         initialTutorId={course?.instructorId || (course as any)?.tutorId || (course as any)?.instructor?.id}
         allCourses={course ? [course] : []}
+      />
+
+      {/* Permanent Class Enrollment Modal with Availability Matching */}
+      <PermanentEnrollmentModal
+        isOpen={showPermanentEnrollmentModal}
+        onClose={() => setShowPermanentEnrollmentModal(false)}
+        course={course}
+        onSuccess={() => {
+          loadCourse(true);
+        }}
       />
 
       {/* Course Purchase Modal */}

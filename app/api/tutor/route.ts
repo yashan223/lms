@@ -21,6 +21,7 @@ import {
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 import { ensureTutorIdForUser } from "@/lib/tutor-id";
+import { getTutorMonthlyEarnings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -185,6 +186,11 @@ export async function GET(request: NextRequest) {
       ],
     });
 
+    const monthlyEarnings = await getTutorMonthlyEarnings(tutor.id).catch((err) => {
+      console.warn("[TutorAPI] Error loading monthly earnings:", err);
+      return null;
+    });
+
     return NextResponse.json(
       {
         tutor: {
@@ -204,6 +210,7 @@ export async function GET(request: NextRequest) {
         students,
         events,
         trials,
+        monthlyEarnings,
       },
       {
         headers: {
@@ -918,17 +925,12 @@ export async function POST(request: NextRequest) {
         const bbbId = getBBBMeetingId({ eventId: resolvedEventId });
         endBBBMeeting(bbbId).catch(() => {});
 
-        // Step 1: Immediately mark as COMPLETED with endedAt = now so the UI updates instantly
-        await prisma.event.update({
-          where: { id: resolvedEventId },
-          data: {
-            status: "COMPLETED",
-            endedAt: manualEndTime ? new Date(manualEndTime) : now,
-            ...(manualStartTime ? { startedAt: new Date(manualStartTime) } : {}),
-            ...(recordingUrl ? { recordingUrl: recordingUrl.trim(), recordingStatus: "AVAILABLE" } : {}),
-          },
+        // Step 1: Complete class, deduct 1 token from student, notify low balance, and credit tutor earnings ledger
+        await completeClassAndProcessEcosystem(resolvedEventId, {
+          manualStartTime: manualStartTime ? new Date(manualStartTime) : undefined,
+          manualEndTime: manualEndTime ? new Date(manualEndTime) : now,
+          recordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
         });
-        broadcastLMSEvent("EVENTS_CHANGED", { eventId: resolvedEventId, ended: true });
 
         // Step 2: Sync with BigBlueButton
         try {

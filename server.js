@@ -207,10 +207,38 @@ app.prepare().then(() => {
   console.log(`> BigBlueButton auto-sync enabled (every ${SYNC_INTERVAL_MS / 60000} min)`);
   // ─────────────────────────────────────────────────────────────────────────
 
+  // ─── Background: Automated 30-Minute Class Reminders ───
+  const REMINDER_INTERVAL_MS = 60 * 1000; // 1 minute
+  const autoCheckClassReminders = async () => {
+    try {
+      const base = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${port}`;
+      const res = await fetch(`${base}/api/classes/reminders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Internal-Sync": "1" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.remindedCount > 0) {
+          console.log(`[auto-reminders] Dispatched ${data.remindedCount} automated 30-min class reminder(s).`);
+        }
+      }
+    } catch (err) {
+      // Non-fatal
+    }
+  };
+
+  const firstReminderTimeout = setTimeout(autoCheckClassReminders, 15 * 1000);
+  const autoReminderInterval = setInterval(autoCheckClassReminders, REMINDER_INTERVAL_MS);
+  if (firstReminderTimeout.unref) firstReminderTimeout.unref();
+  if (autoReminderInterval.unref) autoReminderInterval.unref();
+  console.log(`> Automated class reminders enabled (every ${REMINDER_INTERVAL_MS / 1000}s check)`);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const handleShutdown = (signal) => {
     console.log(`\n> Received ${signal}. Closing server gracefully...`);
     clearInterval(heartbeatInterval);
     clearInterval(autoSyncInterval);
+    clearInterval(autoReminderInterval);
     for (const ws of clients) {
       try {
         ws.close(1001, "Server shutdown");

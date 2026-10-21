@@ -60,6 +60,7 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Button } from "@/components/ui/button";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
+import { PermanentEnrollmentModal } from "@/components/enrollment/PermanentEnrollmentModal";
 import { StudentAvailabilityModal } from "@/components/student/StudentAvailabilityModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
@@ -199,6 +200,8 @@ function DashboardContent() {
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [selectedTrialCourseId, setSelectedTrialCourseId] = useState<string | undefined>(undefined);
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+  const [selectedEnrollmentCourse, setSelectedEnrollmentCourse] = useState<any | null>(null);
   const [trialStats, setTrialStats] = useState<any | null>(null);
   const [showStudentAvailabilityModal, setShowStudentAvailabilityModal] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
@@ -273,6 +276,18 @@ function DashboardContent() {
     setRescheduleReason("");
     setRescheduleStatusMsg(null);
     setShowStudentRescheduleModal(true);
+  };
+
+  const handleOpenEnrollmentForEvent = (event: any) => {
+    let targetCourse = event?.course;
+    if (!targetCourse && event?.courseId) {
+      targetCourse = allCourses.find((c: any) => c.id === event.courseId);
+    }
+    if (!targetCourse && allCourses.length > 0) {
+      targetCourse = allCourses[0];
+    }
+    setSelectedEnrollmentCourse(targetCourse || null);
+    setShowEnrollmentModal(true);
   };
 
   const handleStudentConfirmReschedule = async (e: React.FormEvent) => {
@@ -1500,26 +1515,40 @@ function DashboardContent() {
                               <span>Join Live Class</span>
                             </a>
                           ) : (ev.status === "COMPLETED" || ev.endedAt) ? (
-                            ev.recordingUrl ? (
-                              <a
-                                href={ev.recordingUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all"
-                              >
-                                <Play className="w-3.5 h-3.5 fill-current shrink-0" />
-                                <span>Watch Recording</span>
-                              </a>
-                            ) : ev.recordingStatus === "PROCESSING" ? (
-                              <span className="h-8.5 px-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
-                                <Clock className="w-3.5 h-3.5 text-purple-600 animate-spin shrink-0" />
-                                <span>Recording Processing...</span>
-                              </span>
-                            ) : (
-                              <span className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
-                                <span>Ended</span>
-                              </span>
-                            )
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {ev.recordingUrl ? (
+                                <a
+                                  href={ev.recordingUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all"
+                                >
+                                  <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                                  <span>Watch Recording</span>
+                                </a>
+                              ) : ev.recordingStatus === "PROCESSING" ? (
+                                <span className="h-8.5 px-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
+                                  <Clock className="w-3.5 h-3.5 text-purple-600 animate-spin shrink-0" />
+                                  <span>Recording Processing...</span>
+                                </span>
+                              ) : (
+                                <span className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
+                                  <span>Ended</span>
+                                </span>
+                              )}
+
+                              {userRole === "STUDENT" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEnrollmentForEvent(ev)}
+                                  className="h-8.5 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all cursor-pointer"
+                                  title="Enroll in permanent weekly 1-on-1 classes with this tutor"
+                                >
+                                  <CalendarClock className="w-3.5 h-3.5 text-blue-200 shrink-0" />
+                                  <span>Enroll</span>
+                                </button>
+                              )}
+                            </div>
                           ) : userRole === "STUDENT" ? (
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span
@@ -2096,6 +2125,15 @@ function DashboardContent() {
         initialCourseId={selectedTrialCourseId}
         allCourses={allCourses}
         currentUser={user}
+        onSuccess={() => {
+          fetchDashboardData();
+        }}
+      />
+
+      <PermanentEnrollmentModal
+        isOpen={showEnrollmentModal}
+        onClose={() => setShowEnrollmentModal(false)}
+        course={selectedEnrollmentCourse}
         onSuccess={() => {
           fetchDashboardData();
         }}

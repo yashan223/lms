@@ -73,7 +73,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
-import { formatClassId } from "@/lib/class-id";
+import { formatClassId } from "@/lib/class-id-client";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
 import { EnrollmentRequestsManager } from "@/components/tutor/EnrollmentRequestsManager";
 import { TutorMonthlyEarningsView } from "@/components/tutor/TutorMonthlyEarningsView";

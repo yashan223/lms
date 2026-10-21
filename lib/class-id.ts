@@ -1,4 +1,12 @@
+/**
+ * SERVER-ONLY: Class ID generator that queries the database.
+ * Do NOT import this file in Client Components — use @/lib/class-id-client instead.
+ */
+
 import { prisma } from "@/lib/prisma";
+
+// Re-export the pure formatting helper from the client-safe module.
+export { formatClassId } from "@/lib/class-id-client";
 
 /**
  * Generates a collision-free sequential/formatted Class ID.
@@ -56,29 +64,4 @@ export async function generateUniqueClassCode(overrideYear?: number): Promise<st
   }
 }
 
-/**
- * Resolves or formats a human-readable unique tracking Class ID for an event/session.
- */
-export function formatClassId(event: {
-  id?: string;
-  classCode?: string | null;
-  description?: string | null;
-}): string {
-  if (event.classCode) {
-    return event.classCode;
-  }
 
-  if (event.description) {
-    const match = event.description.match(/Class ID:\s*([A-Za-z0-9_-]+)/i);
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-  }
-
-  if (event.id) {
-    const clean = event.id.replace(/[^a-zA-Z0-9]/g, "");
-    return `CLS-${clean.slice(-6).toUpperCase()}`;
-  }
-
-  return "CLS-CLASS";
-}

@@ -69,7 +69,7 @@ import { StudentAvailabilityModal } from "@/components/student/StudentAvailabili
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
-import { formatClassId } from "@/lib/class-id";
+import { formatClassId } from "@/lib/class-id-client";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 import {

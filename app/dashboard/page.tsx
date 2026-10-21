@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -54,6 +54,10 @@ import {
   Play,
   Copy,
   Check,
+  LayoutGrid,
+  List,
+  Layers,
+  ArrowUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -191,6 +195,8 @@ function DashboardContent() {
   const [timelinePeriod, setTimelinePeriod] = useState("all");
   const [timelineSort, setTimelineSort] = useState("date");
   const [timelineSearch, setTimelineSearch] = useState("");
+  const [timelineViewMode, setTimelineViewMode] = useState<"cards" | "compact">("cards");
+  const timelineScrollRef = useRef<HTMLDivElement>(null);
   const [calendarCourseFilter, setCalendarCourseFilter] = useState("all");
 
   const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
@@ -809,7 +815,16 @@ function DashboardContent() {
       );
     }
 
-    if (timelinePeriod !== "all") {
+    if (timelinePeriod === "today") {
+      const todayStr = getDatePartsInTimezone(new Date(), userTimezone).dateStr;
+      list = list.filter((ev) => getDatePartsInTimezone(ev.dueDate, userTimezone).dateStr === todayStr);
+    } else if (timelinePeriod === "past") {
+      const now = Date.now();
+      list = list.filter((ev) => {
+        const isEnded = ev.status === "COMPLETED" || ev.status === "CANCELLED" || (Boolean(ev.endedAt) && ev.status !== "SCHEDULED");
+        return isEnded || new Date(ev.dueDate).getTime() < now;
+      });
+    } else if (timelinePeriod !== "all") {
       const days = parseInt(timelinePeriod, 10);
       if (!isNaN(days)) {
         const now = Date.now();
@@ -840,7 +855,78 @@ function DashboardContent() {
     }
 
     return list;
-  }, [studentTimelineEvents, calendarCourseFilter, timelinePeriod, timelineSearch, timelineSort]);
+  }, [studentTimelineEvents, calendarCourseFilter, timelinePeriod, timelineSearch, timelineSort, userTimezone]);
+
+  const groupedTimeline = useMemo(() => {
+    if (timelineSort === "course") {
+      const map = new Map<string, typeof filteredTimeline>();
+      for (const ev of filteredTimeline) {
+        const key = ev.course?.title || "General & 1-on-1 Sessions";
+        if (!map.has(key)) {
+          map.set(key, []);
+        }
+        map.get(key)!.push(ev);
+      }
+      return Array.from(map.entries()).map(([key, items]) => ({
+        groupKey: key,
+        label: key,
+        isToday: false,
+        isTomorrow: false,
+        items,
+      }));
+    }
+
+    const todayStr = getDatePartsInTimezone(new Date(), userTimezone).dateStr;
+    const tomorrowStr = getDatePartsInTimezone(new Date(Date.now() + 24 * 60 * 60 * 1000), userTimezone).dateStr;
+
+    const map = new Map<string, typeof filteredTimeline>();
+
+    for (const ev of filteredTimeline) {
+      const dateParts = getDatePartsInTimezone(ev.dueDate, userTimezone);
+      const key = dateParts.dateStr;
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(ev);
+    }
+
+    const groups: Array<{
+      groupKey: string;
+      label: string;
+      isToday: boolean;
+      isTomorrow: boolean;
+      items: typeof filteredTimeline;
+    }> = [];
+
+    for (const [key, items] of map.entries()) {
+      const sampleDate = new Date(items[0].dueDate);
+      const isToday = key === todayStr;
+      const isTomorrow = key === tomorrowStr;
+
+      let label = formatDateInTimezone(sampleDate, userTimezone, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      if (isToday) {
+        label = `Today • ${label}`;
+      } else if (isTomorrow) {
+        label = `Tomorrow • ${label}`;
+      }
+
+      groups.push({
+        groupKey: key,
+        label,
+        isToday,
+        isTomorrow,
+        items,
+      });
+    }
+
+    return groups;
+  }, [filteredTimeline, timelineSort, userTimezone]);
 
   const handleAddPrivateFile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1369,33 +1455,114 @@ function DashboardContent() {
           </aside>
 
           <section className="lg:col-span-9 space-y-5 order-1 lg:order-2">
-            <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                  <span>Timeline & Deadlines</span>
-                </h3>
-                <span className="text-xs font-semibold text-slate-500">
-                  {filteredTimeline.length} {filteredTimeline.length === 1 ? "Activity" : "Activities"}
-                </span>
+            <div className="bg-white rounded-lg border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-3.5">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 leading-none">
+                      Timeline & Deadlines
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Your scheduled classes, 1-on-1 sessions, and assignments
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <Badge variant="outline" className="bg-blue-50/60 text-blue-800 border-blue-200 text-xs font-bold px-2 py-0.5">
+                    {filteredTimeline.length} {filteredTimeline.length === 1 ? "Activity" : "Activities"}
+                  </Badge>
+
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setTimelineViewMode("cards")}
+                      className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        timelineViewMode === "cards"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                      title="Cards view"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Cards</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimelineViewMode("compact")}
+                      className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        timelineViewMode === "compact"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-900"
+                      }`}
+                      title="Compact list view"
+                    >
+                      <List className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Compact</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
+              {/* Quick Filters Pill Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] font-bold text-slate-400 mr-0.5 uppercase tracking-wider">
+                    Quick view:
+                  </span>
+                  {[
+                    { id: "all", label: "All" },
+                    { id: "today", label: "Today" },
+                    { id: "7", label: "Next 7 Days" },
+                    { id: "30", label: "Next 30 Days" },
+                    { id: "past", label: "Past" },
+                  ].map((pill) => {
+                    const active = timelinePeriod === pill.id;
+                    return (
+                      <button
+                        key={pill.id}
+                        type="button"
+                        onClick={() => {
+                          setTimelinePeriod(pill.id);
+                          timelineScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          active
+                            ? "bg-[#0c2461] text-white shadow-2xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Secondary Filter & Search Controls */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
                 <select
                   value={timelinePeriod}
                   onChange={(e) => setTimelinePeriod(e.target.value)}
-                  className="sm:col-span-3 h-8 rounded border border-slate-300 px-2 bg-white font-medium text-slate-700"
+                  className="sm:col-span-3 h-8.5 rounded-lg border border-slate-300 px-2.5 bg-white font-medium text-slate-700 text-xs"
                 >
                   <option value="all">All upcoming & past</option>
+                  <option value="today">Today only</option>
                   <option value="7">Next 7 days</option>
                   <option value="14">Next 14 days</option>
                   <option value="30">Next 30 days</option>
+                  <option value="past">Past sessions</option>
                 </select>
 
                 <select
                   value={timelineSort}
                   onChange={(e) => setTimelineSort(e.target.value)}
-                  className="sm:col-span-3 h-8 rounded border border-slate-300 px-2 bg-white font-medium text-slate-700"
+                  className="sm:col-span-3 h-8.5 rounded-lg border border-slate-300 px-2.5 bg-white font-medium text-slate-700 text-xs"
                 >
                   <option value="date">Sort by due date</option>
                   <option value="course">Sort by class</option>
@@ -1407,272 +1574,469 @@ function DashboardContent() {
                     placeholder="Search activities, titles or classes..."
                     value={timelineSearch}
                     onChange={(e) => setTimelineSearch(e.target.value)}
-                    className="w-full h-8 rounded border border-slate-300 pl-8 pr-3 text-xs"
+                    className="w-full h-8.5 rounded-lg border border-slate-300 pl-8.5 pr-3 text-xs bg-white"
                   />
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
                 </div>
               </div>
 
-              <div className="pt-1">
+              {/* Bounded Scrollable Container */}
+              <div
+                ref={timelineScrollRef}
+                tabIndex={0}
+                aria-label="Timeline activities scroll area"
+                className="max-h-[580px] sm:max-h-[620px] overflow-y-auto overscroll-contain pr-1 sm:pr-2 space-y-4 rounded-lg focus:outline-hidden"
+              >
                 {filteredTimeline.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {filteredTimeline.map((ev) => (
-                      <div
-                        key={ev.id}
-                        className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-blue-50/30 transition-colors"
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className="p-2 rounded-lg bg-blue-100 text-blue-800 shrink-0 mt-0.5">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-bold text-xs text-slate-900 leading-snug">
-                                {ev.title}
-                              </h4>
-                              {ev.status === "LIVE" && (
-                                <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
-                                  <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
-                                  <span>Live Now</span>
-                                </Badge>
-                              )}
-                              {(ev.status === "COMPLETED" || ev.endedAt) && (
-                                <Badge className="bg-slate-100 text-slate-600 text-[9px] font-semibold">
-                                  Ended
-                                </Badge>
-                              )}
-                              {(ev.title?.toLowerCase().includes("trial") || ev.title?.toLowerCase().includes("1-on-1")) ? (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-100 text-blue-800 border-blue-200">
-                                  1-on-1 Trial
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-50 text-blue-700 border-blue-200">
-                                  Online Session
-                                </span>
-                              )}
-                              {ev.approvalStatus === "APPROVED" && ev.status === "SCHEDULED" && (
-                                <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
-                                  <Clock className="w-2.5 h-2.5 text-amber-600" />
-                                  <span>Tutor Accepted (Not Started)</span>
-                                </Badge>
-                              )}
-                              {ev.approvalStatus === "APPROVED" && ev.status === "LIVE" && (
-                                <Badge className="bg-red-50 text-red-800 border-red-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
-                                  <Radio className="w-2.5 h-2.5 text-red-600 animate-pulse" />
-                                  <span>Session Started</span>
-                                </Badge>
-                              )}
-                            </div>
-                            {ev.description && (
-                              <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                                {ev.description}
-                              </p>
+                  <div className="space-y-4">
+                    {groupedTimeline.map((group) => (
+                      <div key={group.groupKey} className="space-y-2">
+                        {/* Sticky Date/Course Group Header */}
+                        <div className="sticky top-0 z-10 py-1.5 px-3 bg-white/95 backdrop-blur-xs border-y border-slate-200/90 rounded-md flex items-center justify-between shadow-2xs">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span className="text-xs font-bold text-slate-800">
+                              {group.label}
+                            </span>
+                            {group.isToday && (
+                              <Badge className="bg-red-600 text-white text-[9px] font-black uppercase px-1.5 py-0">
+                                Today
+                              </Badge>
                             )}
-                            <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1 flex-wrap">
-                              <span className="text-blue-700 font-semibold flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-blue-600" />
-                                {formatForUser(ev.dueDate, userTimezone, { includeDate: true, includeTime: true, includeAbbr: true })}
-                              </span>
-                              {ev.tutorTimezone && ev.tutorTimezone !== userTimezone && (
-                                <span className="text-slate-600 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
-                                  <span>Tutor&apos;s time:</span>
-                                  <strong className="font-mono text-slate-800">{formatTimeInTimezone(ev.dueDate, ev.tutorTimezone, { includeAbbr: true })}</strong>
-                                </span>
-                              )}
-                              {ev.course && (
-                                <span className="text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[180px]">
-                                  {ev.course.title}
-                                </span>
-                              )}
-                              {ev.actualStartTime && ev.actualEndTime ? (
-                                <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
-                                  <Clock className="w-3 h-3 text-emerald-600" />
-                                  BigBlueButton: {formatTimeInTimezone(ev.actualStartTime, userTimezone)} - {formatTimeInTimezone(ev.actualEndTime, userTimezone, { includeAbbr: true })}
-                                </span>
-                              ) : ev.startedAt && ev.endedAt ? (
-                                <span className="text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
-                                  <Clock className="w-3 h-3 text-slate-500" />
-                                  Class: {formatTimeInTimezone(ev.startedAt, userTimezone)} - {formatTimeInTimezone(ev.endedAt, userTimezone, { includeAbbr: true })}
-                                </span>
-                              ) : ev.status === "LIVE" && (ev.actualStartTime || ev.startedAt) ? (
-                                <span className="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 animate-pulse">
-                                  <Clock className="w-3 h-3 text-red-600" />
-                                  Live since {formatTimeInTimezone((ev.actualStartTime || ev.startedAt)!, userTimezone, { includeAbbr: true })}
-                                </span>
-                              ) : null}
-                            </div>
+                            {group.isTomorrow && (
+                              <Badge className="bg-blue-600 text-white text-[9px] font-semibold px-1.5 py-0">
+                                Tomorrow
+                              </Badge>
+                            )}
                           </div>
+                          <span className="text-[11px] font-semibold text-slate-500 font-mono">
+                            {group.items.length} {group.items.length === 1 ? "session" : "sessions"}
+                          </span>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                          {ev.status === "LIVE" ? (
-                            <a
-                              href={
-                                ev.id
-                                  ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
-                                  : ev.trialId
-                                  ? `/api/meetings/join?trialId=${ev.trialId}`
-                                  : getSafeMeetingLink(ev.meetingLink || `/api/meetings/join?eventId=${ev.id}`)
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                              className="h-8.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 animate-pulse whitespace-nowrap"
-                            >
-                              <Video className="w-3.5 h-3.5 shrink-0" />
-                              <span>Join Live Class</span>
-                            </a>
-                          ) : (ev.status === "COMPLETED" || ev.endedAt) ? (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {ev.recordingUrl ? (
-                                <a
-                                  href={ev.recordingUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all"
-                                >
-                                  <Play className="w-3.5 h-3.5 fill-current shrink-0" />
-                                  <span>Watch Recording</span>
-                                </a>
-                              ) : ev.recordingStatus === "PROCESSING" ? (
-                                <span className="h-8.5 px-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
-                                  <Clock className="w-3.5 h-3.5 text-purple-600 animate-spin shrink-0" />
-                                  <span>Recording Processing...</span>
-                                </span>
-                              ) : (
-                                <span className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
-                                  <span>Ended</span>
-                                </span>
-                              )}
-
-                              {userRole === "STUDENT" && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEnrollmentForEvent(ev)}
-                                  className="h-8.5 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all cursor-pointer"
-                                  title="Enroll in permanent weekly 1-on-1 classes with this tutor"
-                                >
-                                  <CalendarClock className="w-3.5 h-3.5 text-blue-200 shrink-0" />
-                                  <span>Enroll</span>
-                                </button>
-                              )}
-                            </div>
-                          ) : userRole === "STUDENT" ? (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span
-                                className="h-8.5 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none"
-                                title="Your tutor will start the session shortly. Once started, this button turns into 'Join Live Class'."
+                        {/* Items in this group */}
+                        {timelineViewMode === "cards" ? (
+                          <div className="space-y-2.5">
+                            {group.items.map((ev) => (
+                              <div
+                                key={ev.id}
+                                className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-blue-50/30 transition-colors"
                               >
-                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                <span>Waiting for Tutor to Start</span>
-                              </span>
-                              {ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) && (
-                                <a
-                                  href={
-                                    ev.id
-                                      ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
-                                      : ev.trialId
-                                      ? `/api/meetings/join?trialId=${ev.trialId}`
-                                      : getSafeMeetingLink(ev.meetingLink)
-                                  }
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="h-8.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all shadow-2xs"
-                                  title="Classroom room is ready - click to preview or enter"
-                                >
-                                  <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                                  <span>Live Classroom</span>
-                                </a>
-                              )}
-                            </div>
-                          ) : (ev.description?.includes("http") || ev.meetingLink) ? (
-                            <a
-                              href={
-                                ev.id
-                                  ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
-                                  : ev.trialId
-                                  ? `/api/meetings/join?trialId=${ev.trialId}`
-                                  : getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                              className="h-8.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
-                            >
-                              <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                              <span>Meet Room</span>
-                            </a>
-                          ) : null}
+                                <div className="flex items-start gap-3 min-w-0">
+                                  <div className="p-2 rounded-lg bg-blue-100 text-blue-800 shrink-0 mt-0.5">
+                                    <FileText className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="font-bold text-xs text-slate-900 leading-snug">
+                                        {ev.title}
+                                      </h4>
+                                      {ev.status === "LIVE" && (
+                                        <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
+                                          <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
+                                          <span>Live Now</span>
+                                        </Badge>
+                                      )}
+                                      {(ev.status === "COMPLETED" || ev.endedAt) && (
+                                        <Badge className="bg-slate-100 text-slate-600 text-[9px] font-semibold">
+                                          Ended
+                                        </Badge>
+                                      )}
+                                      {(ev.title?.toLowerCase().includes("trial") || ev.title?.toLowerCase().includes("1-on-1")) ? (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-100 text-blue-800 border-blue-200">
+                                          1-on-1 Trial
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-blue-50 text-blue-700 border-blue-200">
+                                          Online Session
+                                        </span>
+                                      )}
+                                      {ev.approvalStatus === "APPROVED" && ev.status === "SCHEDULED" && (
+                                        <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
+                                          <Clock className="w-2.5 h-2.5 text-amber-600" />
+                                          <span>Tutor Accepted (Not Started)</span>
+                                        </Badge>
+                                      )}
+                                      {ev.approvalStatus === "APPROVED" && ev.status === "LIVE" && (
+                                        <Badge className="bg-red-50 text-red-800 border-red-200 text-[9px] font-bold flex items-center gap-1 shadow-2xs">
+                                          <Radio className="w-2.5 h-2.5 text-red-600 animate-pulse" />
+                                          <span>Session Started</span>
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    {ev.description && (
+                                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                                        {ev.description}
+                                      </p>
+                                    )}
+                                    <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1 flex-wrap">
+                                      <span className="text-blue-700 font-semibold flex items-center gap-1">
+                                        <Calendar className="w-3 h-3 text-blue-600" />
+                                        {formatForUser(ev.dueDate, userTimezone, { includeDate: true, includeTime: true, includeAbbr: true })}
+                                      </span>
+                                      {ev.tutorTimezone && ev.tutorTimezone !== userTimezone && (
+                                        <span className="text-slate-600 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
+                                          <span>Tutor&apos;s time:</span>
+                                          <strong className="font-mono text-slate-800">{formatTimeInTimezone(ev.dueDate, ev.tutorTimezone, { includeAbbr: true })}</strong>
+                                        </span>
+                                      )}
+                                      {ev.course && (
+                                        <span className="text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[180px]">
+                                          {ev.course.title}
+                                        </span>
+                                      )}
+                                      {ev.actualStartTime && ev.actualEndTime ? (
+                                        <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                                          <Clock className="w-3 h-3 text-emerald-600" />
+                                          BigBlueButton: {formatTimeInTimezone(ev.actualStartTime, userTimezone)} - {formatTimeInTimezone(ev.actualEndTime, userTimezone, { includeAbbr: true })}
+                                        </span>
+                                      ) : ev.startedAt && ev.endedAt ? (
+                                        <span className="text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                                          <Clock className="w-3 h-3 text-slate-500" />
+                                          Class: {formatTimeInTimezone(ev.startedAt, userTimezone)} - {formatTimeInTimezone(ev.endedAt, userTimezone, { includeAbbr: true })}
+                                        </span>
+                                      ) : ev.status === "LIVE" && (ev.actualStartTime || ev.startedAt) ? (
+                                        <span className="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 animate-pulse">
+                                          <Clock className="w-3 h-3 text-red-600" />
+                                          Live since {formatTimeInTimezone((ev.actualStartTime || ev.startedAt)!, userTimezone, { includeAbbr: true })}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </div>
 
-                          {ev.status !== "COMPLETED" && !ev.endedAt && (
-                            <button
-                              onClick={() => openStudentReschedule(ev)}
-                              className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
-                              title="Reschedule Session"
-                            >
-                              <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                              <span>Reschedule</span>
-                            </button>
-                          )}
+                                <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                  {ev.status === "LIVE" ? (
+                                    <a
+                                      href={
+                                        ev.id
+                                          ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                          : ev.trialId
+                                          ? `/api/meetings/join?trialId=${ev.trialId}`
+                                          : getSafeMeetingLink(ev.meetingLink || `/api/meetings/join?eventId=${ev.id}`)
+                                      }
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="h-8.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 animate-pulse whitespace-nowrap"
+                                    >
+                                      <Video className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Join Live Class</span>
+                                    </a>
+                                  ) : (ev.status === "COMPLETED" || ev.endedAt) ? (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {ev.recordingUrl ? (
+                                        <a
+                                          href={ev.recordingUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all"
+                                        >
+                                          <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                                          <span>Watch Recording</span>
+                                        </a>
+                                      ) : ev.recordingStatus === "PROCESSING" ? (
+                                        <span className="h-8.5 px-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
+                                          <Clock className="w-3.5 h-3.5 text-purple-600 animate-spin shrink-0" />
+                                          <span>Recording Processing...</span>
+                                        </span>
+                                      ) : (
+                                        <span className="h-8.5 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none">
+                                          <span>Ended</span>
+                                        </span>
+                                      )}
 
-                          <a
-                            href={buildGoogleCalendarUrl({
-                              title: ev.title,
-                              description: ev.description,
-                              dueDate: ev.dueDate,
-                              courseTitle: ev.course?.title,
-                            })}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="h-8.5 px-3 rounded-xl bg-white hover:bg-sky-50 text-sky-700 hover:text-sky-800 font-semibold text-xs border border-sky-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
-                            title="Add this class/deadline to Google Calendar"
-                          >
-                            <Calendar className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                            <span>Google Cal</span>
-                            <ExternalLink className="w-3 h-3 text-sky-400 shrink-0" />
-                          </a>
+                                      {userRole === "STUDENT" && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEnrollmentForEvent(ev)}
+                                          className="h-8.5 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all cursor-pointer"
+                                          title="Enroll in permanent weekly 1-on-1 classes with this tutor"
+                                        >
+                                          <CalendarClock className="w-3.5 h-3.5 text-blue-200 shrink-0" />
+                                          <span>Enroll</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : userRole === "STUDENT" ? (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span
+                                        className="h-8.5 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap select-none"
+                                        title="Your tutor will start the session shortly. Once started, this button turns into 'Join Live Class'."
+                                      >
+                                        <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span>Waiting for Tutor to Start</span>
+                                      </span>
+                                      {ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) && (
+                                        <a
+                                          href={
+                                            ev.id
+                                              ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                              : ev.trialId
+                                              ? `/api/meetings/join?trialId=${ev.trialId}`
+                                              : getSafeMeetingLink(ev.meetingLink)
+                                          }
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="h-8.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all shadow-2xs"
+                                          title="Classroom room is ready - click to preview or enter"
+                                        >
+                                          <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                          <span>Live Classroom</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  ) : (ev.description?.includes("http") || ev.meetingLink) ? (
+                                    <a
+                                      href={
+                                        ev.id
+                                          ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                          : ev.trialId
+                                          ? `/api/meetings/join?trialId=${ev.trialId}`
+                                          : getSafeMeetingLink(ev.meetingLink || ev.description?.match(/https?:\/\/[^\s]+/)?.[0])
+                                      }
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="h-8.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs border border-blue-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                                    >
+                                      <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                      <span>Meet Room</span>
+                                    </a>
+                                  ) : null}
 
-                          {ev.course?.slug && (
-                            <Link
-                              href={`/classes/${ev.course.slug}`}
-                              prefetch={true}
-                              onMouseEnter={() => prefetchCourse(ev.course.slug)}
-                              className="h-8.5 px-3 rounded-xl bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-semibold text-xs border border-blue-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
-                            >
-                              <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                              <span>Study Materials</span>
-                            </Link>
-                          )}
+                                  {ev.status !== "COMPLETED" && !ev.endedAt && (
+                                    <button
+                                      onClick={() => openStudentReschedule(ev)}
+                                      className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                                      title="Reschedule Session"
+                                    >
+                                      <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                      <span>Reschedule</span>
+                                    </button>
+                                  )}
 
-                          {userRole !== "STUDENT" && (ev.userId === user?.id || userRole === "ADMIN") && (
-                            <button
-                              onClick={() => handleDeleteEvent(ev.id)}
-                              disabled={deletingEventId === ev.id}
-                              className="h-8.5 px-3 sm:px-2.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
-                              title="Delete event"
-                            >
-                              {deletingEventId === ev.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-red-500" />
-                              ) : (
-                                <>
-                                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                  <span className="sm:hidden text-xs font-semibold">Delete</span>
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
+                                  <a
+                                    href={buildGoogleCalendarUrl({
+                                      title: ev.title,
+                                      description: ev.description,
+                                      dueDate: ev.dueDate,
+                                      courseTitle: ev.course?.title,
+                                    })}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="h-8.5 px-3 rounded-xl bg-white hover:bg-sky-50 text-sky-700 hover:text-sky-800 font-semibold text-xs border border-sky-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                                    title="Add this class/deadline to Google Calendar"
+                                  >
+                                    <Calendar className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                                    <span>Google Cal</span>
+                                    <ExternalLink className="w-3 h-3 text-sky-400 shrink-0" />
+                                  </a>
+
+                                  {ev.course?.slug && (
+                                    <Link
+                                      href={`/classes/${ev.course.slug}`}
+                                      prefetch={true}
+                                      onMouseEnter={() => prefetchCourse(ev.course.slug)}
+                                      className="h-8.5 px-3 rounded-xl bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-semibold text-xs border border-blue-200 transition-all shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                                    >
+                                      <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Study Materials</span>
+                                    </Link>
+                                  )}
+
+                                  {userRole !== "STUDENT" && (ev.userId === user?.id || userRole === "ADMIN") && (
+                                    <button
+                                      onClick={() => handleDeleteEvent(ev.id)}
+                                      disabled={deletingEventId === ev.id}
+                                      className="h-8.5 px-3 sm:px-2.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                                      title="Delete event"
+                                    >
+                                      {deletingEventId === ev.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-500" />
+                                      ) : (
+                                        <>
+                                          <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                          <span className="sm:hidden text-xs font-semibold">Delete</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          /* Compact View Mode */
+                          <div className="space-y-1.5">
+                            {group.items.map((ev) => (
+                              <div
+                                key={ev.id}
+                                className="p-2.5 rounded-lg bg-slate-50/90 border border-slate-200/80 hover:bg-blue-50/40 hover:border-blue-200 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="text-left sm:text-right shrink-0 min-w-[70px]">
+                                    <span className="font-mono text-xs font-bold text-slate-800 block">
+                                      {formatTimeInTimezone(ev.dueDate, userTimezone)}
+                                    </span>
+                                    {ev.tutorTimezone && ev.tutorTimezone !== userTimezone && (
+                                      <span className="text-[9px] text-slate-400 font-mono block">
+                                        Tutor: {formatTimeInTimezone(ev.dueDate, ev.tutorTimezone)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="w-px h-6 bg-slate-200 hidden sm:block shrink-0" />
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <h4 className="font-bold text-xs text-slate-900 leading-snug truncate max-w-[200px] sm:max-w-[320px]">
+                                        {ev.title}
+                                      </h4>
+                                      {ev.status === "LIVE" && (
+                                        <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1 py-0 px-1.5 animate-pulse">
+                                          <Radio className="w-2.5 h-2.5" />
+                                          Live
+                                        </Badge>
+                                      )}
+                                      {(ev.status === "COMPLETED" || ev.endedAt) && (
+                                        <Badge className="bg-slate-100 text-slate-600 text-[9px] font-medium py-0 px-1.5">
+                                          Ended
+                                        </Badge>
+                                      )}
+                                      {ev.course && (
+                                        <span className="text-[10px] font-medium text-slate-600 bg-slate-200/70 px-1.5 py-0.2 rounded truncate max-w-[140px]">
+                                          {ev.course.title}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {ev.description && (
+                                      <p className="text-[11px] text-slate-500 truncate max-w-[360px]">
+                                        {ev.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto flex-wrap">
+                                  {ev.status === "LIVE" ? (
+                                    <a
+                                      href={
+                                        ev.id
+                                          ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                          : ev.trialId
+                                          ? `/api/meetings/join?trialId=${ev.trialId}`
+                                          : getSafeMeetingLink(ev.meetingLink || `/api/meetings/join?eventId=${ev.id}`)
+                                      }
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="h-7.5 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1 animate-pulse whitespace-nowrap"
+                                    >
+                                      <Video className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Join Live</span>
+                                    </a>
+                                  ) : (ev.status === "COMPLETED" || ev.endedAt) ? (
+                                    <div className="flex items-center gap-1">
+                                      {ev.recordingUrl && (
+                                        <a
+                                          href={ev.recordingUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="h-7.5 px-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1"
+                                        >
+                                          <Play className="w-3 h-3 fill-current" />
+                                          <span>Recording</span>
+                                        </a>
+                                      )}
+                                      {userRole === "STUDENT" && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEnrollmentForEvent(ev)}
+                                          className="h-7.5 px-2.5 rounded-lg bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+                                          title="Enroll in permanent weekly 1-on-1 classes"
+                                        >
+                                          <CalendarClock className="w-3 h-3 text-blue-200" />
+                                          <span>Enroll</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1">
+                                      {userRole === "STUDENT" && ev.status !== "COMPLETED" && !ev.endedAt && (
+                                        <button
+                                          onClick={() => openStudentReschedule(ev)}
+                                          className="h-7.5 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                          title="Reschedule Session"
+                                        >
+                                          <Clock className="w-3 h-3 text-blue-600" />
+                                          <span>Reschedule</span>
+                                        </button>
+                                      )}
+                                      <a
+                                        href={buildGoogleCalendarUrl({
+                                          title: ev.title,
+                                          description: ev.description,
+                                          dueDate: ev.dueDate,
+                                          courseTitle: ev.course?.title,
+                                        })}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="h-7.5 px-2 rounded-lg bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs inline-flex items-center gap-1"
+                                        title="Add to Google Calendar"
+                                      >
+                                        <Calendar className="w-3 h-3 text-sky-600" />
+                                        <span className="hidden md:inline">Cal</span>
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
+                  <div className="text-center py-10">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
-                    <p className="text-xs text-slate-500 font-semibold">
+                    <p className="text-xs text-slate-600 font-bold">
                       No activities match your current filter
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTimelinePeriod("all");
+                        setTimelineSearch("");
+                      }}
+                      className="mt-2 text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
+                    >
+                      Reset filters
+                    </button>
                   </div>
                 )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-slate-600">
+                    Showing <strong>{filteredTimeline.length}</strong> of {studentTimelineEvents.length} activities
+                  </span>
+                  {filteredTimeline.length > 5 && (
+                    <span className="hidden sm:inline text-[11px] text-slate-400">
+                      • Scroll inside this panel to view all sessions
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => timelineScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                  title="Scroll to top of list"
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                  <span>Top</span>
+                </button>
               </div>
             </div>
 

@@ -256,6 +256,7 @@ model UserProgress {
 
 model Event {
   id                 String      @id @default(cuid())
+  classCode          String?     @unique
   title              String
   description        String?
   type               EventType   @default(LIVE_SEMINAR)

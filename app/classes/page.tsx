@@ -396,7 +396,7 @@ export default function CoursesPage() {
 
                           <div className="absolute bottom-3 left-3 flex items-center text-white text-xs">
                             <span className="bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md font-mono text-[11px]">
-                              {course.subjectCode}
+                              {course.subjectCode || `CLS-${course.id.slice(-6).toUpperCase()}`}
                             </span>
                           </div>
                         </Link>

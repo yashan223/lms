@@ -73,6 +73,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
+import { formatClassId } from "@/lib/class-id";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
 import { EnrollmentRequestsManager } from "@/components/tutor/EnrollmentRequestsManager";
 import { TutorMonthlyEarningsView } from "@/components/tutor/TutorMonthlyEarningsView";
@@ -154,6 +155,7 @@ interface TutorCourse {
 
 interface ScheduledClassEvent {
   id: string;
+  classCode?: string | null;
   title: string;
   description?: string | null;
   dueDate: string;
@@ -2476,6 +2478,9 @@ function TutorDashboardContent() {
                                 <span className="font-bold text-xs sm:text-sm text-slate-900 break-words">
                                   {ev.title}
                                 </span>
+                                <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
+                                  {ev.classCode || formatClassId(ev)}
+                                </span>
                                 {isPendingApproval && (
                                   <Badge className="bg-blue-50 text-blue-800 border-blue-200 font-bold text-[9px] flex items-center gap-1">
                                     <Clock className="w-2.5 h-2.5" />
@@ -2834,6 +2839,9 @@ function TutorDashboardContent() {
                                 <h4 className="font-bold text-sm sm:text-base text-slate-900 leading-snug break-words">
                                   {ev.title}
                                 </h4>
+                                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
+                                  {ev.classCode || formatClassId(ev)}
+                                </span>
                                 <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold shrink-0">
                                   ✓ Completed
                                 </Badge>

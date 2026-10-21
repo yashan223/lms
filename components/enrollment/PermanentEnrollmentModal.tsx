@@ -295,11 +295,9 @@ export function PermanentEnrollmentModal({
                     <User className="w-3.5 h-3.5 text-slate-400" />
                     Tutor: <strong className="text-slate-800">{course.tutor?.name || "Senior Academic Tutor"}</strong>
                   </span>
-                  {course.subjectCode && (
-                    <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
-                      {course.subjectCode}
-                    </span>
-                  )}
+                  <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
+                    {course.subjectCode || `CLS-${course.id?.slice(-6).toUpperCase()}`}
+                  </span>
                   <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-md font-semibold flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-emerald-600" />
                     {totalMatchedSlotsCount} Mutual Availability Matches

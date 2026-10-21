@@ -21,6 +21,7 @@ import {
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 import { ensureTutorIdForUser } from "@/lib/tutor-id";
+import { generateUniqueClassCode } from "@/lib/class-id";
 import { getTutorMonthlyEarnings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
 import { getTutorPendingReschedules, acceptRescheduleRequest, declineRescheduleRequest } from "@/lib/reschedule";
 
@@ -582,8 +583,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const newClassCode = await generateUniqueClassCode();
       const fullDescription = [
         description?.trim() || "Live curriculum individual class with Tutor.",
+        `\nClass ID: ${newClassCode}`,
         meetLink ? `\n\nBigBlueButton Classroom: ${meetLink}` : "",
       ]
         .join("")
@@ -591,6 +594,7 @@ export async function POST(request: NextRequest) {
 
       const newClassEvent = await prisma.event.create({
         data: {
+          classCode: newClassCode,
           title: title.trim(),
           description: fullDescription,
           meetingLink: meetLink,

@@ -4,6 +4,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
 import { createBBBMeeting, getUniversalJoinLink, isBigBlueButtonConfigured } from "@/lib/bigbluebutton";
 import { getSafeMeetingLink } from "@/lib/utils";
+import { generateUniqueClassCode } from "@/lib/class-id";
 import { EventType, EventStatus, Role, EnrollmentRequestStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -402,9 +403,11 @@ export async function PATCH(request: NextRequest) {
             const sessionStart = new Date(baseStart.getTime() + week * 7 * 24 * 60 * 60 * 1000);
             const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000); // Strict 1-hour slot
 
+            const sessionClassCode = await generateUniqueClassCode();
             const title = `${course.title} - ${enrollmentRequest.classType}`;
             const desc = [
               `📚 1-Hour Permanent Class Session (${enrollmentRequest.classType})`,
+              `Class ID: ${sessionClassCode}`,
               `Curriculum: ${course.title} ${course.subjectCode ? `(${course.subjectCode})` : ""}`,
               `Student: ${student.name} (${student.email})`,
               `Tutor: ${enrollmentRequest.tutor.name}`,
@@ -437,6 +440,7 @@ export async function PATCH(request: NextRequest) {
 
             const ev = await tx.event.create({
               data: {
+                classCode: sessionClassCode,
                 title,
                 description: desc,
                 dueDate: sessionStart,

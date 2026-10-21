@@ -69,6 +69,7 @@ import { StudentAvailabilityModal } from "@/components/student/StudentAvailabili
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
+import { formatClassId } from "@/lib/class-id";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
 import {
@@ -1647,6 +1648,9 @@ function DashboardContent() {
                                       <h4 className="font-bold text-xs text-slate-900 leading-snug">
                                         {ev.title}
                                       </h4>
+                                      <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
+                                        {ev.classCode || formatClassId(ev)}
+                                      </span>
                                       {ev.status === "LIVE" && (
                                         <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1">
                                           <Radio className="w-2.5 h-2.5 animate-pulse text-white" />
@@ -1905,6 +1909,9 @@ function DashboardContent() {
                                       <h4 className="font-bold text-xs text-slate-900 leading-snug truncate max-w-[200px] sm:max-w-[320px]">
                                         {ev.title}
                                       </h4>
+                                      <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
+                                        {ev.classCode || formatClassId(ev)}
+                                      </span>
                                       {ev.status === "LIVE" && (
                                         <Badge className="bg-red-600 text-white text-[9px] font-black uppercase flex items-center gap-1 py-0 px-1.5 animate-pulse">
                                           <Radio className="w-2.5 h-2.5" />
@@ -2078,7 +2085,12 @@ function DashboardContent() {
                       className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs space-y-1"
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <div className="font-bold text-slate-900 truncate">{ev.title}</div>
+                        <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                          <span className="truncate">{ev.title}</span>
+                          <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200/80 text-slate-700 shrink-0">
+                            {ev.classCode || formatClassId(ev)}
+                          </span>
+                        </div>
                         {ev.status === "LIVE" && (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-red-600 text-white animate-pulse shrink-0">
                             LIVE

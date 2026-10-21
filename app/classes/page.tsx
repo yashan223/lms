@@ -800,6 +800,7 @@ export default function CoursesPage() {
           setSelectedPurchaseCourse(null);
         }}
         course={selectedPurchaseCourse}
+        currentUser={currentUser}
         onSuccess={() => {
           loadCourses(false);
         }}

@@ -1021,6 +1021,7 @@ export default function CourseDetailPage({
         isOpen={showPermanentEnrollmentModal}
         onClose={() => setShowPermanentEnrollmentModal(false)}
         course={course}
+        currentUser={currentUser}
         onSuccess={() => {
           loadCourse(true);
         }}

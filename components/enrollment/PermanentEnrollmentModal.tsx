@@ -5,7 +5,6 @@ import {
   X,
   Calendar,
   Clock,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
@@ -23,11 +22,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
-  getUserBrowserTimezone,
   DEFAULT_TIMEZONE,
   format24hTo12h,
+  getRegionalTimezone,
+  getTimezoneOffsetString,
 } from "@/lib/timezones";
 
 interface SlotItem {
@@ -81,6 +81,12 @@ interface PermanentEnrollmentModalProps {
       timezone?: string;
     } | null;
   } | null;
+  currentUser?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    timezone?: string | null;
+  } | null;
   onSuccess?: (request: any) => void;
 }
 
@@ -88,6 +94,7 @@ export function PermanentEnrollmentModal({
   isOpen,
   onClose,
   course,
+  currentUser,
   onSuccess,
 }: PermanentEnrollmentModalProps) {
   const [classType, setClassType] = useState<string>("Theory and Paper mix");
@@ -103,14 +110,58 @@ export function PermanentEnrollmentModal({
   const [error, setError] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<any | null>(null);
 
-  const [userTimezone, setUserTimezone] = useState<string>(DEFAULT_TIMEZONE);
+  const resolveAccountTimezone = (tz?: string | null): string | null => {
+    if (!tz) return null;
+    try {
+      return getRegionalTimezone(tz).id;
+    } catch {
+      return tz;
+    }
+  };
+
+  const [userTimezone, setUserTimezone] = useState<string>(() => {
+    const accTz = resolveAccountTimezone(currentUser?.timezone);
+    return accTz || DEFAULT_TIMEZONE;
+  });
   const [tutorTimezone, setTutorTimezone] = useState<string>(DEFAULT_TIMEZONE);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setUserTimezone(getUserBrowserTimezone());
+    const accTz = resolveAccountTimezone(currentUser?.timezone);
+    if (accTz) {
+      setUserTimezone(accTz);
     }
-  }, []);
+  }, [currentUser?.timezone]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const accTz = resolveAccountTimezone(currentUser?.timezone);
+      if (accTz) {
+        setUserTimezone(accTz);
+      } else {
+        const studentQuery = currentUser?.id ? `?studentId=${currentUser.id}` : "";
+        fetch(`/api/student/availability${studentQuery}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (data?.timezone) {
+              const fetchedTz = resolveAccountTimezone(data.timezone);
+              if (fetchedTz) {
+                setUserTimezone(fetchedTz);
+                return;
+              }
+            }
+            return fetch("/api/dashboard")
+              .then((r) => (r.ok ? r.json() : null))
+              .then((d) => {
+                if (d?.user?.timezone) {
+                  const dashTz = resolveAccountTimezone(d.user.timezone);
+                  if (dashTz) setUserTimezone(dashTz);
+                }
+              });
+          })
+          .catch(() => {});
+      }
+    }
+  }, [isOpen, currentUser?.timezone, currentUser?.id]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -132,13 +183,16 @@ export function PermanentEnrollmentModal({
     setSelectedSlots([]);
 
     const tutorIdParam = course.tutor?.id || course.tutorId || "";
-    const url = `/api/tutor/availability?courseId=${encodeURIComponent(
-      course.id
-    )}&slotMinutes=60&days=14&timezone=${encodeURIComponent(
-      userTimezone
-    )}${tutorIdParam ? `&tutorId=${encodeURIComponent(tutorIdParam)}` : ""}`;
+    const studentIdParam = currentUser?.id || "";
+    const params = new URLSearchParams();
+    params.set("courseId", course.id);
+    params.set("slotMinutes", "60");
+    params.set("days", "14");
+    params.set("timezone", userTimezone);
+    if (tutorIdParam) params.set("tutorId", tutorIdParam);
+    if (studentIdParam) params.set("studentId", studentIdParam);
 
-    fetch(url)
+    fetch(`/api/tutor/availability?${params.toString()}`)
       .then(async (res) => {
         if (!isMounted) return;
         const data = await res.json();
@@ -173,7 +227,13 @@ export function PermanentEnrollmentModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, course?.id, userTimezone]);
+  }, [isOpen, course?.id, userTimezone, currentUser?.id]);
+
+  const userRegion = useMemo(() => getRegionalTimezone(userTimezone), [userTimezone]);
+  const userRegionOffset = useMemo(
+    () => getTimezoneOffsetString(new Date(), userRegion.id),
+    [userRegion.id]
+  );
 
   const activeDay = useMemo(() => {
     return days.find((d) => d.date === selectedDate) || days[0] || null;
@@ -299,7 +359,6 @@ export function PermanentEnrollmentModal({
                     {course.subjectCode || `CLS-${course.id?.slice(-6).toUpperCase()}`}
                   </span>
                   <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-md font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-emerald-600" />
                     {totalMatchedSlotsCount} Mutual Availability Matches
                   </span>
                 </div>
@@ -476,12 +535,19 @@ export function PermanentEnrollmentModal({
                     </span>
                   </div>
 
-                  <div className="w-full sm:w-auto">
-                    <RegionalTimezoneSelector
-                      selectedTimezone={userTimezone}
-                      onChange={(tz) => setUserTimezone(tz)}
-                      className="text-xs h-8"
-                    />
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-sky-200 bg-sky-50/70 text-xs shadow-2xs">
+                    <CountryFlag countryCode={userRegion.countryCode} flagEmoji={userRegion.flag} size="sm" />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-bold text-slate-900 truncate">
+                        {userRegion.region}
+                      </span>
+                      <span className="text-[11px] font-mono font-medium text-sky-700 bg-sky-100/90 px-1.5 py-0.2 rounded shrink-0">
+                        {userRegionOffset}
+                      </span>
+                      <span className="text-[9px] font-bold text-blue-700 bg-blue-100/80 border border-blue-200 px-1.5 py-0.2 rounded-full whitespace-nowrap shrink-0">
+                        Account Timezone
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -612,8 +678,8 @@ export function PermanentEnrollmentModal({
                                         <Lock className="w-2.5 h-2.5" /> Booked
                                       </span>
                                     ) : isMatched ? (
-                                      <span className="bg-emerald-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-1">
-                                        <Sparkles className="w-2.5 h-2.5" /> Mutual Match
+                                      <span className="bg-emerald-600 text-white px-2 py-0.5 rounded text-[9px] font-bold">
+                                        Mutual Match
                                       </span>
                                     ) : slot.isAvailable ? (
                                       <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-[9px] font-bold">

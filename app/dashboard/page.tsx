@@ -2533,6 +2533,7 @@ function DashboardContent() {
         isOpen={showEnrollmentModal}
         onClose={() => setShowEnrollmentModal(false)}
         course={selectedEnrollmentCourse}
+        currentUser={user}
         onSuccess={() => {
           fetchDashboardData();
         }}

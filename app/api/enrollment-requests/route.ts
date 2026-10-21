@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     const chosenClassType = validClassTypes.includes(classType) ? classType : "Theory and Paper mix";
 
     const parsedHours = Math.max(1, Math.min(10, parseInt(hoursPerWeek || "1", 10)));
-    const validDurations = ["Repeat for 1 month", "Repeat for 2 months", "Continuous"];
+    const validDurations = ["Repeat for 1 month", "Repeat for 2 months"];
     const chosenDuration = validDurations.includes(duration) ? duration : "Repeat for 1 month";
 
     if (!Array.isArray(selectedSlots) || selectedSlots.length === 0) {

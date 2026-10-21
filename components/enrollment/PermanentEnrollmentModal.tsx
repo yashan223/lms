@@ -399,7 +399,6 @@ export function PermanentEnrollmentModal({
                     >
                       <option value="Repeat for 1 month">Repeat for 1 month (4 wks)</option>
                       <option value="Repeat for 2 months">Repeat for 2 months (8 wks)</option>
-                      <option value="Continuous">Continuous (Weekly Ongoing)</option>
                     </select>
                   </div>
                 </div>

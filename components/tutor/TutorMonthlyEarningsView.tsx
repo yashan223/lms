@@ -149,10 +149,6 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Active Calendar Cycle
-              </span>
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
                 <CalendarDays className="w-3.5 h-3.5 text-blue-300" />
                 {current?.monthLabel || "Current Month"}

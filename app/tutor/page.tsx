@@ -2749,17 +2749,6 @@ function TutorDashboardContent() {
                       </span>
                     </button>
                   </div>
-
-                  <div className="text-[11px] text-slate-500 font-medium px-2">
-                    {historySubTab === "earnings" ? (
-                      <span className="text-emerald-700 font-semibold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Live Monthly Ledger: 1 Token = 1 Hour Class Session &rarr; LKR Payout
-                      </span>
-                    ) : (
-                      <span>Audit logs for all completed classes with BigBlueButton timestamps</span>
-                    )}
-                  </div>
                 </div>
 
                 {historySubTab === "earnings" && (

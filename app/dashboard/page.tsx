@@ -1235,18 +1235,34 @@ function DashboardContent() {
                         ) : (
                           <div className="text-slate-400 italic py-0.5">No enrolled classes</div>
                         )}
-                        <Link
-                          href="/classes"
-                          className="flex items-center gap-1.5 text-blue-700 font-semibold hover:underline cursor-pointer pt-1"
-                        >
-                          <span className="w-2 h-2 bg-blue-700 rounded-2xs inline-block" />
-                          <span>Find my class</span>
-                        </Link>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Independent Find My Class widget */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs">
+              <Link
+                href="/classes"
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-950 font-bold text-xs transition-all shadow-2xs group cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                    <Search className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                      Find My Class
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-normal">
+                      Browse courses & tutors
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+              </Link>
             </div>
 
 

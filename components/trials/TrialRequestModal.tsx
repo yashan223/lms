@@ -225,7 +225,22 @@ export function TrialRequestModal({
     if (pool[0]) setPreferredDate1(formatForDateTimeInput(pool[0].startTime, selectedTimezone));
     if (pool[1]) setPreferredDate2(formatForDateTimeInput(pool[1].startTime, selectedTimezone));
     if (pool[2]) setPreferredDate3(formatForDateTimeInput(pool[2].startTime, selectedTimezone));
+    setActiveSlotTarget(1);
     setError(null);
+  };
+
+  const selectedSlotsCount = useMemo(() => {
+    return [preferredDate1, preferredDate2, preferredDate3].filter(Boolean).length;
+  }, [preferredDate1, preferredDate2, preferredDate3]);
+
+  const formatChoiceDisplay = (val: string) => {
+    if (!val) return "";
+    try {
+      const d = parseDateTimeInputInTimezone(val, selectedTimezone);
+      return formatForUser(d, selectedTimezone, { year: false, includeAbbr: false });
+    } catch {
+      return val;
+    }
   };
 
   const daysWithSlots = useMemo(() => {
@@ -373,15 +388,45 @@ export function TrialRequestModal({
     }
     setError(null);
     const formatted = formatForDateTimeInput(slotStartTime, selectedTimezone);
-    if (activeSlotTarget === 1) {
-      setPreferredDate1(formatted);
+
+    // If slot is already selected, deselect it (toggle off)
+    if (preferredDate1 === formatted) {
+      setPreferredDate1("");
+      setActiveSlotTarget(1);
+      return;
+    }
+    if (preferredDate2 === formatted) {
+      setPreferredDate2("");
       setActiveSlotTarget(2);
-    } else if (activeSlotTarget === 2) {
-      setPreferredDate2(formatted);
+      return;
+    }
+    if (preferredDate3 === formatted) {
+      setPreferredDate3("");
       setActiveSlotTarget(3);
-    } else {
+      return;
+    }
+
+    // Fill first empty slot or replace active target
+    if (!preferredDate1) {
+      setPreferredDate1(formatted);
+      setActiveSlotTarget(!preferredDate2 ? 2 : !preferredDate3 ? 3 : 1);
+    } else if (!preferredDate2) {
+      setPreferredDate2(formatted);
+      setActiveSlotTarget(!preferredDate3 ? 3 : 1);
+    } else if (!preferredDate3) {
       setPreferredDate3(formatted);
       setActiveSlotTarget(1);
+    } else {
+      if (activeSlotTarget === 1) {
+        setPreferredDate1(formatted);
+        setActiveSlotTarget(2);
+      } else if (activeSlotTarget === 2) {
+        setPreferredDate2(formatted);
+        setActiveSlotTarget(3);
+      } else {
+        setPreferredDate3(formatted);
+        setActiveSlotTarget(1);
+      }
     }
   };
 
@@ -402,19 +447,9 @@ export function TrialRequestModal({
 
       const activeTutorTz = initialResolvedTutorTimezone || tutorBaseTimezone;
 
-      // Base default slot times strictly in the TUTOR'S region (10:00, 14:00, 11:00) then convert to student's account timezone
-      const now = new Date();
-      const tomorrowTutor = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      const tutorParts = getDatePartsInTimezone(tomorrowTutor, activeTutorTz);
-      const defaultSlot1 = createDateFromTimezoneParts(tutorParts.dateStr, "10:00", activeTutorTz);
-      const defaultSlot2 = createDateFromTimezoneParts(tutorParts.dateStr, "14:00", activeTutorTz);
-      const dayAfterTutor = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-      const dayAfterParts = getDatePartsInTimezone(dayAfterTutor, activeTutorTz);
-      const defaultSlot3 = createDateFromTimezoneParts(dayAfterParts.dateStr, "11:00", activeTutorTz);
-
-      setPreferredDate1(formatForDateTimeInput(defaultSlot1, activeTz));
-      setPreferredDate2(formatForDateTimeInput(defaultSlot2, activeTz));
-      setPreferredDate3(formatForDateTimeInput(defaultSlot3, activeTz));
+      setPreferredDate1("");
+      setPreferredDate2("");
+      setPreferredDate3("");
 
       setError(null);
       setCreatedTrial(null);
@@ -1048,12 +1083,16 @@ export function TrialRequestModal({
                         Provide 3 convenient time options. Your tutor will confirm <strong>only 1</strong> matching time slot.
                       </p>
                     </div>
-                    <span className="text-[11px] font-bold bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full border border-blue-200 shrink-0">
-                      3 Slots Required
+                    <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${
+                      selectedSlotsCount === 3
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                        : "bg-blue-100 text-blue-800 border-blue-200"
+                    }`}>
+                      {selectedSlotsCount === 3 ? "✓ 3 Slots Selected" : `${selectedSlotsCount}/3 Slots Selected`}
                     </span>
                   </div>
 
-                  {openSlots.length > 0 && (
+                  {openSlots.length > 0 ? (
                     <div className="space-y-3 p-3.5 sm:p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
                       {/* Navigation & Action Header */}
                       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -1071,8 +1110,14 @@ export function TrialRequestModal({
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                            Clicking fills Choice {activeSlotTarget}
+                          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                            selectedSlotsCount === 3
+                              ? "text-emerald-800 bg-emerald-50 border-emerald-200"
+                              : "text-blue-800 bg-blue-50 border-blue-200"
+                          }`}>
+                            {selectedSlotsCount === 3
+                              ? "3 of 3 Slots Selected"
+                              : `Click to choose slot #${activeSlotTarget}`}
                           </span>
                           {openSlots.some((s) => s.isAvailable && !s.isLocked) && (
                             <button
@@ -1234,6 +1279,92 @@ export function TrialRequestModal({
                         </div>
                       )}
 
+                      {/* Selected Slots Summary Row */}
+                      <div className="pt-2.5 border-t border-slate-200/80 flex items-center justify-between gap-2 flex-wrap text-xs">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wide shrink-0">
+                            Selected Slots:
+                          </span>
+                          {preferredDate1 ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 text-white font-semibold text-xs shadow-2xs">
+                              <span>#1 {formatChoiceDisplay(preferredDate1)}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreferredDate1("");
+                                  setActiveSlotTarget(1);
+                                }}
+                                className="text-blue-200 hover:text-white cursor-pointer"
+                                title="Remove Choice 1"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-400 border border-dashed border-slate-300 text-[11px]">
+                              #1 empty
+                            </span>
+                          )}
+
+                          {preferredDate2 ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 text-white font-semibold text-xs shadow-2xs">
+                              <span>#2 {formatChoiceDisplay(preferredDate2)}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreferredDate2("");
+                                  setActiveSlotTarget(2);
+                                }}
+                                className="text-blue-200 hover:text-white cursor-pointer"
+                                title="Remove Choice 2"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-400 border border-dashed border-slate-300 text-[11px]">
+                              #2 empty
+                            </span>
+                          )}
+
+                          {preferredDate3 ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 text-white font-semibold text-xs shadow-2xs">
+                              <span>#3 {formatChoiceDisplay(preferredDate3)}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreferredDate3("");
+                                  setActiveSlotTarget(3);
+                                }}
+                                className="text-blue-200 hover:text-white cursor-pointer"
+                                title="Remove Choice 3"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-400 border border-dashed border-slate-300 text-[11px]">
+                              #3 empty
+                            </span>
+                          )}
+                        </div>
+
+                        {selectedSlotsCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreferredDate1("");
+                              setPreferredDate2("");
+                              setPreferredDate3("");
+                              setActiveSlotTarget(1);
+                            }}
+                            className="text-[11px] font-semibold text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+
                       {/* Legend Footer */}
                       <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 flex-wrap gap-2">
                         <div className="flex items-center gap-3 flex-wrap">
@@ -1255,75 +1386,15 @@ export function TrialRequestModal({
                         </span>
                       </div>
                     </div>
+                  ) : (
+                    <div className="p-8 text-center text-slate-500 text-xs bg-slate-50/70 rounded-2xl border border-slate-200">
+                      <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-60" />
+                      <p className="font-semibold text-slate-700 text-sm">No open slots available</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        This tutor currently has no available time slots published. Please select another course or tutor.
+                      </p>
+                    </div>
                   )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    <div
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                        activeSlotTarget === 1 ? "bg-blue-50/20 border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200 hover:border-slate-300"
-                      }`}
-                      onClick={() => setActiveSlotTarget(1)}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-extrabold inline-flex items-center justify-center">1</span>
-                          <span>1st Choice (Primary) <span className="text-red-500">*</span></span>
-                        </span>
-                      </div>
-                      <input
-                        type="datetime-local"
-                        required
-                        value={preferredDate1}
-                        onFocus={() => setActiveSlotTarget(1)}
-                        onChange={(e) => setPreferredDate1(e.target.value)}
-                        className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                        activeSlotTarget === 2 ? "bg-blue-50/20 border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200 hover:border-slate-300"
-                      }`}
-                      onClick={() => setActiveSlotTarget(2)}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[11px] font-extrabold inline-flex items-center justify-center">2</span>
-                          <span>2nd Choice (Alternative) <span className="text-red-500">*</span></span>
-                        </span>
-                      </div>
-                      <input
-                        type="datetime-local"
-                        required
-                        value={preferredDate2}
-                        onFocus={() => setActiveSlotTarget(2)}
-                        onChange={(e) => setPreferredDate2(e.target.value)}
-                        className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                        activeSlotTarget === 3 ? "bg-blue-50/20 border-blue-500 ring-2 ring-blue-500/10 shadow-xs" : "bg-white border-slate-200 hover:border-slate-300"
-                      }`}
-                      onClick={() => setActiveSlotTarget(3)}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[11px] font-extrabold inline-flex items-center justify-center">3</span>
-                          <span>3rd Choice (Alternative) <span className="text-red-500">*</span></span>
-                        </span>
-                      </div>
-                      <input
-                        type="datetime-local"
-                        required
-                        value={preferredDate3}
-                        onFocus={() => setActiveSlotTarget(3)}
-                        onChange={(e) => setPreferredDate3(e.target.value)}
-                        className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">

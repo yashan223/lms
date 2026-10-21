@@ -2835,92 +2835,90 @@ function TutorDashboardContent() {
                           key={ev.id}
                           className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-200 transition-all space-y-3.5 shadow-2xs"
                         >
-                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                            <div className="space-y-1.5 min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-bold text-sm sm:text-base text-slate-900 leading-snug break-words">
-                                  {ev.title}
-                                </h4>
-                                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
-                                  {ev.classCode || formatClassId(ev)}
-                                </span>
-                                <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold shrink-0">
-                                  ✓ Completed
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-bold text-sm sm:text-base text-slate-900 leading-snug break-words">
+                                {ev.title}
+                              </h4>
+                              <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0" title="Unique Class Tracking ID">
+                                {ev.classCode || formatClassId(ev)}
+                              </span>
+                              <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold shrink-0">
+                                ✓ Completed
+                              </Badge>
+                              {ev.course?.subjectCode && (
+                                <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold shrink-0">
+                                  {ev.course.subjectCode}
                                 </Badge>
-                                {ev.course?.subjectCode && (
-                                  <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold shrink-0">
-                                    {ev.course.subjectCode}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                                <span className="flex items-center gap-1.5 text-slate-600 font-medium">
-                                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                  <span>Scheduled:</span>
-                                  <strong className="text-slate-800">
-                                    {new Date(ev.dueDate).toLocaleDateString("en-US", {
-                                      weekday: "short",
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </strong>
-                                </span>
-                              </div>
+                              )}
                             </div>
+                            <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                              <span className="flex items-center gap-1.5 text-slate-600 font-medium">
+                                <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span>Scheduled:</span>
+                                <strong className="text-slate-800 font-mono">
+                                  {new Date(ev.dueDate).toLocaleDateString("en-US", {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </strong>
+                              </span>
+                            </div>
+                          </div>
 
-                            <div className="flex items-center gap-2 flex-wrap shrink-0 pt-1 lg:pt-0">
-                              {ev.recordingUrl && (
-                                <a
-                                  href={ev.recordingUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all whitespace-nowrap"
-                                >
-                                  <Play className="w-3.5 h-3.5 fill-current shrink-0" />
-                                  <span>Watch Recording</span>
-                                </a>
-                              )}
-                              <button
-                                onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
-                                className="h-8.5 px-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
-                                title="Add or edit video recording link"
+                          <div className="flex items-center gap-2 flex-wrap pt-1">
+                            {ev.recordingUrl && (
+                              <a
+                                href={ev.recordingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all whitespace-nowrap"
                               >
-                                <Video className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                                <span>{ev.recordingUrl ? "Edit Recording" : "Attach Recording"}</span>
-                              </button>
-                              <button
-                                onClick={() => handleSyncMeeting(ev.id)}
-                                disabled={syncingEventId === ev.id}
-                                className="h-8.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
-                                title="Sync timing & recording from BigBlueButton"
+                                <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                                <span>Watch Recording</span>
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
+                              className="h-8.5 px-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+                              title="Add or edit video recording link"
+                            >
+                              <Video className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                              <span>{ev.recordingUrl ? "Edit Recording" : "Attach Recording"}</span>
+                            </button>
+                            <button
+                              onClick={() => handleSyncMeeting(ev.id)}
+                              disabled={syncingEventId === ev.id}
+                              className="h-8.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+                              title="Sync timing & recording from BigBlueButton"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 shrink-0 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
+                              <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
+                            </button>
+                            {ev.meetingLink && (
+                              <a
+                                href={getSafeMeetingLink(ev.meetingLink)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="h-8.5 px-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all whitespace-nowrap"
+                                title={ev.meetingLink}
                               >
-                                <RefreshCw className={`w-3.5 h-3.5 text-slate-500 shrink-0 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
-                                <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
-                              </button>
-                              {ev.meetingLink && (
-                                <a
-                                  href={getSafeMeetingLink(ev.meetingLink)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="h-8.5 px-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all whitespace-nowrap"
-                                  title={ev.meetingLink}
-                                >
-                                  <Video className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                  <span>Meeting Room</span>
-                                  <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
-                                </a>
-                              )}
-                              <button
-                                onClick={() => handleDeleteClass(ev.id, ev.title)}
-                                className="h-8.5 w-8.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 inline-flex items-center justify-center cursor-pointer transition-colors"
-                                title="Delete Class from History"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                              </button>
-                            </div>
+                                <Video className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                <span>Meeting Room</span>
+                                <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleDeleteClass(ev.id, ev.title)}
+                              className="h-8.5 w-8.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 inline-flex items-center justify-center cursor-pointer transition-colors sm:ml-auto"
+                              title="Delete Class from History"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                            </button>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-3 border-t border-slate-100 text-xs text-slate-600">

@@ -21,7 +21,6 @@ import {
   Award,
   Globe,
   Lock,
-  Sparkles,
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -217,14 +216,35 @@ export function TrialRequestModal({
   }, [currentUser?.timezone]);
 
   const handleAutoFillBest = () => {
-    const allMatches = openSlots.filter((s) => s.isMutualMatch && !s.isLocked);
-    const pool =
-      allMatches.length >= 3
-        ? allMatches
-        : [...allMatches, ...openSlots.filter((s) => s.isAvailable && !s.isLocked)];
-    if (pool[0]) setPreferredDate1(formatForDateTimeInput(pool[0].startTime, selectedTimezone));
-    if (pool[1]) setPreferredDate2(formatForDateTimeInput(pool[1].startTime, selectedTimezone));
-    if (pool[2]) setPreferredDate3(formatForDateTimeInput(pool[2].startTime, selectedTimezone));
+    const uniqueSlots: string[] = [];
+
+    // Prioritize mutual matches first
+    for (const s of openSlots) {
+      if (s.isMutualMatch && !s.isLocked && s.startTime) {
+        const formatted = formatForDateTimeInput(s.startTime, selectedTimezone);
+        if (!uniqueSlots.includes(formatted)) {
+          uniqueSlots.push(formatted);
+          if (uniqueSlots.length === 3) break;
+        }
+      }
+    }
+
+    // If fewer than 3, fill remaining with other available tutor slots
+    if (uniqueSlots.length < 3) {
+      for (const s of openSlots) {
+        if (s.isAvailable && !s.isLocked && s.startTime) {
+          const formatted = formatForDateTimeInput(s.startTime, selectedTimezone);
+          if (!uniqueSlots.includes(formatted)) {
+            uniqueSlots.push(formatted);
+            if (uniqueSlots.length === 3) break;
+          }
+        }
+      }
+    }
+
+    setPreferredDate1(uniqueSlots[0] || "");
+    setPreferredDate2(uniqueSlots[1] || "");
+    setPreferredDate3(uniqueSlots[2] || "");
     setActiveSlotTarget(1);
     setError(null);
   };
@@ -360,20 +380,26 @@ export function TrialRequestModal({
           // 2. If fewer than 3 mutual matches, fill remaining with probable available times within tutor's availability
           const choicesToFill: string[] = [];
           for (const m of mutualMatchSlots) {
-            if (choicesToFill.length < 3) choicesToFill.push(m.startTime);
+            const formatted = formatForDateTimeInput(m.startTime, tz);
+            if (choicesToFill.length < 3 && !choicesToFill.includes(formatted)) {
+              choicesToFill.push(formatted);
+            }
           }
           for (const a of availableSlots) {
-            if (choicesToFill.length < 3) choicesToFill.push(a.startTime);
+            const formatted = formatForDateTimeInput(a.startTime, tz);
+            if (choicesToFill.length < 3 && !choicesToFill.includes(formatted)) {
+              choicesToFill.push(formatted);
+            }
           }
 
           if (choicesToFill[0]) {
-            setPreferredDate1(formatForDateTimeInput(choicesToFill[0], tz));
+            setPreferredDate1(choicesToFill[0]);
           }
           if (choicesToFill[1]) {
-            setPreferredDate2(formatForDateTimeInput(choicesToFill[1], tz));
+            setPreferredDate2(choicesToFill[1]);
           }
           if (choicesToFill[2]) {
-            setPreferredDate3(formatForDateTimeInput(choicesToFill[2], tz));
+            setPreferredDate3(choicesToFill[2]);
           }
         }
       })
@@ -403,6 +429,12 @@ export function TrialRequestModal({
     if (preferredDate3 === formatted) {
       setPreferredDate3("");
       setActiveSlotTarget(3);
+      return;
+    }
+
+    // Safety: prevent selecting the same time slot as any existing choice
+    if (preferredDate1 === formatted || preferredDate2 === formatted || preferredDate3 === formatted) {
+      setError("This time slot is already selected. Each of the 3 choices must be a different time slot.");
       return;
     }
 
@@ -604,6 +636,15 @@ export function TrialRequestModal({
 
     if (!preferredDate1 || !preferredDate2 || !preferredDate3) {
       setError("Please select all 3 preferred dates & times for your class session so your tutor can review and confirm the best matching time.");
+      return;
+    }
+
+    if (
+      preferredDate1 === preferredDate2 ||
+      preferredDate1 === preferredDate3 ||
+      preferredDate2 === preferredDate3
+    ) {
+      setError("Please select 3 different time slots. Each choice must be a unique time.");
       return;
     }
 
@@ -1102,8 +1143,7 @@ export function TrialRequestModal({
                             <span>Quick Slots</span>
                           </span>
                           {allMutualMatches.length > 0 && (
-                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                              <Sparkles className="w-3 h-3 text-emerald-600" />
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-0.5 rounded-full inline-flex items-center">
                               <span>{allMutualMatches.length} Mutual Matches</span>
                             </span>
                           )}
@@ -1126,7 +1166,6 @@ export function TrialRequestModal({
                               className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
                               title="Automatically fills 1st, 2nd, and 3rd choices with the best mutual matching slots"
                             >
-                              <Sparkles className="w-3 h-3 text-emerald-600" />
                               <span>Auto-fill 3</span>
                             </button>
                           )}
@@ -1144,7 +1183,6 @@ export function TrialRequestModal({
                               : "bg-white text-emerald-900 hover:bg-emerald-50 border-emerald-200"
                           }`}
                         >
-                          <Sparkles className="w-3.5 h-3.5" />
                           <span>Best Matches</span>
                           {allMutualMatches.length > 0 && (
                             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
@@ -1196,8 +1234,8 @@ export function TrialRequestModal({
                           const isMutual = Boolean(s.isMutualMatch || s.matchesStudent);
                           const slotIsoFormatted = formatForDateTimeInput(s.startTime, selectedTimezone);
                           const isChoice1 = preferredDate1 === slotIsoFormatted;
-                          const isChoice2 = preferredDate2 === slotIsoFormatted;
-                          const isChoice3 = preferredDate3 === slotIsoFormatted;
+                          const isChoice2 = !isChoice1 && preferredDate2 === slotIsoFormatted;
+                          const isChoice3 = !isChoice1 && !isChoice2 && preferredDate3 === slotIsoFormatted;
                           const choiceNum = isChoice1 ? 1 : isChoice2 ? 2 : isChoice3 ? 3 : null;
 
                           if (isLocked) {
@@ -1257,7 +1295,7 @@ export function TrialRequestModal({
                                 </span>
                               ) : isMutual ? (
                                 <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-200/90 border border-emerald-300 px-1.5 py-0.2 rounded-full shrink-0">
-                                  ★ Match
+                                  Match
                                 </span>
                               ) : null}
                             </button>
@@ -1370,7 +1408,7 @@ export function TrialRequestModal({
                         <div className="flex items-center gap-3 flex-wrap">
                           <span className="inline-flex items-center gap-1">
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span className="font-semibold text-emerald-900">★ Mutual Match</span>
+                            <span className="font-semibold text-emerald-900">Mutual Match</span>
                           </span>
                           <span className="inline-flex items-center gap-1">
                             <span className="w-2 h-2 rounded-full bg-slate-300 border border-slate-400" />

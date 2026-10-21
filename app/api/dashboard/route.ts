@@ -629,6 +629,37 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // If user is a STUDENT, strictly enforce the new approval workflow:
+      // 1. Must be >= 24h before class start time
+      // 2. Max 2 reschedules per calendar month
+      // 3. Creates a request to tutor; time remains unchanged until tutor accepts
+      if (auth.user.role === Role.STUDENT) {
+        try {
+          const { createStudentRescheduleRequest } = await import("@/lib/reschedule");
+          const reqResult = await createStudentRescheduleRequest({
+            studentId: auth.user.id,
+            eventId,
+            requestedDate: parsedDate,
+            studentReason: reason,
+            timezone: body.timezone || auth.user.timezone || "Asia/Colombo",
+          });
+
+          return NextResponse.json({
+            success: true,
+            isRequest: true,
+            pendingApproval: true,
+            message: "Reschedule request sent to your tutor! The class schedule will update once your tutor accepts.",
+            request: reqResult.request,
+            remainingThisMonth: reqResult.remainingThisMonth,
+          });
+        } catch (err: any) {
+          return NextResponse.json(
+            { error: err.message || "Failed to submit reschedule request.", code: err.code },
+            { status: err.statusCode || 400 }
+          );
+        }
+      }
+
       const existing = await prisma.event.findUnique({
         where: { id: eventId },
         include: {
@@ -699,7 +730,7 @@ export async function POST(request: NextRequest) {
 
       let updatedDesc = existing.description || "";
       if (reason && reason.trim()) {
-        const prefix = auth.user.role === "STUDENT" ? "Rescheduled by Student" : "Rescheduled by Tutor";
+        const prefix = (auth.user.role as Role) === Role.ADMIN ? "Rescheduled by Admin" : "Rescheduled by Tutor";
         updatedDesc = `${updatedDesc}\n\n[${prefix}: ${reason.trim()}]`.trim();
       }
 
@@ -743,61 +774,34 @@ export async function POST(request: NextRequest) {
       const dateStrTutor = `${formatDateInTimezone(parsedDate, tutorTimezone, { weekday: "short", month: "short", day: "numeric" })} at ${formatTimeInTimezone(parsedDate, tutorTimezone)}`;
       const dateStrStudent = `${formatDateInTimezone(parsedDate, studentTimezone, { weekday: "short", month: "short", day: "numeric" })} at ${formatTimeInTimezone(parsedDate, studentTimezone)}`;
 
-      // Dispatch notifications
-      if (auth.user.role === "STUDENT") {
-        if (effectiveTutorId) {
-          await prisma.notification.create({
-            data: {
-              userId: effectiveTutorId,
-              title: "🔄 Online Class Rescheduled by Student",
-              message: `${auth.user.name || "Student"} has rescheduled "${existing.title}" to ${dateStrTutor}.${reason?.trim() ? ` Reason: "${reason.trim()}"` : ""}`,
-              type: "INFO",
-              link: "/tutor",
-            },
-          });
-          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: effectiveTutorId });
-        }
-
+      // Dispatch notifications (Rescheduled directly by Tutor / Admin)
+      const targetStudentId = existing.userId;
+      if (targetStudentId) {
         await prisma.notification.create({
           data: {
-            userId: auth.user.id,
-            title: "📅 Online Class Schedule Updated",
-            message: `Your class "${existing.title}" has been successfully rescheduled to ${dateStrStudent}.`,
-            type: "SUCCESS",
+            userId: targetStudentId,
+            title: "📅 Online Class Rescheduled by Tutor",
+            message: `Your tutor has rescheduled "${existing.title}" to ${dateStrStudent}.${reason?.trim() ? ` Tutor note: "${reason.trim()}"` : ""}`,
+            type: "INFO",
             link: "/dashboard",
           },
         });
-        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: auth.user.id });
-      } else {
-        // Rescheduled by Tutor / Admin
-        const targetStudentId = existing.userId;
-        if (targetStudentId) {
-          await prisma.notification.create({
-            data: {
-              userId: targetStudentId,
+        broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: targetStudentId });
+      } else if (existing.courseId) {
+        const enrollments = updatedEvent.course?.enrollments || [];
+        if (enrollments.length > 0) {
+          await prisma.notification.createMany({
+            data: enrollments.map((en: any) => ({
+              userId: en.userId,
               title: "📅 Online Class Rescheduled by Tutor",
-              message: `Your tutor has rescheduled "${existing.title}" to ${dateStrStudent}.${reason?.trim() ? ` Tutor note: "${reason.trim()}"` : ""}`,
+              message: `"${existing.title}" has been rescheduled to ${dateStrTutor}.`,
               type: "INFO",
               link: "/dashboard",
-            },
+            })),
           });
-          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: targetStudentId });
-        } else if (existing.courseId) {
-          const enrollments = updatedEvent.course?.enrollments || [];
-          if (enrollments.length > 0) {
-            await prisma.notification.createMany({
-              data: enrollments.map((en: any) => ({
-                userId: en.userId,
-                title: "📅 Online Class Rescheduled by Tutor",
-                message: `"${existing.title}" has been rescheduled to ${dateStrTutor}.`,
-                type: "INFO",
-                link: "/dashboard",
-              })),
-            });
-            enrollments.forEach((en: any) => {
-              broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: en.userId });
-            });
-          }
+          enrollments.forEach((en: any) => {
+            broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: en.userId });
+          });
         }
       }
 

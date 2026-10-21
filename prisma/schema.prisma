@@ -94,6 +94,8 @@ model User {
   studentAvailabilities StudentAvailability[] @relation("StudentAvailabilities")
   studentEnrollmentRequests ClassEnrollmentRequest[] @relation("StudentEnrollmentRequests")
   tutorEnrollmentRequests   ClassEnrollmentRequest[] @relation("TutorEnrollmentRequests")
+  studentRescheduleRequests ClassRescheduleRequest[] @relation("StudentRescheduleRequests")
+  tutorRescheduleRequests   ClassRescheduleRequest[] @relation("TutorRescheduleRequests")
   tokenGrants TokenGrant[] @relation("UserTokenGrants")
   tutorEarnings TutorEarningRecord[] @relation("TutorEarnings")
   studentEarnings TutorEarningRecord[] @relation("StudentClassEarnings")
@@ -183,6 +185,7 @@ model Course {
   events        Event[]
   trialRequests TrialRequest[]
   enrollmentRequests ClassEnrollmentRequest[]
+  rescheduleRequests ClassRescheduleRequest[]
   earningRecords TutorEarningRecord[]
   availabilities TutorAvailability[]
   attendanceRecords ClassAttendance[]
@@ -283,6 +286,7 @@ model Event {
   earningRecord      TutorEarningRecord?
   enrollmentRequestId String?
   enrollmentRequest  ClassEnrollmentRequest? @relation(fields: [enrollmentRequestId], references: [id], onDelete: SetNull)
+  rescheduleRequests ClassRescheduleRequest[]
   attendanceRecords  ClassAttendance[]
   createdAt          DateTime    @default(now()) @db.Timestamptz
 
@@ -746,4 +750,36 @@ model TutorMonthlyPayoutArchive {
 
   @@unique([tutorId, monthKey])
   @@map("tutor_monthly_payout_archives")
+}
+
+enum RescheduleRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+model ClassRescheduleRequest {
+  id              String                  @id @default(cuid())
+  eventId         String
+  event           Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  courseId        String?
+  course          Course?                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User                    @relation("StudentRescheduleRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  tutorId         String
+  tutor           User                    @relation("TutorRescheduleRequests", fields: [tutorId], references: [id], onDelete: Cascade)
+  originalDate    DateTime                @db.Timestamptz
+  requestedDate   DateTime                @db.Timestamptz
+  studentReason   String?                 @db.Text
+  tutorResponse   String?                 @db.Text
+  status          RescheduleRequestStatus @default(PENDING)
+  monthKey        String                  // "2026-10" to enforce max 2 per calendar month
+  createdAt       DateTime                @default(now()) @db.Timestamptz
+  updatedAt       DateTime                @updatedAt @db.Timestamptz
+
+  @@index([studentId, monthKey])
+  @@index([tutorId, status])
+  @@index([eventId])
+  @@map("class_reschedule_requests")
 }

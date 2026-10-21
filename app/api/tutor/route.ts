@@ -22,6 +22,7 @@ import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } 
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 import { ensureTutorIdForUser } from "@/lib/tutor-id";
 import { getTutorMonthlyEarnings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
+import { getTutorPendingReschedules, acceptRescheduleRequest, declineRescheduleRequest } from "@/lib/reschedule";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -191,6 +192,8 @@ export async function GET(request: NextRequest) {
       return null;
     });
 
+    const pendingReschedules = await getTutorPendingReschedules(tutor.id).catch(() => []);
+
     return NextResponse.json(
       {
         tutor: {
@@ -211,6 +214,7 @@ export async function GET(request: NextRequest) {
         events,
         trials,
         monthlyEarnings,
+        pendingReschedules,
       },
       {
         headers: {
@@ -1215,6 +1219,42 @@ export async function POST(request: NextRequest) {
         message: "Class session rescheduled successfully and students notified.",
         event: updated,
       });
+    }
+
+    if (action === "accept_reschedule") {
+      const { requestId, responseNote } = body;
+      if (!requestId) {
+        return NextResponse.json({ error: "Request ID is required." }, { status: 400 });
+      }
+
+      try {
+        const result = await acceptRescheduleRequest({
+          requestId,
+          tutorId: tutor.id,
+          responseNote,
+        });
+        return NextResponse.json(result);
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message || "Failed to accept reschedule." }, { status: err.statusCode || 400 });
+      }
+    }
+
+    if (action === "decline_reschedule") {
+      const { requestId, responseNote } = body;
+      if (!requestId) {
+        return NextResponse.json({ error: "Request ID is required." }, { status: 400 });
+      }
+
+      try {
+        const result = await declineRescheduleRequest({
+          requestId,
+          tutorId: tutor.id,
+          responseNote,
+        });
+        return NextResponse.json(result);
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message || "Failed to decline reschedule." }, { status: err.statusCode || 400 });
+      }
     }
 
     if (action === "confirm_trial") {

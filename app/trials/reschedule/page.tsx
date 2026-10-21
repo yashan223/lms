@@ -163,6 +163,18 @@ function RescheduleContent() {
   const [error, setError] = useState<string | null>(null);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
 
+  const [rescheduleQuota, setRescheduleQuota] = useState<{
+    usedThisMonth: number;
+    maxPerMonth: number;
+    remainingThisMonth: number;
+  } | null>(null);
+  const [rescheduleEligibility, setRescheduleEligibility] = useState<{
+    allowed: boolean;
+    error?: string;
+    code?: string;
+    hoursUntilClass?: number;
+  } | null>(null);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       setViewerTimezone(getUserBrowserTimezone());
@@ -194,6 +206,17 @@ function RescheduleContent() {
         } else if (availData.days.length > 0) {
           setSelectedDate(availData.days[0].date);
         }
+      }
+
+      try {
+        const qRes = await fetch(`/api/classes/reschedule?eventId=${encodeURIComponent(targetSession.id)}`);
+        const qData = await qRes.json();
+        if (qRes.ok) {
+          setRescheduleQuota(qData.quota || null);
+          setRescheduleEligibility(qData.eligibility || null);
+        }
+      } catch (qErr) {
+        console.warn("Failed to fetch reschedule eligibility:", qErr);
       }
     } else {
       setTrial(targetSession);
@@ -382,6 +405,14 @@ function RescheduleContent() {
       return;
     }
 
+    if ((classEvent || eventId) && rescheduleEligibility && !rescheduleEligibility.allowed) {
+      setStatusMsg({
+        type: "error",
+        text: rescheduleEligibility.error || "Rescheduling is not permitted for this class.",
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
       setStatusMsg(null);
@@ -425,9 +456,11 @@ function RescheduleContent() {
 
       setStatusMsg({
         type: "success",
-        text: classEvent || eventId
-          ? "🎉 Online class session has been successfully rescheduled and all participants notified!"
-          : "🎉 Free trial session has been successfully rescheduled and updated on the calendar!",
+        text: data.message || (classEvent || eventId
+          ? (data.pendingApproval
+              ? "📋 Reschedule request sent to your tutor! The class schedule will update once your tutor accepts."
+              : "🎉 Online class session has been successfully rescheduled and all participants notified!")
+          : "🎉 Free trial session has been successfully rescheduled and updated on the calendar!"),
       });
 
       if (classEvent || eventId) {
@@ -576,6 +609,52 @@ function RescheduleContent() {
               </div>
               <p className="text-xs leading-relaxed">{statusMsg.text}</p>
             </div>
+          </div>
+        )}
+
+        {isOnlineClass && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-indigo-50/60 border border-blue-200/80 text-xs space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-100 pb-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-700 shrink-0" />
+                <span className="font-extrabold text-blue-950 text-xs">
+                  Class Rescheduling Rules & Policy
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                  Monthly Allowance: {rescheduleQuota?.usedThisMonth ?? 0} of 2 Used ({rescheduleQuota?.remainingThisMonth ?? 2} remaining)
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] text-slate-600">
+              <div className="flex items-start gap-2">
+                <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>24-Hour Notice:</strong> Rescheduling is strictly permitted only at least 24 hours prior to class start time.
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>2 Per Month Limit:</strong> Each student is limited to a maximum of 2 class reschedules per calendar month.
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Tutor Approval:</strong> Your request goes directly to the tutor. If accepted, the class moves; if declined, the original time remains.
+                </span>
+              </div>
+            </div>
+
+            {rescheduleEligibility && !rescheduleEligibility.allowed && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 font-bold flex items-center gap-2 text-xs">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{rescheduleEligibility.error}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -1070,18 +1149,34 @@ function RescheduleContent() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={submitting || Boolean(activeConflict) || (!selectedSlotTime && !customDateTime)}
+                      disabled={
+                        submitting ||
+                        Boolean(activeConflict) ||
+                        (!selectedSlotTime && !customDateTime) ||
+                        Boolean(isOnlineClass && rescheduleEligibility && !rescheduleEligibility.allowed)
+                      }
                       className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-6 h-10 gap-2 cursor-pointer shadow-md shadow-blue-950/20 w-full sm:w-auto"
                     >
                       {submitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>{isOnlineClass ? "Rescheduling Class..." : "Rescheduling Session..."}</span>
+                          <span>{isOnlineClass ? "Sending Request..." : "Rescheduling Session..."}</span>
+                        </>
+                      ) : isOnlineClass && rescheduleEligibility && !rescheduleEligibility.allowed ? (
+                        <>
+                          <AlertCircle className="w-4 h-4 text-amber-300" />
+                          <span>
+                            {rescheduleEligibility.code === "NOTICE_TOO_SHORT"
+                              ? "Rescheduling Locked (< 24h Notice)"
+                              : rescheduleEligibility.code === "MONTHLY_LIMIT_REACHED"
+                              ? "Monthly Limit Reached (2/2 Used)"
+                              : "Reschedule Unavailable"}
+                          </span>
                         </>
                       ) : (
                         <>
                           <CalendarCheck className="w-4 h-4" />
-                          <span>{isOnlineClass ? "Confirm & Lock New Class Schedule" : "Confirm & Lock New Session Time"}</span>
+                          <span>{isOnlineClass ? "Send Reschedule Request to Tutor" : "Confirm & Lock New Session Time"}</span>
                         </>
                       )}
                     </Button>

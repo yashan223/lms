@@ -76,6 +76,7 @@ import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
 import { EnrollmentRequestsManager } from "@/components/tutor/EnrollmentRequestsManager";
 import { TutorMonthlyEarningsView } from "@/components/tutor/TutorMonthlyEarningsView";
+import { TutorRescheduleRequestsManager } from "@/components/tutor/TutorRescheduleRequestsManager";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import {
   getUserBrowserTimezone,
@@ -225,6 +226,7 @@ function TutorDashboardContent() {
   const [monthlyEarnings, setMonthlyEarnings] = useState<any>(null);
   const [pendingEnrollmentsCount, setPendingEnrollmentsCount] = useState(0);
   const [enrollmentsCount, setEnrollmentsCount] = useState(0);
+  const [pendingReschedules, setPendingReschedules] = useState<any[]>([]);
 
   const fetchEnrollmentCounts = async () => {
     try {
@@ -584,6 +586,9 @@ function TutorDashboardContent() {
       setTrials(sortedTrials);
       if (data.monthlyEarnings) {
         setMonthlyEarnings(data.monthlyEarnings);
+      }
+      if (data.pendingReschedules) {
+        setPendingReschedules(data.pendingReschedules);
       }
 
       if (data.courses && data.courses.length > 0 && !newClassCourseId) {
@@ -1860,9 +1865,16 @@ function TutorDashboardContent() {
                     <Video className="w-3.5 h-3.5 text-blue-600" />
                     <span>Live Classes</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
-                    {events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {pendingReschedules.length > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-black border border-amber-300 animate-pulse">
+                        {pendingReschedules.length} req
+                      </span>
+                    )}
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 font-bold">
+                      {events.filter((e) => e.status !== "COMPLETED" && e.status !== "CANCELLED" && !e.endedAt).length}
+                    </span>
+                  </div>
                 </button>
 
                 <button
@@ -2395,6 +2407,12 @@ function TutorDashboardContent() {
 
             {centerTab === "classes" && (
               <div className="space-y-4">
+                <TutorRescheduleRequestsManager
+                  requests={pendingReschedules}
+                  tutorTimezone={tutorTimezone}
+                  onRefresh={() => fetchTutorData(false)}
+                />
+
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">

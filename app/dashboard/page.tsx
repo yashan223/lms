@@ -262,6 +262,13 @@ function DashboardContent() {
     }
 
     if (event?.id) {
+      if (event?.dueDate) {
+        const hoursNotice = (new Date(event.dueDate).getTime() - Date.now()) / (1000 * 60 * 60);
+        if (hoursNotice < 24) {
+          alert("Classes can only be rescheduled at least 24 hours prior to the scheduled start time.");
+          return;
+        }
+      }
       router.push(`/classes/reschedule?eventId=${encodeURIComponent(event.id)}`);
       return;
     }
@@ -315,10 +322,10 @@ function DashboardContent() {
       if (res.ok) {
         setRescheduleStatusMsg({
           type: "success",
-          text: "Session rescheduled successfully! Your calendar has been updated.",
+          text: data.message || "Reschedule request sent to your tutor! The class schedule will update once your tutor accepts.",
         });
         fetchDashboardData(false);
-        setTimeout(() => setShowStudentRescheduleModal(false), 1200);
+        setTimeout(() => setShowStudentRescheduleModal(false), 2200);
       } else {
         if (res.status === 428 || data.code === "STUDY_AVAILABILITY_REQUIRED") {
           setShowStudentRescheduleModal(false);
@@ -2209,6 +2216,18 @@ function DashboardContent() {
                 )}
               </div>
 
+              <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-[11px] space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Student Rescheduling Rules:</span>
+                </div>
+                <ul className="list-disc list-inside space-y-0.5 text-amber-800 text-[10.5px]">
+                  <li>Must be requested at least 24 hours prior to class start time.</li>
+                  <li>Maximum 2 class reschedules per calendar month.</li>
+                  <li>Direct Tutor Approval: The class time only changes once your tutor accepts. If declined, the original time remains as it is.</li>
+                </ul>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 block">
                   New Preferred Date & Time <span className="text-red-500">*</span>
@@ -2252,12 +2271,12 @@ function DashboardContent() {
                   {reschedulingSession ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Updating Schedule...</span>
+                      <span>Sending Request...</span>
                     </>
                   ) : (
                     <>
                       <CalendarCheck className="w-3.5 h-3.5" />
-                      <span>Confirm Reschedule</span>
+                      <span>Submit Reschedule Request to Tutor</span>
                     </>
                   )}
                 </Button>

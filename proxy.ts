@@ -99,7 +99,7 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
   return res;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const origin = request.headers.get("origin");
 

@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Award,
   Globe,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -189,6 +190,14 @@ export function TrialRequestModal({
       tutorTimeDisplay?: string;
       dateLabel: string;
       matchesStudent?: boolean;
+      isMutualMatch?: boolean;
+      isAvailable?: boolean;
+      isLocked?: boolean;
+      conflict?: {
+        type?: string;
+        title?: string;
+        conflictParty?: "TUTOR" | "STUDENT";
+      } | null;
       dualTime?: any;
     }>
   >([]);
@@ -227,39 +236,69 @@ export function TrialRequestModal({
           setTutorBaseTimezone(d.tutorTimezone);
         }
         if (d.days) {
-          const collected: Array<{
-            startTime: string;
-            timeDisplay: string;
-            tutorTimeDisplay?: string;
-            dateLabel: string;
-            matchesStudent?: boolean;
-            dualTime?: any;
-          }> = [];
+          const mutualMatchSlots: any[] = [];
+          const availableSlots: any[] = [];
+          const lockedSlots: any[] = [];
+
           for (const day of d.days) {
             for (const s of day.slots || []) {
-              if (s.isAvailable && collected.length < 8) {
-                collected.push({
-                  startTime: s.startTime,
-                  timeDisplay: s.timeDisplay,
-                  tutorTimeDisplay: s.tutorTimeDisplay,
-                  dateLabel: day.dateLabel,
-                  matchesStudent: Boolean(s.matchesStudentAvailability),
-                  dualTime: s.dualTime,
-                });
+              if (s.isPast) continue;
+
+              const isLocked = Boolean(s.conflict);
+              const isMutual = Boolean(!isLocked && (s.matchesStudentAvailability || s.isMutualMatch));
+              const isAvail = Boolean(s.isAvailable && !isLocked);
+
+              const slotObj = {
+                startTime: s.startTime,
+                timeDisplay: s.timeDisplay,
+                tutorTimeDisplay: s.tutorTimeDisplay,
+                dateLabel: day.dateLabel,
+                matchesStudent: isMutual,
+                isMutualMatch: isMutual,
+                isAvailable: isAvail,
+                isLocked,
+                conflict: s.conflict || null,
+                dualTime: s.dualTime,
+              };
+
+              if (isLocked) {
+                lockedSlots.push(slotObj);
+              } else if (isMutual) {
+                mutualMatchSlots.push(slotObj);
+              } else if (isAvail) {
+                availableSlots.push(slotObj);
               }
             }
           }
-          setOpenSlots(collected);
 
-          // Automatically match the 3 choices with the tutor's actual available slots
-          if (collected.length >= 1) {
-            setPreferredDate1(formatForDateTimeInput(collected[0].startTime, tz));
+          // Prioritize: Mutual Match slots first, then probable tutor available slots, then locked/busy slots
+          const prioritizedSlots = [
+            ...mutualMatchSlots,
+            ...availableSlots.slice(0, Math.max(4, 12 - mutualMatchSlots.length)),
+            ...lockedSlots.slice(0, 3), // Show up to 3 locked slots in red
+          ];
+
+          setOpenSlots(prioritizedSlots);
+
+          // Priority for pre-filling Choice 1, 2, 3:
+          // 1. Take mutual matches where both tutor and student can attend
+          // 2. If fewer than 3 mutual matches, fill remaining with probable available times within tutor's availability
+          const choicesToFill: string[] = [];
+          for (const m of mutualMatchSlots) {
+            if (choicesToFill.length < 3) choicesToFill.push(m.startTime);
           }
-          if (collected.length >= 2) {
-            setPreferredDate2(formatForDateTimeInput(collected[1].startTime, tz));
+          for (const a of availableSlots) {
+            if (choicesToFill.length < 3) choicesToFill.push(a.startTime);
           }
-          if (collected.length >= 3) {
-            setPreferredDate3(formatForDateTimeInput(collected[2].startTime, tz));
+
+          if (choicesToFill[0]) {
+            setPreferredDate1(formatForDateTimeInput(choicesToFill[0], tz));
+          }
+          if (choicesToFill[1]) {
+            setPreferredDate2(formatForDateTimeInput(choicesToFill[1], tz));
+          }
+          if (choicesToFill[2]) {
+            setPreferredDate3(formatForDateTimeInput(choicesToFill[2], tz));
           }
         }
       })
@@ -267,6 +306,12 @@ export function TrialRequestModal({
   };
 
   const applyTutorSlot = (slotStartTime: string) => {
+    const targetSlot = openSlots.find((s) => s.startTime === slotStartTime);
+    if (targetSlot?.isLocked || targetSlot?.conflict) {
+      setError("This time slot is locked because a session is already scheduled. Please choose an available time.");
+      return;
+    }
+    setError(null);
     const formatted = formatForDateTimeInput(slotStartTime, selectedTimezone);
     if (activeSlotTarget === 1) {
       setPreferredDate1(formatted);
@@ -402,6 +447,7 @@ export function TrialRequestModal({
         body: JSON.stringify({
           action: "apply_preset",
           preset: presetType,
+          timezone: selectedTimezone,
         }),
       });
 
@@ -464,6 +510,19 @@ export function TrialRequestModal({
     if (!preferredDate1 || !preferredDate2 || !preferredDate3) {
       setError("Please select all 3 preferred dates & times for your class session so your tutor can review and confirm the best matching time.");
       return;
+    }
+
+    // Check if any of the preferred dates match a locked slot
+    const selectedDates = [preferredDate1, preferredDate2, preferredDate3];
+    for (let i = 0; i < selectedDates.length; i++) {
+      const d = selectedDates[i];
+      const lockedMatch = openSlots.find(
+        (s) => s.isLocked && formatForDateTimeInput(s.startTime, selectedTimezone) === d
+      );
+      if (lockedMatch) {
+        setError(`Choice ${i + 1} conflicts with a locked session (${lockedMatch.conflict?.conflictParty === 'TUTOR' ? 'Tutor is busy' : 'You are busy'}). Please pick an available time slot.`);
+        return;
+      }
     }
 
     try {
@@ -936,38 +995,74 @@ export function TrialRequestModal({
 
                   {openSlots.length > 0 && (
                     <div className="space-y-2 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Quick Tutor Slots (Click to fill Choice {activeSlotTarget}):
-                        </span>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                            Quick Tutor Slots (Click to fill Choice {activeSlotTarget}):
+                          </span>
+                          {openSlots.some((s) => s.isMutualMatch || s.matchesStudent) && (
+                            <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                              ★ Mutual Matches Available
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
                           Targeting Choice {activeSlotTarget}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {openSlots.map((s, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => applyTutorSlot(s.startTime)}
-                            className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
-                              s.matchesStudent
-                                ? "bg-blue-100 hover:bg-blue-200/80 border-blue-300 text-blue-900 shadow-xs ring-1 ring-blue-300/60 font-bold"
-                                : "bg-white hover:bg-blue-50 border-slate-200 text-slate-700"
-                            }`}
-                          >
-                            <Clock className={`w-3 h-3 ${s.matchesStudent ? "text-blue-700" : "text-blue-600"}`} />
-                            <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
-                            {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
-                              <span className="text-[10px] text-slate-500 font-medium inline-flex items-center gap-1">
-                                <span>({s.tutorTimeDisplay}</span>
-                                <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                                <span>)</span>
-                              </span>
-                            )}
-                            {s.matchesStudent && <span className="text-[10px] text-blue-800 font-extrabold bg-blue-200/60 px-1 py-0.2 rounded">★ Match</span>}
-                          </button>
-                        ))}
+                        {openSlots.map((s, idx) => {
+                          const isLocked = Boolean(s.isLocked || s.conflict);
+                          const isMutual = Boolean(s.isMutualMatch || s.matchesStudent);
+
+                          if (isLocked) {
+                            const party = s.conflict?.conflictParty === "TUTOR" ? "Tutor Busy" : "Student Busy";
+                            const conflictTitle = s.conflict?.title ? `Session: ${s.conflict.title}` : "Session in progress";
+                            return (
+                              <div
+                                key={idx}
+                                title={`${conflictTitle} (${party}). This time slot is locked and unavailable.`}
+                                className="px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs font-medium cursor-not-allowed inline-flex items-center gap-1.5 opacity-90 select-none shadow-2xs"
+                              >
+                                <Lock className="w-3 h-3 text-red-500 shrink-0" />
+                                <span className="line-through decoration-red-400">
+                                  {s.dateLabel.split(",")[0]}: {s.timeDisplay}
+                                </span>
+                                <span className="text-[9px] text-red-800 font-bold bg-red-100 border border-red-200 px-1.5 py-0.2 rounded shrink-0">
+                                  Locked ({party})
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => applyTutorSlot(s.startTime)}
+                              className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                                isMutual
+                                  ? "bg-emerald-50 hover:bg-emerald-100/90 border-emerald-400 text-emerald-950 shadow-xs ring-1 ring-emerald-400/60 font-bold"
+                                  : "bg-white hover:bg-blue-50 border-slate-200 text-slate-700"
+                              }`}
+                            >
+                              <Clock className={`w-3 h-3 ${isMutual ? "text-emerald-700" : "text-blue-600"}`} />
+                              <span>{s.dateLabel.split(",")[0]}: {s.timeDisplay}</span>
+                              {s.tutorTimeDisplay && s.tutorTimeDisplay !== s.timeDisplay && (
+                                <span className="text-[10px] text-slate-500 font-medium inline-flex items-center gap-1">
+                                  <span>({s.tutorTimeDisplay}</span>
+                                  <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                                  <span>)</span>
+                                </span>
+                              )}
+                              {isMutual && (
+                                <span className="text-[9px] text-emerald-800 font-extrabold bg-emerald-200/90 border border-emerald-300 px-1.5 py-0.2 rounded-full inline-flex items-center gap-0.5">
+                                  ★ Mutual Match
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -994,18 +1089,25 @@ export function TrialRequestModal({
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
                       {preferredDate1 && (
-                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                          <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                          <span>
-                            Tutor ({baseRegion.region}):{" "}
-                            <strong className="text-slate-700">
-                              {formatForUser(parseDateTimeInputInTimezone(preferredDate1, selectedTimezone), tutorBaseTimezone, {
-                                includeDate: false,
-                                includeTime: true,
-                                includeAbbr: true,
-                              })}
-                            </strong>
+                        <div className="mt-2 flex items-center justify-between gap-1 text-[11px] text-slate-500 font-medium flex-wrap">
+                          <span className="inline-flex items-center gap-1.5">
+                            <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                            <span>
+                              Tutor ({baseRegion.region}):{" "}
+                              <strong className="text-slate-700">
+                                {formatForUser(parseDateTimeInputInTimezone(preferredDate1, selectedTimezone), tutorBaseTimezone, {
+                                  includeDate: false,
+                                  includeTime: true,
+                                  includeAbbr: true,
+                                })}
+                              </strong>
+                            </span>
                           </span>
+                          {openSlots.some((s) => s.startTime && formatForDateTimeInput(s.startTime, selectedTimezone) === preferredDate1 && (s.isMutualMatch || s.matchesStudent)) && (
+                            <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                              ★ Mutual Match
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1031,18 +1133,25 @@ export function TrialRequestModal({
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
                       {preferredDate2 && (
-                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                          <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                          <span>
-                            Tutor ({baseRegion.region}):{" "}
-                            <strong className="text-slate-700">
-                              {formatForUser(parseDateTimeInputInTimezone(preferredDate2, selectedTimezone), tutorBaseTimezone, {
-                                includeDate: false,
-                                includeTime: true,
-                                includeAbbr: true,
-                              })}
-                            </strong>
+                        <div className="mt-2 flex items-center justify-between gap-1 text-[11px] text-slate-500 font-medium flex-wrap">
+                          <span className="inline-flex items-center gap-1.5">
+                            <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                            <span>
+                              Tutor ({baseRegion.region}):{" "}
+                              <strong className="text-slate-700">
+                                {formatForUser(parseDateTimeInputInTimezone(preferredDate2, selectedTimezone), tutorBaseTimezone, {
+                                  includeDate: false,
+                                  includeTime: true,
+                                  includeAbbr: true,
+                                })}
+                              </strong>
+                            </span>
                           </span>
+                          {openSlots.some((s) => s.startTime && formatForDateTimeInput(s.startTime, selectedTimezone) === preferredDate2 && (s.isMutualMatch || s.matchesStudent)) && (
+                            <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                              ★ Mutual Match
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1068,18 +1177,25 @@ export function TrialRequestModal({
                         className="w-full h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
                       {preferredDate3 && (
-                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                          <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
-                          <span>
-                            Tutor ({baseRegion.region}):{" "}
-                            <strong className="text-slate-700">
-                              {formatForUser(parseDateTimeInputInTimezone(preferredDate3, selectedTimezone), tutorBaseTimezone, {
-                                includeDate: false,
-                                includeTime: true,
-                                includeAbbr: true,
-                              })}
-                            </strong>
+                        <div className="mt-2 flex items-center justify-between gap-1 text-[11px] text-slate-500 font-medium flex-wrap">
+                          <span className="inline-flex items-center gap-1.5">
+                            <CountryFlag countryCode={baseRegion.countryCode} flagEmoji={baseRegion.flag} size="xs" />
+                            <span>
+                              Tutor ({baseRegion.region}):{" "}
+                              <strong className="text-slate-700">
+                                {formatForUser(parseDateTimeInputInTimezone(preferredDate3, selectedTimezone), tutorBaseTimezone, {
+                                  includeDate: false,
+                                  includeTime: true,
+                                  includeAbbr: true,
+                                })}
+                              </strong>
+                            </span>
                           </span>
+                          {openSlots.some((s) => s.startTime && formatForDateTimeInput(s.startTime, selectedTimezone) === preferredDate3 && (s.isMutualMatch || s.matchesStudent)) && (
+                            <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                              ★ Mutual Match
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>

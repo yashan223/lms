@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     if (!resolvedStudentId) {
       const auth = await getAuthenticatedUser(request).catch(() => ({ user: null }));
-      if (auth.user && auth.user.role === Role.STUDENT) {
+      if (auth.user && auth.user.id !== resolvedTutorId) {
         resolvedStudentId = auth.user.id;
       }
     }
@@ -433,18 +433,16 @@ export async function GET(request: NextRequest) {
 
           let matchesStudentAvailability = false;
           if (studentData && studentData.availabilities.length > 0) {
-            const studentParts = getDatePartsInTimezone(slotStart, studentTimezone);
-            const slotStudentMinutes = studentParts.hour * 60 + studentParts.minute;
-
             for (const sAv of studentData.availabilities) {
               const sAvTz = sAv.timezone || studentTimezone;
+              const slotInAvTz = getDatePartsInTimezone(slotStart, sAvTz);
               let dayMatch = false;
 
               if (sAv.specificDate) {
                 const sDateParts = getDatePartsInTimezone(sAv.specificDate, sAvTz);
-                dayMatch = sDateParts.dateStr === studentParts.dateStr;
+                dayMatch = sDateParts.dateStr === slotInAvTz.dateStr;
               } else if (sAv.isRecurring && sAv.dayOfWeek !== null) {
-                dayMatch = sAv.dayOfWeek === studentParts.dayOfWeek;
+                dayMatch = sAv.dayOfWeek === slotInAvTz.dayOfWeek;
               }
 
               if (dayMatch) {
@@ -452,13 +450,16 @@ export async function GET(request: NextRequest) {
                 const [eH, eM] = sAv.endTime.split(":").map(Number);
                 const sStartMin = sH * 60 + sM;
                 const sEndMin = eH * 60 + eM;
-                if (slotStudentMinutes >= sStartMin && slotStudentMinutes + slotMinutes <= sEndMin) {
+                const slotMinutesInAv = slotInAvTz.hour * 60 + slotInAvTz.minute;
+                if (slotMinutesInAv >= sStartMin && slotMinutesInAv + slotMinutes <= sEndMin) {
                   matchesStudentAvailability = true;
                   break;
                 }
               }
             }
           }
+
+          const isMutualMatch = isAvailable && matchesStudentAvailability;
 
           const timeDisplay = formatTimeInTimezone(slotStart, viewerTimezone);
           const tutorTimeDisplay = formatTimeInTimezone(slotStart, tutorTimezone);
@@ -492,7 +493,8 @@ export async function GET(request: NextRequest) {
             dualTime,
             isAvailable,
             isPast,
-            matchesStudentAvailability,
+            matchesStudentAvailability: isMutualMatch,
+            isMutualMatch,
             conflict,
             windowTitle: win.title || undefined,
           });

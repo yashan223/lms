@@ -2461,7 +2461,7 @@ function TutorDashboardContent() {
                         return (
                           <div
                             key={ev.id}
-                            className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                            className={`p-3.5 sm:p-4 rounded-xl border transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-3 ${
                               isLive
                                 ? "bg-red-50/50 border-red-200"
                                 : isPendingApproval
@@ -2471,9 +2471,9 @@ function TutorDashboardContent() {
                                 : "bg-white border-slate-200 hover:border-blue-200"
                             }`}
                           >
-                            <div className="space-y-1">
+                            <div className="space-y-1 min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-bold text-xs text-slate-900">
+                                <span className="font-bold text-xs sm:text-sm text-slate-900 break-words">
                                   {ev.title}
                                 </span>
                                 {isPendingApproval && (
@@ -2826,45 +2826,48 @@ function TutorDashboardContent() {
                       {filteredHistory.map((ev) => (
                         <div
                           key={ev.id}
-                          className="p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-200 transition-all space-y-3 shadow-2xs"
+                          className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-200 transition-all space-y-3.5 shadow-2xs"
                         >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="space-y-1">
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                            <div className="space-y-1.5 min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-bold text-xs sm:text-sm text-slate-900">
+                                <h4 className="font-bold text-sm sm:text-base text-slate-900 leading-snug break-words">
                                   {ev.title}
-                                </span>
-                                <Badge className="bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold">
+                                </h4>
+                                <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold shrink-0">
                                   ✓ Completed
                                 </Badge>
                                 {ev.course?.subjectCode && (
-                                  <Badge className="bg-blue-100 text-blue-800 text-[10px] font-bold">
+                                  <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold shrink-0">
                                     {ev.course.subjectCode}
                                   </Badge>
                                 )}
                               </div>
-                              <div className="text-xs text-slate-500 flex items-center gap-2">
-                                <Calendar className="w-3 h-3 text-slate-400" />
-                                <span>
-                                  Scheduled: {new Date(ev.dueDate).toLocaleDateString("en-US", {
-                                    weekday: "short",
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                              <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                                <span className="flex items-center gap-1.5 text-slate-600 font-medium">
+                                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>Scheduled:</span>
+                                  <strong className="text-slate-800">
+                                    {new Date(ev.dueDate).toLocaleDateString("en-US", {
+                                      weekday: "short",
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </strong>
                                 </span>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-1.5 self-start sm:self-auto shrink-0 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap shrink-0 pt-1 lg:pt-0">
                               {ev.recordingUrl && (
                                 <a
                                   href={ev.recordingUrl}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs"
+                                  className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all whitespace-nowrap"
                                 >
                                   <Play className="w-3.5 h-3.5 fill-current shrink-0" />
                                   <span>Watch Recording</span>
@@ -2872,19 +2875,19 @@ function TutorDashboardContent() {
                               )}
                               <button
                                 onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
-                                className="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-all"
+                                className="h-8.5 px-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
                                 title="Add or edit video recording link"
                               >
-                                <Video className="w-3 h-3 text-purple-600" />
+                                <Video className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                                 <span>{ev.recordingUrl ? "Edit Recording" : "Attach Recording"}</span>
                               </button>
                               <button
                                 onClick={() => handleSyncMeeting(ev.id)}
                                 disabled={syncingEventId === ev.id}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                className="h-8.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
                                 title="Sync timing & recording from BigBlueButton"
                               >
-                                <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
+                                <RefreshCw className={`w-3.5 h-3.5 text-slate-500 shrink-0 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
                                 <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
                               </button>
                               {ev.meetingLink && (
@@ -2892,27 +2895,28 @@ function TutorDashboardContent() {
                                   href={getSafeMeetingLink(ev.meetingLink)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5"
+                                  className="h-8.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-xs font-semibold inline-flex items-center gap-1.5 transition-all whitespace-nowrap"
+                                  title={ev.meetingLink}
                                 >
-                                  <Video className="w-3 h-3 text-slate-500" />
-                                  <span className="truncate max-w-[140px]">{ev.meetingLink.replace(/^https?:\/\//, "")}</span>
-                                  <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
+                                  <Video className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                  <span className="truncate max-w-[130px] sm:max-w-[180px]">{ev.meetingLink.replace(/^https?:\/\//, "")}</span>
+                                  <ExternalLink className="w-3 h-3 text-slate-400 shrink-0" />
                                 </a>
                               )}
                               <button
                                 onClick={() => handleDeleteClass(ev.id, ev.title)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                className="h-8.5 w-8.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 inline-flex items-center justify-center cursor-pointer transition-colors"
                                 title="Delete Class from History"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
                               </button>
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-3 border-t border-slate-100 text-xs text-slate-600">
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Started:</span>
-                              <span className="font-mono text-[11px] font-semibold text-slate-700">
+                              <span className="font-mono text-xs font-semibold text-slate-800">
                                 {ev.startedAt
                                   ? new Date(ev.startedAt).toLocaleString("en-US", {
                                       hour: "2-digit",
@@ -2924,11 +2928,11 @@ function TutorDashboardContent() {
                               </span>
                             </div>
 
-                            <span className="text-slate-200 hidden sm:inline">•</span>
+                            <span className="text-slate-300 hidden sm:inline">•</span>
 
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ended:</span>
-                              <span className="font-mono text-[11px] font-semibold text-slate-700">
+                              <span className="font-mono text-xs font-semibold text-slate-800">
                                 {ev.endedAt
                                   ? new Date(ev.endedAt).toLocaleString("en-US", {
                                       hour: "2-digit",
@@ -2940,21 +2944,21 @@ function TutorDashboardContent() {
                               </span>
                             </div>
 
-                            <span className="text-slate-200 hidden sm:inline">•</span>
+                            <span className="text-slate-300 hidden sm:inline">•</span>
 
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration:</span>
-                              <span className="font-mono text-[11px] font-semibold text-slate-800">
+                              <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">
                                 {formatSessionDuration(ev.startedAt, ev.endedAt)}
                               </span>
                             </div>
 
                             {ev.actualStartTime && ev.actualEndTime && (
                               <>
-                                <span className="text-slate-200 hidden sm:inline">•</span>
+                                <span className="text-slate-300 hidden sm:inline">•</span>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">BBB Verified:</span>
-                                  <span className="font-mono text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                  <span className="font-mono text-xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                                     {new Date(ev.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     {ev.attendanceCount ? ` (${ev.attendanceCount} attended)` : ""}
                                   </span>

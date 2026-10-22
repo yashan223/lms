@@ -3142,7 +3142,7 @@ export default function AdminDashboardPage() {
                                 href={rec.recordingUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                                className="px-3.5 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white font-medium text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                               >
                                 <Play className="w-3.5 h-3.5 fill-current" />
                                 <span>Watch Recording</span>
@@ -3374,7 +3374,7 @@ export default function AdminDashboardPage() {
                                         href={ev.recordingUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                                        className="px-3 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white font-medium text-xs flex items-center gap-1.5 shadow-2xs transition-all"
                                       >
                                         <Play className="w-3.5 h-3.5 fill-current" />
                                         <span>Recording</span>
@@ -6477,7 +6477,7 @@ export default function AdminDashboardPage() {
                                       href={tr.recordingUrl}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                      className="h-8.5 px-3 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all"
                                     >
                                       <Play className="w-3.5 h-3.5 fill-current" />
                                       <span>Watch</span>

@@ -1802,7 +1802,7 @@ function DashboardContent() {
                                           href={ev.recordingUrl}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all"
+                                          className="h-8.5 px-3 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white font-medium text-xs shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all"
                                         >
                                           <Play className="w-3.5 h-3.5 fill-current shrink-0" />
                                           <span>Watch Recording</span>
@@ -2019,7 +2019,7 @@ function DashboardContent() {
                                           href={ev.recordingUrl}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="h-7.5 px-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1"
+                                          className="h-7.5 px-2.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white font-medium text-xs inline-flex items-center gap-1 shadow-2xs"
                                         >
                                           <Play className="w-3 h-3 fill-current" />
                                           <span>Recording</span>

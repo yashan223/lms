@@ -2556,21 +2556,12 @@ function TutorDashboardContent() {
                                       href={ev.recordingUrl}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
+                                      className="px-2.5 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-medium flex items-center gap-1.5 shadow-2xs"
                                     >
                                       <Play className="w-3.5 h-3.5 fill-current shrink-0" />
                                       <span>Watch Recording</span>
                                     </a>
                                   )}
-                                  <button
-                                    onClick={() => handleSyncMeeting(ev.id)}
-                                    disabled={syncingEventId === ev.id}
-                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                                    title="Sync verified timing & recording from BigBlueButton"
-                                  >
-                                    <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
-                                    <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
-                                  </button>
                                 </div>
                               ) : isPendingApproval ? (
                                 <>
@@ -2868,21 +2859,12 @@ function TutorDashboardContent() {
                                 href={ev.recordingUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="h-8.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all whitespace-nowrap"
+                                className="h-8.5 px-3 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap"
                               >
                                 <Play className="w-3.5 h-3.5 fill-current shrink-0" />
                                 <span>Watch Recording</span>
                               </a>
                             )}
-                            <button
-                              onClick={() => handleSyncMeeting(ev.id)}
-                              disabled={syncingEventId === ev.id}
-                              className="h-8.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
-                              title="Sync timing & recording from BigBlueButton"
-                            >
-                              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 shrink-0 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
-                              <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
-                            </button>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-3 border-t border-slate-100 text-xs text-slate-600">
@@ -3393,27 +3375,17 @@ function TutorDashboardContent() {
                                         href={tr.recordingUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="h-9 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                        className="h-8.5 px-3.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all"
                                       >
                                         <Play className="w-3.5 h-3.5 fill-current shrink-0" />
                                         <span>Watch Recording</span>
                                       </a>
                                     )}
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSyncMeeting(undefined, tr.id)}
-                                      disabled={syncingTrialId === tr.id}
-                                      className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                                      title="Sync timing & recording from BigBlueButton"
-                                    >
-                                      <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${syncingTrialId === tr.id ? "animate-spin" : ""}`} />
-                                      <span>{syncingTrialId === tr.id ? "Syncing..." : "Sync BBB"}</span>
-                                    </button>
                                     {tr.studentId && (
                                       <button
                                         type="button"
                                         onClick={() => openChatWithStudent(tr.studentId)}
-                                        className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                                        className="h-8.5 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shadow-2xs"
                                         title="Open encrypted chat with student"
                                       >
                                         <MessageSquareLock className="w-3.5 h-3.5 text-blue-500" />

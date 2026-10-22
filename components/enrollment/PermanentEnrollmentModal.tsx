@@ -19,6 +19,11 @@ import {
   Check,
   ShieldCheck,
   Zap,
+  Coins,
+  CreditCard,
+  ArrowRight,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -110,6 +115,106 @@ export function PermanentEnrollmentModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<any | null>(null);
+
+  // Student Token Wallet & Inline Escrow Checkout
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [frozenBalance, setFrozenBalance] = useState<number>(0);
+  const [loadingWallet, setLoadingWallet] = useState<boolean>(true);
+  const [tokenPackages, setTokenPackages] = useState<any[]>([]);
+  const [topUpLoading, setTopUpLoading] = useState<string | null>(null);
+  const [topUpSuccessMsg, setTopUpSuccessMsg] = useState<string | null>(null);
+
+  const recurrenceWeeks = useMemo(() => {
+    return duration === "Repeat for 2 months" ? 8 : 4;
+  }, [duration]);
+
+  const totalTokensNeeded = useMemo(() => {
+    return hoursPerWeek * recurrenceWeeks;
+  }, [hoursPerWeek, recurrenceWeeks]);
+
+  const hasSufficientBalance = useMemo(() => {
+    if (walletBalance === null) return true;
+    return walletBalance >= totalTokensNeeded;
+  }, [walletBalance, totalTokensNeeded]);
+
+  const shortageTokens = useMemo(() => {
+    if (walletBalance === null) return 0;
+    return Math.max(0, totalTokensNeeded - walletBalance);
+  }, [walletBalance, totalTokensNeeded]);
+
+  const fetchWallet = async () => {
+    try {
+      setLoadingWallet(true);
+      const res = await fetch("/api/tokens");
+      if (res.ok) {
+        const data = await res.json();
+        setWalletBalance(Number(data.balance ?? 0));
+        setFrozenBalance(Number(data.frozenBalance ?? 0));
+        if (Array.isArray(data.packages) && data.packages.length > 0) {
+          setTokenPackages(data.packages);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch student wallet:", err);
+    } finally {
+      setLoadingWallet(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchWallet();
+    }
+  }, [isOpen]);
+
+  const handleInlineTopUp = async (pkg: any) => {
+    try {
+      setTopUpLoading(pkg.id);
+      setError(null);
+      setTopUpSuccessMsg(null);
+
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemType: "TOKEN_BUNDLE",
+          itemId: pkg.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.checkoutUrl) {
+        window.open(data.checkoutUrl, "_blank");
+        setTopUpSuccessMsg(`Checkout launched for ${pkg.name}. Complete payment to add tokens to your active wallet.`);
+
+        // Short-interval polling to detect newly funded balance
+        let attempts = 0;
+        const initialBal = walletBalance ?? 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          try {
+            const check = await fetch("/api/tokens");
+            if (check.ok) {
+              const fresh = await check.json();
+              if (fresh.balance > initialBal) {
+                setWalletBalance(Number(fresh.balance));
+                setFrozenBalance(Number(fresh.frozenBalance ?? 0));
+                setTopUpSuccessMsg(`✓ Top-up successful! Your new balance is ${fresh.balance} Tokens.`);
+                clearInterval(poll);
+              }
+            }
+          } catch {}
+          if (attempts > 20) clearInterval(poll);
+        }, 3000);
+      } else {
+        setError(data.error || "Failed to initialize top-up checkout.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to initiate token checkout.");
+    } finally {
+      setTopUpLoading(null);
+    }
+  };
 
   const resolveAccountTimezone = (tz?: string | null): string | null => {
     if (!tz) return null;
@@ -284,6 +389,13 @@ export function PermanentEnrollmentModal({
       return;
     }
 
+    if (!hasSufficientBalance) {
+      setError(
+        `Insufficient token balance. You need ${shortageTokens} more token(s) to submit this enrollment request. Please top up your wallet.`
+      );
+      return;
+    }
+
     try {
       setSubmitting(true);
       setError(null);
@@ -313,6 +425,11 @@ export function PermanentEnrollmentModal({
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Failed to submit enrollment request.");
+      }
+
+      if (walletBalance !== null) {
+        setWalletBalance(Math.max(0, walletBalance - totalTokensNeeded));
+        setFrozenBalance((prev) => prev + totalTokensNeeded);
       }
 
       setSuccessData(data.request);
@@ -490,6 +607,183 @@ export function PermanentEnrollmentModal({
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Upfront Token Calculation & Wallet Balance Card */}
+              <div className="bg-gradient-to-br from-slate-900 to-[#0c2461] text-white rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300">
+                      <Coins className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-white">
+                        Upfront Token Escrow & Balance
+                      </h4>
+                      <p className="text-[11px] text-blue-200/80">
+                        Formula: ({hoursPerWeek} hrs/week) × ({recurrenceWeeks} weeks) = {totalTokensNeeded} Total Tokens Needed
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={fetchWallet}
+                      disabled={loadingWallet}
+                      className="text-[11px] font-semibold text-blue-200 hover:text-white flex items-center gap-1 bg-white/10 hover:bg-white/15 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                      title="Refresh token balance"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${loadingWallet ? "animate-spin" : ""}`} />
+                      <span>Refresh</span>
+                    </button>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-200 border border-blue-400/30">
+                      Escrow Protected
+                    </span>
+                  </div>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                    <span className="text-[10px] text-blue-200/80 uppercase font-bold tracking-wider block">
+                      Active Balance
+                    </span>
+                    <div className="text-xl font-black text-white font-mono flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>{loadingWallet ? "..." : walletBalance ?? 0}</span>
+                      <span className="text-[11px] text-blue-300 font-sans font-normal">Tokens</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                    <span className="text-[10px] text-blue-200/80 uppercase font-bold tracking-wider block">
+                      Held In Escrow
+                    </span>
+                    <div className="text-xl font-black text-amber-300 font-mono flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>{frozenBalance}</span>
+                      <span className="text-[11px] text-blue-300 font-sans font-normal">Tokens</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-blue-500/20 border border-blue-400/30 space-y-1">
+                    <span className="text-[10px] text-blue-200 uppercase font-bold tracking-wider block">
+                      Required Tokens
+                    </span>
+                    <div className="text-xl font-black text-white font-mono flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-yellow-300 shrink-0" />
+                      <span>{totalTokensNeeded}</span>
+                      <span className="text-[11px] text-blue-200 font-sans font-normal">Tokens</span>
+                    </div>
+                  </div>
+
+                  <div className={`p-3 rounded-xl border space-y-1 ${
+                    hasSufficientBalance
+                      ? "bg-emerald-500/10 border-emerald-400/30"
+                      : "bg-rose-500/15 border-rose-400/30"
+                  }`}>
+                    <span className="text-[10px] uppercase font-bold tracking-wider block text-slate-300">
+                      Balance Status
+                    </span>
+                    <div className="text-sm font-black font-mono">
+                      {hasSufficientBalance ? (
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Sufficient ({((walletBalance ?? 0) - totalTokensNeeded)} left)
+                        </span>
+                      ) : (
+                        <span className="text-rose-300 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Need {shortageTokens} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-blue-100/70 leading-relaxed">
+                  🛡️ <strong>Escrow Guarantee:</strong> {totalTokensNeeded} tokens will be placed into frozen escrow upon submitting your request. Tokens are only permanently consumed when {course.tutor?.name || "your tutor"} accepts your schedule. If declined or expired, your {totalTokensNeeded} tokens are immediately refunded back into your active wallet balance.
+                </p>
+
+                {/* Top-up feedback notice */}
+                {topUpSuccessMsg && (
+                  <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{topUpSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Inline Top-Up Prompt when Wallet Balance < Total Tokens Needed */}
+                {!hasSufficientBalance && (
+                  <div className="p-4 rounded-xl bg-white text-slate-900 border border-amber-300/80 shadow-md space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 text-amber-800 font-black text-xs uppercase tracking-wide">
+                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>Inline Wallet Top-Up Required</span>
+                        </div>
+                        <p className="text-xs text-slate-600">
+                          You currently have <strong>{walletBalance ?? 0} tokens</strong>, but this enrollment requires <strong>{totalTokensNeeded} tokens</strong> ({hoursPerWeek} hrs/week × {recurrenceWeeks} weeks). Purchase a token bundle below to top up without leaving this page:
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
+                        Shortage: {shortageTokens} Token{shortageTokens > 1 ? "s" : ""}
+                      </span>
+                    </div>
+
+                    {/* Package options grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-1">
+                      {(tokenPackages.length > 0
+                        ? tokenPackages
+                        : [
+                            { id: "starter-5", name: "Starter Pack", tokens: 5, price: 30, lkrPrice: 9000 },
+                            { id: "standard-10", name: "Standard Pack", tokens: 10, price: 55, lkrPrice: 17000 },
+                            { id: "master-20", name: "Master Pack", tokens: 20, price: 100, lkrPrice: 32000 },
+                            { id: "pro-40", name: "Academic Pro", tokens: 40, price: 180, lkrPrice: 60000 },
+                          ]
+                      ).map((pkg) => {
+                        const satisfiesNeed = pkg.tokens >= shortageTokens;
+                        const isLoadingThis = topUpLoading === pkg.id;
+
+                        return (
+                          <button
+                            key={pkg.id}
+                            type="button"
+                            disabled={Boolean(topUpLoading)}
+                            onClick={() => handleInlineTopUp(pkg)}
+                            className={`p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer hover:shadow-sm ${
+                              satisfiesNeed
+                                ? "bg-blue-50/80 border-blue-300 hover:bg-blue-100/80"
+                                : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full mb-1">
+                              <span className="font-black text-xs text-slate-900">{pkg.name}</span>
+                              <span className="font-mono font-bold text-xs text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200">
+                                +{pkg.tokens} Tokens
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] text-slate-600 pt-1 border-t border-slate-200/60 mt-1">
+                              <span className="font-bold text-slate-900">
+                                {pkg.lkrPrice ? `LKR ${Number(pkg.lkrPrice).toLocaleString()}` : `$${pkg.price}`}
+                              </span>
+                              <span className="text-blue-600 font-bold flex items-center gap-1 text-[10px]">
+                                {isLoadingThis ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Top-Up...
+                                  </>
+                                ) : (
+                                  <>
+                                    Top Up <ArrowRight className="w-2.5 h-2.5" />
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Step 2: Matched Availability Calendar */}
@@ -761,7 +1055,7 @@ export function PermanentEnrollmentModal({
                       .map((g) => g.timeDisplay)
                       .join(", ")}
                     ). These will be scheduled together as a single <strong>2-hour class session</strong>.
-                    Upon completion of each 2-hour class, <strong>2 tokens</strong> will be deducted from your wallet, and your tutor will be paid for 2 teaching hours.
+                    All <strong>{totalTokensNeeded} tokens</strong> for your {duration} curriculum track are protected in upfront escrow, and your tutor will be compensated for 2 teaching hours per class.
                   </p>
                 </div>
               )}
@@ -798,6 +1092,9 @@ export function PermanentEnrollmentModal({
                       • Merged into 2-Hour continuous class
                     </span>
                   )}
+                  <span className="block text-[11px] font-semibold text-slate-500 mt-0.5">
+                    Total Tokens: <strong className="text-blue-900 font-bold">{totalTokensNeeded} Tokens</strong> (Escrow Hold on Submit)
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2 justify-end">
@@ -811,7 +1108,7 @@ export function PermanentEnrollmentModal({
                   </Button>
                   <Button
                     type="submit"
-                    disabled={submitting || selectedSlots.length < hoursPerWeek}
+                    disabled={submitting || selectedSlots.length < hoursPerWeek || !hasSufficientBalance}
                     className="bg-[#0c2461] hover:bg-[#12366b] text-white font-bold text-xs rounded-xl h-10 px-6 gap-2 shadow-xs cursor-pointer disabled:opacity-50"
                   >
                     {submitting ? (
@@ -819,10 +1116,15 @@ export function PermanentEnrollmentModal({
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Sending Request...</span>
                       </>
+                    ) : !hasSufficientBalance ? (
+                      <>
+                        <Lock className="w-4 h-4 text-amber-300" />
+                        <span>Top-Up Tokens to Submit</span>
+                      </>
                     ) : (
                       <>
                         <CalendarClock className="w-4 h-4 text-blue-200" />
-                        <span>Submit Enrollment Request</span>
+                        <span>Submit Request (Freeze {totalTokensNeeded} Tokens)</span>
                       </>
                     )}
                   </Button>

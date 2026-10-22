@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       balance: wallet.balance,
+      active_token_balance: wallet.balance,
+      frozenBalance: wallet.frozenBalance ?? 0,
+      frozen_token_balance: wallet.frozenBalance ?? 0,
       transactions: wallet.transactions,
       packages: await getBundles(),
       academicLevel,

@@ -117,6 +117,20 @@ export async function GET(request: NextRequest) {
         isModerator = true;
       }
 
+      // Record tutor physical join timestamp if moderator enters live session
+      if (isModerator && !event.tutorJoinTimestamp) {
+        const now = new Date();
+        await prisma.event.update({
+          where: { id: eventId },
+          data: {
+            tutorJoinTimestamp: now,
+            startedAt: event.startedAt || now,
+            actualStartTime: event.actualStartTime || now,
+            status: event.status === "COMPLETED" || event.status === "CANCELLED" ? event.status : "LIVE",
+          },
+        }).catch(() => {});
+      }
+
       // Record automated attendance for this class event
       try {
         const now = new Date();

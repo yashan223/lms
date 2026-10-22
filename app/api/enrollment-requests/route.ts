@@ -148,6 +148,8 @@ export async function POST(request: NextRequest) {
     const parsedHours = Math.max(1, Math.min(10, parseInt(hoursPerWeek || "1", 10)));
     const validDurations = ["Repeat for 1 month", "Repeat for 2 months"];
     const chosenDuration = validDurations.includes(duration) ? duration : "Repeat for 1 month";
+    const recurrenceWeeks = chosenDuration === "Repeat for 2 months" ? 8 : 4;
+    const tokensRequired = parsedHours * recurrenceWeeks;
 
     if (!Array.isArray(selectedSlots) || selectedSlots.length === 0) {
       return NextResponse.json(
@@ -165,60 +167,85 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify token wallet balance
+    // 1. Upfront Token Escrow Verification: (Hours/week) × (Weeks)
     const user = auth.user;
-    const isOL =
-      (user as any).academicLevel === "OL" ||
-      user.headline?.includes("O/L") ||
-      user.headline?.includes("IGCSE");
-
-    const coursePrice =
-      isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) >= 0
-        ? Number((course as any).olPrice)
-        : (course.price !== null && course.price !== undefined && !isNaN(Number(course.price))
-            ? Number(course.price)
-            : 0);
-
-    const wallet = await prisma.tokenWallet.findUnique({
+    let wallet = await prisma.tokenWallet.findUnique({
       where: { userId: user.id },
     });
 
-    if (coursePrice > 0 && user.role !== "ADMIN" && (!wallet || wallet.balance < coursePrice)) {
+    if (!wallet) {
+      wallet = await prisma.tokenWallet.create({
+        data: { userId: user.id, balance: 0, frozenBalance: 0 },
+      });
+    }
+
+    if (user.role !== "ADMIN" && wallet.balance < tokensRequired) {
       return NextResponse.json(
         {
-          error: `Insufficient tokens in your academic wallet. You have ${wallet?.balance || 0} Tokens, but this course requires ${coursePrice} Tokens.`,
-          required: coursePrice,
-          available: wallet?.balance || 0,
+          error: `Insufficient tokens in your academic wallet. You have ${wallet.balance} Tokens, but this enrollment requires ${tokensRequired} Tokens (${parsedHours} hrs/wk × ${recurrenceWeeks} weeks).`,
+          required: tokensRequired,
+          available: wallet.balance,
+          code: "INSUFFICIENT_TOKENS",
         },
         { status: 400 }
       );
     }
 
-    // Create the enrollment request
-    const newRequest = await prisma.classEnrollmentRequest.create({
-      data: {
-        studentId: user.id,
-        tutorId: resolvedTutorId,
-        courseId: course.id,
-        classType: chosenClassType,
-        hoursPerWeek: parsedHours,
-        duration: chosenDuration,
-        selectedSlots: selectedSlots,
-        notes: notes ? String(notes).trim() : null,
-        status: EnrollmentRequestStatus.PENDING,
-      },
-      include: {
-        student: {
-          select: { id: true, name: true, email: true },
+    // 2. Transaction: Deduct tokens into Escrow (Freeze) & Create Enrollment Request
+    const escrowResult = await prisma.$transaction(async (tx) => {
+      let tokensFrozen = 0;
+      if (user.role !== "ADMIN" && tokensRequired > 0) {
+        tokensFrozen = tokensRequired;
+        await tx.tokenWallet.update({
+          where: { id: wallet.id },
+          data: {
+            balance: { decrement: tokensRequired },
+            frozenBalance: { increment: tokensRequired },
+          },
+        });
+
+        await tx.tokenTransaction.create({
+          data: {
+            walletId: wallet.id,
+            amount: -tokensRequired,
+            type: "ESCROW_LOCK",
+            description: `Escrow Hold: ${tokensRequired} Tokens frozen for permanent enrollment in ${course.title} (${parsedHours} hrs/wk × ${recurrenceWeeks} wks)`,
+            referenceId: course.id,
+          },
+        });
+      }
+
+      const createdReq = await tx.classEnrollmentRequest.create({
+        data: {
+          studentId: user.id,
+          tutorId: resolvedTutorId,
+          courseId: course.id,
+          classType: chosenClassType,
+          hoursPerWeek: parsedHours,
+          duration: chosenDuration,
+          tokensInEscrow: tokensFrozen,
+          recurrenceDurationWeeks: recurrenceWeeks,
+          selectedSlots: selectedSlots,
+          notes: notes ? String(notes).trim() : null,
+          status: EnrollmentRequestStatus.PENDING,
         },
-        tutor: {
-          select: { id: true, name: true, email: true },
+        include: {
+          student: {
+            select: { id: true, name: true, email: true },
+          },
+          tutor: {
+            select: { id: true, name: true, email: true },
+          },
+          course: {
+            select: { id: true, title: true, slug: true },
+          },
         },
-        course: {
-          select: { id: true, title: true, slug: true },
-        },
-      },
+      });
+
+      return createdReq;
     });
+
+    const newRequest = escrowResult;
 
     // Notify Tutor
     await prisma.notification.create({
@@ -318,32 +345,44 @@ export async function PATCH(request: NextRequest) {
       }
 
       // Calculate number of recurrence weeks from student's selected duration
-      let numWeeks = 4; // default 1 month
+      let numWeeks = enrollmentRequest.recurrenceDurationWeeks || 4;
       if (enrollmentRequest.duration === "Repeat for 2 months") {
         numWeeks = 8;
       } else if (enrollmentRequest.duration === "Continuous") {
-        numWeeks = 12; // Baseline 12 weeks for continuous
+        numWeeks = 12;
       }
 
-      // Deduct tokens and enroll student if not enrolled already
       const student = enrollmentRequest.student;
       const course = enrollmentRequest.course;
+      const tokensInEscrow = enrollmentRequest.tokensInEscrow || 0;
 
-      const isOL =
-        (student as any).academicLevel === "OL" ||
-        student.headline?.includes("O/L") ||
-        student.headline?.includes("IGCSE");
-
-      const coursePrice =
-        isOL && (course as any).olPrice !== null && (course as any).olPrice !== undefined && Number((course as any).olPrice) >= 0
-          ? Number((course as any).olPrice)
-          : (course.price !== null && course.price !== undefined && !isNaN(Number(course.price))
-              ? Number(course.price)
-              : 0);
-
-      // Perform transaction: update wallet, ensure enrollment, update request, generate recurring events
+      // Perform transaction: permanently consume escrowed tokens, ensure enrollment, update request, generate recurring events
       const result = await prisma.$transaction(async (tx) => {
-        // 1. Check & spend tokens if student not already enrolled
+        // 1. Permanently deduct frozen escrow tokens from student wallet
+        let studentWallet = await tx.tokenWallet.findUnique({
+          where: { userId: student.id },
+        });
+
+        if (tokensInEscrow > 0 && studentWallet) {
+          await tx.tokenWallet.update({
+            where: { id: studentWallet.id },
+            data: {
+              frozenBalance: { decrement: tokensInEscrow },
+            },
+          });
+
+          await tx.tokenTransaction.create({
+            data: {
+              walletId: studentWallet.id,
+              amount: -tokensInEscrow,
+              type: "ESCROW_RELEASE",
+              description: `Permanent Enrollment Confirmed: ${tokensInEscrow} Escrowed Tokens permanently consumed for ${course.title} (${enrollmentRequest.hoursPerWeek} hrs/wk × ${numWeeks} wks)`,
+              referenceId: enrollmentRequest.id,
+            },
+          });
+        }
+
+        // 2. Ensure Enrollment record exists
         const existingEnrollment = await tx.enrollment.findUnique({
           where: {
             userId_courseId: {
@@ -354,30 +393,6 @@ export async function PATCH(request: NextRequest) {
         });
 
         if (!existingEnrollment) {
-          if (coursePrice > 0 && student.role !== Role.ADMIN) {
-            let wallet = await tx.tokenWallet.findUnique({
-              where: { userId: student.id },
-            });
-            if (!wallet || wallet.balance < coursePrice) {
-              throw new Error(
-                `Student has insufficient tokens (${wallet?.balance || 0} available, ${coursePrice} required).`
-              );
-            }
-            await tx.tokenWallet.update({
-              where: { id: wallet.id },
-              data: { balance: { decrement: coursePrice } },
-            });
-            await tx.tokenTransaction.create({
-              data: {
-                walletId: wallet.id,
-                amount: -coursePrice,
-                type: "SPEND",
-                description: `Permanent Enrollment: ${course.title} (${coursePrice} Tokens)`,
-                referenceId: course.id,
-              },
-            });
-          }
-
           await tx.enrollment.create({
             data: {
               userId: student.id,
@@ -386,11 +401,12 @@ export async function PATCH(request: NextRequest) {
           });
         }
 
-        // 2. Mark enrollment request as CONFIRMED with accepted slots
+        // 3. Mark enrollment request as CONFIRMED with accepted slots and clear escrow
         const updatedRequest = await tx.classEnrollmentRequest.update({
           where: { id: enrollmentRequest.id },
           data: {
             status: EnrollmentRequestStatus.CONFIRMED,
+            tokensInEscrow: 0,
             acceptedSlots: acceptedSlots,
           },
         });
@@ -455,6 +471,8 @@ export async function PATCH(request: NextRequest) {
                 meetingSpaceId: null,
                 timezone: student.timezone || enrollmentRequest.tutor.timezone || "Asia/Colombo",
                 reminderSent: false,
+                tokenDeducted: true,
+                tokenDeductedAt: new Date(),
                 enrollmentRequestId: enrollmentRequest.id,
               },
             });
@@ -516,34 +534,97 @@ export async function PATCH(request: NextRequest) {
       });
     }
 
-    if (action === "reject" || action === "decline") {
-      const reason = rejectionReason ? String(rejectionReason).trim() : "Schedule could not be accommodated at this time.";
+    if (action === "reject" || action === "decline" || action === "cancel" || action === "expire") {
+      const reason = rejectionReason
+        ? String(rejectionReason).trim()
+        : action === "cancel"
+        ? "Enrollment request was cancelled by the student."
+        : action === "expire"
+        ? "Enrollment request expired without tutor confirmation."
+        : "Schedule could not be accommodated at this time.";
 
-      const updatedRequest = await prisma.classEnrollmentRequest.update({
-        where: { id: enrollmentRequest.id },
-        data: {
-          status: EnrollmentRequestStatus.REJECTED,
-          rejectionReason: reason,
-        },
+      const newStatus =
+        action === "cancel"
+          ? EnrollmentRequestStatus.CANCELLED
+          : action === "expire"
+          ? (EnrollmentRequestStatus as any).EXPIRED || EnrollmentRequestStatus.REJECTED
+          : EnrollmentRequestStatus.REJECTED;
+
+      const tokensInEscrow = enrollmentRequest.tokensInEscrow || 0;
+
+      const updatedRequest = await prisma.$transaction(async (tx) => {
+        // Refund frozen escrow tokens back to student active balance
+        if (tokensInEscrow > 0) {
+          const studentWallet = await tx.tokenWallet.findUnique({
+            where: { userId: enrollmentRequest.studentId },
+          });
+
+          if (studentWallet) {
+            await tx.tokenWallet.update({
+              where: { id: studentWallet.id },
+              data: {
+                balance: { increment: tokensInEscrow },
+                frozenBalance: { decrement: tokensInEscrow },
+              },
+            });
+
+            await tx.tokenTransaction.create({
+              data: {
+                walletId: studentWallet.id,
+                amount: tokensInEscrow,
+                type: "REFUND",
+                description: `Escrow Refund: ${tokensInEscrow} Tokens refunded to active balance (${
+                  action === "cancel"
+                    ? "Request Cancelled"
+                    : action === "expire"
+                    ? "Request Expired"
+                    : "Declined by Tutor"
+                } for ${enrollmentRequest.course.title})`,
+                referenceId: enrollmentRequest.id,
+              },
+            });
+          }
+        }
+
+        return await tx.classEnrollmentRequest.update({
+          where: { id: enrollmentRequest.id },
+          data: {
+            status: newStatus,
+            tokensInEscrow: 0,
+            rejectionReason: reason,
+          },
+        });
       });
 
       // Notify Student
       await prisma.notification.create({
         data: {
           userId: enrollmentRequest.studentId,
-          title: "Enrollment Request Update",
-          message: `${enrollmentRequest.tutor.name} could not accommodate the requested schedule for "${enrollmentRequest.course.title}". Note: ${reason}`,
-          type: "WARNING",
+          title:
+            action === "cancel"
+              ? "Enrollment Request Cancelled"
+              : action === "expire"
+              ? "Enrollment Request Expired"
+              : "Enrollment Request Declined",
+          message:
+            tokensInEscrow > 0
+              ? `${enrollmentRequest.course.title}: ${reason}. ${tokensInEscrow} Tokens have been refunded to your active wallet balance.`
+              : `${enrollmentRequest.course.title}: ${reason}.`,
+          type: action === "cancel" ? "INFO" : "WARNING",
           link: `/classes/${enrollmentRequest.course.slug}`,
         },
       });
 
       broadcastLMSEvent("ENROLLMENT_REQUESTS_CHANGED");
       broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: enrollmentRequest.studentId });
+      broadcastLMSEvent("USERS_CHANGED");
 
       return NextResponse.json({
         success: true,
-        message: "Enrollment request declined.",
+        message:
+          tokensInEscrow > 0
+            ? `Enrollment request ${action}ed. ${tokensInEscrow} Tokens refunded to student wallet.`
+            : `Enrollment request ${action}ed.`,
         request: updatedRequest,
       });
     }

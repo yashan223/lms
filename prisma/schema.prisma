@@ -50,6 +50,8 @@ enum TransactionType {
   SPEND
   REFUND
   BONUS
+  ESCROW_LOCK
+  ESCROW_RELEASE
 }
 
 model User {
@@ -73,6 +75,8 @@ model User {
   guardianName         String?
   guardianRelationship String?
   guardianPhone        String?
+  igcsePayRate         Float?
+  ialIasPayRate        Float?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -118,6 +122,7 @@ model TokenWallet {
   userId       String             @unique
   user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   balance      Float              @default(0)
+  frozenBalance Float             @default(0)
   transactions TokenTransaction[]
   grants       TokenGrant[]
   createdAt    DateTime           @default(now())
@@ -284,6 +289,9 @@ model Event {
   reminderSentAt     DateTime?   @db.Timestamptz
   tokenDeducted      Boolean     @default(false)
   tokenDeductedAt    DateTime?   @db.Timestamptz
+  tutorJoinTimestamp DateTime?   @db.Timestamptz
+  payoutTriggeredAt  DateTime?   @db.Timestamptz
+  lockedPayoutAmount Float?
   earningRecord      TutorEarningRecord?
   enrollmentRequestId String?
   enrollmentRequest  ClassEnrollmentRequest? @relation(fields: [enrollmentRequestId], references: [id], onDelete: SetNull)
@@ -642,22 +650,25 @@ enum EnrollmentRequestStatus {
   CONFIRMED
   REJECTED
   CANCELLED
+  EXPIRED
 }
 
 model ClassEnrollmentRequest {
-  id              String                  @id @default(cuid())
-  studentId       String
-  student         User                    @relation("StudentEnrollmentRequests", fields: [studentId], references: [id], onDelete: Cascade)
-  tutorId         String
-  tutor           User                    @relation("TutorEnrollmentRequests", fields: [tutorId], references: [id], onDelete: Cascade)
-  courseId        String
-  course          Course                  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  classType       String
-  hoursPerWeek    Int                     @default(1)
-  duration        String
-  selectedSlots   Json
-  acceptedSlots   Json?
-  status          EnrollmentRequestStatus @default(PENDING)
+  id                      String                  @id @default(cuid())
+  studentId               String
+  student                 User                    @relation("StudentEnrollmentRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  tutorId                 String
+  tutor                   User                    @relation("TutorEnrollmentRequests", fields: [tutorId], references: [id], onDelete: Cascade)
+  courseId                String
+  course                  Course                  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  classType               String
+  hoursPerWeek            Int                     @default(1)
+  duration                String
+  tokensInEscrow          Int                     @default(0)
+  recurrenceDurationWeeks Int                     @default(4)
+  selectedSlots           Json
+  acceptedSlots           Json?
+  status                  EnrollmentRequestStatus @default(PENDING)
   notes           String?
   rejectionReason String?
   events          Event[]

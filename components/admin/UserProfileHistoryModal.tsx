@@ -150,8 +150,14 @@ export function UserProfileHistoryModal({
   const specializations: string[] = parsedBio?.specializations || [];
   const experienceYears = parsedBio?.experienceYears || "";
   const officeHours = parsedBio?.officeHours || "";
-  const hourlyRateAL = parsedBio?.hourlyRateAL || parsedBio?.hourlyRate || "5000";
-  const hourlyRateOL = parsedBio?.hourlyRateOL || "3500";
+  const hourlyRateAL =
+    fullUser?.ialIasPayRate !== null && fullUser?.ialIasPayRate !== undefined
+      ? String(fullUser.ialIasPayRate)
+      : parsedBio?.hourlyRateAL || parsedBio?.hourlyRate || "5000";
+  const hourlyRateOL =
+    fullUser?.igcsePayRate !== null && fullUser?.igcsePayRate !== undefined
+      ? String(fullUser.igcsePayRate)
+      : parsedBio?.hourlyRateOL || "3500";
   const linkedin = parsedBio?.linkedin || "";
   const researchGate = parsedBio?.researchGate || "";
   const website = parsedBio?.website || "";

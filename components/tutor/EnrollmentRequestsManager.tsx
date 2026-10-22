@@ -31,6 +31,8 @@ interface EnrollmentRequestItem {
   classType: string;
   hoursPerWeek: number;
   duration: string;
+  tokensInEscrow?: number;
+  recurrenceDurationWeeks?: number;
   selectedSlots: Array<{
     startTime: string;
     endTime: string;
@@ -412,6 +414,19 @@ export function EnrollmentRequestsManager({
                       {req.selectedSlots.length} 1-Hour Options
                     </span>
                   </div>
+                </div>
+
+                {/* Upfront Escrow Protection Badge */}
+                <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 text-xs flex flex-wrap items-center justify-between gap-1 text-blue-900">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <span>🛡️ Upfront Escrow:</span>
+                    <strong className="text-blue-950 font-black font-mono">
+                      {req.tokensInEscrow || req.hoursPerWeek * (req.duration?.includes("2 month") ? 8 : 4)} Tokens Frozen
+                    </strong>
+                  </span>
+                  <span className="text-[11px] text-blue-700 font-medium">
+                    Permanently consumed upon schedule acceptance
+                  </span>
                 </div>
 
                 {req.notes && (

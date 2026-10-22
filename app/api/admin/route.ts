@@ -518,6 +518,9 @@ export async function POST(request: NextRequest) {
         assignedAdminId = await generateUniqueAdminId();
       }
 
+      const resolvedIgcseRate = body.igcsePayRate ?? body.igcse_pay_rate ?? hourlyRateOL;
+      const resolvedIalRate = body.ialIasPayRate ?? body.ial_ias_pay_rate ?? hourlyRateAL ?? hourlyRate;
+
       const newUser = await prisma.user.create({
         data: {
           tutorId: assignedTutorId,
@@ -533,6 +536,14 @@ export async function POST(request: NextRequest) {
           headline: headline || (assignedRole === Role.ADMIN ? "System Administrator" : "Senior Tutor"),
           bio: initialBio,
           avatar: null,
+          igcsePayRate:
+            resolvedIgcseRate !== undefined && resolvedIgcseRate !== null && resolvedIgcseRate !== ""
+              ? parseFloat(String(resolvedIgcseRate))
+              : null,
+          ialIasPayRate:
+            resolvedIalRate !== undefined && resolvedIalRate !== null && resolvedIalRate !== ""
+              ? parseFloat(String(resolvedIalRate))
+              : null,
         },
       });
 
@@ -594,6 +605,17 @@ export async function POST(request: NextRequest) {
       }
       if (country !== undefined) {
         updateData.country = country ? country.trim() : null;
+      }
+
+      if (body.igcsePayRate !== undefined || body.igcse_pay_rate !== undefined || hourlyRateOL !== undefined) {
+        const val = body.igcsePayRate ?? body.igcse_pay_rate ?? hourlyRateOL;
+        updateData.igcsePayRate =
+          val !== null && val !== "" && !isNaN(Number(val)) ? parseFloat(String(val)) : null;
+      }
+      if (body.ialIasPayRate !== undefined || body.ial_ias_pay_rate !== undefined || hourlyRateAL !== undefined || hourlyRate !== undefined) {
+        const val = body.ialIasPayRate ?? body.ial_ias_pay_rate ?? hourlyRateAL ?? hourlyRate;
+        updateData.ialIasPayRate =
+          val !== null && val !== "" && !isNaN(Number(val)) ? parseFloat(String(val)) : null;
       }
 
       const updatedUser = await prisma.user.update({
@@ -1227,11 +1249,14 @@ export async function POST(request: NextRequest) {
         ? getSafeMeetingLink(rawCandidate)
         : studentJoinLink;
 
+      const now = new Date();
       const updated = await prisma.event.update({
         where: { id: eventId },
         data: {
           status: "LIVE",
-          startedAt: new Date(),
+          startedAt: existing.startedAt || now,
+          actualStartTime: existing.actualStartTime || now,
+          tutorJoinTimestamp: existing.tutorJoinTimestamp || now,
           meetingLink: effectiveStudentLink,
           meetingSpaceId: bbbId,
         },

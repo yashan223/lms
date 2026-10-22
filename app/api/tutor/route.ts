@@ -25,7 +25,7 @@ import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } 
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
 import { ensureTutorIdForUser } from "@/lib/tutor-id";
 import { generateUniqueClassCode } from "@/lib/class-id";
-import { getTutorMonthlyEarnings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
+import { getTutorMonthlyEarnings, completeClassAndProcessEcosystem, evaluateAndProcessClassPayout } from "@/lib/token-ecosystem";
 import { getEventDurationHours } from "@/lib/scheduling";
 import { getTutorPendingReschedules, acceptRescheduleRequest, declineRescheduleRequest } from "@/lib/reschedule";
 import { removeLiveClassNotifications } from "@/lib/notifications";
@@ -47,6 +47,25 @@ export async function GET(request: NextRequest) {
     }
 
     const courseWhere = { tutorId: tutor.id };
+
+    // Auto-evaluate 15-minute payout triggers for active live classes
+    try {
+      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const eligibleLiveEvents = await prisma.event.findMany({
+        where: {
+          requestedBy: tutor.id,
+          payoutTriggeredAt: null,
+          tutorJoinTimestamp: { not: null, lte: fifteenMinsAgo },
+          status: { notIn: [EventStatus.CANCELLED, EventStatus.REJECTED] },
+        },
+        select: { id: true },
+      });
+      for (const ev of eligibleLiveEvents) {
+        await evaluateAndProcessClassPayout(ev.id).catch(() => {});
+      }
+    } catch (evalErr) {
+      console.warn("[GET /api/tutor] Auto payout evaluation notice:", evalErr);
+    }
 
     const courses: any[] = await prisma.course.findMany({
       where: courseWhere,
@@ -719,7 +738,9 @@ export async function POST(request: NextRequest) {
           where: { id: existingEvent.id },
           data: {
             status: "LIVE",
-            startedAt: now,
+            startedAt: existingEvent.startedAt || now,
+            actualStartTime: existingEvent.actualStartTime || now,
+            tutorJoinTimestamp: existingEvent.tutorJoinTimestamp || now,
             meetingLink: effectiveStudentLink,
             meetingSpaceId: bbbId,
           },

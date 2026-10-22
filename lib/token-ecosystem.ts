@@ -243,6 +243,306 @@ export function determineClassTier(course?: {
 }
 
 /**
+ * Dynamic Per-Tutor Pay Rate resolver:
+ * Checks specific tutor profile rates (`igcsePayRate` & `ialIasPayRate`).
+ * Falls back to global pay grade settings (750 LKR for IGCSE, 850 LKR for IAL/IAS).
+ */
+export function getTutorPayRate(
+  tutor: { igcsePayRate?: number | null; ialIasPayRate?: number | null } | null | undefined,
+  tier: "IGCSE" | "IAL_IAS",
+  defaultRates?: PayGradeAndBonusSettings
+): { hourlyRate: number; isCustomRate: boolean } {
+  if (tier === "IGCSE") {
+    if (
+      tutor?.igcsePayRate !== null &&
+      tutor?.igcsePayRate !== undefined &&
+      !isNaN(Number(tutor.igcsePayRate)) &&
+      Number(tutor.igcsePayRate) > 0
+    ) {
+      return { hourlyRate: Number(tutor.igcsePayRate), isCustomRate: true };
+    }
+    return {
+      hourlyRate: defaultRates?.igcseRateLkr ?? DEFAULT_PAY_GRADES.IGCSE,
+      isCustomRate: false,
+    };
+  } else {
+    if (
+      tutor?.ialIasPayRate !== null &&
+      tutor?.ialIasPayRate !== undefined &&
+      !isNaN(Number(tutor.ialIasPayRate)) &&
+      Number(tutor.ialIasPayRate) > 0
+    ) {
+      return { hourlyRate: Number(tutor.ialIasPayRate), isCustomRate: true };
+    }
+    return {
+      hourlyRate: defaultRates?.ialRateLkr ?? DEFAULT_PAY_GRADES.IAL_IAS,
+      isCustomRate: false,
+    };
+  }
+}
+
+/**
+ * Records when tutor clicks "Start" or physically enters the live room.
+ * Initializes `tutorJoinTimestamp` and begins the 15-minute backend countdown.
+ */
+export async function recordTutorClassJoin(
+  eventId: string,
+  options?: { joinTime?: Date }
+): Promise<{
+  event: any;
+  firstJoin: boolean;
+}> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { id: true, tutorJoinTimestamp: true, startedAt: true, status: true },
+  });
+
+  if (!event) {
+    throw new Error(`Event ${eventId} not found`);
+  }
+
+  const joinTime = options?.joinTime || new Date();
+
+  if (!event.tutorJoinTimestamp) {
+    const updated = await prisma.event.update({
+      where: { id: eventId },
+      data: {
+        tutorJoinTimestamp: joinTime,
+        startedAt: event.startedAt || joinTime,
+        actualStartTime: joinTime,
+        status:
+          event.status === "COMPLETED" || event.status === "CANCELLED"
+            ? event.status
+            : "LIVE",
+      },
+    });
+    broadcastLMSEvent("EVENTS_CHANGED", { eventId, started: true });
+    return { event: updated, firstJoin: true };
+  }
+
+  return { event, firstJoin: false };
+}
+
+/**
+ * 15-Minute Tutor Payout Trigger & No-Show Policy:
+ * Exactly 15 minutes after the tutor's join time (or when session completes after 15m),
+ * automatically transfers the monetary value of that session to the tutor's "Monthly Earnings" ledger.
+ * Uses dynamic per-tutor pay rate from tutor profile and locks payout in `lockedPayoutAmount`.
+ */
+export async function evaluateAndProcessClassPayout(
+  eventId: string,
+  options?: {
+    force?: boolean;
+    isNoShow?: boolean;
+    evaluationTime?: Date;
+  }
+): Promise<{
+  success: boolean;
+  eligible: boolean;
+  payoutTriggered: boolean;
+  lockedPayoutAmount?: number;
+  minutesRemaining?: number;
+  message: string;
+  earningRecord?: any;
+}> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      course: {
+        include: {
+          tutor: true,
+        },
+      },
+      user: true,
+      earningRecord: true,
+    },
+  });
+
+  if (!event) {
+    return {
+      success: false,
+      eligible: false,
+      payoutTriggered: false,
+      message: "Event not found",
+    };
+  }
+
+  // If already paid out, return locked record
+  if (event.payoutTriggeredAt || event.earningRecord) {
+    return {
+      success: true,
+      eligible: true,
+      payoutTriggered: false,
+      lockedPayoutAmount:
+        event.lockedPayoutAmount || event.earningRecord?.amountLkr || 0,
+      earningRecord: event.earningRecord,
+      message: "Payout was already successfully triggered and transferred to tutor's ledger.",
+    };
+  }
+
+  // 30-min trial sessions check (Free trials are 0 payout)
+  const isTrialSession = Boolean(
+    event.title?.toLowerCase().includes("trial") ||
+    event.description?.toLowerCase().includes("trial")
+  );
+  if (isTrialSession) {
+    return {
+      success: true,
+      eligible: false,
+      payoutTriggered: false,
+      message: "Trial sessions are free consultations with zero tutor payout.",
+    };
+  }
+
+  // Verify tutor physical presence start
+  const joinTimestamp =
+    event.tutorJoinTimestamp || event.startedAt || event.actualStartTime;
+  if (!joinTimestamp) {
+    return {
+      success: false,
+      eligible: false,
+      payoutTriggered: false,
+      message:
+        "Tutor has not started or joined the class session yet. Payout timer inactive.",
+    };
+  }
+
+  const now = options?.evaluationTime || new Date();
+  const elapsedMs = now.getTime() - new Date(joinTimestamp).getTime();
+  const elapsedMinutes = elapsedMs / (60 * 1000);
+
+  // If not forced (e.g. by end_class) and less than 15 mins
+  if (!options?.force && elapsedMinutes < 15) {
+    const minutesRemaining = Math.max(1, Math.ceil(15 - elapsedMinutes));
+    return {
+      success: true,
+      eligible: false,
+      payoutTriggered: false,
+      minutesRemaining,
+      message: `15-minute timer running. Tutor in session for ${Math.floor(
+        elapsedMinutes
+      )} min(s). ${minutesRemaining} min(s) remaining for automatic payout trigger.`,
+    };
+  }
+
+  // Tutor has reached 15 minutes! Calculate payout with tutor-specific rate
+  const tutorId = event.course?.tutorId || event.requestedBy;
+  if (!tutorId) {
+    return {
+      success: false,
+      eligible: true,
+      payoutTriggered: false,
+      message: "No tutor associated with this class event.",
+    };
+  }
+
+  const tutor =
+    event.course?.tutor ||
+    (await prisma.user.findUnique({ where: { id: tutorId } }));
+  const payGrades = await getPayGradeSettings();
+  const { tier, label: tierLabel } = determineClassTier(
+    event.course,
+    (event.user as any)?.academicLevel
+  );
+  const { hourlyRate, isCustomRate } = getTutorPayRate(tutor, tier, payGrades);
+
+  const durationHours =
+    getEventDurationHours(event.title, event.description) || 1;
+  const totalPayoutLkr = hourlyRate * durationHours;
+
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+
+  const desc = options?.isNoShow
+    ? `Student No-Show Policy (15-min physical presence verified): ${event.title} (${tierLabel} @ Rs. ${hourlyRate}/hr${
+        isCustomRate ? " - Custom Tutor Rate" : ""
+      })`
+    : `15-Minute Class Payout Trigger: ${event.title} (${tierLabel} @ Rs. ${hourlyRate}/hr${
+        isCustomRate ? " - Custom Tutor Rate" : ""
+      })`;
+
+  // Atomic update: create earning record and update event
+  const earningRecord = await prisma.$transaction(async (tx) => {
+    // Double check within transaction
+    const freshEvent = await tx.event.findUnique({
+      where: { id: event.id },
+      select: { payoutTriggeredAt: true, lockedPayoutAmount: true },
+    });
+    if (freshEvent?.payoutTriggeredAt) {
+      return null;
+    }
+
+    const record = await tx.tutorEarningRecord.create({
+      data: {
+        tutorId,
+        eventId: event.id,
+        courseId: event.courseId,
+        studentId: event.userId,
+        tier,
+        amountLkr: totalPayoutLkr,
+        tokenCount: durationHours,
+        description: desc,
+        monthKey,
+        year,
+        month,
+      },
+    });
+
+    await tx.event.update({
+      where: { id: event.id },
+      data: {
+        payoutTriggeredAt: now,
+        lockedPayoutAmount: totalPayoutLkr,
+        tutorJoinTimestamp: event.tutorJoinTimestamp || joinTimestamp,
+      },
+    });
+
+    return record;
+  });
+
+  if (!earningRecord) {
+    return {
+      success: true,
+      eligible: true,
+      payoutTriggered: false,
+      lockedPayoutAmount: event.lockedPayoutAmount || totalPayoutLkr,
+      message: "Payout was already processed concurrently.",
+    };
+  }
+
+  // In-app notification to tutor
+  await prisma.notification.create({
+    data: {
+      userId: tutorId,
+      title: "💰 Class Payout Triggered (15-Minute Policy)",
+      message: `Rs. ${totalPayoutLkr.toLocaleString(
+        "en-LK"
+      )} LKR has been transferred to your Monthly Earnings ledger for "${
+        event.title
+      }". Physical presence verified (${tierLabel} @ Rs. ${hourlyRate}/hr).`,
+      type: "SUCCESS",
+      link: "/tutor?tab=history",
+    },
+  });
+
+  broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tutorId });
+  broadcastLMSEvent("EVENTS_CHANGED", { eventId: event.id });
+  broadcastLMSEvent("USERS_CHANGED");
+
+  return {
+    success: true,
+    eligible: true,
+    payoutTriggered: true,
+    lockedPayoutAmount: totalPayoutLkr,
+    earningRecord,
+    message: `Rs. ${totalPayoutLkr.toLocaleString(
+      "en-LK"
+    )} LKR successfully transferred to tutor monthly earnings ledger.`,
+  };
+}
+
+/**
  * Records a new token grant for a student with a lifespan of exactly 365 days (1 year).
  */
 export async function grantStudentTokens(params: {
@@ -532,14 +832,7 @@ export async function completeClassAndProcessEcosystem(
   }
 
   // If tokens already deducted for this event, do not double-deduct
-  if (event.tokenDeducted) {
-    return {
-      success: true,
-      tokenDeducted: false,
-      earningsCredited: false,
-      message: "Event already completed and tokens previously processed.",
-    };
-  }
+  const isPrepaidViaEnrollment = Boolean(event.enrollmentRequestId && event.tokenDeducted);
 
   // Identify Student
   let studentId = event.userId;
@@ -568,8 +861,9 @@ export async function completeClassAndProcessEcosystem(
   const durationHours = getEventDurationHours(event.title, event.description);
   const tokensToDeduct = Math.max(1, Math.round(durationHours));
 
-  // Step 2: Automatic Token Deduction (1 Token = 1 Hour)
-  if (studentId) {
+  // Step 2: Student Token Deduction
+  // If event was part of an upfront-paid permanent enrollment request, tokens were already consumed upon acceptance!
+  if (studentId && !isPrepaidViaEnrollment && !event.tokenDeducted) {
     await expireOverdueTokenGrants(studentId);
 
     let wallet = await prisma.tokenWallet.findUnique({
@@ -634,56 +928,18 @@ export async function completeClassAndProcessEcosystem(
 
     // Check balance & trigger low-balance notification if needed
     await checkAndNotifyLowTokenBalance(studentId);
+  } else if (isPrepaidViaEnrollment) {
+    tokenDeducted = true;
   }
 
-  // Step 3: Tutor Earnings & Pay Grade Conversion
+  // Step 3: Tutor Earnings & 15-Minute Payout Trigger Evaluation
   if (tutorId) {
-    const payGrades = await getPayGradeSettings();
-    const { tier, label: tierLabel } = determineClassTier(event.course, (event.user as any)?.academicLevel);
-    const hourlyRate = tier === "IGCSE" ? payGrades.igcseRateLkr : payGrades.ialRateLkr;
-    const amountLkr = hourlyRate * durationHours;
-
-    // Calendar month key (e.g. "2026-10")
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const monthKey = `${year}-${String(month).padStart(2, "0")}`;
-
-    const earningDesc = opts?.isNoShow
-      ? `Student No-Show Policy (Tutor waited 15+ mins): ${event.title} (${tierLabel})`
-      : `Completed ${durationHours}-Hour Class: ${event.title} (${tierLabel})`;
-
-    earningRecord = await prisma.tutorEarningRecord.create({
-      data: {
-        tutorId,
-        eventId: event.id,
-        courseId: event.courseId,
-        studentId: studentId,
-        tier,
-        amountLkr,
-        tokenCount: durationHours,
-        description: earningDesc,
-        monthKey,
-        year,
-        month,
-      },
+    const payoutResult = await evaluateAndProcessClassPayout(event.id, {
+      force: true,
+      isNoShow: opts?.isNoShow,
+      evaluationTime: now,
     });
-
-    // Notify tutor of credited earnings
-    const notifMsg = opts?.isNoShow
-      ? `Rs. ${amountLkr.toLocaleString("en-LK")} LKR credited for student no-show after completing mandatory 15-minute wait: "${event.title}" (${tierLabel} @ Rs. ${hourlyRate}/hr).`
-      : `Rs. ${amountLkr.toLocaleString("en-LK")} LKR credited to your monthly earnings ledger for completed ${durationHours}-hour session: "${event.title}" (${tierLabel} @ Rs. ${hourlyRate}/hr).`;
-
-    await prisma.notification.create({
-      data: {
-        userId: tutorId,
-        title: "💰 Class Earnings Credited",
-        message: notifMsg,
-        type: "SUCCESS",
-        link: "/tutor?tab=history",
-      },
-    });
-
-    broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tutorId });
+    earningRecord = payoutResult.earningRecord || null;
   }
 
   // Mark event as token deducted

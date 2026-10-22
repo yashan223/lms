@@ -907,18 +907,36 @@ export default function AdminDashboardPage() {
   }, [paymentsList, paymentCurrencyFilter, paymentStatusFilter, paymentSearch]);
 
   const getUserRates = (user: any): { alRate: string; olRate: string; isAL: boolean; isOL: boolean } => {
-    if (!user?.bio) return { alRate: "5000", olRate: "3500", isAL: true, isOL: true };
-    try {
-      const parsed = typeof user.bio === "string" && user.bio.trim().startsWith("{") ? JSON.parse(user.bio) : null;
-      const base = parsed?.hourlyRate ? String(parsed.hourlyRate) : "5000";
-      const al = parsed?.hourlyRateAL ? String(parsed.hourlyRateAL) : base;
-      const ol = parsed?.hourlyRateOL ? String(parsed.hourlyRateOL) : (Number(base) > 0 ? String(Math.round(Number(base) * 0.75)) : "3500");
-      const isAL = parsed?.isALTutor !== undefined ? Boolean(parsed.isALTutor) : true;
-      const isOL = parsed?.isOLTutor !== undefined ? Boolean(parsed.isOLTutor) : true;
-      return { alRate: al, olRate: ol, isAL, isOL };
-    } catch {
-      return { alRate: "5000", olRate: "3500", isAL: true, isOL: true };
+    let alRate =
+      user?.ialIasPayRate !== null && user?.ialIasPayRate !== undefined
+        ? String(user.ialIasPayRate)
+        : "";
+    let olRate =
+      user?.igcsePayRate !== null && user?.igcsePayRate !== undefined
+        ? String(user.igcsePayRate)
+        : "";
+    let isAL = true;
+    let isOL = true;
+
+    if (user?.bio) {
+      try {
+        const parsed = typeof user.bio === "string" && user.bio.trim().startsWith("{") ? JSON.parse(user.bio) : null;
+        if (!alRate) {
+          const base = parsed?.hourlyRate ? String(parsed.hourlyRate) : "5000";
+          alRate = parsed?.hourlyRateAL ? String(parsed.hourlyRateAL) : base;
+        }
+        if (!olRate) {
+          olRate = parsed?.hourlyRateOL ? String(parsed.hourlyRateOL) : (Number(alRate) > 0 ? String(Math.round(Number(alRate) * 0.75)) : "3500");
+        }
+        if (parsed?.isALTutor !== undefined) isAL = Boolean(parsed.isALTutor);
+        if (parsed?.isOLTutor !== undefined) isOL = Boolean(parsed.isOLTutor);
+      } catch {}
     }
+
+    if (!alRate) alRate = "5000";
+    if (!olRate) olRate = "3500";
+
+    return { alRate, olRate, isAL, isOL };
   };
 
   const getUserHourlyRate = (user: any): string => {
@@ -980,6 +998,8 @@ export default function AdminDashboardPage() {
           hourlyRate: formUserHourlyRateAL,
           hourlyRateAL: formUserHourlyRateAL,
           hourlyRateOL: formUserHourlyRateOL,
+          igcsePayRate: formUserIsOLTutor ? (parseFloat(formUserHourlyRateOL) || null) : null,
+          ialIasPayRate: formUserIsALTutor ? (parseFloat(formUserHourlyRateAL) || null) : null,
           isALTutor: formUserIsALTutor,
           isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,
@@ -1075,6 +1095,8 @@ export default function AdminDashboardPage() {
           hourlyRate: formUserHourlyRateAL,
           hourlyRateAL: formUserHourlyRateAL,
           hourlyRateOL: formUserHourlyRateOL,
+          igcsePayRate: formUserIsOLTutor ? (parseFloat(formUserHourlyRateOL) || null) : null,
+          ialIasPayRate: formUserIsALTutor ? (parseFloat(formUserHourlyRateAL) || null) : null,
           isALTutor: formUserIsALTutor,
           isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,

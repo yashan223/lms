@@ -175,6 +175,9 @@ interface ScheduledClassEvent {
   attendanceCount?: number | null;
   startedAt?: string | Date | null;
   endedAt?: string | Date | null;
+  tutorJoinTimestamp?: string | Date | null;
+  payoutTriggeredAt?: string | Date | null;
+  lockedPayoutAmount?: number | null;
   courseId?: string | null;
   userId?: string | null;
   course?: {
@@ -1139,7 +1142,7 @@ function TutorDashboardContent() {
 
   const promptEndClass = (ev: ScheduledClassEvent) => {
     const isTrial = ev.title?.toLowerCase().includes("trial") || ev.description?.toLowerCase().includes("trial");
-    const liveStartTime = ev.actualStartTime || ev.startedAt;
+    const liveStartTime = ev.tutorJoinTimestamp || ev.actualStartTime || ev.startedAt;
     const elapsedMinutes = liveStartTime
       ? Math.floor((Date.now() - new Date(liveStartTime).getTime()) / 60000)
       : 0;
@@ -1168,10 +1171,13 @@ function TutorDashboardContent() {
         },
       });
     } else {
+      const payoutMsg = ev.payoutTriggeredAt
+        ? ` Your session payment of Rs. ${Number(ev.lockedPayoutAmount || 0).toLocaleString()} LKR was automatically triggered and transferred to your monthly ledger.`
+        : "";
       setConfirmModalData({
         isOpen: true,
         title: "End Class Session (15-Minute Policy Met)",
-        description: `You have been in the live session for ${elapsedMinutes} minutes. If your student did not attend, ending this class will apply the Student No-Show Policy: token(s) are deducted from the student and your teaching fee is credited to your monthly earnings.`,
+        description: `You have been in the live session for ${elapsedMinutes} minutes.${payoutMsg} If your student did not attend, ending this class will conclude the session under the Student No-Show Policy with full compensation guaranteed.`,
         variant: "success",
         onConfirm: async () => {
           await handleEndClass(ev.id);

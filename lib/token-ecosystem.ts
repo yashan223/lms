@@ -3,6 +3,7 @@ import { broadcastLMSEvent } from "@/lib/events";
 import { sendLowTokenBalanceEmail } from "@/lib/email";
 import { TokenGrantStatus } from "@prisma/client";
 import { getEventDurationHours } from "@/lib/scheduling";
+import { removeLiveClassNotifications } from "@/lib/notifications";
 
 export const DEFAULT_PAY_GRADES = {
   IGCSE: 750, // LKR per hour / token
@@ -471,6 +472,9 @@ export async function completeClassAndProcessEcosystem(
     },
   });
 
+  // Automatically remove live class notifications and pre-class reminders once ended
+  await removeLiveClassNotifications({ eventId: event.id, title: event.title }).catch(() => {});
+
   // Check if this event represents a 30-Minute Free Trial session
   const isTrialSession = Boolean(
     event.title?.toLowerCase().includes("trial") ||
@@ -513,6 +517,7 @@ export async function completeClassAndProcessEcosystem(
         },
       });
       broadcastLMSEvent("TRIALS_CHANGED", { trialId: linkedTrial.id, completed: true });
+      await removeLiveClassNotifications({ trialId: linkedTrial.id }).catch(() => {});
     }
 
     broadcastLMSEvent("EVENTS_CHANGED", { eventId: event.id, ended: true });

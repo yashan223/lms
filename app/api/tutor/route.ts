@@ -27,6 +27,7 @@ import { generateUniqueClassCode } from "@/lib/class-id";
 import { getTutorMonthlyEarnings, completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
 import { getEventDurationHours } from "@/lib/scheduling";
 import { getTutorPendingReschedules, acceptRescheduleRequest, declineRescheduleRequest } from "@/lib/reschedule";
+import { removeLiveClassNotifications } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -855,12 +856,13 @@ export async function POST(request: NextRequest) {
       }
 
       if (studentIdsToNotify.length > 0) {
+        const sessionTitle = existingEvent?.title || (existingTrial ? `1-on-1 Trial Session: ${existingTrial.course?.title || "Class"}` : "Your class");
         await prisma.notification.createMany({
           data: studentIdsToNotify.map((uId) => ({
             userId: uId,
             title: "🔴 Your Session is Live Now!",
-            message: `"${existingEvent?.title || "Your class"}" has started! Click to join your tutor on BigBlueButton.`,
-            type: "SUCCESS",
+            message: `"${sessionTitle}" has started! Click to join your tutor on BigBlueButton.`,
+            type: "CLASS_LIVE",
             link: effectiveStudentLink,
           })),
         });
@@ -905,6 +907,9 @@ export async function POST(request: NextRequest) {
           manualEndTime: manualEndTime ? new Date(manualEndTime) : now,
           manualRecordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
         }).catch(() => {});
+
+        // Automatically remove live trial notifications and reminders upon completion
+        await removeLiveClassNotifications({ trialId }).catch(() => {});
       }
 
       let resolvedEventId = eventId;
@@ -1099,6 +1104,9 @@ export async function POST(request: NextRequest) {
           broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: tutor.id });
         }
 
+        // Automatically remove live class notifications and pre-class reminders once ended
+        await removeLiveClassNotifications({ eventId: resolvedEventId, trialId, title: event.title }).catch(() => {});
+
         return NextResponse.json({
           success: true,
           isNoShow,
@@ -1221,6 +1229,8 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+
+      await removeLiveClassNotifications({ eventId, trialId }).catch(() => {});
 
       if (trialId) {
         // Delete linked events

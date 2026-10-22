@@ -26,6 +26,62 @@ export async function GET(req: NextRequest) {
       }).catch(() => {});
     }
 
+    // Auto-remove any stale "Live Now" or pre-class reminder notifications if the class is completed or ended
+    const liveNotifications = await prisma.notification.findMany({
+      where: {
+        userId,
+        OR: [
+          { type: "CLASS_LIVE" },
+          { title: { contains: "Live Now" } },
+          { title: { contains: "Starting in 30 Minutes" } },
+          { title: { contains: "Upcoming Class in 30 Minutes" } },
+        ],
+      },
+    });
+
+    if (liveNotifications.length > 0) {
+      const staleIds: string[] = [];
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+
+      for (const notif of liveNotifications) {
+        let eventId: string | null = null;
+        let trialId: string | null = null;
+
+        if (notif.link) {
+          const evMatch = notif.link.match(/[?&]eventId=([^&]+)/);
+          if (evMatch) eventId = evMatch[1];
+          const trMatch = notif.link.match(/[?&]trialId=([^&]+)/);
+          if (trMatch) trialId = trMatch[1];
+        }
+
+        if (eventId) {
+          const ev = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: { status: true, endedAt: true },
+          });
+          if (!ev || ev.status === "COMPLETED" || ev.status === "CANCELLED" || ev.endedAt) {
+            staleIds.push(notif.id);
+          }
+        } else if (trialId) {
+          const tr = await prisma.trialRequest.findUnique({
+            where: { id: trialId },
+            select: { status: true, actualEndTime: true },
+          });
+          if (!tr || tr.status === "COMPLETED" || tr.status === "REJECTED" || tr.status === "CANCELLED" || tr.actualEndTime) {
+            staleIds.push(notif.id);
+          }
+        } else if (new Date(notif.createdAt) < threeHoursAgo) {
+          staleIds.push(notif.id);
+        }
+      }
+
+      if (staleIds.length > 0) {
+        await prisma.notification.deleteMany({
+          where: { id: { in: staleIds } },
+        }).catch(() => {});
+      }
+    }
+
     const [notifications, unreadCount] = await Promise.all([
       prisma.notification.findMany({
         where: { userId },

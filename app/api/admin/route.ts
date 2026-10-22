@@ -32,6 +32,7 @@ import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } 
 import { generateUniqueTutorId, backfillExistingTutors } from "@/lib/tutor-id";
 import { generateUniqueAdminId, backfillExistingAdmins, ensureAdminIdForUser } from "@/lib/admin-id";
 import { getPayGradeSettings, updatePayGradeSettings, completeClassAndProcessEcosystem, getAdminTutorPayoutOverview } from "@/lib/token-ecosystem";
+import { removeLiveClassNotifications } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -1199,6 +1200,33 @@ export async function POST(request: NextRequest) {
         meetingLink: effectiveStudentLink,
       });
 
+      // Notify student(s) that session is now live
+      const studentIdsToNotify: string[] = [];
+      if (updated.userId) {
+        studentIdsToNotify.push(updated.userId);
+      } else if (updated.courseId) {
+        const enrollments = await prisma.enrollment.findMany({
+          where: { courseId: updated.courseId },
+          select: { userId: true },
+        });
+        enrollments.forEach((e) => studentIdsToNotify.push(e.userId));
+      }
+
+      if (studentIdsToNotify.length > 0) {
+        await prisma.notification.createMany({
+          data: studentIdsToNotify.map((uId) => ({
+            userId: uId,
+            title: "🔴 Your Session is Live Now!",
+            message: `"${updated.title || "Your class"}" has started! Click to join on BigBlueButton.`,
+            type: "CLASS_LIVE",
+            link: effectiveStudentLink,
+          })),
+        });
+        studentIdsToNotify.forEach((uId) => {
+          broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: uId });
+        });
+      }
+
       return NextResponse.json({
         success: true,
         message: "Live class session has been started!",
@@ -1230,6 +1258,9 @@ export async function POST(request: NextRequest) {
         manualEndTime: manualEndTime ? new Date(manualEndTime) : new Date(),
         manualRecordingUrl: recordingUrl ? recordingUrl.trim() : undefined,
       });
+
+      // Automatically remove live class notifications and reminders once ended
+      await removeLiveClassNotifications({ eventId, title: syncResult.event?.title }).catch(() => {});
 
       return NextResponse.json({
         success: true,

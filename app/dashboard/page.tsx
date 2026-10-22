@@ -241,11 +241,12 @@ function DashboardContent() {
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   const [liveClassBanner, setLiveClassBanner] = useState<{
+    id: string;
     title: string;
     meetingLink: string;
   } | null>(null);
   const [bannerVisible, setBannerVisible] = useState(false);
-  const [seenLiveEventIds, setSeenLiveEventIds] = useState<Set<string>>(new Set());
+  const [dismissedLiveEventIds, setDismissedLiveEventIds] = useState<Set<string>>(new Set());
 
   const [studentAvailabilitiesCount, setStudentAvailabilitiesCount] = useState<number | null>(null);
 
@@ -460,23 +461,39 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!timelineEvents || userRole !== "STUDENT") return;
-    const liveEv = timelineEvents.find(
-      (ev: any) => ev.status === "LIVE" && !seenLiveEventIds.has(ev.id)
+
+    // Check if there is currently an active live session
+    const activeLiveEv = timelineEvents.find(
+      (ev: any) => ev.status === "LIVE" && !ev.endedAt
     );
-    if (liveEv) {
-      setSeenLiveEventIds((prev) => new Set(prev).add(liveEv.id));
-      const studentJoinHref = liveEv.id
-        ? `/api/meetings/join?eventId=${liveEv.id}${liveEv.trialId ? `&trialId=${liveEv.trialId}` : ""}`
-        : liveEv.trialId
-        ? `/api/meetings/join?trialId=${liveEv.trialId}`
-        : getSafeMeetingLink(liveEv.meetingLink);
+
+    if (activeLiveEv) {
+      if (dismissedLiveEventIds.has(activeLiveEv.id)) {
+        return;
+      }
+      const studentJoinHref = activeLiveEv.id
+        ? `/api/meetings/join?eventId=${activeLiveEv.id}${activeLiveEv.trialId ? `&trialId=${activeLiveEv.trialId}` : ""}`
+        : activeLiveEv.trialId
+        ? `/api/meetings/join?trialId=${activeLiveEv.trialId}`
+        : getSafeMeetingLink(activeLiveEv.meetingLink);
+
       setLiveClassBanner({
-        title: liveEv.title,
+        id: activeLiveEv.id,
+        title: activeLiveEv.title,
         meetingLink: studentJoinHref,
       });
       setBannerVisible(true);
+    } else {
+      // Session has concluded or no active class is live: remove the live class notification banner immediately
+      if (liveClassBanner) {
+        setBannerVisible(false);
+        const timer = setTimeout(() => {
+          setLiveClassBanner(null);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [timelineEvents, userRole, seenLiveEventIds]);
+  }, [timelineEvents, userRole, dismissedLiveEventIds, liveClassBanner]);
 
   const { isConnected: realtimeConnected } = useRealtimeSync({
     onSync: () => {
@@ -1059,6 +1076,9 @@ function DashboardContent() {
               </a>
               <button
                 onClick={() => {
+                  if (liveClassBanner?.id) {
+                    setDismissedLiveEventIds((prev) => new Set(prev).add(liveClassBanner.id));
+                  }
                   setBannerVisible(false);
                   setTimeout(() => setLiveClassBanner(null), 500);
                 }}

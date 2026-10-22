@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
+import { removeLiveClassNotifications } from "@/lib/notifications";
 
 export interface BBBConfig {
   url: string;
@@ -590,6 +591,9 @@ export async function syncClassMeetingSession(
     },
   });
 
+  // Automatically remove live class notifications and reminders now that session has ended
+  await removeLiveClassNotifications({ eventId, title: event.title });
+
   if (recordingUrl && event.courseId) {
     const enrollments = event.course?.enrollments || [];
     if (enrollments.length > 0) {
@@ -765,6 +769,9 @@ export async function syncTrialSession(
     },
     include: { course: true, tutor: true },
   });
+
+  // Automatically remove live trial notifications and reminders now that consultation has ended
+  await removeLiveClassNotifications({ trialId, title: trial.course?.title });
 
   if (recordingUrl && trial.studentId) {
     await prisma.notification.create({

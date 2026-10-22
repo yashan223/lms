@@ -8,10 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await getAuthenticatedUser(request).catch(() => ({ user: null }));
 
     const { searchParams } = new URL(request.url);
     const reference = searchParams.get("reference");
@@ -24,13 +21,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Allow lookup by unguessable cryptographic reference or checkoutId
     const payment = await prisma.payment.findFirst({
       where: {
         OR: [
           ...(reference ? [{ reference }] : []),
           ...(checkoutId ? [{ checkoutId }] : []),
         ],
-        ...(auth.user.role === "ADMIN" ? {} : { userId: auth.user.id }),
+        ...(auth?.user && auth.user.role !== "ADMIN" ? { userId: auth.user.id } : {}),
       },
     });
 

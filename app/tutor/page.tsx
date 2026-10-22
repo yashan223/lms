@@ -2245,9 +2245,9 @@ function TutorDashboardContent() {
                       </h3>
                       <Link
                         href="/tutor/courses/new"
-                        className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 inline-flex items-center px-3 shadow-xs transition-colors cursor-pointer"
+                        className="text-xs font-medium text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shadow-xs cursor-pointer"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-3.5 h-3.5 text-slate-500" />
                         <span>Add Class</span>
                       </Link>
                     </div>

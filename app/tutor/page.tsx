@@ -3146,7 +3146,7 @@ function TutorDashboardContent() {
                       <span>No trial bookings found under &quot;{trialFilter.toLowerCase()}&quot; filter.</span>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="max-h-[600px] sm:max-h-[680px] overflow-y-auto overscroll-contain pr-1.5 space-y-4">
                       {trials
                         .filter((t) => {
                           if (trialFilter === "ALL") return true;

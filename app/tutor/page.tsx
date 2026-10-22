@@ -79,6 +79,7 @@ import { EnrollmentRequestsManager } from "@/components/tutor/EnrollmentRequests
 import { TutorMonthlyEarningsView } from "@/components/tutor/TutorMonthlyEarningsView";
 import { TutorRescheduleRequestsManager } from "@/components/tutor/TutorRescheduleRequestsManager";
 import { CountryFlag } from "@/components/ui/CountryFlag";
+import { formatInternationalPhone } from "@/lib/country-codes";
 import {
   getUserBrowserTimezone,
   formatTimeInTimezone,
@@ -4056,10 +4057,12 @@ function TutorDashboardContent() {
                           Phone / WhatsApp Number
                         </label>
                         <Input
+                          type="tel"
+                          maxLength={18}
                           value={profilePhone}
-                          onChange={(e) => setProfilePhone(e.target.value)}
+                          onChange={(e) => setProfilePhone(formatInternationalPhone(e.target.value))}
                           placeholder="Enter phone number"
-                          className="rounded-xl h-9 text-xs"
+                          className="rounded-xl h-9 text-xs font-mono"
                         />
                       </div>
                     </div>

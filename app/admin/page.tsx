@@ -89,7 +89,7 @@ import {
   formatForUser,
   getUserBrowserTimezone,
 } from "@/lib/timezones";
-import { COUNTRY_DIAL_CODES, DEFAULT_DIAL_CODE } from "@/lib/country-codes";
+import { COUNTRY_DIAL_CODES, DEFAULT_DIAL_CODE, formatSubscriberPhone } from "@/lib/country-codes";
 import { findCountry } from "@/lib/countries";
 import { CountrySelector } from "@/components/ui/CountrySelector";
 import { CountryFlag } from "@/components/ui/CountryFlag";
@@ -940,13 +940,23 @@ export default function AdminDashboardPage() {
     setSelectedUserForEdit(user);
     setFormUserName(user.name);
     setFormUserEmail(user.email);
-    setFormUserPhone(user.phone || "");
     const userCountry = user.country || "Sri Lanka";
     setFormUserCountry(userCountry);
+    let initialDial = DEFAULT_DIAL_CODE;
     const matchedCountry = findCountry(userCountry);
     if (matchedCountry?.dialCode) {
-      setFormUserCountryDial(matchedCountry.dialCode);
+      initialDial = matchedCountry.dialCode;
     }
+    let rawPhone = (user.phone || "").trim();
+    if (rawPhone.startsWith("+")) {
+      const matchedDial = COUNTRY_DIAL_CODES.find((c) => rawPhone.startsWith(c.dial));
+      if (matchedDial) {
+        initialDial = matchedDial.dial;
+        rawPhone = rawPhone.slice(matchedDial.dial.length).trim();
+      }
+    }
+    setFormUserCountryDial(initialDial);
+    setFormUserPhone(formatSubscriberPhone(rawPhone));
     setFormUserRole(user.role);
     setFormUserHeadline(user.headline || "");
     setFormUserBio(user.bio || "");
@@ -965,6 +975,14 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     if (!selectedUserForEdit) return;
     try {
+      let fullPhoneNumber = formUserPhone.trim();
+      if (fullPhoneNumber) {
+        if (!fullPhoneNumber.startsWith("+")) {
+          const digits = fullPhoneNumber.replace(/^0+/, "").replace(/[\s\-\(\)]/g, "");
+          fullPhoneNumber = digits ? `${formUserCountryDial}${digits}` : "";
+        }
+      }
+
       const res = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -973,7 +991,7 @@ export default function AdminDashboardPage() {
           userId: selectedUserForEdit.id,
           name: formUserName,
           email: formUserEmail,
-          phone: formUserPhone,
+          phone: fullPhoneNumber || null,
           country: formUserCountry.trim() || null,
           role: formUserRole,
           headline: formUserHeadline,
@@ -7022,9 +7040,14 @@ export default function AdminDashboardPage() {
                     <Input
                       type="tel"
                       placeholder="77 123 4567"
+                      maxLength={14}
                       value={formUserPhone}
-                      onChange={(e) => setFormUserPhone(e.target.value)}
-                      className="rounded-l-none rounded-r-xl focus-visible:ring-blue-400 h-10 text-xs flex-1"
+                      onChange={(e) =>
+                        setFormUserPhone(
+                          formatSubscriberPhone(e.target.value, (dial) => setFormUserCountryDial(dial))
+                        )
+                      }
+                      className="rounded-l-none rounded-r-xl focus-visible:ring-blue-400 h-10 text-xs flex-1 font-mono tracking-wide"
                     />
                   </div>
                 </div>
@@ -7502,7 +7525,31 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Contact Number</label>
-                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                  <div className="flex items-center">
+                    <select
+                      value={formUserCountryDial}
+                      onChange={(e) => setFormUserCountryDial(e.target.value)}
+                      className="h-10 px-2.5 rounded-l-xl rounded-r-none border border-r-0 border-slate-200 bg-slate-50 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-400 focus:z-10 shrink-0 cursor-pointer outline-none"
+                    >
+                      {COUNTRY_DIAL_CODES.map((c) => (
+                        <option key={`${c.code}-${c.dial}`} value={c.dial}>
+                          {c.flag} {c.dial} ({c.name})
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      type="tel"
+                      placeholder="77 123 4567"
+                      maxLength={14}
+                      value={formUserPhone}
+                      onChange={(e) =>
+                        setFormUserPhone(
+                          formatSubscriberPhone(e.target.value, (dial) => setFormUserCountryDial(dial))
+                        )
+                      }
+                      className="rounded-l-none rounded-r-xl focus-visible:ring-blue-400 h-10 text-xs flex-1 font-mono tracking-wide"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Academic Title</label>

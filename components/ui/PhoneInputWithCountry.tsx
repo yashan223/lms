@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { COUNTRIES, Country, findCountry, findCountryByDialCode } from "@/lib/countries";
+import { formatSubscriberPhone } from "@/lib/country-codes";
 import { ChevronDown, Search, Phone, Check, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CountryFlag } from "@/components/ui/CountryFlag";
@@ -83,17 +84,11 @@ export function PhoneInputWithCountry({
   };
 
   const handleNumberInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let raw = e.target.value;
-
-    if (raw.startsWith("+")) {
-      const match = COUNTRIES.find((c) => raw.startsWith(c.dialCode));
-      if (match) {
-        onCountryCodeChange(match.dialCode, match);
-        raw = raw.slice(match.dialCode.length).trim();
-      }
-    }
-
-    onPhoneChange(raw);
+    const formatted = formatSubscriberPhone(e.target.value, (dial) => {
+      const match = COUNTRIES.find((c) => c.dialCode === dial);
+      onCountryCodeChange(dial, match);
+    });
+    onPhoneChange(formatted);
   };
 
   return (
@@ -127,6 +122,7 @@ export function PhoneInputWithCountry({
           required={required}
           disabled={disabled}
           placeholder={placeholder}
+          maxLength={14}
           value={value}
           onChange={handleNumberInput}
           className="h-11 pl-3 pr-3 text-xs border-slate-200 rounded-l-none rounded-r-xl focus-visible:ring-blue-600 font-mono tracking-wide"

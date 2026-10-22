@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { formatInternationalPhone } from "@/lib/country-codes";
 
 interface AcademicDegree {
   id: string;
@@ -629,10 +630,12 @@ function TutorProfileContent() {
                 <label className="text-xs font-bold text-slate-700">Contact Phone / WhatsApp</label>
                 <div className="relative">
                   <Input
+                    type="tel"
+                    maxLength={18}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(formatInternationalPhone(e.target.value))}
                     placeholder="+94 77 123 4567 or +44 7911 123456"
-                    className="rounded-xl border-slate-200 text-xs h-10 bg-white pl-9"
+                    className="rounded-xl border-slate-200 text-xs h-10 bg-white pl-9 font-mono"
                   />
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 </div>

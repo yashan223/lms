@@ -27,6 +27,7 @@ import {
   isBigBlueButtonConfigured,
   getBBBRecordings,
   deleteBBBRecording,
+  reconcileLiveBBBMeetings,
 } from "@/lib/bigbluebutton";
 import { Role, CourseLevel, CourseStatus, EventType, EventStatus, TrialStatus } from "@prisma/client";
 import { generateUniqueTutorId, backfillExistingTutors } from "@/lib/tutor-id";
@@ -129,6 +130,7 @@ export async function GET(request: NextRequest) {
     try {
       await backfillExistingTutors();
       await backfillExistingAdmins();
+      await reconcileLiveBBBMeetings().catch(() => {});
       allUsers = await prisma.user.findMany({
         include: {
           tokenWallet: {

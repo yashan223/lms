@@ -420,16 +420,6 @@ function TutorDashboardContent() {
   const [startSessionMeetLink, setStartSessionMeetLink] = useState("");
   const [isStartingSession, setIsStartingSession] = useState(false);
 
-  const [showEditLinkModal, setShowEditLinkModal] = useState(false);
-  const [editLinkTarget, setEditLinkTarget] = useState<{
-    eventId?: string;
-    trialId?: string;
-    title: string;
-    currentLink: string;
-  } | null>(null);
-  const [editLinkInput, setEditLinkInput] = useState("");
-  const [isSavingEditLink, setIsSavingEditLink] = useState(false);
-
   const [syncingTrialId, setSyncingTrialId] = useState<string | null>(null);
 
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
@@ -1095,52 +1085,6 @@ function TutorDashboardContent() {
       setIsStartingSession(false);
       setStartingClassId(null);
       setStartingTrialId(null);
-    }
-  };
-
-  const handleOpenEditLink = (opts: { eventId?: string; trialId?: string; title: string; currentLink?: string | null }) => {
-    setEditLinkTarget({
-      eventId: opts.eventId,
-      trialId: opts.trialId,
-      title: opts.title,
-      currentLink: opts.currentLink || "",
-    });
-    setEditLinkInput(opts.currentLink && !isGenericMeetingLink(opts.currentLink) ? opts.currentLink : "");
-    setShowEditLinkModal(true);
-  };
-
-  const handleSaveEditLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editLinkTarget) return;
-    const normalized = normalizeMeetingLink(editLinkInput);
-    if (!normalized) {
-      alert("Please enter a valid classroom meeting link (e.g. BigBlueButton or custom video room URL).");
-      return;
-    }
-
-    try {
-      setIsSavingEditLink(true);
-      const res = await fetch("/api/tutor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "update_meeting_link",
-          eventId: editLinkTarget.eventId,
-          trialId: editLinkTarget.trialId,
-          meetingLink: normalized,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setShowEditLinkModal(false);
-        fetchTutorData();
-      } else {
-        alert(data.error || "Failed to update meeting link.");
-      }
-    } catch (err) {
-      alert("Network error updating meeting link.");
-    } finally {
-      setIsSavingEditLink(false);
     }
   };
 
@@ -2571,19 +2515,6 @@ function TutorDashboardContent() {
                                     Student: {formatTimeInTimezone(ev.dueDate, ev.user.timezone, { includeAbbr: true })}
                                   </span>
                                 )}
-                                {ev.meetingLink && (
-                                  <a
-                                    href={getSafeMeetingLink(ev.meetingLink)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[10px] font-bold transition-colors whitespace-nowrap"
-                                    title={ev.meetingLink}
-                                  >
-                                    <Video className="w-3 h-3 shrink-0" />
-                                    Room Link
-                                    <ExternalLink className="w-2.5 h-2.5 shrink-0 text-blue-400" />
-                                  </a>
-                                )}
                                 {ev.actualStartTime && ev.actualEndTime ? (
                                   <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
                                     <Clock className="w-3 h-3 text-emerald-600" />
@@ -2735,14 +2666,6 @@ function TutorDashboardContent() {
                                     className="px-3 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold cursor-pointer"
                                   >
                                     Start
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenEditLink({ eventId: ev.id, title: ev.title, currentLink: ev.meetingLink })}
-                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                                    title="Set or update classroom link"
-                                  >
-                                    <Video className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>{ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) ? "Edit Link" : "Room Link"}</span>
                                   </button>
                                   <button
                                     onClick={() => openRescheduleForClass(ev)}
@@ -3019,19 +2942,6 @@ function TutorDashboardContent() {
                               <RefreshCw className={`w-3.5 h-3.5 text-slate-500 shrink-0 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
                               <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
                             </button>
-                            {ev.meetingLink && (
-                              <a
-                                href={getSafeMeetingLink(ev.meetingLink)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="h-8.5 px-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all whitespace-nowrap"
-                                title={ev.meetingLink}
-                              >
-                                <Video className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                <span>Meeting Room</span>
-                                <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
-                              </a>
-                            )}
                             <button
                               onClick={() => handleDeleteClass(ev.id, ev.title)}
                               className="h-8.5 w-8.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 inline-flex items-center justify-center cursor-pointer transition-colors sm:ml-auto"
@@ -3670,29 +3580,6 @@ function TutorDashboardContent() {
                                           <Play className="w-3.5 h-3.5 fill-current" />
                                           <span>{startingTrialId === tr.id ? "Starting..." : "Start Session"}</span>
                                         </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() => handleOpenEditLink({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName}`, currentLink: tr.meetingLink })}
-                                          className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                                          title="Set or update classroom link"
-                                        >
-                                          <Video className="w-3.5 h-3.5 text-blue-600" />
-                                          <span>{tr.meetingLink && !isGenericMeetingLink(tr.meetingLink) ? "Edit Link" : "Room Link"}</span>
-                                        </button>
-
-                                        {tr.meetingLink && !isGenericMeetingLink(tr.meetingLink) && (
-                                          <a
-                                            href={getSafeMeetingLink(tr.meetingLink)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
-                                            title="Open classroom room directly"
-                                          >
-                                            <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
-                                            <span>Room Link</span>
-                                          </a>
-                                        )}
                                       </>
                                     )}
 
@@ -4601,52 +4488,6 @@ function TutorDashboardContent() {
                 </div>
               </form>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showEditLinkModal && editLinkTarget && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-sm w-full p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-                  <Video className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900">Set Meeting Link</h3>
-                  <p className="text-xs text-slate-500 truncate max-w-[200px]">{editLinkTarget.title}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowEditLinkModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditLink} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Classroom Room URL</label>
-                <Input
-                  placeholder="Auto-generated BigBlueButton room or custom URL"
-                  value={editLinkInput}
-                  onChange={(e) => setEditLinkInput(e.target.value)}
-                  className="rounded-xl h-9 text-xs font-mono"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowEditLinkModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSavingEditLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-4">
-                  {isSavingEditLink ? "Saving..." : "Save Link"}
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       )}

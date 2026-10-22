@@ -7,7 +7,7 @@ import { fulfillPayment } from "@/lib/payment-fulfillment";
 import { getPaymentsLkCheckout, isPaymentsLkConfigured } from "@/lib/payments-lk";
 import { EventType, EventStatus, TrialStatus, Role } from "@prisma/client";
 import { formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
-import { getBBBMeetingId, getUniversalJoinLink, createBBBMeeting, isBigBlueButtonConfigured } from "@/lib/bigbluebutton";
+import { getBBBMeetingId, getUniversalJoinLink, createBBBMeeting, isBigBlueButtonConfigured, reconcileLiveBBBMeetings } from "@/lib/bigbluebutton";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { ensureStudentIdForUser } from "@/lib/student-id";
 import { ensureAdminIdForUser } from "@/lib/admin-id";
@@ -202,6 +202,9 @@ export async function GET(request: NextRequest) {
         headline: true,
       },
     });
+
+    // Actively reconcile any sessions that ended through BigBlueButton
+    await reconcileLiveBBBMeetings().catch(() => {});
 
     let eventWhere: any = {};
     if (user?.role === "STUDENT") {

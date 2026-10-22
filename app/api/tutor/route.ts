@@ -19,6 +19,7 @@ import {
   isBigBlueButtonConfigured,
   getBBBMeetingInfo,
   extractBBBAttendees,
+  reconcileLiveBBBMeetings,
 } from "@/lib/bigbluebutton";
 import { CourseLevel, CourseStatus, EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
 import { parseDateTimeInputInTimezone, formatDateInTimezone, formatTimeInTimezone } from "@/lib/timezones";
@@ -117,6 +118,9 @@ export async function GET(request: NextRequest) {
     });
 
     const students = Array.from(studentMap.values());
+
+    // Actively reconcile any sessions that ended through BigBlueButton
+    await reconcileLiveBBBMeetings().catch(() => {});
 
     const eventsWhere = {
       OR: [

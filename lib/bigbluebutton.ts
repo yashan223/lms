@@ -166,7 +166,7 @@ export async function createBBBMeeting(opts: {
   const moderatorPW = opts.moderatorPW || `mp_${hash.slice(8, 16)}`;
 
   const appBase = getAppBaseUrl();
-  const defaultLogout = `${appBase}/dashboard`;
+  const defaultLogout = `${appBase}/api/meetings/leave?meetingID=${encodeURIComponent(meetingId)}`;
   const logoutUrl = opts.logoutUrl || defaultLogout;
 
   const welcomeMsg =
@@ -237,6 +237,7 @@ export async function createBBBMeeting(opts: {
     const message = extractXmlTag(text, "message");
 
     if (returncode === "SUCCESS" || messageKey === "idNotUnique") {
+      registerBBBWebhook(meetingId).catch(() => {});
       return {
         success: true,
         meetingId,
@@ -899,9 +900,12 @@ export async function autoSyncActiveBBBMeetings(): Promise<{
         const bbbId = ev.meetingSpaceId || getBBBMeetingId({ eventId: ev.id });
         const running = await isBBBMeetingRunning(bbbId);
 
-        // If it was LIVE and is now no longer running, complete it
+        // If it was LIVE and is now no longer running on BigBlueButton, complete it on LMS
         if (ev.status === "LIVE" && !running) {
+          const { completeClassAndProcessEcosystem } = await import("@/lib/token-ecosystem");
+          await completeClassAndProcessEcosystem(ev.id);
           await syncClassMeetingSession(ev.id);
+          await removeLiveClassNotifications({ eventId: ev.id, title: ev.title });
           syncedEvents++;
         } else if (ev.status === "LIVE" && running) {
           // If running, query getBBBMeetingInfo to discover active attendees and record attendance
@@ -984,6 +988,7 @@ export async function autoSyncActiveBBBMeetings(): Promise<{
         if (tr.status === "CONFIRMED" && tr.actualStartTime && !running) {
           // Meeting ended
           await syncTrialSession(tr.id);
+          await removeLiveClassNotifications({ trialId: tr.id });
           syncedTrials++;
         } else if (tr.status === "CONFIRMED" && running) {
           // If running, query getBBBMeetingInfo to discover active attendees in trial
@@ -1043,4 +1048,86 @@ export async function autoSyncActiveBBBMeetings(): Promise<{
   }
 
   return { syncedEvents, syncedTrials };
+}
+
+/**
+ * Registers a webhook hook in BigBlueButton for meeting lifecycle events (e.g. meeting-ended)
+ */
+export async function registerBBBWebhook(meetingId?: string): Promise<boolean> {
+  try {
+    const appBase = getAppBaseUrl();
+    if (!appBase) return false;
+    const callbackURL = `${appBase}/api/meetings/analytics-callback`;
+    const params: Record<string, any> = {
+      callbackURL,
+    };
+    if (meetingId) {
+      params.meetingID = meetingId;
+    }
+    const url = buildBBBUrl("hooks/create", params);
+    const res = await fetch(url, { method: "GET" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Actively checks all currently marked LIVE sessions against BigBlueButton.
+ * If a session is marked LIVE in LMS, but BBB reports the meeting is no longer running,
+ * automatically complete the session on the LMS too (deduct tokens, credit earnings, save attendance, remove live notifications).
+ */
+export async function reconcileLiveBBBMeetings(): Promise<{ endedEvents: number; endedTrials: number }> {
+  let endedEvents = 0;
+  let endedTrials = 0;
+
+  try {
+    const liveEvents = await prisma.event.findMany({
+      where: { status: "LIVE" },
+      select: { id: true, meetingSpaceId: true, title: true, startedAt: true },
+    });
+
+    for (const ev of liveEvents) {
+      const bbbId = ev.meetingSpaceId || getBBBMeetingId({ eventId: ev.id });
+      const running = await isBBBMeetingRunning(bbbId).catch(() => false);
+
+      if (!running) {
+        const { completeClassAndProcessEcosystem } = await import("@/lib/token-ecosystem");
+        await completeClassAndProcessEcosystem(ev.id);
+        await syncClassMeetingSession(ev.id);
+        await removeLiveClassNotifications({ eventId: ev.id, title: ev.title });
+        endedEvents++;
+      }
+    }
+
+    const liveTrials = await prisma.trialRequest.findMany({
+      where: {
+        OR: [
+          { status: "CONFIRMED" as any, actualStartTime: { not: null }, actualEndTime: null },
+          { status: "LIVE" as any },
+        ],
+      },
+      select: { id: true, meetingSpaceId: true, course: { select: { title: true } } },
+    });
+
+    for (const tr of liveTrials) {
+      const bbbId = tr.meetingSpaceId || getBBBMeetingId({ trialId: tr.id });
+      const running = await isBBBMeetingRunning(bbbId).catch(() => false);
+
+      if (!running) {
+        await syncTrialSession(tr.id);
+        await removeLiveClassNotifications({ trialId: tr.id, title: tr.course?.title });
+        endedTrials++;
+      }
+    }
+
+    if (endedEvents > 0 || endedTrials > 0) {
+      broadcastLMSEvent("EVENTS_CHANGED");
+      broadcastLMSEvent("TRIALS_CHANGED");
+    }
+  } catch (err) {
+    console.warn("[reconcileLiveBBBMeetings] Notice:", err);
+  }
+
+  return { endedEvents, endedTrials };
 }

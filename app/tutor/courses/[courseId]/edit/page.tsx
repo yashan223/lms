@@ -2161,16 +2161,7 @@ export function TutorCourseWorkspaceContent({
                                   )}
                                   <span>Launch Now</span>
                                 </Button>
-                                {eventItem.meetingLink && (
-                                  <a
-                                    href={eventItem.meetingLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50"
-                                  >
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                  </a>
-                                )}
+
                               </>
                             )}
 

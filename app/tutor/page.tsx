@@ -3103,28 +3103,28 @@ function TutorDashboardContent() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 pt-1">
                       {[
-                        { key: "ALL", label: "All Bookings", count: trials.length },
-                        { key: "PENDING", label: "⏳ Needs Date", count: trials.filter((t) => t.status === "PENDING").length },
-                        { key: "CONFIRMED", label: "✓ Scheduled", count: trials.filter((t) => t.status === "CONFIRMED" && !t.actualEndTime).length },
-                        { key: "COMPLETED", label: "✓ Completed", count: trials.filter((t) => t.status === "COMPLETED" || Boolean(t.actualEndTime)).length },
-                        { key: "CANCELLED", label: "Declined / Cancelled", count: trials.filter((t) => t.status === "CANCELLED" || t.status === "REJECTED").length },
+                        { key: "ALL", label: "All", count: trials.length },
+                        { key: "PENDING", label: "Needs Date", count: trials.filter((t) => t.status === "PENDING").length },
+                        { key: "CONFIRMED", label: "Scheduled", count: trials.filter((t) => t.status === "CONFIRMED" && !t.actualEndTime).length },
+                        { key: "COMPLETED", label: "Completed", count: trials.filter((t) => t.status === "COMPLETED" || Boolean(t.actualEndTime)).length },
+                        { key: "CANCELLED", label: "Declined", count: trials.filter((t) => t.status === "CANCELLED" || t.status === "REJECTED").length },
                       ].map((tab) => (
                         <button
                           key={tab.key}
                           type="button"
                           onClick={() => setTrialFilter(tab.key as any)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
                             trialFilter === tab.key
-                              ? "bg-[#0c2461] text-white shadow-xs"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              ? "bg-[#0c2461] text-white shadow-2xs"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
                           }`}
                         >
                           <span>{tab.label}</span>
                           <span
-                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold font-mono ${
-                              trialFilter === tab.key ? "bg-white/25 text-white" : "bg-slate-200/80 text-slate-700"
+                            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold font-mono ${
+                              trialFilter === tab.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
                             }`}
                           >
                             {tab.count}

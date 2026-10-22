@@ -212,46 +212,143 @@ export function calculateTutorMonthlyBonus(
 
 /**
  * Classifies course/class academic tier into IGCSE (750 LKR) or IAL/IAS (850 LKR).
+ * Cross-checks:
+ * 1. Tutor profile capabilities (isALTutor, isOLTutor, academicLevel)
+ * 2. Explicit academic level from class event (dropdown selected when creating/scheduling)
+ * 3. Course level dropdown (ADVANCED = London A/L, INTERMEDIATE = London O/L)
+ * 4. Regex keywords on subtitle, title, code, description (with word boundaries to avoid false substring matches like "biology")
+ * 5. Student academic level
  */
-export function determineClassTier(course?: {
-  title?: string | null;
-  slug?: string | null;
-  subjectCode?: string | null;
-  level?: string | null;
-  category?: string | null;
-} | null, studentLevel?: string | null): {
+export function determineClassTier(
+  course?: {
+    title?: string | null;
+    slug?: string | null;
+    subjectCode?: string | null;
+    level?: string | null;
+    category?: string | null;
+    subtitle?: string | null;
+  } | null,
+  studentLevel?: string | null,
+  tutor?: {
+    academicLevel?: string | null;
+    bio?: string | null;
+    igcsePayRate?: number | null;
+    ialIasPayRate?: number | null;
+  } | null,
+  event?: {
+    title?: string | null;
+    description?: string | null;
+    academicLevel?: string | null;
+  } | null
+): {
   tier: "IGCSE" | "IAL_IAS";
   label: string;
 } {
-  const text = `${course?.title || ""} ${course?.slug || ""} ${course?.subjectCode || ""} ${course?.level || ""} ${studentLevel || ""}`.toLowerCase();
+  // 1. Cross-check Tutor Profile capabilities
+  let isALTutor = false;
+  let isOLTutor = false;
 
-  // If text explicitly points to O/L, IGCSE, GCSE, or Beginner/Intermediate -> IGCSE
-  if (
-    text.includes("igcse") ||
-    text.includes("gcse") ||
-    text.includes("o/l") ||
-    text.includes("ol") ||
-    text.includes("o-level") ||
-    course?.level === "BEGINNER" ||
-    studentLevel === "OL"
-  ) {
+  if (tutor?.bio && typeof tutor.bio === "string" && tutor.bio.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(tutor.bio);
+      if (parsed.isALTutor !== undefined) isALTutor = Boolean(parsed.isALTutor);
+      if (parsed.isOLTutor !== undefined) isOLTutor = Boolean(parsed.isOLTutor);
+    } catch {}
+  }
+
+  const tutorAca = (tutor?.academicLevel || "").toUpperCase();
+  if (tutorAca === "AL" || tutorAca.includes("A/L") || tutorAca.includes("IAL")) {
+    isALTutor = true;
+  }
+  if (tutorAca === "OL" || tutorAca.includes("O/L") || tutorAca.includes("IGCSE")) {
+    isOLTutor = true;
+  }
+  if (tutorAca === "BOTH") {
+    isALTutor = true;
+    isOLTutor = true;
+  }
+
+  // If tutor exclusively teaches only one level, prioritize that tutor specialization
+  if (isALTutor && !isOLTutor) {
+    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  }
+  if (!isALTutor && isOLTutor) {
     return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
   }
 
-  // Default to A-Level: IAL & IAS
+  // 2. Cross-check Explicit Academic Level from Event (set when creating / scheduling class)
+  const eventLevel = (event?.academicLevel || "").toUpperCase();
+  if (eventLevel === "AL" || eventLevel === "IAL" || eventLevel === "A_LEVEL" || eventLevel === "ADVANCED") {
+    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  }
+  if (eventLevel === "OL" || eventLevel === "IGCSE" || eventLevel === "O_LEVEL" || eventLevel === "INTERMEDIATE") {
+    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+  }
+
+  // 3. Cross-check Course Level Dropdown selected when creating the Course
+  // ADVANCED = "London A/L (Advanced)", INTERMEDIATE = "London O/L (Intermediate)"
+  const courseLevel = (course?.level || "").toUpperCase();
+  if (courseLevel === "ADVANCED") {
+    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  }
+  if (courseLevel === "INTERMEDIATE") {
+    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+  }
+
+  // 4. Regex keyword matching with word boundaries on course subtitle, title, code, event title & description
+  // Using \b word boundaries so words like "biology" or "ecology" NEVER false-match "ol"!
+  const alRegex = /\b(al|a\/l|a-level|advanced\s*level|ial|ias)\b/i;
+  const olRegex = /\b(ol|o\/l|o-level|ordinary\s*level|igcse|gcse)\b/i;
+
+  const combinedText = [
+    course?.subtitle || "",
+    course?.title || "",
+    course?.subjectCode || "",
+    event?.title || "",
+    event?.description || "",
+  ].join(" ");
+
+  if (alRegex.test(combinedText) && !olRegex.test(combinedText)) {
+    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  }
+  if (olRegex.test(combinedText) && !alRegex.test(combinedText)) {
+    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+  }
+
+  // 5. Cross-check Student Academic Level
+  const stdLvl = (studentLevel || "").toUpperCase();
+  if (stdLvl === "AL" || stdLvl.includes("A/L") || stdLvl.includes("IAL")) {
+    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  }
+  if (stdLvl === "OL" || stdLvl.includes("O/L") || stdLvl.includes("IGCSE")) {
+    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+  }
+
+  // 6. Default to A-Level: IAL & IAS (Standard Platform Rate)
   return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
 }
 
 /**
  * Dynamic Per-Tutor Pay Rate resolver:
- * Checks specific tutor profile rates (`igcsePayRate` & `ialIasPayRate`).
+ * Checks specific tutor profile rates (`igcsePayRate` & `ialIasPayRate` or bio hourlyRateAL / hourlyRateOL).
  * Falls back to global pay grade settings (750 LKR for IGCSE, 850 LKR for IAL/IAS).
  */
 export function getTutorPayRate(
-  tutor: { igcsePayRate?: number | null; ialIasPayRate?: number | null } | null | undefined,
+  tutor: {
+    igcsePayRate?: number | null;
+    ialIasPayRate?: number | null;
+    bio?: string | null;
+  } | null | undefined,
   tier: "IGCSE" | "IAL_IAS",
   defaultRates?: PayGradeAndBonusSettings
 ): { hourlyRate: number; isCustomRate: boolean } {
+  let bioRates: any = null;
+  if (tutor?.bio && typeof tutor.bio === "string" && tutor.bio.trim().startsWith("{")) {
+    try {
+      bioRates = JSON.parse(tutor.bio);
+    } catch {}
+  }
+
   if (tier === "IGCSE") {
     if (
       tutor?.igcsePayRate !== null &&
@@ -260,6 +357,9 @@ export function getTutorPayRate(
       Number(tutor.igcsePayRate) > 0
     ) {
       return { hourlyRate: Number(tutor.igcsePayRate), isCustomRate: true };
+    }
+    if (bioRates?.hourlyRateOL && !isNaN(Number(bioRates.hourlyRateOL)) && Number(bioRates.hourlyRateOL) > 0) {
+      return { hourlyRate: Number(bioRates.hourlyRateOL), isCustomRate: true };
     }
     return {
       hourlyRate: defaultRates?.igcseRateLkr ?? DEFAULT_PAY_GRADES.IGCSE,
@@ -273,6 +373,12 @@ export function getTutorPayRate(
       Number(tutor.ialIasPayRate) > 0
     ) {
       return { hourlyRate: Number(tutor.ialIasPayRate), isCustomRate: true };
+    }
+    if (bioRates?.hourlyRateAL && !isNaN(Number(bioRates.hourlyRateAL)) && Number(bioRates.hourlyRateAL) > 0) {
+      return { hourlyRate: Number(bioRates.hourlyRateAL), isCustomRate: true };
+    }
+    if (bioRates?.hourlyRate && !isNaN(Number(bioRates.hourlyRate)) && Number(bioRates.hourlyRate) > 0) {
+      return { hourlyRate: Number(bioRates.hourlyRate), isCustomRate: true };
     }
     return {
       hourlyRate: defaultRates?.ialRateLkr ?? DEFAULT_PAY_GRADES.IAL_IAS,
@@ -333,6 +439,7 @@ export async function evaluateAndProcessClassPayout(
   eventId: string,
   options?: {
     force?: boolean;
+    adminBypass?: boolean;
     isNoShow?: boolean;
     evaluationTime?: Date;
   }
@@ -367,7 +474,7 @@ export async function evaluateAndProcessClassPayout(
     };
   }
 
-  // If already paid out, return locked record
+  // If already paid out, return locked record (Strict Idempotency - exactly 1 payout ever)
   if (event.payoutTriggeredAt || event.earningRecord) {
     return {
       success: true,
@@ -408,24 +515,37 @@ export async function evaluateAndProcessClassPayout(
   }
 
   const now = options?.evaluationTime || new Date();
-  const elapsedMs = now.getTime() - new Date(joinTimestamp).getTime();
-  const elapsedMinutes = elapsedMs / (60 * 1000);
+  const sessionEnd = event.actualEndTime || event.endedAt;
+  const isEnded = Boolean(sessionEnd || event.status === "COMPLETED" || event.status === "CANCELLED");
+  const effectiveEnd = sessionEnd ? new Date(sessionEnd) : now;
+  const activeDurationMs = Math.max(0, effectiveEnd.getTime() - new Date(joinTimestamp).getTime());
+  const activeMinutes = activeDurationMs / (60 * 1000);
 
-  // If not forced (e.g. by end_class) and less than 15 mins
-  if (!options?.force && elapsedMinutes < 15) {
-    const minutesRemaining = Math.max(1, Math.ceil(15 - elapsedMinutes));
+  // If session has already concluded, strictly enforce the mandatory 15-minute policy duration
+  if (isEnded && activeMinutes < 15 && !options?.adminBypass) {
+    return {
+      success: false,
+      eligible: false,
+      payoutTriggered: false,
+      message: `Session concluded after ${Math.floor(activeMinutes)} min(s). The mandatory 15-minute policy duration was not completed. Payout is not eligible.`,
+    };
+  }
+
+  // If session is still live and hasn't reached the 15-minute mark yet
+  if (activeMinutes < 15 && !options?.adminBypass) {
+    const minutesRemaining = Math.max(1, Math.ceil(15 - activeMinutes));
     return {
       success: true,
       eligible: false,
       payoutTriggered: false,
       minutesRemaining,
       message: `15-minute timer running. Tutor in session for ${Math.floor(
-        elapsedMinutes
+        activeMinutes
       )} min(s). ${minutesRemaining} min(s) remaining for automatic payout trigger.`,
     };
   }
 
-  // Tutor has reached 15 minutes! Calculate payout with tutor-specific rate
+  // Tutor has reached or completed 15 minutes! Calculate payout with tutor-specific rate
   const tutorId = event.course?.tutorId || event.requestedBy;
   if (!tutorId) {
     return {
@@ -440,9 +560,13 @@ export async function evaluateAndProcessClassPayout(
     event.course?.tutor ||
     (await prisma.user.findUnique({ where: { id: tutorId } }));
   const payGrades = await getPayGradeSettings();
+
+  // Cross-check all parameters: Course level dropdown, Tutor profile capabilities, Event level, Student level
   const { tier, label: tierLabel } = determineClassTier(
     event.course,
-    (event.user as any)?.academicLevel
+    (event.user as any)?.academicLevel,
+    tutor,
+    event
   );
   const { hourlyRate, isCustomRate } = getTutorPayRate(tutor, tier, payGrades);
 
@@ -495,6 +619,7 @@ export async function evaluateAndProcessClassPayout(
         payoutTriggeredAt: now,
         lockedPayoutAmount: totalPayoutLkr,
         tutorJoinTimestamp: event.tutorJoinTimestamp || joinTimestamp,
+        academicLevel: tier === "IAL_IAS" ? "AL" : "OL",
       },
     });
 
@@ -935,9 +1060,8 @@ export async function completeClassAndProcessEcosystem(
   // Step 3: Tutor Earnings & 15-Minute Payout Trigger Evaluation
   if (tutorId) {
     const payoutResult = await evaluateAndProcessClassPayout(event.id, {
-      force: true,
       isNoShow: opts?.isNoShow,
-      evaluationTime: now,
+      evaluationTime: opts?.manualEndTime || now,
     });
     earningRecord = payoutResult.earningRecord || null;
   }
@@ -1171,7 +1295,7 @@ export async function getAdminTutorPayoutOverview(): Promise<{
 
     if (t.createdCourses && t.createdCourses.length > 0) {
       for (const c of t.createdCourses) {
-        const { tier } = determineClassTier(c);
+        const { tier } = determineClassTier(c, null, t);
         if (tier === "IAL_IAS") hasIal = true;
         else hasIgcse = true;
       }

@@ -733,6 +733,7 @@ export function TutorCourseWorkspaceContent({
         dueDate: classDate,
         meetingLink: classMeetLink.trim() || undefined,
         type: "LIVE_SEMINAR",
+        academicLevel: course?.level === "ADVANCED" ? "AL" : course?.level === "INTERMEDIATE" ? "OL" : "AL",
       });
       setClassTitle("");
       setClassDate("");

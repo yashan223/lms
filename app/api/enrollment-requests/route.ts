@@ -451,6 +451,8 @@ export async function PATCH(request: NextRequest) {
               `Enrollment Request ID: ${enrollmentRequest.id}`,
             ].join("\n");
 
+            const eventAcademicLevel = student.academicLevel || (course.level === "ADVANCED" ? "AL" : course.level === "INTERMEDIATE" ? "OL" : "AL");
+
             const ev = await tx.event.create({
               data: {
                 classCode: sessionClassCode,
@@ -474,6 +476,7 @@ export async function PATCH(request: NextRequest) {
                 tokenDeducted: true,
                 tokenDeductedAt: new Date(),
                 enrollmentRequestId: enrollmentRequest.id,
+                academicLevel: eventAcademicLevel,
               },
             });
 

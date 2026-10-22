@@ -808,6 +808,7 @@ export function AdminCourseWorkspaceContent({
         description: classDescription.trim() || null,
         dueDate: classDate,
         meetingLink: classMeetLink.trim() || undefined,
+        academicLevel: course?.level === "ADVANCED" ? "AL" : course?.level === "INTERMEDIATE" ? "OL" : "AL",
       });
       setClassTitle("");
       setClassDate("");

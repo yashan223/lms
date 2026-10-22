@@ -356,6 +356,7 @@ function TutorDashboardContent() {
   const [newClassMeetingLink, setNewClassMeetingLink] = useState("");
   const [newClassDesc, setNewClassDesc] = useState("");
   const [newClassType, setNewClassType] = useState("LIVE_SEMINAR");
+  const [newClassAcademicLevel, setNewClassAcademicLevel] = useState<"AUTO" | "AL" | "OL">("AUTO");
   const [schedulingClass, setSchedulingClass] = useState(false);
   const [selectedStudentAvailabilities, setSelectedStudentAvailabilities] = useState<any[]>([]);
 
@@ -908,6 +909,7 @@ function TutorDashboardContent() {
           studentId: scheduleMode === "STUDENT" ? newClassStudentId : null,
           tutorId: tutor?.id,
           type: newClassType,
+          academicLevel: newClassAcademicLevel !== "AUTO" ? newClassAcademicLevel : undefined,
         }),
       });
 
@@ -917,6 +919,7 @@ function TutorDashboardContent() {
         setNewClassDesc("");
         setNewClassMeetingLink("");
         setNewClassDate("");
+        setNewClassAcademicLevel("AUTO");
         fetchTutorData();
       }
     } catch (error) {
@@ -4532,6 +4535,21 @@ function TutorDashboardContent() {
                   )}
                 </div>
               )}
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Academic Level / Curriculum Tier
+                </label>
+                <select
+                  value={newClassAcademicLevel}
+                  onChange={(e) => setNewClassAcademicLevel(e.target.value as any)}
+                  className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
+                >
+                  <option value="AUTO">Auto-detect from Course / Student Level</option>
+                  <option value="AL">London A/L (IAL &amp; IAS - Rs. 850/hr)</option>
+                  <option value="OL">London O/L (IGCSE - Rs. 750/hr)</option>
+                </select>
+              </div>
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">

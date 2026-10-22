@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
           requestedBy: tutor.id,
           payoutTriggeredAt: null,
           tutorJoinTimestamp: { not: null, lte: fifteenMinsAgo },
-          status: { notIn: [EventStatus.CANCELLED, EventStatus.REJECTED] },
+          status: { in: [EventStatus.LIVE, EventStatus.SCHEDULED] },
         },
         select: { id: true },
       });
@@ -549,6 +549,7 @@ export async function POST(request: NextRequest) {
         studentId,
         type,
         durationMinutes,
+        academicLevel,
       } = body;
 
       if (!title || !scheduledDate) {
@@ -556,6 +557,29 @@ export async function POST(request: NextRequest) {
           { error: "Class title and scheduled date are required." },
           { status: 400 }
         );
+      }
+
+      // Cross-check & resolve Academic Level (AL vs OL)
+      let resolvedAcademicLevel: string | null = academicLevel || null;
+      if (!resolvedAcademicLevel) {
+        if (courseId) {
+          const linkedCourse = await prisma.course.findUnique({
+            where: { id: courseId },
+            select: { level: true, subtitle: true, title: true },
+          });
+          if (linkedCourse?.level === "ADVANCED") resolvedAcademicLevel = "AL";
+          else if (linkedCourse?.level === "INTERMEDIATE") resolvedAcademicLevel = "OL";
+        }
+        if (!resolvedAcademicLevel && studentId) {
+          const linkedStudent = await prisma.user.findUnique({
+            where: { id: studentId },
+            select: { academicLevel: true },
+          });
+          if (linkedStudent?.academicLevel) resolvedAcademicLevel = linkedStudent.academicLevel;
+        }
+        if (!resolvedAcademicLevel) {
+          resolvedAcademicLevel = tutor.academicLevel || "AL";
+        }
       }
 
       const operatingTimezone = body.timezone || tutor.timezone || "Asia/Colombo";
@@ -618,6 +642,7 @@ export async function POST(request: NextRequest) {
           type: (type as EventType) || EventType.LIVE_SEMINAR,
           courseId: courseId || null,
           userId: studentId || null,
+          academicLevel: resolvedAcademicLevel,
         },
       });
 

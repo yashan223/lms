@@ -292,6 +292,7 @@ model Event {
   tutorJoinTimestamp DateTime?   @db.Timestamptz
   payoutTriggeredAt  DateTime?   @db.Timestamptz
   lockedPayoutAmount Float?
+  academicLevel      String?
   earningRecord      TutorEarningRecord?
   enrollmentRequestId String?
   enrollmentRequest  ClassEnrollmentRequest? @relation(fields: [enrollmentRequestId], references: [id], onDelete: SetNull)

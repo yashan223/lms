@@ -1082,11 +1082,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "schedule_class" || action === "create_class") {
-      const { title, description, dueDate, courseId, meetingLink } = body;
+      const { title, description, dueDate, courseId, meetingLink, academicLevel } = body;
       const targetDate = dueDate ? new Date(dueDate) : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       let tutorEmail: string | undefined = undefined;
       let tutorName: string | undefined = undefined;
+      let resolvedAcademicLevel: string | null = academicLevel || null;
       if (courseId) {
         const course = await prisma.course.findUnique({
           where: { id: courseId },
@@ -1095,6 +1096,10 @@ export async function POST(request: NextRequest) {
         if (course?.tutor) {
           tutorEmail = course.tutor.email;
           tutorName = course.tutor.name || undefined;
+        }
+        if (!resolvedAcademicLevel && course) {
+          if (course.level === "ADVANCED") resolvedAcademicLevel = "AL";
+          else if (course.level === "INTERMEDIATE") resolvedAcademicLevel = "OL";
         }
       }
 
@@ -1115,6 +1120,7 @@ export async function POST(request: NextRequest) {
           dueDate: targetDate,
           courseId: courseId || null,
           approvalStatus: "APPROVED",
+          academicLevel: resolvedAcademicLevel || "AL",
         },
       });
 

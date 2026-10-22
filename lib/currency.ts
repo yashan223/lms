@@ -30,22 +30,30 @@ export function formatStudentPrice(
   lkrPrice?: number,
   academicLevel?: "OL" | "AL" | string | null,
   olPrice?: number | null,
-  olLkrPrice?: number | null
+  olLkrPrice?: number | null,
+  discountPercent?: number | null,
+  discountEnabled?: boolean | null
 ): string {
   const isOL =
     academicLevel === "OL" ||
     academicLevel?.toUpperCase().includes("O/L") ||
     academicLevel?.toUpperCase().includes("IGCSE");
 
-  const effectiveUsd =
+  const baseUsd =
     isOL && olPrice !== null && olPrice !== undefined && olPrice > 0
       ? olPrice
       : usdPrice;
 
-  const effectiveLkr =
+  const baseLkr =
     isOL && olLkrPrice !== null && olLkrPrice !== undefined && olLkrPrice > 0
       ? olLkrPrice
       : (lkrPrice ?? 0);
+
+  const hasDiscount = Boolean(discountEnabled && discountPercent && Number(discountPercent) > 0);
+  const factor = hasDiscount ? Math.max(0, (100 - Number(discountPercent)) / 100) : 1;
+
+  const effectiveUsd = hasDiscount ? Math.round(baseUsd * factor * 100) / 100 : baseUsd;
+  const effectiveLkr = hasDiscount ? Math.round(baseLkr * factor) : baseLkr;
 
   if (isSriLankanStudent(country)) {
     return `LKR ${effectiveLkr.toLocaleString("en-LK")}`;
@@ -55,6 +63,64 @@ export function formatStudentPrice(
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+export function getBundlePriceDetails(
+  bundle: {
+    price: number;
+    lkrPrice?: number | null;
+    olPrice?: number | null;
+    olLkrPrice?: number | null;
+    discountPercent?: number | null;
+    discountEnabled?: boolean | null;
+  },
+  country?: string | null,
+  academicLevel?: "OL" | "AL" | string | null
+): {
+  isSriLanka: boolean;
+  hasDiscount: boolean;
+  discountPercent: number;
+  originalPriceText: string;
+  discountedPriceText: string;
+  displayPriceText: string;
+  originalAmount: number;
+  discountedAmount: number;
+} {
+  const isSriLanka = isSriLankanStudent(country);
+  const isOL =
+    academicLevel === "OL" ||
+    academicLevel?.toUpperCase().includes("O/L") ||
+    academicLevel?.toUpperCase().includes("IGCSE");
+
+  const baseUsd = isOL && bundle.olPrice && bundle.olPrice > 0 ? bundle.olPrice : bundle.price;
+  const baseLkr = isOL && bundle.olLkrPrice && bundle.olLkrPrice > 0 ? bundle.olLkrPrice : (bundle.lkrPrice || Math.round(baseUsd * 300));
+
+  const hasDiscount = Boolean(bundle.discountEnabled && bundle.discountPercent && Number(bundle.discountPercent) > 0);
+  const discountPercent = hasDiscount ? Math.min(100, Math.max(0, Number(bundle.discountPercent))) : 0;
+  const factor = hasDiscount ? (100 - discountPercent) / 100 : 1;
+
+  const discountedUsd = hasDiscount ? Math.round(baseUsd * factor * 100) / 100 : baseUsd;
+  const discountedLkr = hasDiscount ? Math.round(baseLkr * factor) : baseLkr;
+
+  const originalAmount = isSriLanka ? baseLkr : baseUsd;
+  const discountedAmount = isSriLanka ? discountedLkr : discountedUsd;
+
+  const formatUsd = (val: number) => `$${val.toFixed(2)} USD`;
+  const formatLkr = (val: number) => `Rs. ${val.toLocaleString("en-LK")}`;
+
+  const originalPriceText = isSriLanka ? formatLkr(baseLkr) : formatUsd(baseUsd);
+  const discountedPriceText = isSriLanka ? formatLkr(discountedLkr) : formatUsd(discountedUsd);
+
+  return {
+    isSriLanka,
+    hasDiscount,
+    discountPercent,
+    originalPriceText,
+    discountedPriceText,
+    displayPriceText: hasDiscount ? discountedPriceText : originalPriceText,
+    originalAmount,
+    discountedAmount,
+  };
 }
 
 export function isCourseOL(

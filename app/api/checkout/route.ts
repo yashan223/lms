@@ -65,27 +65,35 @@ export async function POST(request: NextRequest) {
         user.headline?.includes("O/L") ||
         user.headline?.includes("IGCSE");
 
-      const effectiveUsd =
+      const baseUsd =
         isOL && bundle.olPrice && bundle.olPrice > 0
           ? bundle.olPrice
           : bundle.price;
 
-      const effectiveLkr =
+      const baseLkr =
         isOL && bundle.olLkrPrice && bundle.olLkrPrice > 0
           ? bundle.olLkrPrice
-          : bundle.lkrPrice || Math.round(effectiveUsd * 300);
+          : bundle.lkrPrice || Math.round(baseUsd * 300);
 
-      itemTitle = `${bundle.name}${isOL ? " (O/L Tier)" : ""}`;
+      const hasDiscount = Boolean(bundle.discountEnabled && bundle.discountPercent && Number(bundle.discountPercent) > 0);
+      const discountPercent = hasDiscount ? Math.min(100, Math.max(0, Number(bundle.discountPercent))) : 0;
+      const discountFactor = hasDiscount ? (100 - discountPercent) / 100 : 1;
+
+      const effectiveUsd = hasDiscount ? Math.round(baseUsd * discountFactor * 100) / 100 : baseUsd;
+      const effectiveLkr = hasDiscount ? Math.round(baseLkr * discountFactor) : baseLkr;
+
+      const discountTag = hasDiscount ? ` (${discountPercent}% OFF)` : "";
+      itemTitle = `${bundle.name}${isOL ? " (O/L Tier)" : ""}${discountTag}`;
       tokens = bundle.tokens;
 
       if (resolvedCurrency === "USD") {
         amountCents = Math.round(effectiveUsd * 100);
         gatewayAmountCents = Math.round(effectiveLkr * 100);
-        description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""}) - $${effectiveUsd.toFixed(2)} USD`;
+        description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""}${discountTag}) - $${effectiveUsd.toFixed(2)} USD`;
       } else {
         amountCents = Math.round(effectiveLkr * 100);
         gatewayAmountCents = amountCents;
-        description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""}) - Rs. ${effectiveLkr.toLocaleString("en-LK")} LKR`;
+        description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""}${discountTag}) - Rs. ${effectiveLkr.toLocaleString("en-LK")} LKR`;
       }
     } else if (itemType === "COURSE") {
       const course = await prisma.course.findFirst({

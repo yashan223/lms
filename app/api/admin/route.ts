@@ -2035,6 +2035,10 @@ export async function POST(request: NextRequest) {
         const olLkrPrice = b.olLkrPrice !== undefined && b.olLkrPrice !== null && b.olLkrPrice !== "" && !isNaN(parseFloat(b.olLkrPrice))
           ? parseFloat(b.olLkrPrice)
           : 0;
+        const discountPercent = b.discountPercent !== undefined && b.discountPercent !== null && b.discountPercent !== "" && !isNaN(parseFloat(b.discountPercent))
+          ? Math.min(100, Math.max(0, parseFloat(b.discountPercent)))
+          : 0;
+        const discountEnabled = Boolean(b.discountEnabled);
         const popular = Boolean(b.popular);
         const badge = String(b.badge || (popular ? "Most Popular" : "Standard")).trim();
         const description = String(b.description || "").trim();
@@ -2053,6 +2057,8 @@ export async function POST(request: NextRequest) {
           lkrPrice,
           olPrice,
           olLkrPrice,
+          discountPercent,
+          discountEnabled,
           popular,
           badge,
           description,

@@ -1460,6 +1460,8 @@ export default function AdminDashboardPage() {
       lkrPrice: 29700,
       olPrice: 79,
       olLkrPrice: 23700,
+      discountPercent: 0,
+      discountEnabled: false,
       popular: false,
       badge: "Extended",
       description: `${newHours} hours of comprehensive tutoring tokens for extensive revision and dedicated exam prep.`,
@@ -6068,8 +6070,13 @@ export default function AdminDashboardPage() {
                             )}
                           </div>
 
-                          <h3 className="text-xl font-black text-slate-900 mb-1.5">
-                            {plan.name}
+                          <h3 className="text-xl font-black text-slate-900 mb-1.5 flex items-center justify-between gap-2 flex-wrap">
+                            <span>{plan.name}</span>
+                            {plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? (
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+                                {plan.discountPercent}% OFF
+                              </span>
+                            ) : null}
                           </h3>
 
                           <p className="text-xs text-slate-500 leading-relaxed mb-5 min-h-[36px]">
@@ -6077,44 +6084,86 @@ export default function AdminDashboardPage() {
                           </p>
 
                           <div className="space-y-2 mb-5 pb-5 border-b border-slate-100">
-                            <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/60">
+                            <div className={`p-2.5 rounded-xl border ${plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? "bg-amber-50/50 border-amber-200/80" : "bg-blue-50/60 border-blue-200/60"}`}>
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+                                <span className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? "text-amber-800" : "text-blue-800"}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full inline-block ${plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? "bg-amber-500" : "bg-blue-600"}`} />
                                   London A/L Rate
                                 </span>
                                 <span className="text-[10px] font-mono font-bold text-slate-500">
-                                  ${(price / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
+                                  ${((price * (plan.discountEnabled && plan.discountPercent ? (100 - plan.discountPercent) / 100 : 1)) / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
                                 </span>
                               </div>
-                              <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                                  {formatStudentPrice(price, null, plan.lkrPrice, "AL")}
-                                </span>
-                                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
-                                  {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "AL")}
-                                </span>
-                              </div>
+                              {plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? (
+                                <div className="space-y-1">
+                                  <div className="flex items-baseline gap-2 flex-wrap">
+                                    <span className="text-xl sm:text-2xl font-black text-amber-600 tracking-tight">
+                                      {formatStudentPrice(price, null, plan.lkrPrice, "AL", undefined, undefined, plan.discountPercent, plan.discountEnabled)}
+                                    </span>
+                                    <span className="text-xs font-bold text-slate-400 line-through">
+                                      {formatStudentPrice(price, null, plan.lkrPrice, "AL")}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                                    <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
+                                      {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "AL", undefined, undefined, plan.discountPercent, plan.discountEnabled)}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 line-through">
+                                      {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "AL")}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                  <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                    {formatStudentPrice(price, null, plan.lkrPrice, "AL")}
+                                  </span>
+                                  <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                    {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "AL")}
+                                  </span>
+                                </div>
+                              )}
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200/60">
+                            <div className={`p-2.5 rounded-xl border ${plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? "bg-amber-50/50 border-amber-200/80" : "bg-blue-50/60 border-blue-200/60"}`}>
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+                                <span className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? "text-amber-800" : "text-blue-800"}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full inline-block ${plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? "bg-amber-500" : "bg-blue-600"}`} />
                                   London O/L Rate
                                 </span>
                                 <span className="text-[10px] font-mono font-bold text-slate-500">
-                                  ${((plan.olPrice && plan.olPrice > 0 ? plan.olPrice : price) / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
+                                  ${(((plan.olPrice && plan.olPrice > 0 ? plan.olPrice : price) * (plan.discountEnabled && plan.discountPercent ? (100 - plan.discountPercent) / 100 : 1)) / (plan.hours || plan.tokens || 1)).toFixed(2)}/hr
                                 </span>
                               </div>
-                              <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                                  {formatStudentPrice(price, null, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
-                                </span>
-                                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
-                                  {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
-                                </span>
-                              </div>
+                              {plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? (
+                                <div className="space-y-1">
+                                  <div className="flex items-baseline gap-2 flex-wrap">
+                                    <span className="text-xl sm:text-2xl font-black text-amber-600 tracking-tight">
+                                      {formatStudentPrice(price, null, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice, plan.discountPercent, plan.discountEnabled)}
+                                    </span>
+                                    <span className="text-xs font-bold text-slate-400 line-through">
+                                      {formatStudentPrice(price, null, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                                    <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
+                                      {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice, plan.discountPercent, plan.discountEnabled)}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 line-through">
+                                      {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                  <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                    {formatStudentPrice(price, null, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
+                                  </span>
+                                  <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                    {formatStudentPrice(price, "Sri Lanka", plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -9451,6 +9500,89 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
 
+                        {/* Promotional Discount Section */}
+                        <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-3 sm:col-span-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                              <h5 className="text-xs font-black text-amber-950 uppercase tracking-wider">
+                                Promotional Discount
+                              </h5>
+                            </div>
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                              <span className="text-xs font-bold text-amber-900">
+                                {curBundle.discountEnabled ? "Discount Active" : "Discount Inactive"}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...editingBundles];
+                                  const nextState = !curBundle.discountEnabled;
+                                  updated[selectedBundleIndex] = {
+                                    ...curBundle,
+                                    discountEnabled: nextState,
+                                    discountPercent: nextState && (!curBundle.discountPercent || curBundle.discountPercent <= 0) ? 10 : curBundle.discountPercent,
+                                  };
+                                  setEditingBundles(updated);
+                                }}
+                                className={`w-10 h-5 rounded-full relative transition-colors cursor-pointer ${curBundle.discountEnabled ? "bg-amber-600" : "bg-slate-300"}`}
+                              >
+                                <span
+                                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-xs transition-transform ${curBundle.discountEnabled ? "translate-x-5" : "translate-x-0.5"}`}
+                                />
+                              </button>
+                            </label>
+                          </div>
+
+                          {curBundle.discountEnabled ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                              <div>
+                                <label className="font-bold text-slate-700 text-xs block mb-1">
+                                  Discount Percentage (%)
+                                </label>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    step="1"
+                                    value={curBundle.discountPercent ?? 10}
+                                    onChange={(e) => {
+                                      const val = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
+                                      const updated = [...editingBundles];
+                                      updated[selectedBundleIndex] = { ...curBundle, discountPercent: val };
+                                      setEditingBundles(updated);
+                                    }}
+                                    className="pr-8 h-9 text-xs rounded-xl font-mono bg-white"
+                                    placeholder="10"
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">%</span>
+                                </div>
+                              </div>
+
+                              <div className="p-2.5 rounded-xl bg-white border border-amber-200/80 flex flex-col justify-center text-xs space-y-1">
+                                <div className="text-[10px] font-black text-amber-900 uppercase tracking-wide">
+                                  Discounted Student Rates ({curBundle.discountPercent || 0}% Off)
+                                </div>
+                                <div className="text-[11px] text-slate-700 space-y-0.5 font-mono">
+                                  <div>
+                                    A/L: <strong>${((curBundle.price || 0) * (1 - (curBundle.discountPercent || 0) / 100)).toFixed(2)} USD</strong> / <strong>Rs. {Math.round((curBundle.lkrPrice || 0) * (1 - (curBundle.discountPercent || 0) / 100)).toLocaleString()} LKR</strong>
+                                  </div>
+                                  {(curBundle.olPrice || curBundle.olLkrPrice) && (
+                                    <div>
+                                      O/L: <strong>${((curBundle.olPrice ? curBundle.olPrice : curBundle.price || 0) * (1 - (curBundle.discountPercent || 0) / 100)).toFixed(2)} USD</strong> / <strong>Rs. {Math.round(((curBundle.olLkrPrice ? curBundle.olLkrPrice : curBundle.lkrPrice) || 0) * (1 - (curBundle.discountPercent || 0) / 100)).toLocaleString()} LKR</strong>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-amber-800/80">
+                              Enable promotional discount to apply a discount percentage across this package. Students will see the discounted price with strikethrough original and will be charged the discounted rate at checkout.
+                            </p>
+                          )}
+                        </div>
+
                         <div className="sm:col-span-2">
                           <label className="font-bold text-slate-700 text-xs block mb-1">Button CTA Text</label>
                           <Input
@@ -9548,15 +9680,22 @@ export default function AdminDashboardPage() {
                               : "border-slate-200 shadow-2xs"
                           }`}
                         >
-                          <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
                             <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                               {curBundle.roleTarget || `${curBundle.tokens} Tokens (${curBundle.hours} Hours Tutoring)`}
                             </span>
-                            {curBundle.badge && (
-                              <Badge variant={curBundle.popular ? "default" : "secondary"} className="text-[9px] font-bold">
-                                {curBundle.badge}
-                              </Badge>
-                            )}
+                            <div className="flex items-center gap-1">
+                              {curBundle.discountEnabled && curBundle.discountPercent && curBundle.discountPercent > 0 ? (
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+                                  {curBundle.discountPercent}% OFF
+                                </span>
+                              ) : null}
+                              {curBundle.badge && (
+                                <Badge variant={curBundle.popular ? "default" : "secondary"} className="text-[9px] font-bold">
+                                  {curBundle.badge}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
 
                           <h4 className="text-base font-black text-slate-900 mb-1">
@@ -9567,8 +9706,19 @@ export default function AdminDashboardPage() {
                             {curBundle.description || "Package description..."}
                           </p>
 
-                          <div className="flex items-baseline gap-1 mb-3 pb-3 border-b border-slate-100">
-                            <span className="text-2xl font-black text-slate-900">${curBundle.price}</span>
+                          <div className="flex items-baseline gap-2 mb-3 pb-3 border-b border-slate-100 flex-wrap">
+                            {curBundle.discountEnabled && curBundle.discountPercent && curBundle.discountPercent > 0 ? (
+                              <>
+                                <span className="text-2xl font-black text-amber-600">
+                                  ${((curBundle.price || 0) * (1 - curBundle.discountPercent / 100)).toFixed(2)}
+                                </span>
+                                <span className="text-sm font-bold text-slate-400 line-through">
+                                  ${curBundle.price}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-2xl font-black text-slate-900">${curBundle.price}</span>
+                            )}
                             <span className="text-[10px] text-slate-500">/ package (one-time)</span>
                           </div>
 

@@ -156,6 +156,8 @@ model TokenBundle {
   lkrPrice    Float      @default(0)
   olPrice     Float?
   olLkrPrice  Float?     @default(0)
+  discountPercent Float? @default(0)
+  discountEnabled Boolean @default(false)
   popular     Boolean  @default(false)
   badge       String   @default("Standard")
   description String

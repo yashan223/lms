@@ -210,11 +210,18 @@ export function PricingSection({
                     <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                       {roleTarget}
                     </span>
-                    {!plan.popular && plan.badge && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        {plan.badge}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? (
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+                          {plan.discountPercent}% OFF
+                        </span>
+                      ) : null}
+                      {!plan.popular && plan.badge && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          {plan.badge}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   <h3 className="text-2xl font-black text-slate-900 mb-2">
@@ -231,21 +238,45 @@ export function PricingSection({
                         <Lock className="w-4 h-4 text-blue-600 shrink-0" />
                         <span className="text-xs font-bold">Sign in to view student pricing</span>
                       </div>
+                      {plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? (
+                        <div className="mb-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                          <span>🔥 Limited-time {plan.discountPercent}% promo discount active!</span>
+                        </div>
+                      ) : null}
                       <p className="text-[11px] text-slate-500">
                         Tailored pricing for London A/L &amp; O/L students unlocked after creating an account.
                       </p>
                     </div>
                   ) : (
                     <div className="mb-6 pb-6 border-b border-slate-100">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                          {formatStudentPrice(price, studentCountry, plan.lkrPrice, studentLevel, plan.olPrice, plan.olLkrPrice)}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-500">
-                          / package
-                        </span>
-                      </div>
-                      <div className="mt-1.5 flex items-center gap-1.5">
+                      {plan.discountEnabled && plan.discountPercent && plan.discountPercent > 0 ? (
+                        <div>
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-4xl sm:text-5xl font-black text-amber-600 tracking-tight">
+                              {formatStudentPrice(price, studentCountry, plan.lkrPrice, studentLevel, plan.olPrice, plan.olLkrPrice, plan.discountPercent, plan.discountEnabled)}
+                            </span>
+                            <span className="text-lg sm:text-xl font-bold text-slate-400 line-through">
+                              {formatStudentPrice(price, studentCountry, plan.lkrPrice, studentLevel, plan.olPrice, plan.olLkrPrice)}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-500">
+                              / package
+                            </span>
+                          </div>
+                          <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                            <span>Special Promo • {plan.discountPercent}% Off Applied</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
+                            {formatStudentPrice(price, studentCountry, plan.lkrPrice, studentLevel, plan.olPrice, plan.olLkrPrice)}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-500">
+                            / package
+                          </span>
+                        </div>
+                      )}
+                      <div className="mt-2 flex items-center gap-1.5">
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-md border inline-flex items-center gap-1.5 ${
                             studentLevel === "OL"
@@ -271,8 +302,8 @@ export function PricingSection({
                           <span className="font-semibold text-slate-500">Other Track:</span>
                           <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
                             {studentLevel === "OL"
-                              ? `London A/L: ${formatStudentPrice(price, studentCountry, plan.lkrPrice, "AL", plan.olPrice, plan.olLkrPrice)}`
-                              : `London O/L: ${formatStudentPrice(price, studentCountry, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice)}`
+                              ? `London A/L: ${formatStudentPrice(price, studentCountry, plan.lkrPrice, "AL", plan.olPrice, plan.olLkrPrice, plan.discountPercent, plan.discountEnabled)}`
+                              : `London O/L: ${formatStudentPrice(price, studentCountry, plan.lkrPrice, "OL", plan.olPrice, plan.olLkrPrice, plan.discountPercent, plan.discountEnabled)}`
                             }
                           </span>
                         </div>

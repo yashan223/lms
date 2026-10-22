@@ -2852,20 +2852,38 @@ function DashboardContent() {
             <div className="space-y-3">
               {(tokenBundles.length > 0 ? tokenBundles : DEFAULT_BUNDLES).map((pack) => {
                 const isOL = user?.academicLevel === "OL";
-                const displayPrice = selectedCurrency === "USD"
-                  ? `$${(isOL && pack.olPrice && pack.olPrice > 0 ? pack.olPrice : pack.price).toFixed(2)} USD`
-                  : `Rs. ${(isOL && pack.olLkrPrice && pack.olLkrPrice > 0 ? pack.olLkrPrice : (pack.lkrPrice || pack.price * 300)).toLocaleString("en-LK")}`;
+                const baseUsd = isOL && pack.olPrice && pack.olPrice > 0 ? pack.olPrice : pack.price;
+                const baseLkr = isOL && pack.olLkrPrice && pack.olLkrPrice > 0 ? pack.olLkrPrice : (pack.lkrPrice || Math.round(pack.price * 300));
+
+                const hasDiscount = Boolean(pack.discountEnabled && pack.discountPercent && Number(pack.discountPercent) > 0);
+                const discountPercent = hasDiscount ? Math.min(100, Math.max(0, Number(pack.discountPercent))) : 0;
+                const discountFactor = hasDiscount ? (100 - discountPercent) / 100 : 1;
+
+                const finalUsd = hasDiscount ? Math.round(baseUsd * discountFactor * 100) / 100 : baseUsd;
+                const finalLkr = hasDiscount ? Math.round(baseLkr * discountFactor) : baseLkr;
+
+                const originalPriceStr = selectedCurrency === "USD" ? `$${baseUsd.toFixed(2)} USD` : `Rs. ${baseLkr.toLocaleString("en-LK")}`;
+                const finalPriceStr = selectedCurrency === "USD" ? `$${finalUsd.toFixed(2)} USD` : `Rs. ${finalLkr.toLocaleString("en-LK")}`;
 
                 return (
                   <div
                     key={pack.id}
-                    className="p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 transition-all flex items-center justify-between gap-4 group"
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between gap-4 group ${
+                      hasDiscount
+                        ? "border-amber-200/90 hover:border-amber-500 bg-amber-50/20 hover:bg-amber-50/40"
+                        : "border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30"
+                    }`}
                   >
                     <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 group-hover:text-blue-700">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className={`font-extrabold text-xs sm:text-sm text-slate-900 ${hasDiscount ? "group-hover:text-amber-700" : "group-hover:text-blue-700"}`}>
                           {pack.name}
                         </h4>
+                        {hasDiscount && (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-black uppercase tracking-wider shadow-2xs">
+                            {discountPercent}% OFF
+                          </span>
+                        )}
                         {pack.badge && (
                           <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-black uppercase tracking-wider">
                             {pack.badge}
@@ -2880,14 +2898,29 @@ function DashboardContent() {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="text-lg font-black text-slate-900">
-                        {displayPrice}
-                      </div>
+                      {hasDiscount ? (
+                        <div>
+                          <div className="text-xs font-bold text-slate-400 line-through">
+                            {originalPriceStr}
+                          </div>
+                          <div className="text-lg font-black text-amber-600">
+                            {finalPriceStr}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-lg font-black text-slate-900">
+                          {originalPriceStr}
+                        </div>
+                      )}
                       <Button
                         size="sm"
                         disabled={tokenPurchasing}
                         onClick={() => handlePurchaseTokenPack(pack.id, selectedCurrency)}
-                        className="mt-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-3 cursor-pointer shadow-sm"
+                        className={`mt-1 text-white text-xs font-bold rounded-xl px-3 cursor-pointer shadow-sm ${
+                          hasDiscount
+                            ? "bg-amber-600 hover:bg-amber-700"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        }`}
                       >
                         {tokenPurchasing ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />

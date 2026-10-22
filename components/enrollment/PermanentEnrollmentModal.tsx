@@ -743,6 +743,10 @@ export function PermanentEnrollmentModal({
                       ).map((pkg) => {
                         const satisfiesNeed = pkg.tokens >= shortageTokens;
                         const isLoadingThis = topUpLoading === pkg.id;
+                        const hasDiscount = Boolean(pkg.discountEnabled && pkg.discountPercent && Number(pkg.discountPercent) > 0);
+                        const discountFactor = hasDiscount ? (100 - Number(pkg.discountPercent)) / 100 : 1;
+                        const finalLkr = hasDiscount ? Math.round(Number(pkg.lkrPrice || 0) * discountFactor) : Number(pkg.lkrPrice || 0);
+                        const finalUsd = hasDiscount ? Math.round(Number(pkg.price || 0) * discountFactor * 100) / 100 : Number(pkg.price || 0);
 
                         return (
                           <button
@@ -751,21 +755,37 @@ export function PermanentEnrollmentModal({
                             disabled={Boolean(topUpLoading)}
                             onClick={() => handleInlineTopUp(pkg)}
                             className={`p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer hover:shadow-sm ${
-                              satisfiesNeed
+                              hasDiscount
+                                ? "bg-amber-50/50 border-amber-300 hover:bg-amber-100/60"
+                                : satisfiesNeed
                                 ? "bg-blue-50/80 border-blue-300 hover:bg-blue-100/80"
                                 : "bg-slate-50 border-slate-200 hover:bg-slate-100"
                             }`}
                           >
                             <div className="flex items-center justify-between w-full mb-1">
                               <span className="font-black text-xs text-slate-900">{pkg.name}</span>
-                              <span className="font-mono font-bold text-xs text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200">
-                                +{pkg.tokens} Tokens
-                              </span>
+                              <div className="flex items-center gap-1">
+                                {hasDiscount && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black uppercase">
+                                    {pkg.discountPercent}% OFF
+                                  </span>
+                                )}
+                                <span className="font-mono font-bold text-xs text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200">
+                                  +{pkg.tokens} Tokens
+                                </span>
+                              </div>
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-slate-600 pt-1 border-t border-slate-200/60 mt-1">
-                              <span className="font-bold text-slate-900">
-                                {pkg.lkrPrice ? `LKR ${Number(pkg.lkrPrice).toLocaleString()}` : `$${pkg.price}`}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`font-bold ${hasDiscount ? "text-amber-700" : "text-slate-900"}`}>
+                                  {pkg.lkrPrice ? `LKR ${finalLkr.toLocaleString()}` : `$${finalUsd}`}
+                                </span>
+                                {hasDiscount && (
+                                  <span className="text-[10px] text-slate-400 line-through">
+                                    {pkg.lkrPrice ? `LKR ${Number(pkg.lkrPrice).toLocaleString()}` : `$${pkg.price}`}
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-blue-600 font-bold flex items-center gap-1 text-[10px]">
                                 {isLoadingThis ? (
                                   <>

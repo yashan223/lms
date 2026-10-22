@@ -7,6 +7,8 @@ export interface TokenBundle {
   lkrPrice: number;
   olPrice?: number;
   olLkrPrice?: number;
+  discountPercent?: number;
+  discountEnabled?: boolean;
   popular: boolean;
   badge: string;
   description: string;
@@ -15,14 +17,37 @@ export interface TokenBundle {
   features: string[];
 }
 
+export function getDiscountedPrice(price: number, discountPercent?: number | null, discountEnabled?: boolean | null): number {
+  if (!discountEnabled || !discountPercent || discountPercent <= 0) return price;
+  const factor = Math.max(0, (100 - discountPercent) / 100);
+  return Math.round(price * factor * 100) / 100;
+}
+
+export function getDiscountedLkrPrice(lkrPrice: number, discountPercent?: number | null, discountEnabled?: boolean | null): number {
+  if (!discountEnabled || !discountPercent || discountPercent <= 0) return lkrPrice;
+  const factor = Math.max(0, (100 - discountPercent) / 100);
+  return Math.round(lkrPrice * factor);
+}
+
 export function getBundlePricingForLevel(
   bundle: TokenBundle,
   level?: "OL" | "AL" | string | null
-): { price: number; lkrPrice: number } {
+): {
+  price: number;
+  lkrPrice: number;
+  originalPrice: number;
+  originalLkrPrice: number;
+  hasDiscount: boolean;
+  discountPercent: number;
+} {
   const isOL = level === "OL" || level?.toUpperCase().includes("O/L") || level?.toUpperCase().includes("IGCSE");
-  const price = isOL && bundle.olPrice ? bundle.olPrice : bundle.price;
-  const lkrPrice = isOL && bundle.olLkrPrice ? bundle.olLkrPrice : bundle.lkrPrice;
-  return { price, lkrPrice };
+  const originalPrice = isOL && bundle.olPrice && bundle.olPrice > 0 ? bundle.olPrice : bundle.price;
+  const originalLkrPrice = isOL && bundle.olLkrPrice && bundle.olLkrPrice > 0 ? bundle.olLkrPrice : bundle.lkrPrice;
+  const hasDiscount = Boolean(bundle.discountEnabled && bundle.discountPercent && bundle.discountPercent > 0);
+  const discountPercent = hasDiscount ? Number(bundle.discountPercent) : 0;
+  const price = hasDiscount ? getDiscountedPrice(originalPrice, discountPercent, true) : originalPrice;
+  const lkrPrice = hasDiscount ? getDiscountedLkrPrice(originalLkrPrice, discountPercent, true) : originalLkrPrice;
+  return { price, lkrPrice, originalPrice, originalLkrPrice, hasDiscount, discountPercent };
 }
 
 export const DEFAULT_BUNDLES: TokenBundle[] = [
@@ -35,6 +60,8 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     lkrPrice: 7200,
     olPrice: 18,
     olLkrPrice: 5400,
+    discountPercent: 0,
+    discountEnabled: false,
     popular: false,
     badge: "Starter",
     description:
@@ -59,6 +86,8 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     lkrPrice: 17400,
     olPrice: 44,
     olLkrPrice: 13200,
+    discountPercent: 0,
+    discountEnabled: false,
     popular: true,
     badge: "Most Popular",
     description:
@@ -83,6 +112,8 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
     lkrPrice: 25200,
     olPrice: 64,
     olLkrPrice: 19200,
+    discountPercent: 0,
+    discountEnabled: false,
     popular: false,
     badge: "Best Value",
     description:

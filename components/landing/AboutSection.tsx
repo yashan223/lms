@@ -13,6 +13,8 @@ import {
   Users,
   ShieldCheck,
   ArrowRight,
+  Video,
+  Sparkles,
 } from "lucide-react";
 
 export function AboutSection() {
@@ -29,33 +31,34 @@ export function AboutSection() {
   const pillars = [
     {
       icon: Award,
-      title: "Accredited Academic Curriculum",
+      title: "Cambridge & Edexcel Aligned",
       description: "100% specification alignment for London A/L (IAL AS & A2) and London O/L (IGCSE) Pearson Edexcel and Cambridge syllabi.",
-      badge: "Academic Standards",
+      badge: "Curriculum Standards",
       badgeColor: "bg-blue-100 text-blue-800",
     },
     {
       icon: Users,
-      title: "Expert Online Tutors",
-      description: "Learn directly from active university and college educators who structure individual class content, author study materials, and guide students.",
+      title: "Verified Subject Specialists",
+      description: "Learn 1-on-1 from experienced educators who tailor each session to your syllabus, past paper practice, and learning pace.",
       badge: "Expert Tutors",
       badgeColor: "bg-blue-100 text-blue-800",
     },
     {
-      icon: GraduationCap,
-      title: "Blended Practical Labs",
-      description: "Full laboratory video walkthroughs with error analysis, experimental methods, and graph plotting individual classes.",
-      badge: "Practical Mastery",
+      icon: Video,
+      title: "BigBlueButton & Auto Recording",
+      description: "High-definition interactive virtual classrooms with automatic cloud recordings, whiteboard notes, and instant dashboard playback.",
+      badge: "Virtual Classroom",
       badgeColor: "bg-blue-100 text-blue-800",
     },
   ];
 
   const highlights = [
-    "Comprehensive 10-Year past topic proofs and step-by-step video solutions",
-    "Downloadable study handbooks, unit formula sheets, and practical notes",
-    "24/7 AI-powered academic question and formula assistance",
-    "Structured syllabus progress tracking and class schedule alerts",
-    "Recognized academic standards partnered with global learning institutions",
+    "Interactive 1-on-1 BigBlueButton classrooms with multi-user whiteboard, screen share & live video",
+    "Automated class recordings synced directly to your dashboard for unlimited revision",
+    "Escrow-protected token enrollment — tokens are safely held until your tutor accepts the schedule",
+    "Free 30-minute 1-on-1 trial consultation with your chosen tutor before recurring classes",
+    "Comprehensive Pearson Edexcel & Cambridge (IAL AS/A2 & IGCSE) syllabus-aligned study materials",
+    "Flexible token wallet supporting both LKR and USD with instant payment top-up",
   ];
 
   return (
@@ -63,12 +66,18 @@ export function AboutSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.15]">
-              World-Class London A/L & O/L Academic Excellence
-            </h2>
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold mb-3">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                <span>Live 1-on-1 Virtual Tutoring</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.15]">
+                World-Class London A/L & O/L Online Education
+              </h2>
+            </div>
 
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              EduPulse is a premier international learning platform dedicated to London A/L and London O/L students. We bridge digital interactive classes, comprehensive topic walkthroughs, and certified tutor evaluations to ensure students achieve academic mastery.
+              EduPulse is the premier platform connecting London A/L (IAL) and London O/L (IGCSE) students with elite subject tutors for interactive 1-on-1 classes. Powered by BigBlueButton live video rooms, automated class recordings, and transparent escrow-protected token enrollments.
             </p>
 
             <div className="space-y-2.5 pt-2">

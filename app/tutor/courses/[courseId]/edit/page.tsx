@@ -748,6 +748,14 @@ export function TutorCourseWorkspaceContent({
   };
 
   const handleStartClass = async (eventItem: ClassEvent) => {
+    const hasOtherLive = (course?.events || []).some(
+      (e: any) => e.status === "LIVE" && !e.endedAt && e.id !== eventItem.id
+    );
+    if (hasOtherLive) {
+      showToast("error", "Another class session is currently ongoing. Please conclude it before starting a new class.");
+      return;
+    }
+
     setStartingClassId(eventItem.id);
     try {
       const res = await callTutorApi({
@@ -2130,20 +2138,31 @@ export function TutorCourseWorkspaceContent({
                               <Badge className="bg-slate-100 text-slate-600 text-xs">Concluded</Badge>
                             ) : (
                               <>
-                                <Button
-                                  size="sm"
-                                  disabled={startingClassId === eventItem.id}
-                                  onClick={() => handleStartClass(eventItem)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl gap-1.5"
-                                >
-                                  {startingClassId === eventItem.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Play className="w-3.5 h-3.5" />
-                                  )}
-                                  <span>Launch Now</span>
-                                </Button>
-
+                                {(() => {
+                                  const hasOtherLive = (course?.events || []).some(
+                                    (e: any) => e.status === "LIVE" && !e.endedAt && e.id !== eventItem.id
+                                  );
+                                  return (
+                                    <Button
+                                      size="sm"
+                                      disabled={startingClassId === eventItem.id || hasOtherLive}
+                                      onClick={() => handleStartClass(eventItem)}
+                                      className={`font-bold text-xs rounded-xl gap-1.5 ${
+                                        hasOtherLive
+                                          ? "bg-slate-200 text-slate-400 cursor-not-allowed hover:bg-slate-200"
+                                          : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                                      }`}
+                                      title={hasOtherLive ? "Another class session is currently ongoing. Please conclude it first." : "Launch live classroom"}
+                                    >
+                                      {startingClassId === eventItem.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      ) : (
+                                        <Play className="w-3.5 h-3.5" />
+                                      )}
+                                      <span>Launch Now</span>
+                                    </Button>
+                                  );
+                                })()}
                               </>
                             )}
                           </div>

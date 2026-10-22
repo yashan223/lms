@@ -876,6 +876,17 @@ function TutorDashboardContent() {
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [events]);
 
+  const ongoingLiveEvent = useMemo(() => {
+    return events.find((e) => e.status === "LIVE" && !e.endedAt);
+  }, [events]);
+
+  const ongoingLiveTrial = useMemo(() => {
+    return trials.find((t) => t.status === "CONFIRMED" && t.actualStartTime && !t.actualEndTime);
+  }, [trials]);
+
+  const hasAnyLiveSession = Boolean(ongoingLiveEvent || ongoingLiveTrial);
+  const activeSessionTitle = ongoingLiveEvent?.title || (ongoingLiveTrial ? `Trial Consultation with ${ongoingLiveTrial.studentName}` : "Live Session");
+
   const handleScheduleClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClassTitle.trim() || !newClassDate) return;
@@ -1029,21 +1040,39 @@ function TutorDashboardContent() {
   };
 
   const triggerStartClassFlow = (ev: ScheduledClassEvent) => {
+    if (hasAnyLiveSession && ev.id !== ongoingLiveEvent?.id) {
+      alert(`Cannot start a new class: You already have an ongoing live session ("${activeSessionTitle}"). Please conclude your active session before starting another class.`);
+      return;
+    }
     handleStartClassDirect(ev);
   };
 
   const triggerStartTrialFlow = (tr: any) => {
+    if (hasAnyLiveSession && tr.id !== ongoingLiveTrial?.id) {
+      alert(`Cannot start a new consultation: You already have an ongoing live session ("${activeSessionTitle}"). Please conclude your active session before starting another consultation.`);
+      return;
+    }
     handleStartTrialDirect(tr);
   };
 
   const handleStartClass = (eventId: string) => {
     const ev = events.find((e) => e.id === eventId);
-    if (ev) handleStartClassDirect(ev);
+    if (!ev) return;
+    if (hasAnyLiveSession && ev.id !== ongoingLiveEvent?.id) {
+      alert(`Cannot start a new class: You already have an ongoing live session ("${activeSessionTitle}"). Please conclude your active session before starting another class.`);
+      return;
+    }
+    handleStartClassDirect(ev);
   };
 
   const handleStartTrial = (trialId: string) => {
     const tr = trials.find((t) => t.id === trialId);
-    if (tr) handleStartTrialDirect(tr);
+    if (!tr) return;
+    if (hasAnyLiveSession && tr.id !== ongoingLiveTrial?.id) {
+      alert(`Cannot start a new consultation: You already have an ongoing live session ("${activeSessionTitle}"). Please conclude your active session before starting another consultation.`);
+      return;
+    }
+    handleStartTrialDirect(tr);
   };
 
   const handleStartLiveSession = async (e: React.FormEvent) => {
@@ -2579,8 +2608,17 @@ function TutorDashboardContent() {
                                 <>
                                   <button
                                     onClick={() => triggerStartClassFlow(ev)}
-                                    disabled={startingClassId === ev.id}
-                                    className="px-3 py-1.5 rounded-lg bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold cursor-pointer"
+                                    disabled={startingClassId === ev.id || (hasAnyLiveSession && ev.id !== ongoingLiveEvent?.id)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                      hasAnyLiveSession && ev.id !== ongoingLiveEvent?.id
+                                        ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                                        : "bg-[#0c2461] hover:bg-[#103080] text-white cursor-pointer shadow-xs"
+                                    }`}
+                                    title={
+                                      hasAnyLiveSession && ev.id !== ongoingLiveEvent?.id
+                                        ? `Another session ("${activeSessionTitle}") is currently active. Conclude it first.`
+                                        : "Start live class"
+                                    }
                                   >
                                     Start
                                   </button>
@@ -3451,9 +3489,17 @@ function TutorDashboardContent() {
                                         <button
                                           type="button"
                                           onClick={() => triggerStartTrialFlow(tr)}
-                                          disabled={startingTrialId === tr.id}
-                                          className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                                          title="Start live consultation session and open BigBlueButton room"
+                                          disabled={startingTrialId === tr.id || (hasAnyLiveSession && tr.id !== ongoingLiveTrial?.id)}
+                                          className={`h-9 px-4 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs ${
+                                            hasAnyLiveSession && tr.id !== ongoingLiveTrial?.id
+                                              ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                                              : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                                          }`}
+                                          title={
+                                            hasAnyLiveSession && tr.id !== ongoingLiveTrial?.id
+                                              ? `Another session ("${activeSessionTitle}") is currently active. Conclude it first.`
+                                              : "Start live consultation session and open BigBlueButton room"
+                                          }
                                         >
                                           <Play className="w-3.5 h-3.5 fill-current" />
                                           <span>{startingTrialId === tr.id ? "Starting..." : "Start Session"}</span>

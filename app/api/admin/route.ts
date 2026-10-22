@@ -1215,6 +1215,88 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Class event not found" }, { status: 404 });
       }
 
+      // 🛡️ Conflict Check: Tutor & Student Ongoing Sessions
+      const tutorId = existing.course?.tutorId || existing.requestedBy;
+      if (tutorId) {
+        const tutorOngoingEvent = await prisma.event.findFirst({
+          where: {
+            status: "LIVE",
+            endedAt: null,
+            id: { not: existing.id },
+            OR: [
+              { course: { tutorId } },
+              { requestedBy: tutorId },
+            ],
+          },
+          select: { id: true, title: true },
+        });
+
+        if (tutorOngoingEvent) {
+          return NextResponse.json(
+            {
+              error: `Cannot start class: Tutor is currently in an ongoing live class ("${tutorOngoingEvent.title}"). Please conclude that active session first.`,
+            },
+            { status: 409 }
+          );
+        }
+
+        const tutorOngoingTrial = await prisma.trialRequest.findFirst({
+          where: {
+            tutorId,
+            status: TrialStatus.CONFIRMED,
+            actualStartTime: { not: null },
+            actualEndTime: null,
+          },
+        });
+
+        if (tutorOngoingTrial) {
+          return NextResponse.json(
+            {
+              error: `Cannot start class: Tutor is currently in an ongoing live consultation. Please conclude that active session first.`,
+            },
+            { status: 409 }
+          );
+        }
+      }
+
+      const studentIdsToCheck: string[] = [];
+      if (existing.userId) {
+        studentIdsToCheck.push(existing.userId);
+      } else if (existing.courseId) {
+        const enrollments = await prisma.enrollment.findMany({
+          where: { courseId: existing.courseId },
+          select: { userId: true },
+        });
+        enrollments.forEach((e) => studentIdsToCheck.push(e.userId));
+      }
+
+      if (studentIdsToCheck.length > 0) {
+        const studentOngoingEvent = await prisma.event.findFirst({
+          where: {
+            status: "LIVE",
+            endedAt: null,
+            id: { not: existing.id },
+            OR: [
+              { userId: { in: studentIdsToCheck } },
+              { course: { enrollments: { some: { userId: { in: studentIdsToCheck } } } } },
+            ],
+          },
+          include: {
+            user: { select: { name: true } },
+          },
+        });
+
+        if (studentOngoingEvent) {
+          const studentName = studentOngoingEvent.user?.name || "A student in this class";
+          return NextResponse.json(
+            {
+              error: `Cannot start class: ${studentName} is currently in another ongoing live class ("${studentOngoingEvent.title}"). Overlapping classes cannot run concurrently.`,
+            },
+            { status: 409 }
+          );
+        }
+      }
+
       const bbbId = existing.meetingSpaceId || getBBBMeetingId({ eventId });
       const studentJoinLink = getUniversalJoinLink({ eventId });
       const moderatorJoinUrl = getBBBJoinUrl({

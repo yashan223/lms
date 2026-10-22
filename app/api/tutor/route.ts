@@ -686,6 +686,160 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const targetEventId = existingEvent?.id || null;
+      const targetTrialId = existingTrial?.id || null;
+
+      // 🛡️ 1. CONFLICT CHECK: Is the tutor currently in another active LIVE session?
+      const tutorOngoingEvent = await prisma.event.findFirst({
+        where: {
+          status: "LIVE",
+          endedAt: null,
+          ...(targetEventId ? { id: { not: targetEventId } } : {}),
+          OR: [
+            { course: { tutorId: tutor.id } },
+            { requestedBy: tutor.id },
+          ],
+        },
+        select: { id: true, title: true, startedAt: true },
+      });
+
+      if (tutorOngoingEvent) {
+        return NextResponse.json(
+          {
+            error: `Cannot start session: You already have an ongoing live class ("${tutorOngoingEvent.title}"). Please conclude your currently active class before starting a new one.`,
+          },
+          { status: 409 }
+        );
+      }
+
+      const tutorOngoingTrial = await prisma.trialRequest.findFirst({
+        where: {
+          tutorId: tutor.id,
+          status: TrialStatus.CONFIRMED,
+          actualStartTime: { not: null },
+          actualEndTime: null,
+          ...(targetTrialId ? { id: { not: targetTrialId } } : {}),
+        },
+        include: { course: { select: { title: true } } },
+      });
+
+      if (tutorOngoingTrial) {
+        const trialTitle = tutorOngoingTrial.course?.title || `1-on-1 Consultation with ${tutorOngoingTrial.studentName}`;
+        return NextResponse.json(
+          {
+            error: `Cannot start session: You already have an ongoing live consultation ("${trialTitle}"). Please conclude your currently active consultation before starting a new one.`,
+          },
+          { status: 409 }
+        );
+      }
+
+      // 🛡️ 2. CONFLICT CHECK: Is any student in this session currently in another active LIVE session?
+      const studentIdsToCheck: string[] = [];
+      if (existingTrial?.studentId) {
+        studentIdsToCheck.push(existingTrial.studentId);
+      } else if (existingEvent?.userId) {
+        studentIdsToCheck.push(existingEvent.userId);
+      } else if (existingEvent?.courseId) {
+        const enrollments = await prisma.enrollment.findMany({
+          where: { courseId: existingEvent.courseId },
+          select: { userId: true },
+        });
+        enrollments.forEach((e) => studentIdsToCheck.push(e.userId));
+      }
+
+      if (studentIdsToCheck.length > 0) {
+        const studentOngoingEvent = await prisma.event.findFirst({
+          where: {
+            status: "LIVE",
+            endedAt: null,
+            ...(targetEventId ? { id: { not: targetEventId } } : {}),
+            OR: [
+              { userId: { in: studentIdsToCheck } },
+              { course: { enrollments: { some: { userId: { in: studentIdsToCheck } } } } },
+            ],
+          },
+          include: {
+            user: { select: { id: true, name: true } },
+            course: {
+              select: {
+                title: true,
+                enrollments: {
+                  where: { userId: { in: studentIdsToCheck } },
+                  include: { user: { select: { name: true } } },
+                },
+              },
+            },
+          },
+        });
+
+        if (studentOngoingEvent) {
+          const studentName =
+            studentOngoingEvent.user?.name ||
+            studentOngoingEvent.course?.enrollments?.[0]?.user?.name ||
+            "The student";
+          return NextResponse.json(
+            {
+              error: `Cannot start session: ${studentName} is currently participating in another ongoing live class ("${studentOngoingEvent.title}"). Both tutor and student cannot start overlapping classes until the active session ends.`,
+            },
+            { status: 409 }
+          );
+        }
+
+        const studentOngoingTrial = await prisma.trialRequest.findFirst({
+          where: {
+            studentId: { in: studentIdsToCheck },
+            status: TrialStatus.CONFIRMED,
+            actualStartTime: { not: null },
+            actualEndTime: null,
+            ...(targetTrialId ? { id: { not: targetTrialId } } : {}),
+          },
+          select: {
+            id: true,
+            studentName: true,
+            course: { select: { title: true } },
+          },
+        });
+
+        if (studentOngoingTrial) {
+          const studentName = studentOngoingTrial.studentName || "The student";
+          const trialTitle = studentOngoingTrial.course?.title || "1-on-1 Consultation";
+          return NextResponse.json(
+            {
+              error: `Cannot start session: ${studentName} is currently participating in an ongoing live consultation ("${trialTitle}"). Both tutor and student cannot start overlapping classes until the active session ends.`,
+            },
+            { status: 409 }
+          );
+        }
+      }
+
+      if (existingTrial?.studentEmail && studentIdsToCheck.length === 0) {
+        const studentOngoingTrialByEmail = await prisma.trialRequest.findFirst({
+          where: {
+            studentEmail: { equals: existingTrial.studentEmail, mode: "insensitive" },
+            status: TrialStatus.CONFIRMED,
+            actualStartTime: { not: null },
+            actualEndTime: null,
+            ...(targetTrialId ? { id: { not: targetTrialId } } : {}),
+          },
+          select: {
+            id: true,
+            studentName: true,
+            course: { select: { title: true } },
+          },
+        });
+
+        if (studentOngoingTrialByEmail) {
+          const studentName = studentOngoingTrialByEmail.studentName || "The student";
+          const trialTitle = studentOngoingTrialByEmail.course?.title || "1-on-1 Consultation";
+          return NextResponse.json(
+            {
+              error: `Cannot start session: ${studentName} is currently participating in an ongoing live consultation ("${trialTitle}"). Both tutor and student cannot start overlapping classes until the active session ends.`,
+            },
+            { status: 409 }
+          );
+        }
+      }
+
       // Set up BigBlueButton classroom
       const bbbId =
         existingEvent?.meetingSpaceId ||

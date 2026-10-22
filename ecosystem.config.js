@@ -11,6 +11,7 @@ module.exports = {
         NODE_ENV: "production",
         PORT: 3000,
         HOSTNAME: "0.0.0.0",
+        NEXT_PUBLIC_APP_URL: "https://pulseedu.online",
       },
     },
   ],

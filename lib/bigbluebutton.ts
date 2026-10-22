@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
@@ -37,13 +38,53 @@ export function isBigBlueButtonConfigured(): boolean {
   return Boolean(config.url && config.secret);
 }
 
-export function getAppBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL?.trim()) {
-    return process.env.NEXT_PUBLIC_APP_URL.trim().replace(/\/$/, "");
+export function getAppBaseUrl(req?: Request | NextRequest | null): string {
+  // 1. Explicitly configured valid public application URL from environment
+  const envUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "").trim().replace(/\/$/, "");
+  if (envUrl && !envUrl.includes("0.0.0.0")) {
+    return envUrl;
   }
-  if (process.env.APP_URL?.trim()) {
-    return process.env.APP_URL.trim().replace(/\/$/, "");
+
+  // 2. Derive safely from request headers if available (handles reverse proxies like Nginx)
+  if (req) {
+    try {
+      const headers = req.headers;
+      const fwdHost = headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+      const fwdProto = headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+      const rawHost = fwdHost || headers.get("host")?.trim();
+
+      if (rawHost) {
+        if (rawHost.includes("0.0.0.0")) {
+          if (process.env.NODE_ENV === "production") {
+            return "https://pulseedu.online";
+          }
+          const proto = fwdProto || "http";
+          const safeHost = rawHost.replace("0.0.0.0", "localhost");
+          return `${proto}://${safeHost}`.replace(/\/$/, "");
+        }
+
+        const proto = fwdProto || (rawHost.includes("localhost") || rawHost.includes("127.0.0.1") ? "http" : "https");
+        return `${proto}://${rawHost}`.replace(/\/$/, "");
+      }
+
+      if (req.url) {
+        const parsed = new URL(req.url);
+        let hostname = parsed.hostname;
+        if (hostname === "0.0.0.0") {
+          if (process.env.NODE_ENV === "production") {
+            return "https://pulseedu.online";
+          }
+          hostname = "localhost";
+        }
+        const portStr = parsed.port ? `:${parsed.port}` : "";
+        return `${parsed.protocol}//${hostname}${portStr}`.replace(/\/$/, "");
+      }
+    } catch {
+      // Fall through to default
+    }
   }
+
+  // 3. Fallback to production domain
   return "https://pulseedu.online";
 }
 
@@ -167,7 +208,10 @@ export async function createBBBMeeting(opts: {
 
   const appBase = getAppBaseUrl();
   const defaultLogout = `${appBase}/api/meetings/leave?meetingID=${encodeURIComponent(meetingId)}`;
-  const logoutUrl = opts.logoutUrl || defaultLogout;
+  let logoutUrl = opts.logoutUrl || defaultLogout;
+  if (logoutUrl.includes("0.0.0.0")) {
+    logoutUrl = logoutUrl.replace(/https?:\/\/0\.0\.0\.0(?::\d+)?/, "https://pulseedu.online");
+  }
 
   const welcomeMsg =
     opts.welcome ||
@@ -197,7 +241,11 @@ export async function createBBBMeeting(opts: {
 
   // Configure BigBlueButton Learning Analytics Dashboard callback upon session end
   if (!params["meta_analytics-callback-url"] && appBase) {
-    params["meta_analytics-callback-url"] = `${appBase}/api/meetings/analytics-callback?meetingID=${encodeURIComponent(meetingId)}`;
+    let analyticsUrl = `${appBase}/api/meetings/analytics-callback?meetingID=${encodeURIComponent(meetingId)}`;
+    if (analyticsUrl.includes("0.0.0.0")) {
+      analyticsUrl = analyticsUrl.replace(/https?:\/\/0\.0\.0\.0(?::\d+)?/, "https://pulseedu.online");
+    }
+    params["meta_analytics-callback-url"] = analyticsUrl;
   }
 
   // Pre-upload a clean whiteboard presentation to replace the default "Welcome to BigBlueButton" slides
@@ -267,6 +315,7 @@ export function getBBBJoinUrl(opts: {
   avatarUrl?: string;
   redirect?: boolean;
   hidePresentationOnJoin?: boolean;
+  logoutUrl?: string;
 }): string {
   const meetingId = opts.meetingId.trim();
   const hash = crypto.createHash("sha256").update(meetingId).digest("hex");
@@ -290,6 +339,14 @@ export function getBBBJoinUrl(opts: {
   if (opts.hidePresentationOnJoin) {
     params["userdata-bbb_hide_presentation_on_join"] = "true";
   }
+
+  const appBase = getAppBaseUrl();
+  const defaultLogout = `${appBase}/api/meetings/leave?meetingID=${encodeURIComponent(meetingId)}`;
+  let targetLogout = opts.logoutUrl || defaultLogout;
+  if (targetLogout.includes("0.0.0.0")) {
+    targetLogout = targetLogout.replace(/https?:\/\/0\.0\.0\.0(?::\d+)?/, "https://pulseedu.online");
+  }
+  params["userdata-bbb_logout_url"] = targetLogout;
 
   return buildBBBUrl("join", params);
 }

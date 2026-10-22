@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { clearSessionCookies, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { getAppBaseUrl } from "@/lib/bigbluebutton";
 
 export async function POST() {
   try {
@@ -27,8 +28,8 @@ export async function GET(request: Request) {
     console.error("Logout GET cookieStore error:", err);
   }
 
-  const url = new URL(request.url);
-  const targetUrl = new URL("/login", url.origin);
+  const baseUrl = getAppBaseUrl(request);
+  const targetUrl = new URL("/login", baseUrl);
   const response = NextResponse.redirect(targetUrl);
   clearSessionCookies(response);
   return response;

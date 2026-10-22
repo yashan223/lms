@@ -258,6 +258,11 @@ function TutorDashboardContent() {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
+    const sessionEnded = searchParams.get("sessionEnded");
+    if (sessionEnded === "true") {
+      fetchTutorData(false);
+      fetchEnrollmentCounts();
+    }
     if (tab === "profile") {
       router.push("/tutor/profile");
       return;

@@ -29,14 +29,9 @@ export interface EmailDispatchResult {
 }
 
 function getAppUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.trim().replace(/\/$/, "");
-  }
-  if (process.env.APP_URL) {
-    return process.env.APP_URL.trim().replace(/\/$/, "");
-  }
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.trim().replace(/\/$/, "");
+  const envUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").trim().replace(/\/$/, "");
+  if (envUrl && !envUrl.includes("0.0.0.0")) {
+    return envUrl;
   }
   return "https://pulseedu.online";
 }

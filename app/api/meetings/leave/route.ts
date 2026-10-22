@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
-import { isBBBMeetingRunning, syncClassMeetingSession, syncTrialSession } from "@/lib/bigbluebutton";
+import { isBBBMeetingRunning, syncClassMeetingSession, syncTrialSession, getAppBaseUrl } from "@/lib/bigbluebutton";
 import { completeClassAndProcessEcosystem } from "@/lib/token-ecosystem";
 import { removeLiveClassNotifications } from "@/lib/notifications";
 import { broadcastLMSEvent } from "@/lib/events";
@@ -85,20 +85,28 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Determine redirect destination based on authenticated user role
+    // Determine redirect destination based on authenticated user role or cookie
     const auth = await getAuthenticatedUser(request).catch(() => ({ user: null }));
-    const baseUrl = new URL(request.url).origin;
+    const cookieRole = request.cookies.get("edupulse_user_role")?.value;
+    const isTutor =
+      auth.user?.role === Role.TUTOR ||
+      (auth.user?.role as any) === "INSTRUCTOR" ||
+      cookieRole === "TUTOR" ||
+      cookieRole === "INSTRUCTOR";
+    const isAdmin = auth.user?.role === Role.ADMIN || cookieRole === "ADMIN";
 
-    if (auth.user?.role === Role.TUTOR || (auth.user?.role as any) === "INSTRUCTOR") {
+    const baseUrl = getAppBaseUrl(request);
+
+    if (isTutor) {
       return NextResponse.redirect(`${baseUrl}/tutor?tab=classes&sessionEnded=true`);
-    } else if (auth.user?.role === Role.ADMIN) {
+    } else if (isAdmin) {
       return NextResponse.redirect(`${baseUrl}/admin?sessionEnded=true`);
     } else {
       return NextResponse.redirect(`${baseUrl}/dashboard?sessionEnded=true`);
     }
   } catch (error) {
     console.error("[meetings/leave] Error during meeting leave handling:", error);
-    const baseUrl = new URL(request.url).origin;
+    const baseUrl = getAppBaseUrl(request);
     return NextResponse.redirect(`${baseUrl}/dashboard`);
   }
 }

@@ -12,7 +12,8 @@ const dev = process.env.NODE_ENV === "development" || process.env.npm_lifecycle_
 if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = dev ? "development" : "production";
 }
-const hostname = process.env.HOSTNAME || "0.0.0.0";
+// Always bind to 0.0.0.0 so Nginx reverse proxy, Docker, and external requests can reach the app
+const hostname = process.env.BIND_HOST || (process.env.HOSTNAME && process.env.HOSTNAME !== "localhost" ? process.env.HOSTNAME : "0.0.0.0");
 const port = parseInt(process.env.PORT || "3000", 10);
 
 const app = next({ dev, hostname, port });

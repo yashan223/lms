@@ -525,11 +525,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
       }
 
-      if (
-        auth.user.role !== Role.ADMIN &&
-        existing.userId !== auth.user.id &&
-        existing.course?.tutorId !== auth.user.id
-      ) {
+      if (existing.courseId || existing.type === EventType.LIVE_SEMINAR) {
+        if (auth.user.role !== Role.ADMIN) {
+          return NextResponse.json(
+            { error: "Forbidden: Class records and scheduled class sessions cannot be deleted. Please contact an Administrator." },
+            { status: 403 }
+          );
+        }
+      }
+
+      if (auth.user.role !== Role.ADMIN && existing.userId !== auth.user.id) {
         return NextResponse.json({ error: "Forbidden: You cannot delete this event" }, { status: 403 });
       }
 

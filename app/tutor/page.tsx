@@ -1217,67 +1217,6 @@ function TutorDashboardContent() {
     }
   };
 
-  const handleDeleteClass = async (eventId: string, title?: string) => {
-    setConfirmModalData({
-      isOpen: true,
-      title: title ? `Delete "${title}"?` : "Cancel & Delete Class Session?",
-      description: "This will remove the scheduled live class from all enrolled student calendars and dashboards.",
-      variant: "danger",
-      onConfirm: async () => {
-        try {
-          const res = await fetch("/api/tutor", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "delete_class",
-              eventId,
-            }),
-          });
-          if (res.ok) {
-            fetchTutorData();
-          } else {
-            const data = await res.json();
-            alert(data.error || "Failed to delete class session.");
-          }
-        } catch (error) {
-          console.error("Failed to delete class:", error);
-        } finally {
-          setConfirmModalData((prev) => ({ ...prev, isOpen: false }));
-        }
-      },
-    });
-  };
-
-  const handleDeleteTrial = async (trialId: string, studentName?: string) => {
-    setConfirmModalData({
-      isOpen: true,
-      title: studentName ? `Delete Consultation with ${studentName}?` : "Delete Consultation Session?",
-      description: "This will permanently remove the consultation booking and its meeting entry.",
-      variant: "danger",
-      onConfirm: async () => {
-        try {
-          const res = await fetch("/api/tutor", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "delete_class",
-              trialId,
-            }),
-          });
-          if (res.ok) {
-            fetchTutorData();
-          } else {
-            const data = await res.json();
-            alert(data.error || "Failed to delete consultation.");
-          }
-        } catch (error) {
-          console.error("Failed to delete trial:", error);
-        } finally {
-          setConfirmModalData((prev) => ({ ...prev, isOpen: false }));
-        }
-      },
-    });
-  };
 
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2587,13 +2526,6 @@ function TutorDashboardContent() {
                                       ? "End (15m Met)"
                                       : "End"}
                                   </button>
-                                  <button
-                                    onClick={() => handleDeleteClass(ev.id, ev.title)}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                                    title="Cancel & Delete Live Class"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
                                 </>
                               ) : isCompleted ? (
                                 <div className="flex items-center gap-1.5">
@@ -2617,13 +2549,6 @@ function TutorDashboardContent() {
                                     <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
                                     <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
                                   </button>
-                                  <button
-                                    onClick={() => handleDeleteClass(ev.id, ev.title)}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                                    title="Delete Ended Session"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
                                 </div>
                               ) : isPendingApproval ? (
                                 <>
@@ -2639,13 +2564,6 @@ function TutorDashboardContent() {
                                     <Edit3 className="w-3.5 h-3.5 text-blue-600" />
                                     <span>Edit</span>
                                   </button>
-                                  <button
-                                    onClick={() => handleDeleteClass(ev.id, ev.title)}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                                    title="Cancel Class"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
                                 </>
                               ) : isRejected ? (
                                 <>
@@ -2655,13 +2573,6 @@ function TutorDashboardContent() {
                                   >
                                     <RefreshCw className="w-3 h-3" />
                                     <span>Resubmit</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteClass(ev.id, ev.title)}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                                    title="Delete Request"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </>
                               ) : (
@@ -2695,13 +2606,6 @@ function TutorDashboardContent() {
                                   >
                                     <Calendar className="w-3.5 h-3.5" />
                                   </a>
-                                  <button
-                                    onClick={() => handleDeleteClass(ev.id, ev.title)}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                                    title="Delete Class"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
                                 </>
                               )}
                             </div>
@@ -2947,13 +2851,6 @@ function TutorDashboardContent() {
                             >
                               <RefreshCw className={`w-3.5 h-3.5 text-slate-500 shrink-0 ${syncingEventId === ev.id ? "animate-spin" : ""}`} />
                               <span>{syncingEventId === ev.id ? "Syncing..." : "Sync BBB"}</span>
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClass(ev.id, ev.title)}
-                              className="h-8.5 w-8.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 inline-flex items-center justify-center cursor-pointer transition-colors sm:ml-auto"
-                              title="Delete Class from History"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
                             </button>
                           </div>
 
@@ -3492,14 +3389,6 @@ function TutorDashboardContent() {
                                         <span>Chat with Student</span>
                                       </button>
                                     )}
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteTrial(tr.id, tr.studentName)}
-                                      className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 hover:border-red-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                                      title="Delete Consultation Record"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
                                   </>
                                 ) : isPending ? (
                                   <>
@@ -3533,15 +3422,6 @@ function TutorDashboardContent() {
                                         <span>Chat with Student</span>
                                       </button>
                                     )}
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteTrial(tr.id, tr.studentName)}
-                                      className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 hover:border-red-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                                      title="Delete Consultation Request"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
                                   </>
                                 ) : isConfirmed ? (
                                   <>
@@ -3564,14 +3444,6 @@ function TutorDashboardContent() {
                                         >
                                           <X className="w-3.5 h-3.5" />
                                           <span>{endingTrialId === tr.id ? "Ending..." : "End Session"}</span>
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleDeleteTrial(tr.id, tr.studentName)}
-                                          className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 hover:border-red-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                                          title="Cancel & Delete Consultation"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                       </>
                                     ) : (
@@ -3624,15 +3496,6 @@ function TutorDashboardContent() {
                                         <span>Chat with Student</span>
                                       </button>
                                     )}
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteTrial(tr.id, tr.studentName)}
-                                      className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 hover:border-red-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                                      title="Cancel & Delete Consultation"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
                                   </>
                                 ) : (
                                   <>
@@ -3640,15 +3503,6 @@ function TutorDashboardContent() {
                                       <X className="w-3.5 h-3.5 text-slate-400" />
                                       <span>Declined / Cancelled</span>
                                     </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteTrial(tr.id, tr.studentName)}
-                                      className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 hover:border-red-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                                      title="Delete Consultation Record"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                      <span>Delete</span>
-                                    </button>
                                   </>
                                 )}
 

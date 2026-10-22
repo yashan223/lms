@@ -783,24 +783,6 @@ export function TutorCourseWorkspaceContent({
     }
   };
 
-  const handleDeleteClass = (eventItem: ClassEvent) => {
-    setConfirmModal({
-      isOpen: true,
-      title: `Cancel Live Class "${eventItem.title}"?`,
-      description: "This will remove this scheduled live class session from the calendar.",
-      variant: "danger",
-      confirmText: "Delete Session",
-      onConfirm: async () => {
-        try {
-          await callTutorApi({ action: "delete_class", eventId: eventItem.id });
-          await loadData(true);
-          showToast("success", "Live class deleted.");
-        } catch (err: any) {
-          showToast("error", err.message || "Failed to delete live class.");
-        }
-      },
-    });
-  };
 
   if (loading) {
     return (
@@ -2164,14 +2146,6 @@ export function TutorCourseWorkspaceContent({
 
                               </>
                             )}
-
-                            <button
-                              onClick={() => handleDeleteClass(eventItem)}
-                              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-                              title="Delete Session"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
                         </div>
                       );

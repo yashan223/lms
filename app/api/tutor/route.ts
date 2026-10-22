@@ -1246,6 +1246,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "delete_class" || action === "delete_event" || action === "delete_trial") {
+      if (tutor.role !== Role.ADMIN) {
+        return NextResponse.json(
+          { error: "Forbidden: Class records and session history cannot be deleted by tutors. Please contact an Administrator to archive or remove class records." },
+          { status: 403 }
+        );
+      }
+
       const { eventId, trialId } = body;
 
       if (!eventId && !trialId) {
@@ -1793,6 +1800,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "delete_trial") {
+      if (tutor.role !== Role.ADMIN) {
+        return NextResponse.json(
+          { error: "Forbidden: Consultation records cannot be deleted by tutors. Please contact an Administrator." },
+          { status: 403 }
+        );
+      }
       const { trialId } = body;
       if (!trialId) {
         return NextResponse.json({ error: "Trial ID is required." }, { status: 400 });

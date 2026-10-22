@@ -2409,7 +2409,7 @@ function TutorDashboardContent() {
                       No live sessions found for this filter.
                     </div>
                   ) : (
-                    <div className="max-h-[600px] sm:max-h-[660px] overflow-y-auto overscroll-contain pr-1 space-y-3">
+                    <div className="max-h-[520px] lg:max-h-[calc(100vh-320px)] overflow-y-auto pr-1 space-y-3">
                       {filteredEvents.map((ev) => {
                         const isLive = ev.status === "LIVE";
                         const isCompleted = ev.status === "COMPLETED";
@@ -3146,7 +3146,7 @@ function TutorDashboardContent() {
                       <span>No trial bookings found under &quot;{trialFilter.toLowerCase()}&quot; filter.</span>
                     </div>
                   ) : (
-                    <div className="max-h-[600px] sm:max-h-[680px] overflow-y-auto overscroll-contain pr-1.5 space-y-4">
+                    <div className="max-h-[520px] lg:max-h-[calc(100vh-320px)] overflow-y-auto pr-1.5 space-y-4">
                       {trials
                         .filter((t) => {
                           if (trialFilter === "ALL") return true;

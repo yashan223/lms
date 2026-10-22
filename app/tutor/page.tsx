@@ -2347,30 +2347,36 @@ function TutorDashboardContent() {
                           <div className="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-2">
                             <Link
                               href={`/classes/${c.slug}`}
-                              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                              className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 whitespace-nowrap"
+                              title="Open public syllabus page"
                             >
-                              <span>Open Syllabus</span>
+                              <span>Syllabus</span>
                               <ArrowRight className="w-3 h-3" />
                             </Link>
 
-                            <Link
-                              href={`/tutor/courses/${c.id}/edit`}
-                              className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md inline-flex items-center gap-1 hover:bg-blue-100 transition-colors"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                              <span>Edit Class & Content</span>
-                            </Link>
-                            <button
-                              onClick={() => {
-                                setScheduleMode("COURSE");
-                                setNewClassCourseId(c.id);
-                                setNewClassTitle(`Live Class: ${c.title}`);
-                                setShowScheduleModal(true);
-                              }}
-                              className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded-md"
-                            >
-                              + Schedule
-                            </button>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Link
+                                href={`/tutor/courses/${c.id}/edit`}
+                                className="text-xs font-medium text-slate-700 hover:text-blue-600 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 px-2 py-1 rounded-md inline-flex items-center gap-1 transition-colors whitespace-nowrap shadow-xs"
+                                title="Edit class syllabus and materials"
+                              >
+                                <Edit3 className="w-3 h-3 text-slate-400" />
+                                <span>Edit</span>
+                              </Link>
+                              <button
+                                onClick={() => {
+                                  setScheduleMode("COURSE");
+                                  setNewClassCourseId(c.id);
+                                  setNewClassTitle(`Live Class: ${c.title}`);
+                                  setShowScheduleModal(true);
+                                }}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 px-2 py-1 rounded-md inline-flex items-center gap-1 transition-colors whitespace-nowrap shadow-xs cursor-pointer"
+                                title="Schedule live class session"
+                              >
+                                <Plus className="w-3 h-3 text-blue-500" />
+                                <span>Schedule</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}

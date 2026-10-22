@@ -62,8 +62,8 @@ export function isCourseOL(
 ): boolean {
   if (!course) return false;
   const lvl = (course.level || "").toUpperCase();
-  if (lvl === "ADVANCED") return false;
-  if (lvl === "INTERMEDIATE") return true;
+  if (lvl === "ADVANCED" || lvl === "AL") return false;
+  if (lvl === "INTERMEDIATE" || lvl === "OL") return true;
 
   const combined = [
     course.subtitle || "",
@@ -71,7 +71,7 @@ export function isCourseOL(
     course.subjectCode || "",
   ].join(" ");
 
-  const alRegex = /\b(al|a\/l|a-level|advanced\s*level|ial|ias)\b/i;
+  const alRegex = /\b(al|a\/l|a-level|advanced\s*level|ial|ias|as|a2)\b/i;
   const olRegex = /\b(ol|o\/l|o-level|ordinary\s*level|igcse|gcse)\b/i;
 
   if (alRegex.test(combined) && !olRegex.test(combined)) return false;
@@ -84,6 +84,22 @@ export function isCourseAL(
   course?: { level?: string | null; title?: string | null; subjectCode?: string | null; subtitle?: string | null } | null
 ): boolean {
   if (!course) return true;
+  const lvl = (course.level || "").toUpperCase();
+  if (lvl === "ADVANCED" || lvl === "AL") return true;
+  if (lvl === "INTERMEDIATE" || lvl === "OL") return false;
+
+  const combined = [
+    course.subtitle || "",
+    course.title || "",
+    course.subjectCode || "",
+  ].join(" ");
+
+  const alRegex = /\b(al|a\/l|a-level|advanced\s*level|ial|ias|as|a2)\b/i;
+  const olRegex = /\b(ol|o\/l|o-level|ordinary\s*level|igcse|gcse)\b/i;
+
+  if (alRegex.test(combined) && !olRegex.test(combined)) return true;
+  if (olRegex.test(combined) && !alRegex.test(combined)) return false;
+
   return !isCourseOL(course);
 }
 

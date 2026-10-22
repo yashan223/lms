@@ -1170,9 +1170,8 @@ export function TutorCourseWorkspaceContent({
                     onChange={(e) => setDetailsForm({ ...detailsForm, level: e.target.value })}
                     className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option value="ADVANCED">London A/L (Advanced)</option>
-                    <option value="INTERMEDIATE">London O/L (Intermediate)</option>
-                    <option value="FOUNDATION">Foundation / Preparatory</option>
+                    <option value="ADVANCED">Cambridge/Edexcel AS and A2</option>
+                    <option value="INTERMEDIATE">Cambridge/Edexcel IGCSE and OL</option>
                   </select>
                 </div>
 

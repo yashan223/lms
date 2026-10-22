@@ -333,8 +333,8 @@ function RegisterContent() {
                       onChange={(e) => setQualification(e.target.value)}
                       className="w-full h-11 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 font-semibold focus:ring-blue-600"
                     >
-                      <option value="London A/L (IAL)">London A/L (IAL AS & A2)</option>
-                      <option value="London O/L (IGCSE)">London O/L (IGCSE Foundation)</option>
+                      <option value="London A/L (IAL)">Cambridge/Edexcel AS and A2</option>
+                      <option value="London O/L (IGCSE)">Cambridge/Edexcel IGCSE and OL</option>
                     </select>
                   </div>
                   <p className="text-[10px] text-slate-500">

@@ -78,6 +78,7 @@ import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
 import { AcademicSchool, DEFAULT_SCHOOLS } from "@/lib/subjects";
 import { deriveConversationKey, decryptMessage } from "@/lib/crypto";
 import { formatStudentPrice } from "@/lib/currency";
+import { isTutorQualifiedForLevel } from "@/lib/faculty-tutors";
 import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
 import { UserProfileHistoryModal } from "@/components/admin/UserProfileHistoryModal";
@@ -5399,7 +5400,7 @@ export default function AdminDashboardPage() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                      Tutor hourly rates are individually configured per tutor when adding or editing an account in User Management. Class earnings are dynamically calculated based on the class Academic Level (London A/L vs London O/L) and the lead tutor&apos;s approved rate.
+                      Tutor hourly rates are individually configured per tutor when adding or editing an account in User Management. Class earnings are dynamically calculated based on the class Academic Level (Cambridge/Edexcel AS & A2 vs Cambridge/Edexcel IGCSE & OL) and the lead tutor&apos;s approved rate.
                     </p>
                   </div>
 
@@ -8188,18 +8189,37 @@ export default function AdminDashboardPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-bold block mb-1">Level</label>
-                  <select value={courseFormLevel} onChange={(e) => setCourseFormLevel(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                    <option value="ADVANCED">London A/L (Advanced)</option>
-                    <option value="INTERMEDIATE">London O/L (Intermediate)</option>
+                  <label className="font-bold block mb-1">Academic Level</label>
+                  <select
+                    value={courseFormLevel}
+                    onChange={(e) => {
+                      const newLvl = e.target.value;
+                      setCourseFormLevel(newLvl);
+                      const currentTutor = tutorList.find((f) => f.id === courseFormInstructorId);
+                      if (currentTutor && !isTutorQualifiedForLevel(currentTutor, newLvl)) {
+                        const qualified = tutorList.find((f) => isTutorQualifiedForLevel(f, newLvl));
+                        setCourseFormInstructorId(qualified ? qualified.id : "");
+                      }
+                    }}
+                    className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs"
+                  >
+                    <option value="ADVANCED">Cambridge/Edexcel AS and A2</option>
+                    <option value="INTERMEDIATE">Cambridge/Edexcel IGCSE and OL</option>
                   </select>
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Lead Tutor</label>
-                  <select value={courseFormInstructorId} onChange={(e) => setCourseFormInstructorId(e.target.value)} className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs">
-                    {tutorList.map((f) => (
-                      <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
+                  <select
+                    value={courseFormInstructorId}
+                    onChange={(e) => setCourseFormInstructorId(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-slate-200 px-2 bg-white text-xs"
+                  >
+                    <option value="">Select Tutor...</option>
+                    {tutorList
+                      .filter((f) => isTutorQualifiedForLevel(f, courseFormLevel))
+                      .map((f) => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
                   </select>
                 </div>
               </div>

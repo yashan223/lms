@@ -518,8 +518,10 @@ export async function POST(request: NextRequest) {
         assignedAdminId = await generateUniqueAdminId();
       }
 
-      const resolvedIgcseRate = body.igcsePayRate ?? body.igcse_pay_rate ?? hourlyRateOL;
-      const resolvedIalRate = body.ialIasPayRate ?? body.ial_ias_pay_rate ?? hourlyRateAL ?? hourlyRate;
+      const resolvedIgcseRate =
+        body.isOLTutor === false ? null : (body.igcsePayRate ?? body.igcse_pay_rate ?? hourlyRateOL);
+      const resolvedIalRate =
+        body.isALTutor === false ? null : (body.ialIasPayRate ?? body.ial_ias_pay_rate ?? hourlyRateAL ?? hourlyRate);
 
       const newUser = await prisma.user.create({
         data: {
@@ -607,12 +609,16 @@ export async function POST(request: NextRequest) {
         updateData.country = country ? country.trim() : null;
       }
 
-      if (body.igcsePayRate !== undefined || body.igcse_pay_rate !== undefined || hourlyRateOL !== undefined) {
+      if (body.isOLTutor === false) {
+        updateData.igcsePayRate = null;
+      } else if (body.igcsePayRate !== undefined || body.igcse_pay_rate !== undefined || hourlyRateOL !== undefined) {
         const val = body.igcsePayRate ?? body.igcse_pay_rate ?? hourlyRateOL;
         updateData.igcsePayRate =
           val !== null && val !== "" && !isNaN(Number(val)) ? parseFloat(String(val)) : null;
       }
-      if (body.ialIasPayRate !== undefined || body.ial_ias_pay_rate !== undefined || hourlyRateAL !== undefined || hourlyRate !== undefined) {
+      if (body.isALTutor === false) {
+        updateData.ialIasPayRate = null;
+      } else if (body.ialIasPayRate !== undefined || body.ial_ias_pay_rate !== undefined || hourlyRateAL !== undefined || hourlyRate !== undefined) {
         const val = body.ialIasPayRate ?? body.ial_ias_pay_rate ?? hourlyRateAL ?? hourlyRate;
         updateData.ialIasPayRate =
           val !== null && val !== "" && !isNaN(Number(val)) ? parseFloat(String(val)) : null;

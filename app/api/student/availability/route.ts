@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
 import { Role } from "@prisma/client";
+import { hasStudentAssignedClasses } from "@/lib/server/assigned-classes";
 import {
   DEFAULT_TIMEZONE,
   getRegionalTimezone,
@@ -79,6 +80,8 @@ export async function GET(request: NextRequest) {
       orderBy: { dueDate: "asc" },
     });
 
+    const assignedInfo = await hasStudentAssignedClasses(studentId);
+
     return NextResponse.json({
       success: true,
       student: {
@@ -89,6 +92,9 @@ export async function GET(request: NextRequest) {
       regionalTimezone: getRegionalTimezone(resolvedTimezone),
       availabilities,
       scheduledEvents,
+      hasAssignedClasses: assignedInfo.hasAssignedClasses,
+      assignedClassesCount: assignedInfo.count,
+      activeAssignedClasses: assignedInfo.activeClasses,
     });
   } catch (error: any) {
     console.error("Student Availability GET error:", error);
@@ -138,6 +144,28 @@ export async function POST(request: NextRequest) {
         message: `Regional timezone updated to ${validTz}.`,
         timezone: validTz,
       });
+    }
+
+    // Do not allow students to change availability if classes are already assigned to them
+    if (
+      action === "set_availability" ||
+      action === "batch_add" ||
+      action === "delete_availability" ||
+      action === "toggle_availability" ||
+      action === "apply_preset" ||
+      action === "clear_all"
+    ) {
+      const assignedInfo = await hasStudentAssignedClasses(student.id);
+      if (assignedInfo.hasAssignedClasses) {
+        return NextResponse.json(
+          {
+            error: "You cannot change your study availability because you already have active or scheduled classes assigned to you. Please request a reschedule or contact support if you need to adjust your timings.",
+            hasAssignedClasses: true,
+            assignedClassesCount: assignedInfo.count,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     if (action === "set_availability" || action === "batch_add") {

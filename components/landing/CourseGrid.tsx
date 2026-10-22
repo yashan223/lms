@@ -23,6 +23,7 @@ import {
   FacultyTutor,
   formatDbTutors,
   parseTutorBio,
+  isTutorQualifiedForLevel,
 } from "@/lib/faculty-tutors";
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -110,7 +111,7 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
                 slug: c.slug,
                 subtitle: c.subtitle || c.description,
                 category: c.category,
-                level: isCourseOL(c) ? "London O/L" : "London A/L",
+                level: isCourseOL(c) ? "Cambridge/Edexcel IGCSE & OL" : "Cambridge/Edexcel AS & A2",
                 subjectCode: c.subjectCode || "MATH-101",
                 thumbnail: c.thumbnail || null,
                 price: c.price,
@@ -183,9 +184,7 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
 
       const matchesLevel =
         effectiveLevel === "ALL" ||
-        tutor.level === "BOTH" ||
-        (effectiveLevel === "AL" && (tutor.level === "AL" || tutor.subjects.some((s) => s.level === "AL"))) ||
-        (effectiveLevel === "OL" && (tutor.level === "OL" || tutor.subjects.some((s) => s.level === "OL")));
+        isTutorQualifiedForLevel(tutor, effectiveLevel);
 
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
@@ -212,7 +211,7 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#0c2461] tracking-tight mb-3">
-              London A/L & O/L Subject Individual Classes & Tutors
+              Cambridge/Edexcel AS, A2 & OL Subject Classes & Tutors
             </h2>
             <p className="text-sm sm:text-base text-slate-600">
               Unit-by-unit syllabus coverage, comprehensive tuition walkthroughs, and structured topic individual classes.
@@ -280,12 +279,12 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
                 {userAcademicLevel === "OL" ? (
                   <>
                     <BookOpen className="w-3.5 h-3.5 text-blue-200" />
-                    <span>London O/L (IGCSE)</span>
+                    <span>Cambridge/Edexcel IGCSE & OL</span>
                   </>
                 ) : (
                   <>
                     <GraduationCap className="w-3.5 h-3.5 text-blue-200" />
-                    <span>London A/L (IAL)</span>
+                    <span>Cambridge/Edexcel AS & A2</span>
                   </>
                 )}
                 <span className="text-[9px] bg-white/20 text-white px-1.5 py-0.2 rounded font-extrabold uppercase">
@@ -300,8 +299,8 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
               </span>
               {[
                 { id: "ALL", label: "All Qualifications" },
-                { id: "AL", label: "London A/L (IAL)" },
-                { id: "OL", label: "London O/L (IGCSE)" },
+                { id: "AL", label: "Cambridge/Edexcel AS and A2" },
+                { id: "OL", label: "Cambridge/Edexcel IGCSE and OL" },
               ].map((lvl) => (
                 <button
                   key={lvl.id}

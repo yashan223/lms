@@ -27,7 +27,7 @@ import {
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { CoursePurchaseModal } from "@/components/checkout/CoursePurchaseModal";
 import { PermanentEnrollmentModal } from "@/components/enrollment/PermanentEnrollmentModal";
-import { FacultyTutor, formatDbTutors, parseTutorBio } from "@/lib/faculty-tutors";
+import { FacultyTutor, formatDbTutors, parseTutorBio, isTutorQualifiedForLevel } from "@/lib/faculty-tutors";
 import { isCourseOL, isCourseAL, getStudentAcademicLevel } from "@/lib/currency";
 
 export default function CoursesPage() {
@@ -110,7 +110,7 @@ export default function CoursesPage() {
               slug: c.slug,
               subtitle: c.subtitle || c.description,
               category: c.category,
-              level: isCourseOL(c) ? "London O/L" : "London A/L",
+              level: isCourseOL(c) ? "Cambridge/Edexcel IGCSE & OL" : "Cambridge/Edexcel AS & A2",
               subjectCode: c.subjectCode || "MATH-101",
               thumbnail: c.thumbnail || null,
               price: c.price,
@@ -219,9 +219,7 @@ export default function CoursesPage() {
 
       const matchLevel =
         effectiveLevel === "ALL" ||
-        tutor.level === "BOTH" ||
-        (effectiveLevel === "AL" && (tutor.level === "AL" || tutor.subjects?.some((s: any) => s.level === "AL" || s.level === "BOTH"))) ||
-        (effectiveLevel === "OL" && (tutor.level === "OL" || tutor.subjects?.some((s: any) => s.level === "OL" || s.level === "BOTH")));
+        isTutorQualifiedForLevel(tutor, effectiveLevel);
 
       return matchSearch && matchCat && matchLevel;
     });
@@ -295,12 +293,12 @@ export default function CoursesPage() {
                   {userAcademicLevel === "OL" ? (
                     <>
                       <BookOpen className="w-3.5 h-3.5 text-blue-200" />
-                      <span>London O/L (IGCSE) Individual Classes</span>
+                      <span>Cambridge/Edexcel IGCSE and OL Individual Classes</span>
                     </>
                   ) : (
                     <>
                       <GraduationCap className="w-3.5 h-3.5 text-blue-200" />
-                      <span>London A/L (IAL) Individual Classes</span>
+                      <span>Cambridge/Edexcel AS and A2 Individual Classes</span>
                     </>
                   )}
                   <span className="text-[10px] bg-white/20 text-white px-1.5 py-0.5 rounded font-bold">
@@ -313,8 +311,8 @@ export default function CoursesPage() {
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Level:</span>
                 {[
                   { id: "ALL", label: "All Qualifications" },
-                  { id: "AL", label: "London A/L (IAL)" },
-                  { id: "OL", label: "London O/L (IGCSE)" },
+                  { id: "AL", label: "Cambridge/Edexcel AS and A2" },
+                  { id: "OL", label: "Cambridge/Edexcel IGCSE and OL" },
                 ].map((lvl) => (
                   <button
                     key={lvl.id}
@@ -663,7 +661,7 @@ export default function CoursesPage() {
                           {tutor.subjects && tutor.subjects.length > 0 && (
                             <div className="space-y-1.5 pt-1">
                               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                                London O/L & A/L Subjects Taught:
+                                Cambridge/Edexcel AS, A2 & OL Subjects Taught:
                               </span>
                               <div className="flex flex-wrap gap-1.5">
                                 {tutor.subjects.map((sub: any, sIdx: number) => (

@@ -270,35 +270,35 @@ export function determineClassTier(
 
   // 1. Cross-check Explicit Academic Level from Event (set when creating / scheduling class)
   const eventLevel = (event?.academicLevel || "").toUpperCase();
-  if (eventLevel === "AL" || eventLevel === "IAL" || eventLevel === "A_LEVEL" || eventLevel === "ADVANCED") {
-    return { tier: "IAL_IAS", label: "London A/L (Advanced)" };
+  if (eventLevel === "AL" || eventLevel === "IAL" || eventLevel === "A_LEVEL" || eventLevel === "ADVANCED" || eventLevel.includes("A2") || eventLevel.includes("AS")) {
+    return { tier: "IAL_IAS", label: "Cambridge/Edexcel AS and A2" };
   }
   if (eventLevel === "OL" || eventLevel === "IGCSE" || eventLevel === "O_LEVEL" || eventLevel === "INTERMEDIATE" || eventLevel === "FOUNDATION") {
-    return { tier: "IGCSE", label: "London O/L (Intermediate)" };
+    return { tier: "IGCSE", label: "Cambridge/Edexcel IGCSE and OL" };
   }
 
   // 2. Cross-check Course Level Dropdown selected when creating the Course
-  // ADVANCED = "London A/L (Advanced)", INTERMEDIATE = "London O/L (Intermediate)", FOUNDATION = "Foundation / Preparatory"
+  // ADVANCED = "Cambridge/Edexcel AS and A2", INTERMEDIATE = "Cambridge/Edexcel IGCSE and OL"
   const courseLevel = (course?.level || "").toUpperCase();
-  if (courseLevel === "ADVANCED" || courseLevel === "AL" || courseLevel === "A_LEVEL") {
-    return { tier: "IAL_IAS", label: "London A/L (Advanced)" };
+  if (courseLevel === "ADVANCED" || courseLevel === "AL" || courseLevel === "A_LEVEL" || courseLevel.includes("A2") || courseLevel.includes("AS")) {
+    return { tier: "IAL_IAS", label: "Cambridge/Edexcel AS and A2" };
   }
   if (courseLevel === "INTERMEDIATE" || courseLevel === "OL" || courseLevel === "O_LEVEL" || courseLevel === "FOUNDATION") {
-    return { tier: "IGCSE", label: "London O/L (Intermediate)" };
+    return { tier: "IGCSE", label: "Cambridge/Edexcel IGCSE and OL" };
   }
 
   // 3. Cross-check Tutor Profile capabilities
   // If tutor exclusively teaches only one level, prioritize that tutor specialization
   if (isALTutor && !isOLTutor) {
-    return { tier: "IAL_IAS", label: "London A/L (Advanced)" };
+    return { tier: "IAL_IAS", label: "Cambridge/Edexcel AS and A2" };
   }
   if (!isALTutor && isOLTutor) {
-    return { tier: "IGCSE", label: "London O/L (Intermediate)" };
+    return { tier: "IGCSE", label: "Cambridge/Edexcel IGCSE and OL" };
   }
 
   // 4. Regex keyword matching with word boundaries on course subtitle, title, code, event title & description
   // Using \b word boundaries so words like "biology" or "ecology" NEVER false-match "ol"!
-  const alRegex = /\b(al|a\/l|a-level|advanced\s*level|ial|ias)\b/i;
+  const alRegex = /\b(al|a\/l|a-level|advanced\s*level|ial|ias|a2|as)\b/i;
   const olRegex = /\b(ol|o\/l|o-level|ordinary\s*level|igcse|gcse)\b/i;
 
   const combinedText = [
@@ -310,23 +310,23 @@ export function determineClassTier(
   ].join(" ");
 
   if (alRegex.test(combinedText) && !olRegex.test(combinedText)) {
-    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+    return { tier: "IAL_IAS", label: "Cambridge/Edexcel AS and A2" };
   }
   if (olRegex.test(combinedText) && !alRegex.test(combinedText)) {
-    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+    return { tier: "IGCSE", label: "Cambridge/Edexcel IGCSE and OL" };
   }
 
   // 5. Cross-check Student Academic Level
   const stdLvl = (studentLevel || "").toUpperCase();
-  if (stdLvl === "AL" || stdLvl.includes("A/L") || stdLvl.includes("IAL")) {
-    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  if (stdLvl === "AL" || stdLvl.includes("A/L") || stdLvl.includes("IAL") || stdLvl.includes("A2") || stdLvl.includes("AS")) {
+    return { tier: "IAL_IAS", label: "Cambridge/Edexcel AS and A2" };
   }
   if (stdLvl === "OL" || stdLvl.includes("O/L") || stdLvl.includes("IGCSE")) {
-    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+    return { tier: "IGCSE", label: "Cambridge/Edexcel IGCSE and OL" };
   }
 
-  // 6. Default to A-Level: IAL & IAS (Standard Platform Rate)
-  return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  // 6. Default to A-Level: Cambridge/Edexcel AS and A2 (Standard Platform Rate)
+  return { tier: "IAL_IAS", label: "Cambridge/Edexcel AS and A2" };
 }
 
 /**

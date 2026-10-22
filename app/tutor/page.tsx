@@ -4508,8 +4508,8 @@ function TutorDashboardContent() {
                   className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
                 >
                   <option value="AUTO">Auto-detect from Course / Student Level</option>
-                  <option value="AL">London A/L (Advanced{profileRateAL ? ` - Rs. ${Number(profileRateAL).toLocaleString()}/hr` : ""})</option>
-                  <option value="OL">London O/L (Intermediate{profileRateOL ? ` - Rs. ${Number(profileRateOL).toLocaleString()}/hr` : ""})</option>
+                  <option value="AL">Cambridge/Edexcel AS and A2{profileRateAL ? ` - Rs. ${Number(profileRateAL).toLocaleString()}/hr` : ""}</option>
+                  <option value="OL">Cambridge/Edexcel IGCSE and OL{profileRateOL ? ` - Rs. ${Number(profileRateOL).toLocaleString()}/hr` : ""}</option>
                 </select>
               </div>
 

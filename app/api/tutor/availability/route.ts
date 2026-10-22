@@ -13,6 +13,7 @@ import {
   getDualTimeDisplay,
 } from "@/lib/timezones";
 import { getEventDurationMinutes } from "@/lib/scheduling";
+import { hasTutorAssignedClasses } from "@/lib/server/assigned-classes";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -511,6 +512,8 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(0, daysCount);
 
+    const assignedInfo = await hasTutorAssignedClasses(resolvedTutorId);
+
     return NextResponse.json({
       success: true,
       tutor,
@@ -520,6 +523,9 @@ export async function GET(request: NextRequest) {
       viewerRegion: getRegionalTimezone(viewerTimezone),
       student: studentData,
       availabilities: rawAvailabilities,
+      hasAssignedClasses: assignedInfo.hasAssignedClasses,
+      assignedClassesCount: assignedInfo.count,
+      activeAssignedClasses: assignedInfo.activeClasses,
       scheduledClasses: scheduledClasses.map((c) => ({
         id: c.id,
         title: c.title,
@@ -575,6 +581,31 @@ export async function POST(request: NextRequest) {
         message: `Regional timezone updated to ${validTz}.`,
         timezone: validTz,
       });
+    }
+
+    // Do not allow tutors to change availability if classes are already assigned to them
+    if (
+      tutor.role !== Role.ADMIN &&
+      (
+        action === "set_availability" ||
+        action === "batch_add" ||
+        action === "delete_availability" ||
+        action === "toggle_availability" ||
+        action === "apply_preset" ||
+        action === "clear_all"
+      )
+    ) {
+      const assignedInfo = await hasTutorAssignedClasses(tutor.id);
+      if (assignedInfo.hasAssignedClasses) {
+        return NextResponse.json(
+          {
+            error: "You cannot modify your availability because you already have active or scheduled classes assigned to your schedule. Please contact administration to adjust class assignments.",
+            hasAssignedClasses: true,
+            assignedClassesCount: assignedInfo.count,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     if (action === "set_availability" || action === "batch_add") {

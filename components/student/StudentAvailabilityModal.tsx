@@ -15,6 +15,7 @@ import {
   RefreshCw,
   BookOpen,
   Zap,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,8 @@ export function StudentAvailabilityModal({
   const [title, setTitle] = useState("After-School Study & Mentoring Hours");
 
   const [saving, setSaving] = useState(false);
+  const [hasAssignedClasses, setHasAssignedClasses] = useState(false);
+  const [assignedClassesCount, setAssignedClassesCount] = useState(0);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState<string>(
     currentUser?.timezone || DEFAULT_TIMEZONE
@@ -95,6 +98,10 @@ export function StudentAvailabilityModal({
         setAvailabilities(data.availabilities || []);
         if (data.timezone) {
           setSelectedTimezone(data.timezone);
+        }
+        if (data.hasAssignedClasses !== undefined) {
+          setHasAssignedClasses(Boolean(data.hasAssignedClasses));
+          setAssignedClassesCount(data.assignedClassesCount || 0);
         }
       }
     } catch (err) {
@@ -313,6 +320,25 @@ export function StudentAvailabilityModal({
             </div>
           </div>
 
+        {hasAssignedClasses && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div className="space-y-0.5 text-xs">
+              <div className="font-extrabold text-amber-950 flex items-center gap-2">
+                <span>Study Availability Locked</span>
+                <Badge className="bg-amber-200/80 text-amber-900 border-amber-300 text-[10px] font-bold">
+                  {assignedClassesCount} Active Class{assignedClassesCount === 1 ? "" : "es"} Assigned
+                </Badge>
+              </div>
+              <p className="text-amber-800 leading-relaxed">
+                You already have active or scheduled classes assigned to your timetable. Your study availability cannot be altered to prevent schedule conflicts with your tutors. If you need to adjust timings, please request a class reschedule or contact support.
+              </p>
+            </div>
+          </div>
+        )}
+
         {statusMsg && (
           <div
             className={`p-3 rounded-xl border text-xs flex items-center gap-2 animate-in fade-in ${
@@ -338,8 +364,12 @@ export function StudentAvailabilityModal({
             <button
               type="button"
               onClick={() => handleApplyPreset("WEEKDAY_EVENINGS")}
-              disabled={saving}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
+              disabled={saving || hasAssignedClasses}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                hasAssignedClasses
+                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
+                  : "bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border-slate-200 cursor-pointer"
+              }`}
             >
               <Zap className="w-3.5 h-3.5" />
               Weekdays (4:00 PM – 8:00 PM)
@@ -347,8 +377,12 @@ export function StudentAvailabilityModal({
             <button
               type="button"
               onClick={() => handleApplyPreset("WEEKEND_STUDY")}
-              disabled={saving}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
+              disabled={saving || hasAssignedClasses}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                hasAssignedClasses
+                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
+                  : "bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border-slate-200 cursor-pointer"
+              }`}
             >
               <Zap className="w-3.5 h-3.5" />
               Weekend Study (10:00 AM – 4:00 PM)
@@ -459,13 +493,22 @@ export function StudentAvailabilityModal({
 
           <Button
             type="submit"
-            disabled={saving}
-            className="w-full bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl h-9.5 gap-1.5 shadow-xs cursor-pointer"
+            disabled={saving || hasAssignedClasses}
+            className={`w-full text-xs font-bold rounded-xl h-9.5 gap-1.5 shadow-xs ${
+              hasAssignedClasses
+                ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                : "bg-[#0c2461] hover:bg-[#103080] text-white cursor-pointer"
+            }`}
           >
             {saving ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>Saving Study Hours...</span>
+              </>
+            ) : hasAssignedClasses ? (
+              <>
+                <Lock className="w-3.5 h-3.5" />
+                <span>Locked: Active Classes Assigned</span>
               </>
             ) : (
               <>
@@ -529,14 +572,23 @@ export function StudentAvailabilityModal({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSlot(av.id)}
-                        className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
-                        title="Delete slot"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {hasAssignedClasses ? (
+                        <span
+                          className="text-slate-300 p-1.5 rounded-lg shrink-0 cursor-not-allowed"
+                          title="Locked: Active classes assigned to your schedule"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSlot(av.id)}
+                          className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                          title="Delete slot"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   );
                 })}

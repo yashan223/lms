@@ -21,6 +21,7 @@ import {
   CalendarClock,
   Globe,
   X,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -111,6 +112,8 @@ export function TutorAvailabilityManager({
   const [previewTimezone, setPreviewTimezone] = useState<string>(tutor?.timezone || DEFAULT_TIMEZONE);
 
   const [saving, setSaving] = useState(false);
+  const [hasAssignedClasses, setHasAssignedClasses] = useState(false);
+  const [assignedClassesCount, setAssignedClassesCount] = useState(0);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -133,6 +136,10 @@ export function TutorAvailabilityManager({
         }
         setAvailabilities(data.availabilities || []);
         setDaySlotsPreview(data.days || []);
+        if (data.hasAssignedClasses !== undefined) {
+          setHasAssignedClasses(Boolean(data.hasAssignedClasses));
+          setAssignedClassesCount(data.assignedClassesCount || 0);
+        }
       }
     } catch (err) {
       console.error("Failed to load availability:", err);
@@ -325,6 +332,25 @@ export function TutorAvailabilityManager({
 
   return (
     <div className="space-y-6">
+      {hasAssignedClasses && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
+          <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+            <Lock className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5 text-xs">
+            <div className="font-extrabold text-amber-950 flex items-center gap-2">
+              <span>Teaching Availability Locked</span>
+              <Badge className="bg-amber-200/80 text-amber-900 border-amber-300 text-[10px] font-bold">
+                {assignedClassesCount} Active Class{assignedClassesCount === 1 ? "" : "es"} Assigned
+              </Badge>
+            </div>
+            <p className="text-amber-800 leading-relaxed">
+              You already have active or scheduled classes assigned to your schedule. To protect enrolled student timetables and avoid scheduling conflicts, your availability cannot be altered or removed while classes are assigned. Please contact administration if you need to adjust assigned classes.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -344,12 +370,29 @@ export function TutorAvailabilityManager({
         <div className="flex items-center gap-2.5 shrink-0">
           <Button
             size="sm"
-            onClick={() => router.push("/tutor/availability")}
-            className="bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold rounded-xl px-4 py-2 gap-2 cursor-pointer shadow-md shadow-blue-950/20"
+            onClick={() => {
+              if (hasAssignedClasses) return;
+              router.push("/tutor/availability");
+            }}
+            disabled={hasAssignedClasses}
+            className={`text-xs font-bold rounded-xl px-4 py-2 gap-2 shadow-md ${
+              hasAssignedClasses
+                ? "bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
+                : "bg-[#0c2461] hover:bg-[#103080] text-white cursor-pointer shadow-blue-950/20"
+            }`}
           >
-            <Plus className="w-4 h-4" />
-            <span>Set Multiple Available Times</span>
-            <ExternalLink className="w-3.5 h-3.5 text-blue-300 ml-0.5" />
+            {hasAssignedClasses ? (
+              <>
+                <Lock className="w-4 h-4" />
+                <span>Availability Locked</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                <span>Set Multiple Available Times</span>
+                <ExternalLink className="w-3.5 h-3.5 text-blue-300 ml-0.5" />
+              </>
+            )}
           </Button>
 
           <Button
@@ -553,14 +596,23 @@ export function TutorAvailabilityManager({
                             {format24hTo12h(av.startTime)} – {format24hTo12h(av.endTime)}
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSlot(av.id)}
-                          className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                          title="Delete slot"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {hasAssignedClasses ? (
+                          <span
+                            className="text-slate-300 p-1 rounded-lg cursor-not-allowed"
+                            title="Locked: Classes already assigned"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSlot(av.id)}
+                            className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Delete slot"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-200/60">

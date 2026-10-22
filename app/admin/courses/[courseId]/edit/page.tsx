@@ -47,6 +47,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { isTutorQualifiedForLevel } from "@/lib/faculty-tutors";
 
 type Lesson = {
   id: string;
@@ -159,6 +160,11 @@ type TutorMember = {
   name?: string | null;
   email?: string | null;
   avatar?: string | null;
+  bio?: string | null;
+  ialIasPayRate?: number | null;
+  igcsePayRate?: number | null;
+  level?: string;
+  [key: string]: any;
 };
 
 type Tab = "overview" | "curriculum" | "materials" | "students" | "live_classes" | "reviews";
@@ -313,9 +319,12 @@ export function AdminCourseWorkspaceContent({
           setTutorList(fetchedTutors);
           setAllUsers(data.allUsers || []);
           if (fetchedTutors.length > 0 && !detailsForm.tutorId) {
+            const qualified = fetchedTutors.find((t: any) =>
+              isTutorQualifiedForLevel(t, detailsForm.level || "ADVANCED")
+            );
             setDetailsForm((prev) => ({
               ...prev,
-              tutorId: prev.tutorId || fetchedTutors[0].id,
+              tutorId: prev.tutorId || (qualified ? qualified.id : fetchedTutors[0].id),
             }));
           }
         }
@@ -1231,12 +1240,22 @@ export function AdminCourseWorkspaceContent({
                   <label className="text-xs font-bold text-slate-700">Academic Level</label>
                   <select
                     value={detailsForm.level}
-                    onChange={(e) => setDetailsForm({ ...detailsForm, level: e.target.value })}
+                    onChange={(e) => {
+                      const newLvl = e.target.value;
+                      setDetailsForm((prev) => {
+                        const updated = { ...prev, level: newLvl };
+                        const currentTutor = tutorList.find((t) => t.id === prev.tutorId);
+                        if (currentTutor && !isTutorQualifiedForLevel(currentTutor, newLvl)) {
+                          const qualified = tutorList.find((t) => isTutorQualifiedForLevel(t, newLvl));
+                          updated.tutorId = qualified ? qualified.id : "";
+                        }
+                        return updated;
+                      });
+                    }}
                     className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option value="ADVANCED">London A/L (Advanced)</option>
-                    <option value="INTERMEDIATE">London O/L (Intermediate)</option>
-                    <option value="FOUNDATION">Foundation / Preparatory</option>
+                    <option value="ADVANCED">Cambridge/Edexcel AS and A2</option>
+                    <option value="INTERMEDIATE">Cambridge/Edexcel IGCSE and OL</option>
                   </select>
                 </div>
 
@@ -1248,11 +1267,13 @@ export function AdminCourseWorkspaceContent({
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all shadow-2xs"
                   >
                     <option value="">Select Tutor...</option>
-                    {tutorList.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name || f.email} ({f.email})
-                      </option>
-                    ))}
+                    {tutorList
+                      .filter((f) => isTutorQualifiedForLevel(f, detailsForm.level))
+                      .map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name || f.email} ({f.email})
+                        </option>
+                      ))}
                   </select>
                 </div>
 

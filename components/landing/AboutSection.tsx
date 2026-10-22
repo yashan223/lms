@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   ArrowRight,
   Video,
-  Sparkles,
 } from "lucide-react";
 
 export function AboutSection() {
@@ -66,15 +65,9 @@ export function AboutSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold mb-3">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                <span>Live 1-on-1 Virtual Tutoring</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.15]">
-                World-Class London A/L & O/L Online Education
-              </h2>
-            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#0c2461] tracking-tight leading-[1.15]">
+              World-Class London A/L & O/L Online Education
+            </h2>
 
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
               EduPulse is the premier platform connecting London A/L (IAL) and London O/L (IGCSE) students with elite subject tutors for interactive 1-on-1 classes. Powered by BigBlueButton live video rooms, automated class recordings, and transparent escrow-protected token enrollments.
@@ -130,12 +123,6 @@ export function AboutSection() {
                   preload="metadata"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-3 left-3 pointer-events-none z-10">
-                  <span className="px-2.5 py-1 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold flex items-center gap-1.5 border border-white/10 shadow-sm">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Platform Tour & Overview
-                  </span>
-                </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-500 font-medium">
                 <span className="flex items-center gap-1.5 text-slate-700">

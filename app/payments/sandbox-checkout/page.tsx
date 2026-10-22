@@ -185,10 +185,17 @@ function SandboxCheckoutContent() {
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <span className="text-xs text-slate-400">Total to Authorise</span>
+              <span className="text-xs text-slate-400">
+                {isUsd ? "Total to Authorise (USD)" : "Total to Authorise (LKR)"}
+              </span>
               <div className="text-3xl font-black text-white tracking-tight">
                 {formattedPrice}
               </div>
+              {isUsd && paymentData && (
+                <div className="text-[11px] text-sky-400 font-mono mt-0.5">
+                  Approx Rs. {Math.round((paymentData.amountCents / 100) * 300).toLocaleString("en-LK")} LKR gateway clearance
+                </div>
+              )}
             </div>
           </div>
 
@@ -203,19 +210,21 @@ function SandboxCheckoutContent() {
                     : "bg-slate-800 text-slate-400 hover:text-white"
                 }`}
               >
-                <CreditCard className="w-4 h-4" /> Credit / Debit Card (Visa / MC / Amex)
+                <CreditCard className="w-4 h-4" /> {isUsd ? "Credit / Debit Card (USD International)" : "Credit / Debit Card (Visa / MC / Amex)"}
               </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethodTab("LANKAQR")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
-                  paymentMethodTab === "LANKAQR"
-                    ? "bg-sky-500 text-white shadow-lg shadow-sky-500/20"
-                    : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
-              >
-                <QrCode className="w-4 h-4" /> LankaQR / LankaPay
-              </button>
+              {!isUsd && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethodTab("LANKAQR")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                    paymentMethodTab === "LANKAQR"
+                      ? "bg-sky-500 text-white shadow-lg shadow-sky-500/20"
+                      : "bg-slate-800 text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <QrCode className="w-4 h-4" /> LankaQR / LankaPay
+                </button>
+              )}
             </div>
 
             {paymentMethodTab === "CARD" ? (

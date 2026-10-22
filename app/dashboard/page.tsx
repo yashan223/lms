@@ -71,7 +71,7 @@ import { EncryptedChatDrawer } from "@/components/chat/EncryptedChatDrawer";
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { formatClassId } from "@/lib/class-id-client";
 import { DEFAULT_BUNDLES, TokenBundle } from "@/lib/bundle-types";
-import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
+import { formatStudentPrice, getStudentAcademicLevel, isCourseOL, isCourseAL, isSriLankanStudent } from "@/lib/currency";
 import {
   getUserBrowserTimezone,
   formatTimeInTimezone,
@@ -158,6 +158,7 @@ interface UserProfile {
 
 function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [allCourses, setAllCourses] = useState<any[]>([]);
@@ -172,6 +173,21 @@ function DashboardContent() {
   const [tokenFeedbackMsg, setTokenFeedbackMsg] = useState("");
   const [tokenBundles, setTokenBundles] = useState<TokenBundle[]>(DEFAULT_BUNDLES);
   const [detectedCountry, setDetectedCountry] = useState<string | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<"LKR" | "USD">("LKR");
+
+  useEffect(() => {
+    const c = user?.country || detectedCountry;
+    if (c) {
+      setSelectedCurrency(isSriLankanStudent(c) ? "LKR" : "USD");
+    }
+  }, [user?.country, detectedCountry]);
+
+  useEffect(() => {
+    const buyBundle = searchParams?.get("buyBundle");
+    if (buyBundle) {
+      setShowBuyTokensModal(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -429,16 +445,18 @@ function DashboardContent() {
     }
   };
 
-  const handlePurchaseTokenPack = async (packageId: string) => {
+  const handlePurchaseTokenPack = async (packageId: string, currencyOverride?: "LKR" | "USD") => {
     try {
       setTokenPurchasing(true);
       setTokenFeedbackMsg("Connecting to Payments.lk...");
+      const currency = currencyOverride || selectedCurrency || (isSriLankanStudent(user?.country || detectedCountry) ? "LKR" : "USD");
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           itemType: "TOKEN_BUNDLE",
           itemId: packageId,
+          currency,
         }),
       });
       const result = await res.json();
@@ -2744,7 +2762,7 @@ function DashboardContent() {
               </div>
             )}
 
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 gap-2.5">
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Applied Tier:</span>
                 <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md border inline-flex items-center gap-1.5 ${
@@ -2755,72 +2773,103 @@ function DashboardContent() {
                   {user?.academicLevel === "OL" ? (
                     <>
                       <BookOpen className="w-3.5 h-3.5 text-blue-700" />
-                      <span>London O/L (IGCSE) Student Rate</span>
+                      <span>London O/L (IGCSE) Rate</span>
                     </>
                   ) : (
                     <>
                       <GraduationCap className="w-3.5 h-3.5 text-blue-700" />
-                      <span>London A/L (IAL) Student Rate</span>
+                      <span>London A/L (IAL) Rate</span>
                     </>
                   )}
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400 font-semibold inline-flex items-center gap-1 bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200">
-                <Lock className="w-3 h-3 text-slate-400" />
-                <span>Enrolled Track</span>
-              </span>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Currency:</span>
+                <div className="inline-flex p-0.5 bg-slate-200/80 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCurrency("LKR")}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-md transition cursor-pointer ${
+                      selectedCurrency === "LKR"
+                        ? "bg-white text-blue-700 shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    LKR (Rs.)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCurrency("USD")}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-md transition cursor-pointer ${
+                      selectedCurrency === "USD"
+                        ? "bg-white text-blue-700 shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    USD ($)
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {(tokenBundles.length > 0 ? tokenBundles : DEFAULT_BUNDLES).map((pack) => (
-                <div
-                  key={pack.id}
-                  className="p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 transition-all flex items-center justify-between gap-4 group"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 group-hover:text-blue-700">
-                        {pack.name}
-                      </h4>
-                      {pack.badge && (
-                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-black uppercase tracking-wider">
-                          {pack.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-snug">{pack.description}</p>
-                    <div className="text-xs font-bold text-blue-600 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{pack.hours || pack.tokens} Hours Learning Credit</span>
-                    </div>
-                  </div>
+            {selectedCurrency === "USD" && (
+              <div className="px-3.5 py-2 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-center justify-between text-xs text-blue-800">
+                <span className="font-medium">International card checkout supported via Payments.lk IPG.</span>
+                <span className="font-bold font-mono text-[11px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded">Payments.lk 3DS</span>
+              </div>
+            )}
 
-                  <div className="text-right shrink-0">
-                    <div className="text-lg font-black text-slate-900">
-                      {formatStudentPrice(
-                        pack.price,
-                        user?.country || detectedCountry,
-                        pack.lkrPrice,
-                        user?.academicLevel || "AL",
-                        pack.olPrice,
-                        pack.olLkrPrice
-                      )}
+            <div className="space-y-3">
+              {(tokenBundles.length > 0 ? tokenBundles : DEFAULT_BUNDLES).map((pack) => {
+                const isOL = user?.academicLevel === "OL";
+                const displayPrice = selectedCurrency === "USD"
+                  ? `$${(isOL && pack.olPrice && pack.olPrice > 0 ? pack.olPrice : pack.price).toFixed(2)} USD`
+                  : `Rs. ${(isOL && pack.olLkrPrice && pack.olLkrPrice > 0 ? pack.olLkrPrice : (pack.lkrPrice || pack.price * 300)).toLocaleString("en-LK")}`;
+
+                return (
+                  <div
+                    key={pack.id}
+                    className="p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 transition-all flex items-center justify-between gap-4 group"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 group-hover:text-blue-700">
+                          {pack.name}
+                        </h4>
+                        {pack.badge && (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-black uppercase tracking-wider">
+                            {pack.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-snug">{pack.description}</p>
+                      <div className="text-xs font-bold text-blue-600 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{pack.hours || pack.tokens} Hours Learning Credit</span>
+                      </div>
                     </div>
-                    <Button
-                      size="sm"
-                      disabled={tokenPurchasing}
-                      onClick={() => handlePurchaseTokenPack(pack.id)}
-                      className="mt-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-3 cursor-pointer shadow-sm"
-                    >
-                      {tokenPurchasing ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        "Purchase"
-                      )}
-                    </Button>
+
+                    <div className="text-right shrink-0">
+                      <div className="text-lg font-black text-slate-900">
+                        {displayPrice}
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={tokenPurchasing}
+                        onClick={() => handlePurchaseTokenPack(pack.id, selectedCurrency)}
+                        className="mt-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-3 cursor-pointer shadow-sm"
+                      >
+                        {tokenPurchasing ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          "Purchase"
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

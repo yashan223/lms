@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { getBundles } from "@/lib/bundles";
+import { getPackageCurrency } from "@/lib/currency";
 import {
   createPaymentsLkCheckout,
   isPaymentsLkConfigured,
@@ -36,7 +37,14 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000";
 
+    const requestedCurrency = typeof body.currency === "string" ? body.currency.toUpperCase() : null;
+    const resolvedCurrency: "LKR" | "USD" =
+      requestedCurrency === "USD" || requestedCurrency === "LKR"
+        ? requestedCurrency
+        : getPackageCurrency(user.country);
+
     let amountCents = 0;
+    let gatewayAmountCents = 0;
     let description = "";
     let itemTitle = "";
     let tokens: number | null = null;
@@ -57,17 +65,28 @@ export async function POST(request: NextRequest) {
         user.headline?.includes("O/L") ||
         user.headline?.includes("IGCSE");
 
+      const effectiveUsd =
+        isOL && bundle.olPrice && bundle.olPrice > 0
+          ? bundle.olPrice
+          : bundle.price;
+
       const effectiveLkr =
         isOL && bundle.olLkrPrice && bundle.olLkrPrice > 0
           ? bundle.olLkrPrice
-          : isOL && bundle.olPrice && bundle.olPrice > 0
-          ? bundle.olPrice * 300
-          : bundle.lkrPrice || bundle.price * 300;
+          : bundle.lkrPrice || Math.round(effectiveUsd * 300);
 
-      amountCents = Math.round(effectiveLkr * 100);
-      description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""})`;
       itemTitle = `${bundle.name}${isOL ? " (O/L Tier)" : ""}`;
       tokens = bundle.tokens;
+
+      if (resolvedCurrency === "USD") {
+        amountCents = Math.round(effectiveUsd * 100);
+        gatewayAmountCents = Math.round(effectiveLkr * 100);
+        description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""}) - $${effectiveUsd.toFixed(2)} USD`;
+      } else {
+        amountCents = Math.round(effectiveLkr * 100);
+        gatewayAmountCents = amountCents;
+        description = `PulseEDU - ${bundle.name} (${bundle.tokens} Learning Hours${isOL ? " - O/L Tier" : ""}) - Rs. ${effectiveLkr.toLocaleString("en-LK")} LKR`;
+      }
     } else if (itemType === "COURSE") {
       const course = await prisma.course.findFirst({
         where: {
@@ -110,10 +129,20 @@ export async function POST(request: NextRequest) {
               ? Number(course.price)
               : 0);
 
-      const courseLkrPrice = Math.max(1, effectiveCourseTokens * 1200);
-      amountCents = Math.round(courseLkrPrice * 100);
-      description = `PulseEDU Enrollment: ${course.title}${isOL ? " (O/L Tier)" : ""}`;
+      const effectiveCourseLkr = Math.max(1, effectiveCourseTokens * 1200);
+      const effectiveCourseUsd = Math.max(1, effectiveCourseTokens * 4);
+
       itemTitle = `${course.title}${isOL ? " (O/L Tier)" : ""}`;
+
+      if (resolvedCurrency === "USD") {
+        amountCents = Math.round(effectiveCourseUsd * 100);
+        gatewayAmountCents = Math.round(effectiveCourseLkr * 100);
+        description = `PulseEDU Enrollment: ${course.title}${isOL ? " (O/L Tier)" : ""} - $${effectiveCourseUsd.toFixed(2)} USD`;
+      } else {
+        amountCents = Math.round(effectiveCourseLkr * 100);
+        gatewayAmountCents = amountCents;
+        description = `PulseEDU Enrollment: ${course.title}${isOL ? " (O/L Tier)" : ""} - Rs. ${effectiveCourseLkr.toLocaleString("en-LK")} LKR`;
+      }
     } else {
       return NextResponse.json(
         { error: `Unsupported itemType: ${itemType}` },
@@ -142,7 +171,7 @@ export async function POST(request: NextRequest) {
         reference,
         userId: user.id,
         amountCents,
-        currency: "LKR",
+        currency: resolvedCurrency,
         status: "PENDING",
         itemType,
         itemId,
@@ -153,9 +182,14 @@ export async function POST(request: NextRequest) {
 
     if (isPaymentsLkConfigured()) {
       try {
+        const gatewayDescription =
+          resolvedCurrency === "USD"
+            ? `${description} (Rs. ${(gatewayAmountCents / 100).toLocaleString("en-LK")} LKR)`
+            : description;
+
         const checkout = await createPaymentsLkCheckout({
-          amountCents,
-          description,
+          amountCents: gatewayAmountCents,
+          description: gatewayDescription,
           reference,
           customer: {
             name: user.name || "Student",
@@ -179,6 +213,10 @@ export async function POST(request: NextRequest) {
           checkoutUrl: checkout.url,
           checkoutId: checkout.id,
           reference,
+          currency: resolvedCurrency,
+          amountCents,
+          gatewayAmountCents,
+          gatewayCurrency: "LKR",
           mode: "live_or_sandbox",
         });
       } catch (err: any) {
@@ -204,6 +242,10 @@ export async function POST(request: NextRequest) {
       checkoutUrl: mockCheckoutUrl,
       checkoutId: `chk_test_${reference}`,
       reference,
+      currency: resolvedCurrency,
+      amountCents,
+      gatewayAmountCents,
+      gatewayCurrency: "LKR",
       mode: "sandbox_simulator",
       notice:
         "Running in Payments.lk Sandbox Simulator. Configure PAYMENTS_LK_SECRET_KEY in .env for official hosted checkouts.",

@@ -104,6 +104,11 @@ export async function fulfillPayment(
 
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 365 days lifespan
+      const costLkr =
+        payment.currency === "USD"
+          ? (payment.amountCents / 100) * 300
+          : payment.amountCents / 100;
+
       await tx.tokenGrant.create({
         data: {
           walletId: wallet.id,
@@ -111,7 +116,7 @@ export async function fulfillPayment(
           packageName: payment.itemTitle || `${tokensToAdd} Hours Pack`,
           tokensGranted: tokensToAdd,
           tokensRemaining: tokensToAdd,
-          costLkr: payment.amountCents / 100,
+          costLkr: costLkr,
           purchasedAt: now,
           expiresAt: expiresAt,
           status: "ACTIVE",
@@ -119,11 +124,16 @@ export async function fulfillPayment(
         },
       });
 
+      const formattedPaid =
+        payment.currency === "USD"
+          ? `$${(payment.amountCents / 100).toFixed(2)} USD`
+          : `Rs. ${(payment.amountCents / 100).toLocaleString("en-LK")}`;
+
       await tx.notification.create({
         data: {
           userId: payment.userId,
           title: "💳 Payment Confirmed - Hours Credited!",
-          message: `Your payment of Rs. ${(payment.amountCents / 100).toLocaleString("en-LK")} was successful! ${tokensToAdd} learning hours have been added to your academic wallet.`,
+          message: `Your payment of ${formattedPaid} was successful! ${tokensToAdd} learning hours have been added to your academic wallet.`,
           type: "INFO",
           link: "/dashboard",
         },

@@ -16,6 +16,16 @@ import {
 } from "lucide-react";
 
 export function AboutSection() {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  React.useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
+
   const pillars = [
     {
       icon: Award,
@@ -97,20 +107,33 @@ export function AboutSection() {
           </div>
 
           <div className="lg:col-span-5 space-y-4">
-            <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-slate-900 aspect-[4/3]">
-              <img
-                src="/images/campus_library_study.jpg"
-                alt="Academy Library Study"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 text-white">
-                <div className="text-xs font-bold text-sky-300 uppercase tracking-wider">
-                  International Academic Accreditation
+            <div className="space-y-2.5">
+              <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-slate-900 aspect-video group">
+                <video
+                  ref={videoRef}
+                  src="/pulseedu-promo.mp4"
+                  poster="/images/campus_library_study.jpg"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  controls
+                  preload="metadata"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-3 left-3 pointer-events-none z-10">
+                  <span className="px-2.5 py-1 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold flex items-center gap-1.5 border border-white/10 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Platform Tour & Overview
+                  </span>
                 </div>
-                <div className="text-sm sm:text-base font-extrabold leading-snug">
-                  Academy #EDU-92810 • 140+ Partner Learning Institutions
-                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-500 font-medium">
+                <span className="flex items-center gap-1.5 text-slate-700">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  International Academic Accreditation #EDU-92810
+                </span>
+                <span>140+ Partner Institutions</span>
               </div>
             </div>
 

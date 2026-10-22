@@ -106,13 +106,14 @@ export const COUNTRIES: Country[] = [
 export function findCountry(query: string): Country | undefined {
   if (!query) return undefined;
   const q = query.trim().toLowerCase();
-  return COUNTRIES.find(
+  const exact = COUNTRIES.find(
     (c) =>
       c.name.toLowerCase() === q ||
       c.code.toLowerCase() === q ||
-      c.dialCode.toLowerCase() === q ||
-      c.name.toLowerCase().startsWith(q)
+      c.dialCode.toLowerCase() === q
   );
+  if (exact) return exact;
+  return COUNTRIES.find((c) => c.name.toLowerCase().startsWith(q));
 }
 
 export function findCountryByDialCode(dialCode: string): Country | undefined {

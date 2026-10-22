@@ -41,6 +41,8 @@ import {
   Minimize2,
 } from "lucide-react";
 import { getRegionalTimezone } from "@/lib/timezones";
+import { findCountry } from "@/lib/countries";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 
 interface UserProfileHistoryModalProps {
   isOpen: boolean;
@@ -348,6 +350,13 @@ export function UserProfileHistoryModal({
                     <span className="flex items-center gap-1 font-mono text-[11px] text-slate-600">
                       <Phone className="w-3 h-3 text-emerald-600" />
                       <span>{fullUser.phone}</span>
+                    </span>
+                  )}
+
+                  {fullUser.country && (
+                    <span className="flex items-center gap-1 text-[11px] text-slate-600 font-medium" title={`Country: ${fullUser.country}`}>
+                      <CountryFlag countryCode={findCountry(fullUser.country)?.code} flagEmoji={findCountry(fullUser.country)?.flag} size="xs" />
+                      <span>{fullUser.country}</span>
                     </span>
                   )}
 
@@ -896,6 +905,14 @@ export function UserProfileHistoryModal({
                     <div className="font-semibold text-slate-800 flex items-center gap-1.5 mt-0.5 font-mono">
                       <Phone className="w-3.5 h-3.5 text-emerald-600" />
                       <span>{fullUser.phone || "Not provided"}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 font-medium block text-[11px]">Country of Residence</span>
+                    <div className="font-semibold text-slate-800 flex items-center gap-1.5 mt-0.5">
+                      <CountryFlag countryCode={findCountry(fullUser.country)?.code} flagEmoji={findCountry(fullUser.country)?.flag} size="xs" />
+                      <span>{fullUser.country || "Not specified"}</span>
                     </div>
                   </div>
 

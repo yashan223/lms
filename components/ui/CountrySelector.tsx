@@ -11,6 +11,7 @@ interface CountrySelectorProps {
   required?: boolean;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
   id?: string;
 }
 
@@ -20,6 +21,7 @@ export function CountrySelector({
   required = false,
   placeholder = "Select country...",
   className = "",
+  inputClassName = "",
   id,
 }: CountrySelectorProps) {
   const [inputValue, setInputValue] = useState(value || "");
@@ -147,7 +149,7 @@ export function CountrySelector({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full h-11 pl-10 pr-9 bg-white text-xs text-slate-800 font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all shadow-2xs placeholder:text-slate-400"
+          className={`w-full ${inputClassName || "h-11"} pl-10 pr-9 bg-white text-xs text-slate-800 font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all shadow-2xs placeholder:text-slate-400`}
         />
 
         {inputValue ? (

@@ -171,6 +171,8 @@ export async function GET(request: NextRequest) {
               avatar: true,
               headline: true,
               bio: true,
+              country: true,
+              timezone: true,
             },
           },
           modules: {
@@ -310,6 +312,8 @@ export async function GET(request: NextRequest) {
               avatar: true,
               headline: true,
               bio: true,
+              country: true,
+              timezone: true,
             },
           },
         },

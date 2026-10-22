@@ -90,6 +90,9 @@ import {
   getUserBrowserTimezone,
 } from "@/lib/timezones";
 import { COUNTRY_DIAL_CODES, DEFAULT_DIAL_CODE } from "@/lib/country-codes";
+import { findCountry } from "@/lib/countries";
+import { CountrySelector } from "@/components/ui/CountrySelector";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 
 function formatSessionDuration(startedAt?: string | Date | null, endedAt?: string | Date | null) {
   if (!startedAt) return "—";
@@ -255,6 +258,7 @@ export default function AdminDashboardPage() {
   const [formUserName, setFormUserName] = useState("");
   const [formUserEmail, setFormUserEmail] = useState("");
   const [formUserPhone, setFormUserPhone] = useState("");
+  const [formUserCountry, setFormUserCountry] = useState("Sri Lanka");
   const [formUserCountryDial, setFormUserCountryDial] = useState(DEFAULT_DIAL_CODE);
   const [formUserPassword, setFormUserPassword] = useState("");
   const [showUserPassword, setShowUserPassword] = useState(false);
@@ -272,6 +276,7 @@ export default function AdminDashboardPage() {
   const [createdUserSuccess, setCreatedUserSuccess] = useState<{
     name: string;
     email: string;
+    country?: string | null;
     password?: string;
     role: string;
     tutorId?: string | null;
@@ -796,7 +801,8 @@ export default function AdminDashboardPage() {
         (u.studentId && u.studentId.toLowerCase().includes(q)) ||
         (u.tutorId && u.tutorId.toLowerCase().includes(q)) ||
         (u.adminId && u.adminId.toLowerCase().includes(q)) ||
-        (u.headline && u.headline.toLowerCase().includes(q));
+        (u.headline && u.headline.toLowerCase().includes(q)) ||
+        (u.country && u.country.toLowerCase().includes(q));
       const matchesRole = userRoleFilter === "ALL" || u.role === userRoleFilter;
       return matchesSearch && matchesRole;
     });
@@ -847,6 +853,7 @@ export default function AdminDashboardPage() {
     setFormUserName("");
     setFormUserEmail("");
     setFormUserPhone("");
+    setFormUserCountry("Sri Lanka");
     setFormUserCountryDial(DEFAULT_DIAL_CODE);
     setFormUserPassword("");
     setShowUserPassword(false);
@@ -889,6 +896,7 @@ export default function AdminDashboardPage() {
           name: formUserName,
           email: resolvedEmail,
           phone: fullPhoneNumber || undefined,
+          country: formUserCountry.trim() || undefined,
           password: formUserPassword,
           role: formUserRole,
           headline: formUserHeadline,
@@ -909,6 +917,7 @@ export default function AdminDashboardPage() {
         setCreatedUserSuccess({
           name: formUserName,
           email: resolvedEmail,
+          country: formUserCountry.trim() || null,
           password: formUserPassword,
           role: formUserRole,
           tutorId: data.user?.tutorId || null,
@@ -932,6 +941,12 @@ export default function AdminDashboardPage() {
     setFormUserName(user.name);
     setFormUserEmail(user.email);
     setFormUserPhone(user.phone || "");
+    const userCountry = user.country || "Sri Lanka";
+    setFormUserCountry(userCountry);
+    const matchedCountry = findCountry(userCountry);
+    if (matchedCountry?.dialCode) {
+      setFormUserCountryDial(matchedCountry.dialCode);
+    }
     setFormUserRole(user.role);
     setFormUserHeadline(user.headline || "");
     setFormUserBio(user.bio || "");
@@ -959,6 +974,7 @@ export default function AdminDashboardPage() {
           name: formUserName,
           email: formUserEmail,
           phone: formUserPhone,
+          country: formUserCountry.trim() || null,
           role: formUserRole,
           headline: formUserHeadline,
           bio: formUserBio,
@@ -3521,6 +3537,12 @@ export default function AdminDashboardPage() {
                                     <span>{u.phone}</span>
                                   </div>
                                 )}
+                                {u.country && (
+                                  <div className="text-[10px] text-slate-600 font-medium flex items-center gap-1 mt-0.5" title={`Country: ${u.country}`}>
+                                    <CountryFlag countryCode={findCountry(u.country)?.code} flagEmoji={findCountry(u.country)?.flag} size="xs" />
+                                    <span>{u.country}</span>
+                                  </div>
+                                )}
                                 {u.timezone && (
                                   <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mt-0.5" title={`Operating Regional Timezone: ${u.timezone}`}>
                                     <Globe className="w-2.5 h-2.5 text-slate-400 shrink-0" />
@@ -3916,12 +3938,20 @@ export default function AdminDashboardPage() {
                                   <p className="text-[10px] text-slate-400 font-mono truncate">
                                     {tutor.email}
                                   </p>
-                                  {tutor.timezone && (
-                                    <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-800 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md mt-1" title={`Operating Regional Timezone: ${tutor.timezone}`}>
-                                      <Globe className="w-2.5 h-2.5 text-sky-600 shrink-0" />
-                                      <span>{getRegionalTimezone(tutor.timezone).flag} {getRegionalTimezone(tutor.timezone).city} ({getRegionalTimezone(tutor.timezone).standardOffset})</span>
-                                    </div>
-                                  )}
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                    {tutor.country && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md" title={`Country: ${tutor.country}`}>
+                                        <CountryFlag countryCode={findCountry(tutor.country)?.code} flagEmoji={findCountry(tutor.country)?.flag} size="xs" />
+                                        <span>{tutor.country}</span>
+                                      </span>
+                                    )}
+                                    {tutor.timezone && (
+                                      <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-800 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md" title={`Operating Regional Timezone: ${tutor.timezone}`}>
+                                        <Globe className="w-2.5 h-2.5 text-sky-600 shrink-0" />
+                                        <span>{getRegionalTimezone(tutor.timezone).flag} {getRegionalTimezone(tutor.timezone).city} ({getRegionalTimezone(tutor.timezone).standardOffset})</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 
@@ -6938,7 +6968,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Role</label>
                   <select
@@ -6950,6 +6980,31 @@ export default function AdminDashboardPage() {
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
+                <div>
+                  <label className="font-bold block mb-1.5 text-slate-700">
+                    Country of Residence
+                  </label>
+                  <CountrySelector
+                    value={formUserCountry}
+                    onChange={(countryName, countryObj) => {
+                      setFormUserCountry(countryName);
+                      if (countryObj?.dialCode) {
+                        setFormUserCountryDial(countryObj.dialCode);
+                      }
+                      if (countryObj?.code) {
+                        const matchedTz = getRegionalTimezone(countryObj.code);
+                        if (matchedTz?.id) {
+                          setFormUserTimezone(matchedTz.id);
+                        }
+                      }
+                    }}
+                    placeholder="Select tutor's country..."
+                    inputClassName="h-10 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold block mb-1.5 text-slate-700">Contact Number</label>
                   <div className="flex items-center">
@@ -7217,9 +7272,19 @@ export default function AdminDashboardPage() {
 
             <div className="space-y-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
-                <span className="text-slate-500 text-[11px]">Tutor</span>
+                <span className="text-slate-500 text-[11px]">User Member</span>
                 <span className="font-bold text-slate-800">{createdUserSuccess.name}</span>
               </div>
+
+              {createdUserSuccess.country && (
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                  <span className="text-slate-500 text-[11px]">Country</span>
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <CountryFlag countryCode={findCountry(createdUserSuccess.country)?.code} flagEmoji={findCountry(createdUserSuccess.country)?.flag} size="xs" />
+                    <span>{createdUserSuccess.country}</span>
+                  </span>
+                </div>
+              )}
 
               {createdUserSuccess.tutorId && (
                 <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
@@ -7416,14 +7481,33 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold block mb-1.5 text-slate-700">Contact Number</label>
-                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                  <label className="font-bold block mb-1.5 text-slate-700">Country of Residence</label>
+                  <CountrySelector
+                    value={formUserCountry}
+                    onChange={(countryName, countryObj) => {
+                      setFormUserCountry(countryName);
+                      if (countryObj?.code) {
+                        const matchedTz = getRegionalTimezone(countryObj.code);
+                        if (matchedTz?.id && (!formUserTimezone || formUserTimezone === DEFAULT_TIMEZONE)) {
+                          setFormUserTimezone(matchedTz.id);
+                        }
+                      }
+                    }}
+                    placeholder="Select country..."
+                    inputClassName="h-10 text-xs"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold block mb-1.5 text-slate-700">Academic Title</label>
-                <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold block mb-1.5 text-slate-700">Contact Number</label>
+                  <Input placeholder="Enter phone number" value={formUserPhone} onChange={(e) => setFormUserPhone(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                </div>
+                <div>
+                  <label className="font-bold block mb-1.5 text-slate-700">Academic Title</label>
+                  <Input placeholder="Academic title or specialization" value={formUserHeadline} onChange={(e) => setFormUserHeadline(e.target.value)} className="rounded-xl focus-visible:ring-blue-400 h-10 text-xs" />
+                </div>
               </div>
 
               <div className="space-y-1.5">

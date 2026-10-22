@@ -23,6 +23,7 @@ import {
   Radio,
   Save,
   Search,
+  Send,
   Star,
   Trash2,
   Upload,
@@ -215,7 +216,7 @@ export function TutorCourseWorkspaceContent({
     price: "0",
     olPrice: "",
     level: "ADVANCED",
-    status: "PUBLISHED",
+    status: "PENDING_REVIEW",
     subtitle: "",
     description: "",
     thumbnail: "",
@@ -305,7 +306,7 @@ export function TutorCourseWorkspaceContent({
         price: String(found.price ?? 0),
         olPrice: found.olPrice !== null && found.olPrice !== undefined ? String(found.olPrice) : "",
         level: found.level || "ADVANCED",
-        status: found.status || "PUBLISHED",
+        status: found.status || "PENDING_REVIEW",
         subtitle: found.subtitle || "",
         description: found.description || "",
         thumbnail: found.thumbnail || "",
@@ -387,6 +388,10 @@ export function TutorCourseWorkspaceContent({
   };
 
   const handleQuickStatusChange = async (newStatus: string) => {
+    if (newStatus === "PUBLISHED") {
+      showToast("error", "Only administrators can publish classes.");
+      return;
+    }
     try {
       await callTutorApi({
         action: "update_course",
@@ -398,7 +403,12 @@ export function TutorCourseWorkspaceContent({
       });
       setDetailsForm((prev) => ({ ...prev, status: newStatus }));
       await loadData(true);
-      showToast("success", `Class status updated to ${newStatus}`);
+      showToast(
+        "success",
+        newStatus === "PENDING_REVIEW"
+          ? "Submitted for Admin Review & Approval!"
+          : "Class status reverted to Draft."
+      );
     } catch (err: any) {
       showToast("error", err.message || "Failed to update class status.");
     }
@@ -846,14 +856,6 @@ export function TutorCourseWorkspaceContent({
       ];
 
   const currentStatus = course?.status || detailsForm.status;
-  const statusBadgeColor =
-    currentStatus === "PUBLISHED"
-      ? "bg-blue-50 text-blue-700 border-blue-200"
-      : currentStatus === "PENDING_REVIEW"
-      ? "bg-blue-50 text-blue-800 border-blue-200"
-      : currentStatus === "DRAFT"
-      ? "bg-slate-100 text-slate-700 border-slate-200"
-      : "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-900 pb-16">
@@ -896,16 +898,52 @@ export function TutorCourseWorkspaceContent({
               </Button>
             ) : (
               <>
-                <select
-                  value={course?.status || "PUBLISHED"}
-                  onChange={(e) => handleQuickStatusChange(e.target.value)}
-                  className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusBadgeColor}`}
-                  title="Change class publishing state"
-                >
-                  <option value="PUBLISHED">Published</option>
-                  <option value="PENDING_REVIEW">Pending Review</option>
-                  <option value="DRAFT">Draft</option>
-                </select>
+                {currentStatus === "PUBLISHED" ? (
+                  <div
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold shadow-2xs"
+                    title="This class has been reviewed and published by an Administrator"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Published by Admin</span>
+                  </div>
+                ) : currentStatus === "PENDING_REVIEW" ? (
+                  <div className="inline-flex items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs font-bold shadow-2xs"
+                      title="This class is waiting for Admin review and approval"
+                    >
+                      <Clock3 className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Pending Admin Review</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickStatusChange("DRAFT")}
+                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-2.5 py-1 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="Withdraw from Admin review and return to draft"
+                    >
+                      Withdraw to Draft
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-600 text-xs font-bold"
+                      title="Draft mode - only visible to you"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-slate-400" />
+                      <span>Draft</span>
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleQuickStatusChange("PENDING_REVIEW")}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl h-8.5 px-3.5 gap-1.5 shadow-xs cursor-pointer"
+                      title="Submit this class for Admin approval"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Submit for Review</span>
+                    </Button>
+                  </div>
+                )}
 
                 {course && (
                   <Link
@@ -1148,16 +1186,44 @@ export function TutorCourseWorkspaceContent({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Publishing Status</label>
-                  <select
-                    value={detailsForm.status}
-                    onChange={(e) => setDetailsForm({ ...detailsForm, status: e.target.value })}
-                    className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="PUBLISHED">Published (Available to Students)</option>
-                    <option value="PENDING_REVIEW">Pending Review</option>
-                    <option value="DRAFT">Draft (Under Preparation)</option>
-                  </select>
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>Publishing Status</span>
+                    {detailsForm.status === "PUBLISHED" ? (
+                      <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Approved by Admin
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1">
+                        <Clock3 className="w-3.5 h-3.5" /> Admin approval required
+                      </span>
+                    )}
+                  </label>
+
+                  {detailsForm.status === "PUBLISHED" ? (
+                    <div className="h-10 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 flex items-center justify-between text-xs font-bold text-emerald-800">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Published (Live to Students)
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">
+                        Admin Managed
+                      </span>
+                    </div>
+                  ) : (
+                    <select
+                      value={detailsForm.status === "PUBLISHED" ? "PENDING_REVIEW" : detailsForm.status}
+                      onChange={(e) => setDetailsForm({ ...detailsForm, status: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    >
+                      <option value="PENDING_REVIEW">Pending Review (Submit to Admin for Approval)</option>
+                      <option value="DRAFT">Draft (Work in Progress - Hidden)</option>
+                    </select>
+                  )}
+                  <p className="text-[11px] text-slate-500">
+                    {detailsForm.status === "PUBLISHED"
+                      ? "This class is currently published and live to students. Only Administrators can unpublish or archive it."
+                      : "Classes can only be published to students by an Administrator after review."}
+                  </p>
                 </div>
 
                 <div className="md:col-span-2 space-y-1.5">

@@ -241,6 +241,20 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: "Course not found or not owned by this tutor." }, { status: 404 });
         }
 
+        // Only Admin can set CourseStatus.PUBLISHED. Tutors can only set DRAFT or PENDING_REVIEW.
+        let updatedStatus: CourseStatus = existing.status;
+        if (status) {
+          if (isAdmin) {
+            updatedStatus = status as CourseStatus;
+          } else {
+            if (status === CourseStatus.DRAFT || status === CourseStatus.PENDING_REVIEW) {
+              updatedStatus = status as CourseStatus;
+            } else if (status === CourseStatus.PUBLISHED) {
+              updatedStatus = existing.status === CourseStatus.PUBLISHED ? CourseStatus.PUBLISHED : CourseStatus.PENDING_REVIEW;
+            }
+          }
+        }
+
         const updated = await prisma.course.update({
           where: { id: existing.id },
           data: {
@@ -254,7 +268,7 @@ export async function POST(request: NextRequest) {
             price: isAdmin && Number.isFinite(tokenPrice) ? tokenPrice : existing.price,
             olPrice: isAdmin ? (olPrice !== undefined ? olTokenPrice : (existing as any).olPrice) : (existing as any).olPrice,
             level: (level as CourseLevel) || existing.level,
-            status: status ? (status as CourseStatus) : existing.status,
+            status: updatedStatus,
           },
         });
 
@@ -278,7 +292,7 @@ export async function POST(request: NextRequest) {
           price: isAdmin && Number.isFinite(tokenPrice) ? tokenPrice : 0,
           olPrice: isAdmin ? olTokenPrice : null,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
-          status: CourseStatus.PENDING_REVIEW,
+          status: isAdmin && status === CourseStatus.PUBLISHED ? CourseStatus.PUBLISHED : (status === CourseStatus.DRAFT ? CourseStatus.DRAFT : CourseStatus.PENDING_REVIEW),
           tutorId: tutor.id,
           modules: {
             create: [

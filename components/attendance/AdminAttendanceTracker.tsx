@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
+  BarChart3,
   CheckCircle2,
   XCircle,
   Clock,
@@ -65,7 +66,11 @@ interface RosterStudent {
   attendanceId: string | null;
 }
 
-export function AdminAttendanceTracker() {
+export function AdminAttendanceTracker({
+  onOpenAnalytics,
+}: {
+  onOpenAnalytics?: (eventId: string, title?: string) => void;
+} = {}) {
   const [activeSubTab, setActiveSubTab] = useState<"all" | "roster">("all");
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
@@ -485,8 +490,21 @@ export function AdminAttendanceTracker() {
               </select>
             </div>
 
-            {rosterData?.event?.meetingLink && (
-              <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
+              {onOpenAnalytics && selectedEventId && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onOpenAnalytics(selectedEventId, rosterData?.event?.title)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition shadow-xs cursor-pointer"
+                  title="View BigBlueButton Learning Analytics Dashboard"
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Learning Analytics</span>
+                </Button>
+              )}
+
+              {rosterData?.event?.meetingLink && (
                 <a
                   href={rosterData.event.meetingLink}
                   target="_blank"
@@ -496,8 +514,8 @@ export function AdminAttendanceTracker() {
                   <Video className="w-3.5 h-3.5" />
                   Enter Room
                 </a>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Roster overview */}

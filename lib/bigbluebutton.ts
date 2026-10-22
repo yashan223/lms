@@ -194,6 +194,11 @@ export async function createBBBMeeting(opts: {
     }
   }
 
+  // Configure BigBlueButton Learning Analytics Dashboard callback upon session end
+  if (!params["meta_analytics-callback-url"] && appBase) {
+    params["meta_analytics-callback-url"] = `${appBase}/api/meetings/analytics-callback?meetingID=${encodeURIComponent(meetingId)}`;
+  }
+
   // Pre-upload a clean whiteboard presentation to replace the default "Welcome to BigBlueButton" slides
   let xmlBody: string | undefined;
   if (opts.overrideDefaultPresentation !== false) {
@@ -386,12 +391,15 @@ export async function endBBBMeeting(meetingId: string, moderatorPW?: string): Pr
 export interface BBBRecordingItem {
   recordId: string;
   meetingId: string;
+  internalMeetingId?: string;
   name: string;
   published: boolean;
   startTime?: Date;
   endTime?: Date;
   playbackUrl?: string;
   lengthMinutes?: number;
+  participants?: number;
+  rawSize?: number;
 }
 
 /**
@@ -421,6 +429,11 @@ export async function getBBBRecordings(opts?: {
     for (const block of recordingBlocks) {
       const recordId = extractXmlTag(block, "recordID") || "";
       const meetingId = extractXmlTag(block, "meetingID") || "";
+      const internalMeetingId = extractXmlTag(block, "internalMeetingID") || recordId;
+      const participantsStr = extractXmlTag(block, "participants");
+      const participants = participantsStr ? parseInt(participantsStr, 10) : undefined;
+      const rawSizeStr = extractXmlTag(block, "rawSize") || extractXmlTag(block, "size");
+      const rawSize = rawSizeStr ? parseInt(rawSizeStr, 10) : undefined;
       const name = extractXmlTag(block, "name") || "";
       const published = extractXmlTag(block, "published")?.toLowerCase() === "true";
       const rawStart = extractXmlTag(block, "startTime");
@@ -443,12 +456,15 @@ export async function getBBBRecordings(opts?: {
       results.push({
         recordId,
         meetingId,
+        internalMeetingId,
         name,
         published,
         startTime,
         endTime,
         playbackUrl,
         lengthMinutes,
+        participants,
+        rawSize,
       });
     }
 

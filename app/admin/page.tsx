@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import {
+  BarChart3,
   GraduationCap,
   Users,
   BookOpen,
@@ -81,6 +82,7 @@ import { parseTutorBio } from "@/lib/utils";
 import { RegionalTimezoneSelector } from "@/components/ui/RegionalTimezoneSelector";
 import { UserProfileHistoryModal } from "@/components/admin/UserProfileHistoryModal";
 import { AdminAttendanceTracker } from "@/components/attendance/AdminAttendanceTracker";
+import { BigBlueButtonAnalyticsModal } from "@/components/admin/BigBlueButtonAnalyticsModal";
 import {
   getRegionalTimezone,
   DEFAULT_TIMEZONE,
@@ -1809,6 +1811,20 @@ export default function AdminDashboardPage() {
   const [isSavingRecording, setIsSavingRecording] = useState(false);
   const [isAutoSyncingInModal, setIsAutoSyncingInModal] = useState(false);
 
+  const [analyticsModalTarget, setAnalyticsModalTarget] = useState<{
+    eventId?: string | null;
+    trialId?: string | null;
+    title?: string;
+  } | null>(null);
+
+  const handleOpenAnalyticsModal = (opts: {
+    eventId?: string | null;
+    trialId?: string | null;
+    title?: string;
+  }) => {
+    setAnalyticsModalTarget(opts);
+  };
+
   const handleSyncMeeting = async (eventId?: string, trialId?: string) => {
     try {
       if (eventId) setSyncingEventId(eventId);
@@ -3022,7 +3038,9 @@ export default function AdminDashboardPage() {
 
                 {liveClassFilter === "ATTENDANCE" ? (
                   <div className="p-4 sm:p-5">
-                    <AdminAttendanceTracker />
+                    <AdminAttendanceTracker
+                      onOpenAnalytics={(evId, title) => handleOpenAnalyticsModal({ eventId: evId, title })}
+                    />
                   </div>
                 ) : liveClassFilter === "RECORDINGS" ? (
                   filteredRecordings.length > 0 ? (
@@ -3106,6 +3124,17 @@ export default function AdminDashboardPage() {
                                 <Play className="w-3.5 h-3.5 fill-current" />
                                 <span>Watch Recording</span>
                               </a>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenAnalyticsModal({ eventId: rec.eventId, trialId: rec.trialId, title: rec.title })}
+                                className="text-xs font-semibold text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-xl h-8 flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                                title="View BigBlueButton Learning Analytics Dashboard"
+                              >
+                                <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Analytics</span>
+                              </Button>
 
                               <Button
                                 size="sm"
@@ -3362,6 +3391,16 @@ export default function AdminDashboardPage() {
                                   )}
                                   {isCompleted && (
                                     <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleOpenAnalyticsModal({ eventId: ev.id, title: ev.title })}
+                                        className="text-xs font-semibold text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-xl h-8 flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                                        title="View BigBlueButton Learning Analytics Dashboard"
+                                      >
+                                        <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
+                                        <span>Analytics</span>
+                                      </Button>
                                       <Button
                                         size="sm"
                                         variant="outline"
@@ -6138,6 +6177,17 @@ export default function AdminDashboardPage() {
                                     </Button>
                                   </>
                                 )}
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenAnalyticsModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}` })}
+                                  className="h-8.5 px-3 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+                                  title="View BigBlueButton Learning Analytics Dashboard"
+                                >
+                                  <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
+                                  <span>Analytics</span>
+                                </Button>
                                 <Button
                                   type="button"
                                   size="sm"
@@ -9728,6 +9778,16 @@ export default function AdminDashboardPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                onClick={() => handleOpenAnalyticsModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}` })}
+                                className="h-8 px-2.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all"
+                                title="View BigBlueButton Learning Analytics Dashboard"
+                              >
+                                <BarChart3 className="w-3 h-3 text-blue-600" />
+                                <span>Analytics</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => handleOpenRecordingModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}`, currentUrl: tr.recordingUrl })}
                                 className="h-8 px-2.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
                                 title="Attach or edit recording link"
@@ -10073,6 +10133,15 @@ export default function AdminDashboardPage() {
           setShowUserProfileModal(false);
           handleOpenEditUser(u);
         }}
+      />
+
+      <BigBlueButtonAnalyticsModal
+        isOpen={Boolean(analyticsModalTarget)}
+        onClose={() => setAnalyticsModalTarget(null)}
+        eventId={analyticsModalTarget?.eventId}
+        trialId={analyticsModalTarget?.trialId}
+        title={analyticsModalTarget?.title}
+        adminTimezone={adminTimezone}
       />
     </div>
   );

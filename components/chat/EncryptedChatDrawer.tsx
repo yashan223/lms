@@ -99,7 +99,10 @@ export function EncryptedChatDrawer({
     if (!currentUser?.id) return;
     try {
       setLoadingConversations(true);
-      const res = await fetch("/api/chat?action=conversations");
+      const res = await fetch("/api/chat?action=conversations", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         setConversations(data.conversations || []);
@@ -114,7 +117,10 @@ export function EncryptedChatDrawer({
   const fetchContacts = async () => {
     if (!currentUser?.id) return;
     try {
-      const res = await fetch("/api/chat?action=contacts");
+      const res = await fetch("/api/chat?action=contacts", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         setContacts(data.contacts || []);
@@ -179,7 +185,10 @@ export function EncryptedChatDrawer({
   const fetchMessages = async (convId: string, otherUserHint?: any) => {
     try {
       setLoadingMessages(true);
-      const res = await fetch(`/api/chat?action=messages&conversationId=${convId}`);
+      const res = await fetch(`/api/chat?action=messages&conversationId=${convId}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         const rawMessages = data.messages || [];

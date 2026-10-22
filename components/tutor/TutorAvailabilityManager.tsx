@@ -120,7 +120,11 @@ export function TutorAvailabilityManager({
       setLoading(true);
       const activeTz = tzOverride || previewTimezone;
       const res = await fetch(
-        `/api/tutor/availability?tutorId=${tutor.id}&timezone=${encodeURIComponent(activeTz)}&days=7`
+        `/api/tutor/availability?tutorId=${tutor.id}&timezone=${encodeURIComponent(activeTz)}&days=7`,
+        {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        }
       );
       const data = await res.json();
       if (res.ok) {

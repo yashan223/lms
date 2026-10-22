@@ -62,10 +62,11 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
   const loadCourses = async () => {
     try {
       setLoading(true);
+      const noCacheOptions = { cache: "no-store" as RequestCache, headers: { "Cache-Control": "no-cache" } };
       const [res, dashRes, subjectsRes] = await Promise.all([
-        fetch("/api/courses"),
-        fetch("/api/dashboard").catch(() => null),
-        fetch("/api/subjects").catch(() => null),
+        fetch("/api/courses", noCacheOptions),
+        fetch("/api/dashboard", noCacheOptions).catch(() => null),
+        fetch("/api/subjects", noCacheOptions).catch(() => null),
       ]);
       if (subjectsRes && subjectsRes.ok) {
         const sData = await subjectsRes.json();

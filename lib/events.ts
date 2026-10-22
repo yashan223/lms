@@ -34,9 +34,8 @@ export const eventEmitter =
 
 eventEmitter.setMaxListeners(500);
 
-if (process.env.NODE_ENV !== "production") {
-  globalForEvents.lmsEventEmitter = eventEmitter;
-}
+// Always bind singleton eventEmitter on globalThis across all environments
+globalForEvents.lmsEventEmitter = eventEmitter;
 
 async function writeEventToDb(type: LMSEventType, data?: any): Promise<void> {
   try {
@@ -58,9 +57,15 @@ export function broadcastLMSEvent(type: LMSEventType, data?: any) {
     data,
   };
 
-  if (typeof globalForEvents.lmsWsBroadcast === "function") {
+  // Robustly retrieve WebSocket broadcaster from globalThis / global
+  const broadcaster =
+    globalForEvents.lmsWsBroadcast ||
+    (globalThis as any).lmsWsBroadcast ||
+    (typeof global !== "undefined" ? (global as any).lmsWsBroadcast : undefined);
+
+  if (typeof broadcaster === "function") {
     try {
-      globalForEvents.lmsWsBroadcast(payload);
+      broadcaster(payload);
     } catch (wsErr) {
       console.warn("[events] WebSocket broadcast dispatch error:", wsErr);
     }

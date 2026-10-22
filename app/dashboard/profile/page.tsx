@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatInternationalPhone } from "@/lib/country-codes";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 export default function StudentProfilePage() {
   const router = useRouter();
@@ -73,7 +74,10 @@ export default function StudentProfilePage() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/student/profile");
+      const res = await fetch("/api/student/profile", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (!res.ok) {
         if (res.status === 401) {
           router.push("/login?redirect=/dashboard/profile");
@@ -107,6 +111,13 @@ export default function StudentProfilePage() {
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useRealtimeSync({
+    events: ["USERS_CHANGED"],
+    onSync: () => {
+      fetchProfile();
+    },
+  });
 
   const handleAvatarFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

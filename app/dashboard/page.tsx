@@ -377,7 +377,10 @@ function DashboardContent() {
       if (isInitial === true && !user) {
         setLoading(true);
       }
-      const res = await fetch("/api/dashboard");
+      const res = await fetch("/api/dashboard", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           router.push("/login");
@@ -417,7 +420,10 @@ function DashboardContent() {
       setTimelineEvents(data.timelineEvents || []);
 
       try {
-        const bundlesRes = await fetch("/api/bundles");
+        const bundlesRes = await fetch("/api/bundles", {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         if (bundlesRes.ok) {
           const bData = await bundlesRes.json();
           if (bData.bundles && Array.isArray(bData.bundles) && bData.bundles.length > 0) {
@@ -430,7 +436,10 @@ function DashboardContent() {
       } catch {}
 
       try {
-        const trialsRes = await fetch("/api/trials");
+        const trialsRes = await fetch("/api/trials", {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         if (trialsRes.ok) {
           const tData = await trialsRes.json();
           if (tData.trialStats) {

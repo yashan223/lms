@@ -9,13 +9,14 @@ interface UseRealtimeSyncOptions {
   enabled?: boolean;
 }
 
+/**
+ * Returns the WebSocket endpoint dynamically matching the active host and protocol
+ */
 function getWebSocketUrl(): string {
   if (typeof window === "undefined") return "";
-  if (process.env.NEXT_PUBLIC_WS_URL) {
-    return process.env.NEXT_PUBLIC_WS_URL;
-  }
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/ws`;
+  const loc = window.location;
+  const protocol = loc.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${loc.host}/ws`;
 }
 
 export function useRealtimeSync({
@@ -28,6 +29,8 @@ export function useRealtimeSync({
   const callbackRef = useRef(onSync);
   const eventsRef = useRef(events);
   const sinceRef = useRef<number>(0);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestPayloadRef = useRef<LMSEventPayload | undefined>(undefined);
 
   useEffect(() => {
     callbackRef.current = onSync;
@@ -37,11 +40,21 @@ export function useRealtimeSync({
     eventsRef.current = events;
   }, [events]);
 
+  // Debounced triggerSync collapses rapid burst events (e.g. 5 simultaneous events from an action)
+  // into a single clean callback, eliminating race conditions and duplicate fetch cascades.
   const triggerSync = useCallback((payload?: LMSEventPayload) => {
     setLastSyncTime(new Date());
-    if (callbackRef.current) {
-      callbackRef.current(payload);
+    latestPayloadRef.current = payload;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+
+    debounceTimerRef.current = setTimeout(() => {
+      if (callbackRef.current) {
+        callbackRef.current(latestPayloadRef.current);
+      }
+    }, 150);
   }, []);
 
   useEffect(() => {
@@ -57,7 +70,6 @@ export function useRealtimeSync({
     let pingInterval: ReturnType<typeof setInterval> | null = null;
     let isCleanedUp = false;
     let reconnectAttempts = 0;
-    let useSseFallback = false;
 
     function connectWs() {
       if (isCleanedUp) return;
@@ -73,7 +85,14 @@ export function useRealtimeSync({
           }
           setIsConnected(true);
           reconnectAttempts = 0;
-          useSseFallback = false;
+
+          // If SSE fallback was active while WS was down, close it now that WS is healthy
+          if (eventSource) {
+            try {
+              eventSource.close();
+            } catch {}
+            eventSource = null;
+          }
 
           const targetEvents = eventsRef.current;
           if (targetEvents && targetEvents.length > 0) {
@@ -135,13 +154,12 @@ export function useRealtimeSync({
 
           if (!isCleanedUp) {
             reconnectAttempts++;
-            if (reconnectAttempts >= 3) {
-              console.warn("[ws] Multiple connection failures, switching to SSE fallback");
-              useSseFallback = true;
+            // If WebSocket has struggled for multiple attempts, activate SSE as secondary bridge
+            if (reconnectAttempts >= 3 && !eventSource) {
               connectSse();
-              return;
             }
 
+            // Always continue attempting to re-establish primary WebSocket with exponential backoff
             const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), 10000);
             reconnectTimeout = setTimeout(connectWs, delay);
           }
@@ -157,18 +175,17 @@ export function useRealtimeSync({
         setIsConnected(false);
         if (!isCleanedUp) {
           reconnectAttempts++;
-          if (reconnectAttempts >= 3) {
-            useSseFallback = true;
+          if (reconnectAttempts >= 3 && !eventSource) {
             connectSse();
-          } else {
-            reconnectTimeout = setTimeout(connectWs, 2000);
           }
+          const delay = Math.min(1500 * Math.pow(1.5, reconnectAttempts), 10000);
+          reconnectTimeout = setTimeout(connectWs, delay);
         }
       }
     }
 
     function connectSse() {
-      if (isCleanedUp) return;
+      if (isCleanedUp || eventSource) return;
 
       try {
         const url = `/api/events?since=${sinceRef.current}`;
@@ -200,55 +217,54 @@ export function useRealtimeSync({
         };
 
         eventSource.onerror = () => {
-          setIsConnected(false);
           if (eventSource) {
-            eventSource.close();
+            try {
+              eventSource.close();
+            } catch {}
             eventSource = null;
-          }
-          if (!isCleanedUp) {
-            reconnectTimeout = setTimeout(() => {
-              useSseFallback = false;
-              connectWs();
-            }, 10000);
           }
         };
       } catch {
-        setIsConnected(false);
+        // SSE failure is non-fatal
       }
     }
 
     connectWs();
 
-    const handleVisibilityChange = () => {
+    // Instant data fresh-check whenever user returns to or focuses this window/tab
+    const handleWindowRecheck = () => {
       if (document.visibilityState === "visible") {
-        if (!useSseFallback) {
-          if (!ws || ws.readyState !== WebSocket.OPEN) {
-            connectWs();
-          }
-        } else {
-          if (!eventSource || eventSource.readyState !== EventSource.OPEN) {
-            connectSse();
-          }
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          connectWs();
         }
         triggerSync();
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleWindowRecheck);
+    window.addEventListener("focus", handleWindowRecheck);
 
     return () => {
       isCleanedUp = true;
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (pingInterval) clearInterval(pingInterval);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (ws) {
         ws.onopen = null;
         ws.onmessage = null;
         ws.onerror = null;
         ws.onclose = null;
-        ws.close();
+        try {
+          ws.close();
+        } catch {}
       }
-      if (eventSource) eventSource.close();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (eventSource) {
+        try {
+          eventSource.close();
+        } catch {}
+      }
+      document.removeEventListener("visibilitychange", handleWindowRecheck);
+      window.removeEventListener("focus", handleWindowRecheck);
       setIsConnected(false);
     };
   }, [enabled, triggerSync]);

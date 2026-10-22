@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { formatInternationalPhone } from "@/lib/country-codes";
 
 interface AcademicDegree {
@@ -101,7 +102,10 @@ function TutorProfileContent() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/tutor/profile");
+      const res = await fetch("/api/tutor/profile", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           router.push("/login?redirect=/tutor/profile");
@@ -165,6 +169,13 @@ function TutorProfileContent() {
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useRealtimeSync({
+    events: ["USERS_CHANGED"],
+    onSync: () => {
+      fetchProfile();
+    },
+  });
 
   const handleAvatarFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

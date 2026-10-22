@@ -96,7 +96,10 @@ export function EnrollmentRequestsManager({
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/enrollment-requests");
+      const res = await fetch("/api/enrollment-requests", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const data = await res.json();
       if (res.ok && Array.isArray(data.requests)) {
         setRequests(data.requests);

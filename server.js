@@ -155,8 +155,8 @@ app.prepare().then(() => {
   server.on("upgrade", (req, socket, head) => {
     try {
       const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
-      const pathname = url.pathname;
-      if (pathname === "/ws" || pathname === "/api/ws") {
+      const cleanPath = (url.pathname || "").replace(/\/$/, "");
+      if (cleanPath === "/ws" || cleanPath === "/api/ws" || cleanPath === "") {
         wss.handleUpgrade(req, socket, head, (ws) => {
           wss.emit("connection", ws, req);
         });

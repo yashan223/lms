@@ -2,6 +2,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { broadcastLMSEvent } from "@/lib/events";
 import { Role, AttendanceStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -365,6 +366,10 @@ export async function POST(request: NextRequest) {
           where: { id: eventId },
           data: { attendanceCount: count },
         });
+        broadcastLMSEvent("ATTENDANCE_CHANGED", { eventId, userId });
+        broadcastLMSEvent("EVENTS_CHANGED", { eventId });
+      } else {
+        broadcastLMSEvent("ATTENDANCE_CHANGED", { userId });
       }
 
       return NextResponse.json({ success: true, record });
@@ -412,6 +417,9 @@ export async function POST(request: NextRequest) {
         where: { id: eventId },
         data: { attendanceCount: count },
       });
+
+      broadcastLMSEvent("ATTENDANCE_CHANGED", { eventId });
+      broadcastLMSEvent("EVENTS_CHANGED", { eventId });
 
       return NextResponse.json({ success: true, count: results.length, records: results });
     }

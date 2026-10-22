@@ -37,7 +37,10 @@ export function NotificationBell({ userRole }: { userRole?: string }) {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch("/api/notifications");
+      const res = await fetch("/api/notifications", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);

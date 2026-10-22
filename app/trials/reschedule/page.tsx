@@ -209,7 +209,10 @@ function RescheduleContent() {
       }
 
       try {
-        const qRes = await fetch(`/api/classes/reschedule?eventId=${encodeURIComponent(targetSession.id)}`);
+        const qRes = await fetch(`/api/classes/reschedule?eventId=${encodeURIComponent(targetSession.id)}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         const qData = await qRes.json();
         if (qRes.ok) {
           setRescheduleQuota(qData.quota || null);
@@ -228,7 +231,10 @@ function RescheduleContent() {
         tutorId ? `&tutorId=${encodeURIComponent(tutorId)}` : ""
       }&timezone=${encodeURIComponent(activeTz)}&days=14`;
 
-      const availRes = await fetch(availUrl);
+      const availRes = await fetch(availUrl, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const availData = await availRes.json();
       if (availRes.ok && availData.days) {
         if (availData.tutorTimezone) {
@@ -273,7 +279,10 @@ function RescheduleContent() {
 
         if (eventId) {
           const availUrl = `/api/tutor/availability?eventId=${encodeURIComponent(eventId)}&timezone=${encodeURIComponent(viewerTimezone)}&days=14`;
-          const availRes = await fetch(availUrl);
+          const availRes = await fetch(availUrl, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache" },
+          });
           const availData = await availRes.json();
           if (availRes.ok && availData.event) {
             await loadSessionAvailability(availData.event, true);
@@ -283,7 +292,10 @@ function RescheduleContent() {
           }
         }
 
-        const res = await fetch("/api/trials");
+        const res = await fetch("/api/trials", {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         const data = await res.json();
         const trialsList: TrialDetail[] = res.ok && Array.isArray(data.trials) ? data.trials : [];
         setAllTrials(trialsList);
@@ -292,7 +304,10 @@ function RescheduleContent() {
         if (trialId) {
           targetTrial = trialsList.find((t) => t.id === trialId) || null;
           if (!targetTrial) {
-            const singleRes = await fetch(`/api/trials?id=${encodeURIComponent(trialId)}`);
+            const singleRes = await fetch(`/api/trials?id=${encodeURIComponent(trialId)}`, {
+              cache: "no-store",
+              headers: { "Cache-Control": "no-cache" },
+            });
             const singleData = await singleRes.json();
             if (singleRes.ok && singleData.trial) {
               targetTrial = singleData.trial;

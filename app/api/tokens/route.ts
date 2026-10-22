@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
       });
 
       broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: auth.user.id });
+      broadcastLMSEvent("USERS_CHANGED");
 
       return NextResponse.json({
         success: true,
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
       });
 
       broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: auth.user.id });
+      broadcastLMSEvent("USERS_CHANGED");
 
       return NextResponse.json({
         success: true,

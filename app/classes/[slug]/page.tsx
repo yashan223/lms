@@ -145,7 +145,10 @@ export default function CourseDetailPage({
       if (!course && !silent) {
         setLoading(true);
       }
-      const res = await fetch(`/api/courses/${encodeURIComponent(slug)}`);
+      const res = await fetch(`/api/courses/${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.course) {

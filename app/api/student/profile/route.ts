@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         country: true,
         timezone: true,
         academicLevel: true,
+        student_grade: true,
         guardianName: true,
         guardianRelationship: true,
         guardianPhone: true,
@@ -198,6 +199,13 @@ export async function PUT(request: NextRequest) {
     if (guardianRelationship !== undefined) updateData.guardianRelationship = guardianRelationship?.trim() || null;
     if (guardianPhone !== undefined) updateData.guardianPhone = guardianPhone?.trim() || null;
 
+    if (academicLevel !== undefined || (body as any).student_grade !== undefined) {
+      const raw = (body as any).student_grade || academicLevel;
+      const isOL = raw?.includes("O/L") || raw?.includes("OL") || raw?.includes("IGCSE");
+      updateData.academicLevel = isOL ? "OL" : "AL";
+      updateData.student_grade = isOL ? "O/L" : "A/L";
+    }
+
     if (avatar !== undefined) {
       if (avatar === null || avatar === "") {
         updateData.avatar = null;
@@ -227,6 +235,7 @@ export async function PUT(request: NextRequest) {
         country: true,
         timezone: true,
         academicLevel: true,
+        student_grade: true,
         guardianName: true,
         guardianRelationship: true,
         guardianPhone: true,

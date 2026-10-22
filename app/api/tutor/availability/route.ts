@@ -118,6 +118,8 @@ export async function GET(request: NextRequest) {
         phone: true,
         country: true,
         timezone: true,
+        teaches_ol: true,
+        teaches_al: true,
       },
     });
 
@@ -141,9 +143,31 @@ export async function GET(request: NextRequest) {
           phone: true,
           country: true,
           timezone: true,
+          student_grade: true,
+          academicLevel: true,
         },
       });
       if (sUser) {
+        const rawGrade = sUser.student_grade || sUser.academicLevel;
+        const isOL = rawGrade?.includes("O/L") || rawGrade?.includes("OL") || rawGrade?.includes("IGCSE");
+        if (isOL && tutor.teaches_ol === false) {
+          return NextResponse.json({
+            days: [],
+            tutorTimezone,
+            hasAssignedClasses: false,
+            assignedClassesCount: 0,
+            error: "Tutor is not approved for student grade level.",
+          });
+        }
+        if (!isOL && tutor.teaches_al === false) {
+          return NextResponse.json({
+            days: [],
+            tutorTimezone,
+            hasAssignedClasses: false,
+            assignedClassesCount: 0,
+            error: "Tutor is not approved for student grade level.",
+          });
+        }
         studentTimezone = sUser.timezone || getRegionalTimezone(sUser.country).id || viewerTimezone;
         const sAvail = await prisma.studentAvailability.findMany({
           where: { studentId: resolvedStudentId, isActive: true },

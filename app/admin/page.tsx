@@ -916,10 +916,16 @@ export default function AdminDashboardPage() {
       user?.igcsePayRate !== null && user?.igcsePayRate !== undefined
         ? String(user.igcsePayRate)
         : "";
-    let isAL = true;
-    let isOL = true;
+    let isAL =
+      user?.teaches_al !== undefined && user?.teaches_al !== null
+        ? Boolean(user.teaches_al)
+        : true;
+    let isOL =
+      user?.teaches_ol !== undefined && user?.teaches_ol !== null
+        ? Boolean(user.teaches_ol)
+        : true;
 
-    if (user?.bio) {
+    if (user?.bio && (user?.teaches_al === undefined || user?.teaches_ol === undefined)) {
       try {
         const parsed = typeof user.bio === "string" && user.bio.trim().startsWith("{") ? JSON.parse(user.bio) : null;
         if (!alRate) {
@@ -929,8 +935,8 @@ export default function AdminDashboardPage() {
         if (!olRate) {
           olRate = parsed?.hourlyRateOL ? String(parsed.hourlyRateOL) : (Number(alRate) > 0 ? String(Math.round(Number(alRate) * 0.75)) : "3500");
         }
-        if (parsed?.isALTutor !== undefined) isAL = Boolean(parsed.isALTutor);
-        if (parsed?.isOLTutor !== undefined) isOL = Boolean(parsed.isOLTutor);
+        if (user?.teaches_al === undefined && parsed?.isALTutor !== undefined) isAL = Boolean(parsed.isALTutor);
+        if (user?.teaches_ol === undefined && parsed?.isOLTutor !== undefined) isOL = Boolean(parsed.isOLTutor);
       } catch {}
     }
 
@@ -1001,6 +1007,8 @@ export default function AdminDashboardPage() {
           hourlyRateOL: formUserHourlyRateOL,
           igcsePayRate: formUserIsOLTutor ? (parseFloat(formUserHourlyRateOL) || null) : null,
           ialIasPayRate: formUserIsALTutor ? (parseFloat(formUserHourlyRateAL) || null) : null,
+          teaches_al: formUserIsALTutor,
+          teaches_ol: formUserIsOLTutor,
           isALTutor: formUserIsALTutor,
           isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,
@@ -1098,6 +1106,8 @@ export default function AdminDashboardPage() {
           hourlyRateOL: formUserHourlyRateOL,
           igcsePayRate: formUserIsOLTutor ? (parseFloat(formUserHourlyRateOL) || null) : null,
           ialIasPayRate: formUserIsALTutor ? (parseFloat(formUserHourlyRateAL) || null) : null,
+          teaches_al: formUserIsALTutor,
+          teaches_ol: formUserIsOLTutor,
           isALTutor: formUserIsALTutor,
           isOLTutor: formUserIsOLTutor,
           timezone: formUserTimezone,

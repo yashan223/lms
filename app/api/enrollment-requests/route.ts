@@ -128,6 +128,8 @@ export async function POST(request: NextRequest) {
             name: true,
             email: true,
             timezone: true,
+            teaches_ol: true,
+            teaches_al: true,
           },
         },
       },
@@ -140,6 +142,24 @@ export async function POST(request: NextRequest) {
     const resolvedTutorId = propTutorId || course.tutorId;
     if (!resolvedTutorId) {
       return NextResponse.json({ error: "No tutor assigned to this course." }, { status: 400 });
+    }
+
+    const studentUser = auth.user;
+    const rawGrade = studentUser.student_grade || studentUser.academicLevel;
+    const isOL = rawGrade?.includes("O/L") || rawGrade?.includes("OL") || rawGrade?.includes("IGCSE");
+    if (course.tutor) {
+      if (isOL && course.tutor.teaches_ol === false) {
+        return NextResponse.json(
+          { error: "This tutor is not currently approved for London O/L (IGCSE) classes." },
+          { status: 403 }
+        );
+      }
+      if (!isOL && course.tutor.teaches_al === false) {
+        return NextResponse.json(
+          { error: "This tutor is not currently approved for London A/L classes." },
+          { status: 403 }
+        );
+      }
     }
 
     const validClassTypes = ["Theory only", "Paper only", "Theory and Paper mix"];

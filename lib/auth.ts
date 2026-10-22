@@ -131,6 +131,9 @@ export type AuthUser = {
   phone: string | null;
   country?: string | null;
   academicLevel?: string | null;
+  student_grade?: string | null;
+  teaches_ol?: boolean | null;
+  teaches_al?: boolean | null;
   timezone: string | null;
   createdAt: Date;
 };
@@ -153,6 +156,9 @@ const USER_SELECT_FIELDS = {
   phone: true,
   country: true,
   academicLevel: true,
+  student_grade: true,
+  teaches_ol: true,
+  teaches_al: true,
   timezone: true,
   createdAt: true,
 } as const;

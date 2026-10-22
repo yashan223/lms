@@ -11,6 +11,7 @@ import { getBBBMeetingId, getUniversalJoinLink, createBBBMeeting, isBigBlueButto
 import { getSafeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { ensureStudentIdForUser } from "@/lib/student-id";
 import { ensureAdminIdForUser } from "@/lib/admin-id";
+import { isCourseOL, isCourseAL } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -181,7 +182,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const allCourses = await prisma.course.findMany({
+    let courseWhere: any = {};
+    if (user?.role === "STUDENT") {
+      const studentGrade = (user as any).student_grade || (user as any).academicLevel;
+      const isOL =
+        studentGrade?.includes("O/L") ||
+        studentGrade?.includes("OL") ||
+        studentGrade?.includes("IGCSE");
+
+      courseWhere = {
+        status: "PUBLISHED",
+        tutor: isOL ? { teaches_ol: true } : { teaches_al: true },
+      };
+    }
+
+    const rawAllCourses = await prisma.course.findMany({
+      where: courseWhere,
       include: {
         tutor: true,
         modules: {
@@ -191,6 +207,18 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
+    const allCourses =
+      user?.role === "STUDENT"
+        ? rawAllCourses.filter((c) => {
+            const studentGrade = (user as any).student_grade || (user as any).academicLevel;
+            const isOL =
+              studentGrade?.includes("O/L") ||
+              studentGrade?.includes("OL") ||
+              studentGrade?.includes("IGCSE");
+            return isOL ? isCourseOL(c) : isCourseAL(c);
+          })
+        : rawAllCourses;
 
     const onlineUsers = await prisma.user.findMany({
       take: 8,

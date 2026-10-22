@@ -361,6 +361,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (resolvedStudentId && resolvedTutorId) {
+        const [studentUser, tutorUser] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: resolvedStudentId },
+            select: { student_grade: true, academicLevel: true },
+          }),
+          prisma.user.findUnique({
+            where: { id: resolvedTutorId },
+            select: { teaches_ol: true, teaches_al: true },
+          }),
+        ]);
+
+        if (studentUser && tutorUser) {
+          const rawGrade = studentUser.student_grade || studentUser.academicLevel;
+          const isOL = rawGrade?.includes("O/L") || rawGrade?.includes("OL") || rawGrade?.includes("IGCSE");
+          if (isOL && tutorUser.teaches_ol === false) {
+            return NextResponse.json(
+              { error: "This tutor is not currently approved for London O/L (IGCSE) tutoring." },
+              { status: 403 }
+            );
+          }
+          if (!isOL && tutorUser.teaches_al === false) {
+            return NextResponse.json(
+              { error: "This tutor is not currently approved for London A/L tutoring." },
+              { status: 403 }
+            );
+          }
+        }
+      }
+
       const studentWhereClause = resolvedStudentId
         ? {
             OR: [

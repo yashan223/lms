@@ -118,6 +118,7 @@ export async function POST(request: Request) {
         guardianPhone: guardianPhone ? guardianPhone.trim() : null,
         role: Role.STUDENT,
         academicLevel: qualification?.includes("O/L") || qualification?.includes("IGCSE") ? "OL" : "AL",
+        student_grade: qualification?.includes("O/L") || qualification?.includes("IGCSE") ? "O/L" : "A/L",
         emailVerified: null,
         headline: null,
         bio: null,

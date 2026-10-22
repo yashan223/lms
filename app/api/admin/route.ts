@@ -546,6 +546,18 @@ export async function POST(request: NextRequest) {
             resolvedIalRate !== undefined && resolvedIalRate !== null && resolvedIalRate !== ""
               ? parseFloat(String(resolvedIalRate))
               : null,
+          teaches_ol:
+            body.teaches_ol !== undefined
+              ? Boolean(body.teaches_ol)
+              : isOLTutor !== undefined
+              ? Boolean(isOLTutor)
+              : true,
+          teaches_al:
+            body.teaches_al !== undefined
+              ? Boolean(body.teaches_al)
+              : isALTutor !== undefined
+              ? Boolean(isALTutor)
+              : true,
         },
       });
 
@@ -622,6 +634,25 @@ export async function POST(request: NextRequest) {
         const val = body.ialIasPayRate ?? body.ial_ias_pay_rate ?? hourlyRateAL ?? hourlyRate;
         updateData.ialIasPayRate =
           val !== null && val !== "" && !isNaN(Number(val)) ? parseFloat(String(val)) : null;
+      }
+
+      if (body.teaches_ol !== undefined) {
+        updateData.teaches_ol = Boolean(body.teaches_ol);
+      } else if (isOLTutor !== undefined) {
+        updateData.teaches_ol = Boolean(isOLTutor);
+      }
+
+      if (body.teaches_al !== undefined) {
+        updateData.teaches_al = Boolean(body.teaches_al);
+      } else if (isALTutor !== undefined) {
+        updateData.teaches_al = Boolean(isALTutor);
+      }
+
+      if (body.student_grade !== undefined || body.academicLevel !== undefined) {
+        const raw = body.student_grade || body.academicLevel;
+        const isOL = raw?.includes("O/L") || raw?.includes("OL") || raw?.includes("IGCSE");
+        updateData.student_grade = isOL ? "O/L" : "A/L";
+        updateData.academicLevel = isOL ? "OL" : "AL";
       }
 
       const updatedUser = await prisma.user.update({

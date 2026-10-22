@@ -19,6 +19,8 @@ export interface FacultyTutor {
   category: string;
   level: "AL" | "OL" | "BOTH";
   levelLabel: string;
+  teaches_ol?: boolean;
+  teaches_al?: boolean;
   rating: number;
   reviewCount: number;
   country?: string;
@@ -59,6 +61,21 @@ export function isTutorQualifiedForLevel(
     normTarget.includes("O/L");
 
   if (!wantsAL && !wantsOL) return true;
+
+  // 0. Check explicit database boolean flags (teaches_al & teaches_ol)
+  if (tutor.teaches_al !== undefined && tutor.teaches_al !== null) {
+    if (wantsAL && tutor.teaches_al === false) return false;
+    if (wantsOL && tutor.teaches_al === true && tutor.teaches_ol === false) return false;
+  }
+  if (tutor.teaches_ol !== undefined && tutor.teaches_ol !== null) {
+    if (wantsOL && tutor.teaches_ol === false) return false;
+    if (wantsAL && tutor.teaches_ol === true && tutor.teaches_al === false) return false;
+  }
+  if (tutor.teaches_al === true && tutor.teaches_ol === true) {
+    return true;
+  }
+  if (wantsAL && tutor.teaches_al === true) return true;
+  if (wantsOL && tutor.teaches_ol === true) return true;
 
   // 1. If tutor object already has parsed level (e.g. from formatDbTutors)
   if (tutor.level === "BOTH") return true;
@@ -140,28 +157,34 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
       };
     });
 
-    let isALTutor: boolean | null = null;
-    let isOLTutor: boolean | null = null;
+    let isALTutor: boolean | null =
+      dbTutor.teaches_al !== undefined && dbTutor.teaches_al !== null
+        ? Boolean(dbTutor.teaches_al)
+        : null;
+    let isOLTutor: boolean | null =
+      dbTutor.teaches_ol !== undefined && dbTutor.teaches_ol !== null
+        ? Boolean(dbTutor.teaches_ol)
+        : null;
     if (typeof dbTutor.bio === "string" && dbTutor.bio.trim().startsWith("{")) {
       try {
         const parsed = JSON.parse(dbTutor.bio);
-        if (parsed.isALTutor !== undefined) isALTutor = Boolean(parsed.isALTutor);
-        if (parsed.isOLTutor !== undefined) isOLTutor = Boolean(parsed.isOLTutor);
+        if (isALTutor === null && parsed.isALTutor !== undefined) isALTutor = Boolean(parsed.isALTutor);
+        if (isOLTutor === null && parsed.isOLTutor !== undefined) isOLTutor = Boolean(parsed.isOLTutor);
         if (parsed.hourlyRateAL && Number(parsed.hourlyRateAL) > 0 && isALTutor === null) isALTutor = true;
         if (parsed.hourlyRateOL && Number(parsed.hourlyRateOL) > 0 && isOLTutor === null) isOLTutor = true;
       } catch {}
     }
     if (dbTutor.ialIasPayRate !== null && dbTutor.ialIasPayRate !== undefined) {
       if (Number(dbTutor.ialIasPayRate) > 0) {
-        if (isALTutor !== false) isALTutor = true;
-      } else {
+        if (isALTutor === null) isALTutor = true;
+      } else if (isALTutor === null) {
         isALTutor = false;
       }
     }
     if (dbTutor.igcsePayRate !== null && dbTutor.igcsePayRate !== undefined) {
       if (Number(dbTutor.igcsePayRate) > 0) {
-        if (isOLTutor !== false) isOLTutor = true;
-      } else {
+        if (isOLTutor === null) isOLTutor = true;
+      } else if (isOLTutor === null) {
         isOLTutor = false;
       }
     }
@@ -201,6 +224,8 @@ export function formatDbTutors(dbTutors: any[] = []): FacultyTutor[] {
         "All",
       level: levelVal,
       levelLabel: levelLabel,
+      teaches_ol: dbTutor.teaches_ol !== undefined && dbTutor.teaches_ol !== null ? Boolean(dbTutor.teaches_ol) : hasOL,
+      teaches_al: dbTutor.teaches_al !== undefined && dbTutor.teaches_al !== null ? Boolean(dbTutor.teaches_al) : hasAL,
       rating: 5.0,
       reviewCount: dbTutor.createdCourses?.reduce(
         (acc: number, c: any) => acc + (c.enrollments?.length || 0),

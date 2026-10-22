@@ -240,6 +240,11 @@ export default function AdminDashboardPage() {
   const [endingClassId, setEndingClassId] = useState<string | null>(null);
   const [purchaseSearch, setPurchaseSearch] = useState("");
   const [purchaseCourseFilter, setPurchaseCourseFilter] = useState("ALL");
+  const [paymentsList, setPaymentsList] = useState<any[]>([]);
+  const [paymentCurrencyFilter, setPaymentCurrencyFilter] = useState<"ALL" | "LKR" | "USD">("ALL");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<"ALL" | "SUCCEEDED" | "PENDING" | "FAILED">("ALL");
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [financeSubTab, setFinanceSubTab] = useState<"PAYMENTS" | "COURSES">("PAYMENTS");
 
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
@@ -709,6 +714,9 @@ export default function AdminDashboardPage() {
         setAllTrialsList(data.allTrials || []);
         setPendingCoursesList(data.pendingCourses || []);
         setTotalPendingApprovals(data.totalPendingApprovals || 0);
+        if (data.payments && Array.isArray(data.payments)) {
+          setPaymentsList(data.payments);
+        }
         if (data.bundles && data.bundles.length > 0) {
           setBundlesList(data.bundles);
         }
@@ -831,6 +839,72 @@ export default function AdminDashboardPage() {
       return acc + count * (c.price ?? 0);
     }, 0);
   }, [coursesList]);
+
+  const financialTotals = useMemo(() => {
+    let lkr = 0;
+    let usd = 0;
+    let lkrCount = 0;
+    let usdCount = 0;
+    let lkrPending = 0;
+    let usdPending = 0;
+
+    paymentsList.forEach((p) => {
+      const amount = (p.amountCents || 0) / 100;
+      if (p.currency === "USD") {
+        if (p.status === "SUCCEEDED") {
+          usd += amount;
+          usdCount++;
+        } else if (p.status === "PENDING") {
+          usdPending += amount;
+        }
+      } else {
+        // Default to LKR
+        if (p.status === "SUCCEEDED") {
+          lkr += amount;
+          lkrCount++;
+        } else if (p.status === "PENDING") {
+          lkrPending += amount;
+        }
+      }
+    });
+
+    return {
+      lkr,
+      usd,
+      lkrCount,
+      usdCount,
+      lkrPending,
+      usdPending,
+      totalCount: paymentsList.length,
+    };
+  }, [paymentsList]);
+
+  const filteredPaymentsList = useMemo(() => {
+    return paymentsList.filter((p) => {
+      if (paymentCurrencyFilter !== "ALL" && p.currency !== paymentCurrencyFilter) {
+        return false;
+      }
+      if (paymentStatusFilter !== "ALL" && p.status !== paymentStatusFilter) {
+        return false;
+      }
+      if (paymentSearch) {
+        const q = paymentSearch.toLowerCase();
+        const studentName = p.user?.name || "";
+        const studentEmail = p.user?.email || "";
+        const studentId = p.user?.studentId || "";
+        const itemTitle = p.itemTitle || "";
+        const reference = p.reference || "";
+        const matches =
+          studentName.toLowerCase().includes(q) ||
+          studentEmail.toLowerCase().includes(q) ||
+          studentId.toLowerCase().includes(q) ||
+          itemTitle.toLowerCase().includes(q) ||
+          reference.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [paymentsList, paymentCurrencyFilter, paymentStatusFilter, paymentSearch]);
 
   const getUserRates = (user: any): { alRate: string; olRate: string; isAL: boolean; isOL: boolean } => {
     if (!user?.bio) return { alRate: "5000", olRate: "3500", isAL: true, isOL: true };
@@ -2602,13 +2676,36 @@ export default function AdminDashboardPage() {
                   <div className="text-[11px] text-blue-600 font-semibold">Verified Enrollment Records</div>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-blue-700">Gross Tuition Volume</span>
-                    <DollarSign className="w-4 h-4 text-blue-700" />
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Gross Tuition Revenue</span>
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
                   </div>
-                  <div className="text-2xl font-semibold tracking-tight text-slate-800">${totalCalculatedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
-                  <div className="text-[11px] text-slate-500">Calculated from enrollments</div>
+                  <div className="space-y-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        LKR (Rs.)
+                      </span>
+                      <span className="text-base font-black text-slate-900">
+                        Rs. {financialTotals.lkr.toLocaleString("en-LK")}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-[10px] font-black text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                        USD ($)
+                      </span>
+                      <span className="text-base font-black text-blue-700">
+                        ${financialTotals.usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between font-mono">
+                    <span>{financialTotals.lkrCount} LKR cleared</span>
+                    <span>•</span>
+                    <span>{financialTotals.usdCount} USD cleared</span>
+                  </div>
                 </div>
               </div>
 
@@ -4547,68 +4644,393 @@ export default function AdminDashboardPage() {
           {activeTab === "finances" && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                {/* 1. Gross LKR Revenue */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Gross Course Revenue</span>
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                      <DollarSign className="w-4 h-4" />
-                    </div>
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Gross LKR Revenue</span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase">
+                      LKR (Rs.)
+                    </span>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
-                    ${totalCalculatedRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    Rs. {financialTotals.lkr.toLocaleString("en-LK")}
                   </div>
-                  <div className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>100% Cleared Student Tuition</span>
+                  <div className="space-y-0.5">
+                    <div className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{financialTotals.lkrCount} Cleared Payments.lk Checkouts</span>
+                    </div>
+                    {financialTotals.lkrPending > 0 && (
+                      <div className="text-[10px] text-amber-600 font-medium">
+                        Rs. {financialTotals.lkrPending.toLocaleString("en-LK")} pending clearance
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                {/* 2. Gross USD Revenue */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Total Course Purchases</span>
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Gross USD Revenue</span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 uppercase">
+                      USD ($)
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black tracking-tight text-blue-700">
+                    ${financialTotals.usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{financialTotals.usdCount} Cleared International Payments</span>
+                    </div>
+                    {financialTotals.usdPending > 0 && (
+                      <div className="text-[10px] text-amber-600 font-medium">
+                        ${financialTotals.usdPending.toFixed(2)} pending clearance
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Total Transactions & Volume */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Total Purchases</span>
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                       <TrendingUp className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-2xl font-black tracking-tight text-slate-900">
-                    {totalEnrollmentsCount} {totalEnrollmentsCount === 1 ? "Purchase" : "Purchases"}
+                    {financialTotals.totalCount} Purchases
                   </div>
-                  <div className="text-[11px] text-blue-600 font-semibold">
-                    Across {coursesList.length} Published Classes
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Active Paying Students</span>
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                      <Users className="w-4 h-4" />
+                  <div className="space-y-0.5 text-[11px]">
+                    <div className="text-slate-600 font-semibold">
+                      {uniquePayingStudentsCount} Active Enrolled Students
+                    </div>
+                    <div className="text-slate-400 text-[10px]">
+                      {totalEnrollmentsCount} Course Enrolments Across {coursesList.length} Classes
                     </div>
                   </div>
-                  <div className="text-2xl font-black tracking-tight text-slate-900">
-                    {uniquePayingStudentsCount} Students
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Enrolled with Full Material Access
-                  </div>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                {/* 4. Tutor Honorarium Pools */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Tutor Honorarium Pool</span>
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tutor Honorarium Pool</span>
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                       <Award className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-black tracking-tight text-slate-900">
-                    ${(totalCalculatedRevenue * 0.3).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  <div className="space-y-1">
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1 rounded border border-emerald-200">LKR (30%)</span>
+                      <span className="text-base font-black text-slate-900">
+                        Rs. {(financialTotals.lkr * 0.3).toLocaleString("en-LK")}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className="text-[10px] font-bold text-blue-800 bg-blue-50 px-1 rounded border border-blue-200">USD (30%)</span>
+                      <span className="text-base font-black text-blue-700">
+                        ${(financialTotals.usd * 0.3).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-[11px] text-blue-600 font-semibold">
-                    30% Pool for Certified Tutors
+                  <div className="text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                    30% honorarium allocation for certified faculty
                   </div>
                 </div>
               </div>
 
+              {/* Finance Sub-Tab Selector */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFinanceSubTab("PAYMENTS")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                      financeSubTab === "PAYMENTS"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200"
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Payment Gateway Transactions ({paymentsList.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFinanceSubTab("COURSES")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                      financeSubTab === "COURSES"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200"
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Course Enrollments & Tuition ({purchasesList.length})</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* TAB 1: Payment Gateway Transactions (LKR & USD Separated) */}
+              {financeSubTab === "PAYMENTS" && (
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-4 p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900">Payment Gateway Transactions (Payments.lk)</h3>
+                      <p className="text-xs text-slate-500">
+                        Live transaction ledger showing verified student checkouts with LKR and USD currency separation
+                      </p>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const headers = "Reference,Student Name,Student Email,Student ID,Item Title,Item Type,Currency,Amount,Tokens Credited,Payment Status,Payment Method,Created Date\n";
+                        const rows = filteredPaymentsList
+                          .map((p) =>
+                            `"${p.reference}","${p.user?.name || "Student"}","${p.user?.email || ""}","${p.user?.studentId || ""}","${p.itemTitle}","${p.itemType}","${p.currency}",${(p.amountCents / 100).toFixed(2)},${p.tokens || 0},"${p.status}","${p.paymentMethod || "CARD"}","${new Date(p.createdAt).toLocaleString()}"`
+                          )
+                          .join("\n");
+                        const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.setAttribute("download", `edupulse_payment_transactions_${new Date().toISOString().slice(0, 10)}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="text-xs font-bold text-slate-700 h-9 rounded-xl gap-1.5 cursor-pointer shadow-2xs border-slate-200 hover:bg-slate-50"
+                    >
+                      <Download className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Export CSV Statement</span>
+                    </Button>
+                  </div>
+
+                  {/* Filters Bar */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                    <div className="relative w-full sm:w-80">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder="Search student, email, reference, package..."
+                        value={paymentSearch}
+                        onChange={(e) => setPaymentSearch(e.target.value)}
+                        className="pl-8 h-9 text-xs rounded-xl border-slate-200"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                      {/* Currency Filter Tabs */}
+                      <div className="inline-flex p-0.5 bg-slate-100 rounded-xl border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentCurrencyFilter("ALL")}
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+                            paymentCurrencyFilter === "ALL"
+                              ? "bg-white text-slate-900 shadow-2xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          All ({paymentsList.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentCurrencyFilter("LKR")}
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+                            paymentCurrencyFilter === "LKR"
+                              ? "bg-emerald-600 text-white shadow-2xs"
+                              : "text-emerald-700 hover:text-emerald-900"
+                          }`}
+                        >
+                          LKR (Rs.) ({paymentsList.filter((p) => p.currency === "LKR").length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentCurrencyFilter("USD")}
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+                            paymentCurrencyFilter === "USD"
+                              ? "bg-blue-600 text-white shadow-2xs"
+                              : "text-blue-700 hover:text-blue-900"
+                          }`}
+                        >
+                          USD ($) ({paymentsList.filter((p) => p.currency === "USD").length})
+                        </button>
+                      </div>
+
+                      {/* Status Filter */}
+                      <select
+                        value={paymentStatusFilter}
+                        onChange={(e) => setPaymentStatusFilter(e.target.value as any)}
+                        className="h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-semibold text-slate-700 cursor-pointer"
+                      >
+                        <option value="ALL">All Statuses</option>
+                        <option value="SUCCEEDED">Succeeded</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="FAILED">Failed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {filteredPaymentsList.length === 0 ? (
+                    <div className="py-12 text-center space-y-2 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                      <CreditCard className="w-8 h-8 text-slate-400 mx-auto" />
+                      <p className="text-xs font-bold text-slate-700">No Payment Transactions Found</p>
+                      <p className="text-[11px] text-slate-400">
+                        {paymentSearch || paymentCurrencyFilter !== "ALL" || paymentStatusFilter !== "ALL"
+                          ? "Try clearing your search query or filters."
+                          : "Student checkouts via Payments.lk will appear here in real-time."}
+                      </p>
+                      {(paymentSearch || paymentCurrencyFilter !== "ALL" || paymentStatusFilter !== "ALL") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setPaymentSearch("");
+                            setPaymentCurrencyFilter("ALL");
+                            setPaymentStatusFilter("ALL");
+                          }}
+                          className="text-xs font-bold rounded-xl mt-2"
+                        >
+                          Reset Filters
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                          <tr>
+                            <th className="py-3 px-4">Student / Buyer</th>
+                            <th className="py-3 px-4">Package / Item</th>
+                            <th className="py-3 px-4">Currency & Amount</th>
+                            <th className="py-3 px-4">Payment Status</th>
+                            <th className="py-3 px-4">Reference & Gateway</th>
+                            <th className="py-3 px-4">Transaction Date</th>
+                            <th className="py-3 px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredPaymentsList.map((tx: any) => {
+                            const isUsd = tx.currency === "USD";
+                            const formattedAmount = isUsd
+                              ? `$${(tx.amountCents / 100).toFixed(2)} USD`
+                              : `Rs. ${(tx.amountCents / 100).toLocaleString("en-LK")} LKR`;
+
+                            return (
+                              <tr key={tx.id} className="hover:bg-blue-50/20 transition-colors">
+                                <td className="py-3.5 px-4">
+                                  <div className="flex items-center gap-2.5">
+                                    <Avatar className="w-8 h-8 ring-1 ring-slate-200">
+                                      {tx.user?.avatar && <AvatarImage src={tx.user.avatar} />}
+                                      <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">
+                                        {(tx.user?.name || "S").charAt(0)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0">
+                                      <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                                        <span>{tx.user?.name || "Student"}</span>
+                                        {tx.user?.studentId && (
+                                          <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200" title="Official Student ID">
+                                            {tx.user.studentId}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="text-[11px] text-slate-400 truncate">{tx.user?.email || "No email"}</div>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-4 max-w-xs">
+                                  <div className="space-y-0.5">
+                                    <div className="font-bold text-slate-900 line-clamp-1">{tx.itemTitle}</div>
+                                    <div className="flex items-center gap-1.5">
+                                      {tx.tokens ? (
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                          <Clock className="w-3 h-3" />
+                                          <span>+{tx.tokens} Learning Hours</span>
+                                        </span>
+                                      ) : null}
+                                      <span className="text-[10px] font-semibold text-slate-400 uppercase">
+                                        {tx.itemType}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-4">
+                                  {isUsd ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                                      {formattedAmount}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                                      {formattedAmount}
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td className="py-3.5 px-4">
+                                  {tx.status === "SUCCEEDED" ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                      <span>PAID & CREDITED</span>
+                                    </span>
+                                  ) : tx.status === "PENDING" ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                      <Clock className="w-3 h-3 text-amber-600" />
+                                      <span>PENDING 3DS</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                      <AlertCircle className="w-3 h-3 text-rose-600" />
+                                      <span>FAILED</span>
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                                  <div className="font-mono text-[11px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block">
+                                    {tx.reference}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 mt-0.5 font-semibold">
+                                    {tx.paymentMethod || "CARD"}
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                                  <div>{new Date(tx.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                                  <div className="text-[10px] text-slate-400 font-mono">
+                                    {new Date(tx.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                  {tx.user && (
+                                    <button
+                                      onClick={() => handleOpenUserProfile(tx.user)}
+                                      className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-colors shadow-2xs"
+                                      title="View Student Full Profile & Complete History"
+                                    >
+                                      <Eye className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Profile</span>
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: Course Purchases & Student Enrollments */}
+              {financeSubTab === "COURSES" && (
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-4 p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
@@ -4818,6 +5240,7 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
               </div>
+              )}
 
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
                 <div className="border-b border-slate-100 pb-3">

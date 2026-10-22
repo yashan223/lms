@@ -327,6 +327,52 @@ export async function GET(request: NextRequest) {
       pendingCourses = [];
     }
 
+    let payments: any[] = [];
+    try {
+      payments = await prisma.payment.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              studentId: true,
+              name: true,
+              email: true,
+              avatar: true,
+              phone: true,
+              country: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (payErr) {
+      console.error("Error fetching payments in admin:", payErr);
+      payments = [];
+    }
+
+    const lkrSucceededPayments = payments.filter((p) => p.currency === "LKR" && p.status === "SUCCEEDED");
+    const usdSucceededPayments = payments.filter((p) => p.currency === "USD" && p.status === "SUCCEEDED");
+    const lkrPendingPayments = payments.filter((p) => p.currency === "LKR" && p.status === "PENDING");
+    const usdPendingPayments = payments.filter((p) => p.currency === "USD" && p.status === "PENDING");
+
+    const totalLkrRevenue = lkrSucceededPayments.reduce((acc, p) => acc + (p.amountCents / 100), 0);
+    const totalUsdRevenue = usdSucceededPayments.reduce((acc, p) => acc + (p.amountCents / 100), 0);
+    const pendingLkrRevenue = lkrPendingPayments.reduce((acc, p) => acc + (p.amountCents / 100), 0);
+    const pendingUsdRevenue = usdPendingPayments.reduce((acc, p) => acc + (p.amountCents / 100), 0);
+
+    const financeStats = {
+      totalLkrRevenue,
+      totalUsdRevenue,
+      pendingLkrRevenue,
+      pendingUsdRevenue,
+      lkrSucceededCount: lkrSucceededPayments.length,
+      usdSucceededCount: usdSucceededPayments.length,
+      lkrPendingCount: lkrPendingPayments.length,
+      usdPendingCount: usdPendingPayments.length,
+      totalPaymentsCount: payments.length,
+    };
+
     const sanitizedUsers = allUsers.map(({ passwordHash, ...safeUser }) => safeUser);
     const candidates = sanitizedUsers.filter((u) => u.role === Role.STUDENT);
     const tutors = sanitizedUsers.filter((u) => u.role === Role.TUTOR || (u.role as any) === "INSTRUCTOR");
@@ -374,6 +420,8 @@ export async function GET(request: NextRequest) {
       tutorPayoutOverview: await getAdminTutorPayoutOverview(),
       schools: await getSchools(false),
       subjects: await getSchools(false),
+      payments,
+      financeStats,
     });
   } catch (error: any) {
     console.error("Admin API GET error:", error);

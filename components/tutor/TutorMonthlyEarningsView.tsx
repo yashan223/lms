@@ -98,6 +98,8 @@ interface MonthlyEarningsData {
     ialEarningsLkr: number;
     bonus?: MonthlyBonusData;
     totalEstimatedPayoutLkr?: number;
+    tutorAlRate?: number;
+    tutorOlRate?: number;
     records: EarningRecord[];
   };
   archivedMonths: MonthlyPayoutArchive[];
@@ -220,7 +222,7 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
               IGCSE Level (O/L)
             </span>
             <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
-              750 LKR / hr
+              {current?.tutorOlRate ? `Rs. ${current.tutorOlRate.toLocaleString()} / hr` : "London O/L Rate"}
             </span>
           </div>
           <div className="text-xl font-black text-slate-900 tracking-tight">
@@ -238,7 +240,7 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
               IAL & IAS (A-Level)
             </span>
             <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
-              850 LKR / hr
+              {current?.tutorAlRate ? `Rs. ${current.tutorAlRate.toLocaleString()} / hr` : "London A/L Rate"}
             </span>
           </div>
           <div className="text-xl font-black text-slate-900 tracking-tight">
@@ -577,7 +579,7 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
                 </div>
                 <h4 className="text-sm font-bold text-slate-700">No Class Sessions Logged for {current?.monthLabel || "This Month"}</h4>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  When you complete a scheduled 1-hour enrolled class session, 1 token is subtracted from the student and the converted local currency (750 LKR for IGCSE, 850 LKR for IAL/IAS) will appear here instantly. (30-Minute trial sessions are free consultations with zero token deduction and zero tutor payout).
+                  When you complete a scheduled 1-hour enrolled class session, 1 token is subtracted from the student and your approved hourly rate for that academic level will appear here instantly. (30-Minute trial sessions are free consultations with zero token deduction and zero tutor payout).
                 </p>
               </div>
             ) : (
@@ -623,7 +625,9 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
                                   : "bg-indigo-50 text-indigo-700 border border-indigo-200"
                               }`}
                             >
-                              {isIgcse ? "IGCSE Level (750 LKR)" : "IAL & IAS Level (850 LKR)"}
+                              {isIgcse
+                                ? `IGCSE / O-Level (${formatLkr(r.amountLkr)})`
+                                : `IAL / A-Level (${formatLkr(r.amountLkr)})`}
                             </span>
                           </td>
                           <td className="py-3.5 text-slate-700">
@@ -701,8 +705,8 @@ export function TutorMonthlyEarningsView({ earnings, loading }: Props) {
                             <span className="font-black text-slate-900">{a.totalHours}</span> Hours
                           </td>
                           <td className="py-3.5 text-slate-600 text-[11px]">
-                            <span className="font-semibold text-blue-700">{a.igcseHours} IGCSE</span> (750 LKR) +{" "}
-                            <span className="font-semibold text-indigo-700">{a.ialHours} IAL</span> (850 LKR)
+                            <span className="font-semibold text-blue-700">{a.igcseHours} IGCSE (O/L)</span> +{" "}
+                            <span className="font-semibold text-indigo-700">{a.ialHours} IAL (A/L)</span>
                           </td>
                           <td className="py-3.5 text-slate-500 text-[11px]">
                             {archiveDate.toLocaleDateString("en-US", {

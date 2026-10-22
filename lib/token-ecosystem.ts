@@ -6,8 +6,8 @@ import { getEventDurationHours } from "@/lib/scheduling";
 import { removeLiveClassNotifications } from "@/lib/notifications";
 
 export const DEFAULT_PAY_GRADES = {
-  IGCSE: 750, // LKR per hour / token
-  IAL_IAS: 850, // LKR per hour / token
+  IGCSE: 3500, // LKR per hour / token (London O/L default)
+  IAL_IAS: 5000, // LKR per hour / token (London A/L default)
 };
 
 export const DEFAULT_BONUS_TIERS = {
@@ -268,31 +268,32 @@ export function determineClassTier(
     isOLTutor = true;
   }
 
-  // If tutor exclusively teaches only one level, prioritize that tutor specialization
-  if (isALTutor && !isOLTutor) {
-    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
-  }
-  if (!isALTutor && isOLTutor) {
-    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
-  }
-
-  // 2. Cross-check Explicit Academic Level from Event (set when creating / scheduling class)
+  // 1. Cross-check Explicit Academic Level from Event (set when creating / scheduling class)
   const eventLevel = (event?.academicLevel || "").toUpperCase();
   if (eventLevel === "AL" || eventLevel === "IAL" || eventLevel === "A_LEVEL" || eventLevel === "ADVANCED") {
-    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+    return { tier: "IAL_IAS", label: "London A/L (Advanced)" };
   }
-  if (eventLevel === "OL" || eventLevel === "IGCSE" || eventLevel === "O_LEVEL" || eventLevel === "INTERMEDIATE") {
-    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+  if (eventLevel === "OL" || eventLevel === "IGCSE" || eventLevel === "O_LEVEL" || eventLevel === "INTERMEDIATE" || eventLevel === "FOUNDATION") {
+    return { tier: "IGCSE", label: "London O/L (Intermediate)" };
   }
 
-  // 3. Cross-check Course Level Dropdown selected when creating the Course
-  // ADVANCED = "London A/L (Advanced)", INTERMEDIATE = "London O/L (Intermediate)"
+  // 2. Cross-check Course Level Dropdown selected when creating the Course
+  // ADVANCED = "London A/L (Advanced)", INTERMEDIATE = "London O/L (Intermediate)", FOUNDATION = "Foundation / Preparatory"
   const courseLevel = (course?.level || "").toUpperCase();
-  if (courseLevel === "ADVANCED") {
-    return { tier: "IAL_IAS", label: "IAL & IAS (A-Level)" };
+  if (courseLevel === "ADVANCED" || courseLevel === "AL" || courseLevel === "A_LEVEL") {
+    return { tier: "IAL_IAS", label: "London A/L (Advanced)" };
   }
-  if (courseLevel === "INTERMEDIATE") {
-    return { tier: "IGCSE", label: "IGCSE Level (O/L)" };
+  if (courseLevel === "INTERMEDIATE" || courseLevel === "OL" || courseLevel === "O_LEVEL" || courseLevel === "FOUNDATION") {
+    return { tier: "IGCSE", label: "London O/L (Intermediate)" };
+  }
+
+  // 3. Cross-check Tutor Profile capabilities
+  // If tutor exclusively teaches only one level, prioritize that tutor specialization
+  if (isALTutor && !isOLTutor) {
+    return { tier: "IAL_IAS", label: "London A/L (Advanced)" };
+  }
+  if (!isALTutor && isOLTutor) {
+    return { tier: "IGCSE", label: "London O/L (Intermediate)" };
   }
 
   // 4. Regex keyword matching with word boundaries on course subtitle, title, code, event title & description
@@ -361,6 +362,15 @@ export function getTutorPayRate(
     if (bioRates?.hourlyRateOL && !isNaN(Number(bioRates.hourlyRateOL)) && Number(bioRates.hourlyRateOL) > 0) {
       return { hourlyRate: Number(bioRates.hourlyRateOL), isCustomRate: true };
     }
+    if (bioRates?.hourlyRate && !isNaN(Number(bioRates.hourlyRate)) && Number(bioRates.hourlyRate) > 0) {
+      return { hourlyRate: Number(bioRates.hourlyRate), isCustomRate: true };
+    }
+    if (tutor?.ialIasPayRate && Number(tutor.ialIasPayRate) > 0) {
+      return { hourlyRate: Math.round(Number(tutor.ialIasPayRate) * 0.75), isCustomRate: true };
+    }
+    if (bioRates?.hourlyRateAL && Number(bioRates.hourlyRateAL) > 0) {
+      return { hourlyRate: Math.round(Number(bioRates.hourlyRateAL) * 0.75), isCustomRate: true };
+    }
     return {
       hourlyRate: defaultRates?.igcseRateLkr ?? DEFAULT_PAY_GRADES.IGCSE,
       isCustomRate: false,
@@ -379,6 +389,12 @@ export function getTutorPayRate(
     }
     if (bioRates?.hourlyRate && !isNaN(Number(bioRates.hourlyRate)) && Number(bioRates.hourlyRate) > 0) {
       return { hourlyRate: Number(bioRates.hourlyRate), isCustomRate: true };
+    }
+    if (tutor?.igcsePayRate && Number(tutor.igcsePayRate) > 0) {
+      return { hourlyRate: Math.round(Number(tutor.igcsePayRate) * 1.25), isCustomRate: true };
+    }
+    if (bioRates?.hourlyRateOL && Number(bioRates.hourlyRateOL) > 0) {
+      return { hourlyRate: Math.round(Number(bioRates.hourlyRateOL) * 1.25), isCustomRate: true };
     }
     return {
       hourlyRate: defaultRates?.ialRateLkr ?? DEFAULT_PAY_GRADES.IAL_IAS,
@@ -1105,6 +1121,8 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
     bonus: ReturnType<typeof calculateTutorMonthlyBonus>;
     totalEstimatedPayoutLkr: number;
     records: any[];
+    tutorAlRate: number;
+    tutorOlRate: number;
   };
   archivedMonths: any[];
 }> {
@@ -1120,6 +1138,13 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
   const currentMonthLabel = `${monthNames[currentMonthNum - 1]} ${currentYear}`;
 
   const paySettings = await getPayGradeSettings();
+
+  const tutorUser = await prisma.user.findUnique({
+    where: { id: tutorId },
+    select: { id: true, name: true, bio: true, ialIasPayRate: true, igcsePayRate: true },
+  });
+  const tutorAlRate = tutorUser ? getTutorPayRate(tutorUser, "IAL_IAS", paySettings).hourlyRate : paySettings.ialRateLkr;
+  const tutorOlRate = tutorUser ? getTutorPayRate(tutorUser, "IGCSE", paySettings).hourlyRate : paySettings.igcseRateLkr;
 
   // Current month records
   const currentRecords = await prisma.tutorEarningRecord.findMany({
@@ -1226,6 +1251,8 @@ export async function getTutorMonthlyEarnings(tutorId: string): Promise<{
       bonus,
       totalEstimatedPayoutLkr: totalAmountLkr + bonus.unlockedBonusLkr,
       records: currentRecords,
+      tutorAlRate,
+      tutorOlRate,
     },
     archivedMonths,
   };
@@ -1289,9 +1316,21 @@ export async function getAdminTutorPayoutOverview(): Promise<{
   });
 
   const rows = tutors.map((t) => {
-    // Determine subject tier based on taught courses
-    let hasIgcse = false;
-    let hasIal = false;
+    // Determine subject tier based on taught courses and tutor profile capabilities
+    let isALTutor = false;
+    let isOLTutor = false;
+    if (t.bio && typeof t.bio === "string" && t.bio.trim().startsWith("{")) {
+      try {
+        const parsed = JSON.parse(t.bio);
+        if (parsed.isALTutor !== undefined) isALTutor = Boolean(parsed.isALTutor);
+        if (parsed.isOLTutor !== undefined) isOLTutor = Boolean(parsed.isOLTutor);
+      } catch {}
+    }
+    if (t.ialIasPayRate) isALTutor = true;
+    if (t.igcsePayRate) isOLTutor = true;
+
+    let hasIgcse = isOLTutor;
+    let hasIal = isALTutor;
 
     if (t.createdCourses && t.createdCourses.length > 0) {
       for (const c of t.createdCourses) {
@@ -1299,23 +1338,26 @@ export async function getAdminTutorPayoutOverview(): Promise<{
         if (tier === "IAL_IAS") hasIal = true;
         else hasIgcse = true;
       }
-    } else {
-      // Default to IGCSE if no courses yet
+    } else if (!hasIal && !hasIgcse) {
+      hasIal = true;
       hasIgcse = true;
     }
 
+    const { hourlyRate: tutorAlRate } = getTutorPayRate(t, "IAL_IAS", paySettings);
+    const { hourlyRate: tutorOlRate } = getTutorPayRate(t, "IGCSE", paySettings);
+
     let subjectTier: "IGCSE" | "IAL_IAS" | "Both (IGCSE & IAL/IAS)" = "IGCSE";
-    let hourlyPayGrade = `Rs. ${paySettings.igcseRateLkr} / hr`;
-    let primaryRate = paySettings.igcseRateLkr;
+    let hourlyPayGrade = `Rs. ${tutorOlRate.toLocaleString()} / hr`;
+    let primaryRate = tutorOlRate;
 
     if (hasIal && hasIgcse) {
       subjectTier = "Both (IGCSE & IAL/IAS)";
-      hourlyPayGrade = `Rs. ${paySettings.igcseRateLkr} (O/L) • Rs. ${paySettings.ialRateLkr} (A/L)`;
-      primaryRate = paySettings.ialRateLkr;
+      hourlyPayGrade = `Rs. ${tutorOlRate.toLocaleString()} (O/L) • Rs. ${tutorAlRate.toLocaleString()} (A/L)`;
+      primaryRate = tutorAlRate;
     } else if (hasIal) {
       subjectTier = "IAL_IAS";
-      hourlyPayGrade = `Rs. ${paySettings.ialRateLkr} / hr`;
-      primaryRate = paySettings.ialRateLkr;
+      hourlyPayGrade = `Rs. ${tutorAlRate.toLocaleString()} / hr`;
+      primaryRate = tutorAlRate;
     }
 
     const earningsRecords = (t.tutorEarnings || []).filter(

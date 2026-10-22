@@ -322,8 +322,8 @@ export default function AdminDashboardPage() {
     tier3MinHours: number;
     tier3BonusLkr: number;
   }>({
-    igcseRateLkr: 750,
-    ialRateLkr: 850,
+    igcseRateLkr: 3500,
+    ialRateLkr: 5000,
     tier1MinHours: 50,
     tier1BonusLkr: 5000,
     tier2MinHours: 75,
@@ -341,8 +341,8 @@ export default function AdminDashboardPage() {
     tier3MinHours: string;
     tier3BonusLkr: string;
   }>({
-    igcse: "750",
-    ial: "850",
+    igcse: "3500",
+    ial: "5000",
     tier1MinHours: "50",
     tier1BonusLkr: "5000",
     tier2MinHours: "75",
@@ -723,8 +723,8 @@ export default function AdminDashboardPage() {
         if (data.payGrades) {
           setPayGrades(data.payGrades);
           setPayGradesInput({
-            igcse: String(data.payGrades.igcseRateLkr ?? 750),
-            ial: String(data.payGrades.ialRateLkr ?? 850),
+            igcse: String(data.payGrades.igcseRateLkr ?? 3500),
+            ial: String(data.payGrades.ialRateLkr ?? 5000),
             tier1MinHours: String(data.payGrades.tier1MinHours ?? 50),
             tier1BonusLkr: String(data.payGrades.tier1BonusLkr ?? 5000),
             tier2MinHours: String(data.payGrades.tier2MinHours ?? 75),
@@ -1394,7 +1394,7 @@ export default function AdminDashboardPage() {
           tier3BonusLkr: String(data.payGrades.tier3BonusLkr),
         });
       }
-      setPayGradesSaveMsg({ type: "success", text: "Pay grades and bonus tier settings saved successfully!" });
+      setPayGradesSaveMsg({ type: "success", text: "Performance bonus tier settings saved successfully!" });
       setTimeout(() => setPayGradesSaveMsg(null), 3500);
       fetchAdminData();
     } catch (err: any) {
@@ -1406,8 +1406,8 @@ export default function AdminDashboardPage() {
 
   const handleResetStandardPayGrades = () => {
     setPayGradesInput({
-      igcse: "750",
-      ial: "850",
+      igcse: "3500",
+      ial: "5000",
       tier1MinHours: "50",
       tier1BonusLkr: "5000",
       tier2MinHours: "75",
@@ -5383,7 +5383,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Tutor Hourly Pay Grades & Token Conversion Settings */}
+              {/* Tutor Hourly Pay Grades & Custom Per-Tutor Rates */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                   <div>
@@ -5392,14 +5392,14 @@ export default function AdminDashboardPage() {
                         <CreditCard className="w-4 h-4" />
                       </div>
                       <h3 className="font-black text-lg text-slate-900">
-                        Tutor Hourly Pay Grades & Token Conversion
+                        Active Tutors & Approved Hourly Rates
                       </h3>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        Active Pay Rates
+                        {tutorList.length} Tutors Active
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                      Define the hourly pay rates for each academic tier. When a completed 1-hour class session deducts 1 token from a student, the tutor's internal earnings ledger is instantly credited with the corresponding monetary equivalent (LKR).
+                      Tutor hourly rates are individually configured per tutor when adding or editing an account in User Management. Class earnings are dynamically calculated based on the class Academic Level (London A/L vs London O/L) and the lead tutor&apos;s approved rate.
                     </p>
                   </div>
 
@@ -5407,148 +5407,84 @@ export default function AdminDashboardPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={handleResetStandardPayGrades}
-                      disabled={isSavingPayGrades}
+                      onClick={() => setActiveTab("users")}
                       className="text-xs font-bold h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Reset Standard Defaults</span>
+                      <Users className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Manage In Users</span>
                     </Button>
                     <Button
                       size="sm"
-                      onClick={handleSavePayGrades}
-                      disabled={isSavingPayGrades}
+                      onClick={() => {
+                        handleOpenAddUser();
+                        setFormUserRole("TUTOR");
+                      }}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-emerald-600/20 cursor-pointer"
                     >
-                      {isSavingPayGrades ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Saving Settings...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Save Pay Grades & Bonus Tiers</span>
-                        </>
-                      )}
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add New Tutor</span>
                     </Button>
                   </div>
                 </div>
 
-                {payGradesSaveMsg && (
-                  <div
-                    className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
-                      payGradesSaveMsg.type === "success"
-                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                        : "bg-rose-50 text-rose-800 border border-rose-200"
-                    }`}
-                  >
-                    {payGradesSaveMsg.type === "success" ? (
-                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                    )}
-                    <span>{payGradesSaveMsg.text}</span>
+                {/* Tutors rates list */}
+                {tutorList.length === 0 ? (
+                  <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                    No active tutors found. Click &quot;Add New Tutor&quot; to create a tutor account and configure their approved hourly rates.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {tutorList.map((t) => {
+                      const rates = getUserRates(t);
+                      return (
+                        <div
+                          key={t.id}
+                          className="p-4 rounded-2xl bg-slate-50/60 border border-slate-200 hover:border-slate-300 transition-all space-y-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 font-black text-xs flex items-center justify-center shrink-0">
+                                {t.name ? t.name.charAt(0).toUpperCase() : "T"}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-xs text-slate-900 truncate">
+                                  {t.name || "Unnamed Tutor"}
+                                </div>
+                                <div className="text-[10px] text-slate-400 truncate">
+                                  {t.email}
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleOpenEditUser(t)}
+                              className="h-7 px-2 text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg gap-1 cursor-pointer shrink-0"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>Edit</span>
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/70 text-[11px]">
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
+                              <div className="text-[10px] font-semibold text-slate-500">London A/L</div>
+                              <div className="font-black text-indigo-700">
+                                {rates.isAL ? `Rs. ${Number(rates.alRate).toLocaleString()}/hr` : "Not Conducted"}
+                              </div>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
+                              <div className="text-[10px] font-semibold text-slate-500">London O/L</div>
+                              <div className="font-black text-blue-700">
+                                {rates.isOL ? `Rs. ${Number(rates.olRate).toLocaleString()}/hr` : "Not Conducted"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* IGCSE Level Card */}
-                  <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                        <span className="text-sm font-black text-slate-900">IGCSE Level (O/L)</span>
-                      </div>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
-                        Standard: 750 LKR/hr
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-700 block">
-                        Hourly Rate per Token Deducted (LKR)
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
-                          Rs.
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="10"
-                          value={payGradesInput.igcse}
-                          onChange={(e) =>
-                            setPayGradesInput((prev) => ({ ...prev, igcse: e.target.value }))
-                          }
-                          className="w-full pl-10 pr-16 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs"
-                          placeholder="750"
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                          LKR / hr
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-white/80 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-700">Currently Active:</span>
-                        <span className="font-black text-blue-700">Rs. {payGrades.igcseRateLkr.toLocaleString()} LKR</span>
-                      </div>
-                      <p className="text-slate-500 text-[10.5px]">
-                        Applied to all O/L, IGCSE, GCSE course sessions and beginner/intermediate curriculum classes.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* IAL & IAS Level Card */}
-                  <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-slate-200 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                        <span className="text-sm font-black text-slate-900">IAL & IAS (A-Level)</span>
-                      </div>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
-                        Standard: 850 LKR/hr
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-700 block">
-                        Hourly Rate per Token Deducted (LKR)
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
-                          Rs.
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="10"
-                          value={payGradesInput.ial}
-                          onChange={(e) =>
-                            setPayGradesInput((prev) => ({ ...prev, ial: e.target.value }))
-                          }
-                          className="w-full pl-10 pr-16 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs"
-                          placeholder="850"
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                          LKR / hr
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-white/80 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-700">Currently Active:</span>
-                        <span className="font-black text-indigo-700">Rs. {payGrades.ialRateLkr.toLocaleString()} LKR</span>
-                      </div>
-                      <p className="text-slate-500 text-[10.5px]">
-                        Applied to all International A-Level (IAL & IAS / A2) syllabus courses and advanced curriculum sessions.
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Performance-Based Tutor Bonus System Configuration */}
                 <div className="pt-6 border-t border-slate-100 space-y-4">
@@ -5570,10 +5506,54 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
 
-                    <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                      Default: 50h (5,000 LKR) • 75h (7,500 LKR) • 100h (10,000 LKR)
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleResetStandardPayGrades}
+                        disabled={isSavingPayGrades}
+                        className="text-xs font-bold h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Reset Defaults</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSavePayGrades}
+                        disabled={isSavingPayGrades}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-emerald-600/20 cursor-pointer"
+                      >
+                        {isSavingPayGrades ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Saving Settings...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Save Bonus Tier Settings</span>
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
+
+                  {payGradesSaveMsg && (
+                    <div
+                      className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                        payGradesSaveMsg.type === "success"
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          : "bg-rose-50 text-rose-800 border border-rose-200"
+                      }`}
+                    >
+                      {payGradesSaveMsg.type === "success" ? (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                      )}
+                      <span>{payGradesSaveMsg.text}</span>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Tier 1 Configuration */}

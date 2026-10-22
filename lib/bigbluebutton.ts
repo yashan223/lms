@@ -1196,10 +1196,9 @@ export async function reconcileLiveBBBMeetings(): Promise<{ endedEvents: number;
 
     const liveTrials = await prisma.trialRequest.findMany({
       where: {
-        OR: [
-          { status: "CONFIRMED" as any, actualStartTime: { not: null }, actualEndTime: null },
-          { status: "LIVE" as any },
-        ],
+        status: "CONFIRMED",
+        actualStartTime: { not: null },
+        actualEndTime: null,
       },
       select: {
         id: true,

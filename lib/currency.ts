@@ -108,3 +108,34 @@ export function getCourseAcademicLevel(
 ): "OL" | "AL" {
   return isCourseOL(course) ? "OL" : "AL";
 }
+
+export function isStudentOL(
+  student?: { student_grade?: string | null; academicLevel?: string | null; headline?: string | null } | null
+): boolean {
+  if (!student) return false;
+  const raw = (student.student_grade || student.academicLevel || student.headline || "").toUpperCase();
+  return (
+    raw.includes("O/L") ||
+    raw.includes("OL") ||
+    raw.includes("IGCSE") ||
+    raw.includes("ORDINARY") ||
+    raw === "INTERMEDIATE"
+  );
+}
+
+export function isStudentAL(
+  student?: { student_grade?: string | null; academicLevel?: string | null; headline?: string | null } | null
+): boolean {
+  if (!student) return true;
+  const raw = (student.student_grade || student.academicLevel || student.headline || "").toUpperCase();
+  if (
+    raw.includes("A/L") ||
+    raw.includes("AL") ||
+    raw === "ADVANCED" ||
+    raw.includes("AS") ||
+    raw.includes("A2")
+  ) {
+    return true;
+  }
+  return !isStudentOL(student);
+}

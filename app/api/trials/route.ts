@@ -11,6 +11,7 @@ import {
 import { getAuthenticatedUser } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { EventType, EventStatus, Role, TrialStatus } from "@prisma/client";
+import { isCourseOL, isCourseAL, isStudentOL, isStudentAL } from "@/lib/currency";
 
 export async function GET(request: NextRequest) {
   try {
@@ -124,6 +125,8 @@ export async function GET(request: NextRequest) {
             slug: true,
             subjectCode: true,
             thumbnail: true,
+            level: true,
+            subtitle: true,
             tutor: {
               select: {
                 id: true,
@@ -149,6 +152,8 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true,
             avatar: true,
+            student_grade: true,
+            academicLevel: true,
           },
         },
       },
@@ -158,7 +163,42 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    const trials = rawTrials.map((t) => ({
+    const isTutorQuery = Boolean(
+      (authenticatedUser && (authenticatedUser.role === Role.TUTOR || (authenticatedUser.role as any) === "INSTRUCTOR")) ||
+      roleCookie === "TUTOR" ||
+      roleCookie === "INSTRUCTOR"
+    );
+
+    let filteredTrials = rawTrials;
+    if (isTutorQuery && authenticatedUser && authenticatedUser.role !== Role.ADMIN) {
+      let teachesOL = authenticatedUser.teaches_ol !== undefined && authenticatedUser.teaches_ol !== null ? Boolean(authenticatedUser.teaches_ol) : true;
+      let teachesAL = authenticatedUser.teaches_al !== undefined && authenticatedUser.teaches_al !== null ? Boolean(authenticatedUser.teaches_al) : true;
+      if (authenticatedUser.bio && (authenticatedUser.teaches_ol === undefined || authenticatedUser.teaches_al === undefined)) {
+        try {
+          const parsed = typeof authenticatedUser.bio === "string" && authenticatedUser.bio.trim().startsWith("{") ? JSON.parse(authenticatedUser.bio) : null;
+          if (parsed) {
+            if (authenticatedUser.teaches_ol === undefined && parsed.isOLTutor !== undefined) teachesOL = Boolean(parsed.isOLTutor);
+            if (authenticatedUser.teaches_al === undefined && parsed.isALTutor !== undefined) teachesAL = Boolean(parsed.isALTutor);
+          }
+        } catch {}
+      }
+
+      if (teachesOL && !teachesAL) {
+        filteredTrials = filteredTrials.filter((t) => {
+          if (t.course) return isCourseOL(t.course);
+          if (t.student) return isStudentOL(t.student);
+          return true;
+        });
+      } else if (teachesAL && !teachesOL) {
+        filteredTrials = filteredTrials.filter((t) => {
+          if (t.course) return isCourseAL(t.course);
+          if (t.student) return isStudentAL(t.student);
+          return true;
+        });
+      }
+    }
+
+    const trials = filteredTrials.map((t) => ({
       ...t,
       course: t.course ? { ...t.course, instructor: (t.course as any).tutor } : null,
     }));

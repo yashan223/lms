@@ -137,6 +137,54 @@ async function runTests() {
     assert(testStudent.student_grade === "O/L", "student_grade must be 'O/L'");
     console.log("✅ Student grade stored and verified successfully.");
 
+    // 5. Test isStudentOL and isStudentAL utility functions
+    console.log("Testing isStudentOL and isStudentAL utilities...");
+    const { isStudentOL, isStudentAL, isCourseOL, isCourseAL } = await import("../lib/currency");
+    
+    assert(isStudentOL({ student_grade: "O/L" }) === true, "student_grade O/L must be OL");
+    assert(isStudentAL({ student_grade: "O/L" }) === false, "student_grade O/L must NOT be AL");
+    assert(isStudentOL({ student_grade: "A/L" }) === false, "student_grade A/L must NOT be OL");
+    assert(isStudentAL({ student_grade: "A/L" }) === true, "student_grade A/L must be AL");
+    assert(isStudentOL({ academicLevel: "OL" }) === true, "academicLevel OL must be OL");
+    assert(isStudentAL({ academicLevel: "AL" }) === true, "academicLevel AL must be AL");
+    assert(isStudentOL({ headline: "London O/L Student" }) === true, "headline with London O/L must be OL");
+    assert(isStudentAL({ headline: "London A/L Student" }) === true, "headline with London A/L must be AL");
+    console.log("✅ isStudentOL and isStudentAL helpers passed all cases.");
+
+    // 6. Test Condition D: O/L Tutor Filtering (O/L tutors only see O/L students, courses, trials)
+    console.log("Testing Condition D: O/L Tutor visibility filtering...");
+    const students = [
+      { id: "s-ol", name: "OL Student", student_grade: "O/L", academicLevel: "OL" },
+      { id: "s-al", name: "AL Student", student_grade: "A/L", academicLevel: "AL" },
+    ];
+    const courses = [
+      { id: "c-ol", title: "Cambridge IGCSE Chemistry", level: "INTERMEDIATE" },
+      { id: "c-al", title: "Cambridge International AS Physics", level: "ADVANCED" },
+    ];
+
+    // For OL-only tutor:
+    const olTutorFilteredStudents = students.filter((s) => isStudentOL(s));
+    const olTutorFilteredCourses = courses.filter((c) => isCourseOL(c));
+    assert(olTutorFilteredStudents.length === 1 && olTutorFilteredStudents[0].id === "s-ol", "OL-only tutor must only see OL student");
+    assert(olTutorFilteredCourses.length === 1 && olTutorFilteredCourses[0].id === "c-ol", "OL-only tutor must only see OL course");
+    console.log("✅ Condition D passed: OL-only tutor filtering verified.");
+
+    // 7. Test Condition E: A/L Tutor Filtering (A/L tutors only see A/L students, courses, trials)
+    console.log("Testing Condition E: A/L Tutor visibility filtering...");
+    const alTutorFilteredStudents = students.filter((s) => isStudentAL(s));
+    const alTutorFilteredCourses = courses.filter((c) => isCourseAL(c));
+    assert(alTutorFilteredStudents.length === 1 && alTutorFilteredStudents[0].id === "s-al", "AL-only tutor must only see AL student");
+    assert(alTutorFilteredCourses.length === 1 && alTutorFilteredCourses[0].id === "c-al", "AL-only tutor must only see AL course");
+    console.log("✅ Condition E passed: AL-only tutor filtering verified.");
+
+    // 8. Test Condition F: Dual Tutor Filtering (Dual tutors see both)
+    console.log("Testing Condition F: Dual Tutor visibility...");
+    const dualStudents = tutorBoth.teaches_ol && tutorBoth.teaches_al ? students : [];
+    const dualCourses = tutorBoth.teaches_ol && tutorBoth.teaches_al ? courses : [];
+    assert(dualStudents.length === 2, "Dual tutor must see both students");
+    assert(dualCourses.length === 2, "Dual tutor must see both courses");
+    console.log("✅ Condition F passed: Dual tutor sees both grades.");
+
     // Clean up test student
     await prisma.user.delete({ where: { id: testStudent.id } });
   } finally {

@@ -94,6 +94,7 @@ import {
   DEFAULT_TIMEZONE,
 } from "@/lib/timezones";
 import { getEventDurationHours, getEventDurationMinutes } from "@/lib/scheduling";
+import { isCourseOL, isCourseAL, isStudentOL, isStudentAL } from "@/lib/currency";
 
 const formatSessionDuration = (startedAt?: string | Date | null, endedAt?: string | Date | null) => {
   if (!startedAt) return "—";
@@ -139,6 +140,8 @@ interface StudentRecord {
   phone: string;
   avatar?: string;
   headline: string;
+  student_grade?: string;
+  academicLevel?: string;
   enrolledCourses: EnrolledCourseInfo[];
   latestEnrollment: string;
 }
@@ -534,6 +537,11 @@ function TutorDashboardContent() {
       const data = await res.json();
       if (data.tutor) {
         setTutor(data.tutor);
+        if (data.tutor.teaches_ol && !data.tutor.teaches_al) {
+          setNewClassAcademicLevel("OL");
+        } else if (data.tutor.teaches_al && !data.tutor.teaches_ol) {
+          setNewClassAcademicLevel("AL");
+        }
         setProfileName(data.tutor.name || "");
         setProfileHeadline(data.tutor.headline || "Senior Tutor");
         setProfilePhone(data.tutor.phone || "");
@@ -842,6 +850,9 @@ function TutorDashboardContent() {
 
   const filteredStudents = useMemo(() => {
     return students.filter((st) => {
+      if (tutor?.teaches_ol && !tutor?.teaches_al && !isStudentOL(st)) return false;
+      if (tutor?.teaches_al && !tutor?.teaches_ol && !isStudentAL(st)) return false;
+
       const matchQuery =
         st.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
         st.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
@@ -854,7 +865,7 @@ function TutorDashboardContent() {
 
       return matchQuery && matchCourse;
     });
-  }, [students, studentSearch, selectedCourseFilter]);
+  }, [students, studentSearch, selectedCourseFilter, tutor]);
 
   const filteredEvents = useMemo(() => {
     const now = Date.now();
@@ -1442,6 +1453,15 @@ function TutorDashboardContent() {
     setScheduleMode("STUDENT");
     setNewClassStudentId(student.id);
     setNewClassTitle(`1-on-1 Consultation: ${student.name}`);
+    if (tutor?.teaches_ol && !tutor?.teaches_al) {
+      setNewClassAcademicLevel("OL");
+    } else if (tutor?.teaches_al && !tutor?.teaches_ol) {
+      setNewClassAcademicLevel("AL");
+    } else if (isStudentOL(student)) {
+      setNewClassAcademicLevel("OL");
+    } else {
+      setNewClassAcademicLevel("AL");
+    }
     const d = new Date();
     d.setDate(d.getDate() + 1);
     d.setHours(10, 0, 0, 0);
@@ -2345,6 +2365,15 @@ function TutorDashboardContent() {
                                   setScheduleMode("COURSE");
                                   setNewClassCourseId(c.id);
                                   setNewClassTitle(`Live Class: ${c.title}`);
+                                  if (tutor?.teaches_ol && !tutor?.teaches_al) {
+                                    setNewClassAcademicLevel("OL");
+                                  } else if (tutor?.teaches_al && !tutor?.teaches_ol) {
+                                    setNewClassAcademicLevel("AL");
+                                  } else if (isCourseOL(c)) {
+                                    setNewClassAcademicLevel("OL");
+                                  } else {
+                                    setNewClassAcademicLevel("AL");
+                                  }
                                   setShowScheduleModal(true);
                                 }}
                                 className="text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 px-2 py-1 rounded-md inline-flex items-center gap-1 transition-colors whitespace-nowrap shadow-xs cursor-pointer"
@@ -4432,11 +4461,17 @@ function TutorDashboardContent() {
                     className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
                     required
                   >
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.subjectCode ? `[${c.subjectCode}] ` : ""}{c.title}
-                      </option>
-                    ))}
+                    {courses
+                      .filter((c) => {
+                        if (tutor?.teaches_ol && !tutor?.teaches_al) return isCourseOL(c);
+                        if (tutor?.teaches_al && !tutor?.teaches_ol) return isCourseAL(c);
+                        return true;
+                      })
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.subjectCode ? `[${c.subjectCode}] ` : ""}{c.title}
+                        </option>
+                      ))}
                   </select>
                 </div>
               ) : (
@@ -4451,11 +4486,17 @@ function TutorDashboardContent() {
                     required
                   >
                     <option value="">Choose a student...</option>
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.email})
-                      </option>
-                    ))}
+                    {students
+                      .filter((s) => {
+                        if (tutor?.teaches_ol && !tutor?.teaches_al) return isStudentOL(s);
+                        if (tutor?.teaches_al && !tutor?.teaches_ol) return isStudentAL(s);
+                        return true;
+                      })
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.email})
+                        </option>
+                      ))}
                   </select>
 
                   {newClassStudentId && (
@@ -4507,9 +4548,15 @@ function TutorDashboardContent() {
                   onChange={(e) => setNewClassAcademicLevel(e.target.value as any)}
                   className="w-full h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium"
                 >
-                  <option value="AUTO">Auto-detect from Course / Student Level</option>
-                  <option value="AL">Cambridge/Edexcel AS and A2{profileRateAL ? ` - Rs. ${Number(profileRateAL).toLocaleString()}/hr` : ""}</option>
-                  <option value="OL">Cambridge/Edexcel IGCSE and OL{profileRateOL ? ` - Rs. ${Number(profileRateOL).toLocaleString()}/hr` : ""}</option>
+                  {tutor?.teaches_al !== false && tutor?.teaches_ol !== false && (
+                    <option value="AUTO">Auto-detect from Course / Student Level</option>
+                  )}
+                  {tutor?.teaches_al !== false && (
+                    <option value="AL">Cambridge/Edexcel AS and A2{profileRateAL ? ` - Rs. ${Number(profileRateAL).toLocaleString()}/hr` : ""}</option>
+                  )}
+                  {tutor?.teaches_ol !== false && (
+                    <option value="OL">Cambridge/Edexcel IGCSE and OL{profileRateOL ? ` - Rs. ${Number(profileRateOL).toLocaleString()}/hr` : ""}</option>
+                  )}
                 </select>
               </div>
 

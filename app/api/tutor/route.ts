@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastLMSEvent } from "@/lib/events";
+import { isCourseOL, isCourseAL, isStudentOL, isStudentAL } from "@/lib/currency";
 import {
   getSafeMeetingLink,
   isGenericMeetingLink,
@@ -42,6 +43,18 @@ export async function GET(request: NextRequest) {
 
     const tutor = auth.user;
 
+    let teachesOL = tutor.teaches_ol !== undefined && tutor.teaches_ol !== null ? Boolean(tutor.teaches_ol) : true;
+    let teachesAL = tutor.teaches_al !== undefined && tutor.teaches_al !== null ? Boolean(tutor.teaches_al) : true;
+    if (tutor.bio && (tutor.teaches_ol === undefined || tutor.teaches_al === undefined)) {
+      try {
+        const parsed = typeof tutor.bio === "string" && tutor.bio.trim().startsWith("{") ? JSON.parse(tutor.bio) : null;
+        if (parsed) {
+          if (tutor.teaches_ol === undefined && parsed.isOLTutor !== undefined) teachesOL = Boolean(parsed.isOLTutor);
+          if (tutor.teaches_al === undefined && parsed.isALTutor !== undefined) teachesAL = Boolean(parsed.isALTutor);
+        }
+      } catch {}
+    }
+
     if (!tutor.tutorId && (tutor.role === Role.TUTOR || (tutor.role as any) === "INSTRUCTOR")) {
       tutor.tutorId = await ensureTutorIdForUser(tutor.id);
     }
@@ -67,7 +80,7 @@ export async function GET(request: NextRequest) {
       console.warn("[GET /api/tutor] Auto payout evaluation notice:", evalErr);
     }
 
-    const courses: any[] = await prisma.course.findMany({
+    let courses: any[] = await prisma.course.findMany({
       where: courseWhere,
       include: {
         modules: {
@@ -94,6 +107,14 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
+    if (tutor.role !== Role.ADMIN) {
+      if (teachesOL && !teachesAL) {
+        courses = courses.filter((c) => isCourseOL(c));
+      } else if (teachesAL && !teachesOL) {
+        courses = courses.filter((c) => isCourseAL(c));
+      }
+    }
+
     const courseIds = courses.map((c) => c.id);
 
     const studentMap = new Map<string, any>();
@@ -102,6 +123,12 @@ export async function GET(request: NextRequest) {
       (course.enrollments || []).forEach((enrollment: any) => {
         const student = enrollment.user;
         if (!student) return;
+
+        if (tutor.role !== Role.ADMIN) {
+          if (teachesOL && !teachesAL && !isStudentOL(student)) return;
+          if (teachesAL && !teachesOL && !isStudentAL(student)) return;
+        }
+
         if (!studentMap.has(student.id)) {
           studentMap.set(student.id, {
             id: student.id,
@@ -110,7 +137,9 @@ export async function GET(request: NextRequest) {
             email: student.email,
             phone: student.phone || "Not provided",
             avatar: student.avatar,
-            headline: student.headline || "London A/L Student",
+            headline: student.headline || (isStudentOL(student) ? "London O/L Student" : "London A/L Student"),
+            student_grade: isStudentOL(student) ? "O/L" : "A/L",
+            academicLevel: isStudentOL(student) ? "OL" : "AL",
             enrolledCourses: [
               {
                 courseId: course.id,
@@ -149,7 +178,7 @@ export async function GET(request: NextRequest) {
       ],
     };
 
-    const events = await prisma.event.findMany({
+    let events = await prisma.event.findMany({
       where: eventsWhere,
       include: {
         course: true,
@@ -160,6 +189,26 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    if (tutor.role !== Role.ADMIN) {
+      if (teachesOL && !teachesAL) {
+        events = events.filter((ev) => {
+          if (ev.academicLevel === "OL") return true;
+          if (ev.academicLevel === "AL") return false;
+          if (ev.course) return isCourseOL(ev.course);
+          if (ev.user) return isStudentOL(ev.user);
+          return true;
+        });
+      } else if (teachesAL && !teachesOL) {
+        events = events.filter((ev) => {
+          if (ev.academicLevel === "AL") return true;
+          if (ev.academicLevel === "OL") return false;
+          if (ev.course) return isCourseAL(ev.course);
+          if (ev.user) return isStudentAL(ev.user);
+          return true;
+        });
+      }
+    }
+
     const trialsWhere = {
       OR: [
         { tutorId: tutor.id },
@@ -167,7 +216,7 @@ export async function GET(request: NextRequest) {
       ],
     };
 
-    const trials = await prisma.trialRequest.findMany({
+    let trials = await prisma.trialRequest.findMany({
       where: trialsWhere,
       include: {
         course: true,
@@ -178,6 +227,22 @@ export async function GET(request: NextRequest) {
         { preferredDate: "desc" },
       ],
     });
+
+    if (tutor.role !== Role.ADMIN) {
+      if (teachesOL && !teachesAL) {
+        trials = trials.filter((t) => {
+          if (t.course) return isCourseOL(t.course);
+          if (t.student) return isStudentOL(t.student);
+          return true;
+        });
+      } else if (teachesAL && !teachesOL) {
+        trials = trials.filter((t) => {
+          if (t.course) return isCourseAL(t.course);
+          if (t.student) return isStudentAL(t.student);
+          return true;
+        });
+      }
+    }
 
     const monthlyEarnings = await getTutorMonthlyEarnings(tutor.id).catch((err) => {
       console.warn("[TutorAPI] Error loading monthly earnings:", err);
@@ -204,6 +269,8 @@ export async function GET(request: NextRequest) {
           role: tutor.role,
           timezone: tutor.timezone || "Asia/Colombo",
           createdAt: tutor.createdAt,
+          teaches_ol: teachesOL,
+          teaches_al: teachesAL,
         },
         hasConfiguredAvailability: availabilityCount > 0,
         availabilityCount,
@@ -237,6 +304,18 @@ export async function POST(request: NextRequest) {
     }
 
     const tutor = auth.user;
+    let teachesOL = tutor.teaches_ol !== undefined && tutor.teaches_ol !== null ? Boolean(tutor.teaches_ol) : true;
+    let teachesAL = tutor.teaches_al !== undefined && tutor.teaches_al !== null ? Boolean(tutor.teaches_al) : true;
+    if (tutor.bio && (tutor.teaches_ol === undefined || tutor.teaches_al === undefined)) {
+      try {
+        const parsed = typeof tutor.bio === "string" && tutor.bio.trim().startsWith("{") ? JSON.parse(tutor.bio) : null;
+        if (parsed) {
+          if (tutor.teaches_ol === undefined && parsed.isOLTutor !== undefined) teachesOL = Boolean(parsed.isOLTutor);
+          if (tutor.teaches_al === undefined && parsed.isALTutor !== undefined) teachesAL = Boolean(parsed.isALTutor);
+        }
+      } catch {}
+    }
+
     const body = await request.json();
     const { action } = body;
 
@@ -249,11 +328,29 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const isAdmin = tutor.role === Role.ADMIN;
+      if (!isAdmin) {
+        if (teachesOL && !teachesAL) {
+          if (level === CourseLevel.ADVANCED || level === "AL") {
+            return NextResponse.json(
+              { error: "You are only authorized to create and manage Cambridge/Edexcel IGCSE and OL courses." },
+              { status: 403 }
+            );
+          }
+        } else if (teachesAL && !teachesOL) {
+          if (level === CourseLevel.INTERMEDIATE || level === "OL") {
+            return NextResponse.json(
+              { error: "You are only authorized to create and manage Cambridge/Edexcel AS and A2 courses." },
+              { status: 403 }
+            );
+          }
+        }
+      }
+
       const normalizedSlug = (slug?.trim() || title.trim())
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
-      const isAdmin = tutor.role === Role.ADMIN;
       const tokenPrice = Number(price);
       const olTokenPrice = olPrice !== undefined && olPrice !== null && olPrice !== "" && !isNaN(Number(olPrice)) ? Number(olPrice) : null;
 
@@ -579,6 +676,75 @@ export async function POST(request: NextRequest) {
         }
         if (!resolvedAcademicLevel) {
           resolvedAcademicLevel = tutor.academicLevel || "AL";
+        }
+      }
+
+      // Enforce tutor teaching levels (teaches_ol vs teaches_al)
+      if (tutor.role !== Role.ADMIN) {
+        if (teachesOL && !teachesAL) {
+          if (academicLevel === "AL") {
+            return NextResponse.json(
+              { error: "You are only authorized to schedule Cambridge/Edexcel IGCSE and OL classes." },
+              { status: 403 }
+            );
+          }
+          if (courseId) {
+            const courseToCheck = await prisma.course.findUnique({
+              where: { id: courseId },
+              select: { level: true, title: true, subtitle: true, subjectCode: true },
+            });
+            if (courseToCheck && isCourseAL(courseToCheck) && !isCourseOL(courseToCheck)) {
+              return NextResponse.json(
+                { error: "You are only authorized to schedule classes for Cambridge/Edexcel IGCSE and OL courses." },
+                { status: 403 }
+              );
+            }
+          }
+          if (studentId) {
+            const studentToCheck = await prisma.user.findUnique({
+              where: { id: studentId },
+              select: { student_grade: true, academicLevel: true, headline: true },
+            });
+            if (studentToCheck && isStudentAL(studentToCheck) && !isStudentOL(studentToCheck)) {
+              return NextResponse.json(
+                { error: "You are only authorized to schedule classes with Cambridge/Edexcel IGCSE and OL students." },
+                { status: 403 }
+              );
+            }
+          }
+          resolvedAcademicLevel = "OL";
+        } else if (teachesAL && !teachesOL) {
+          if (academicLevel === "OL") {
+            return NextResponse.json(
+              { error: "You are only authorized to schedule Cambridge/Edexcel AS and A2 classes." },
+              { status: 403 }
+            );
+          }
+          if (courseId) {
+            const courseToCheck = await prisma.course.findUnique({
+              where: { id: courseId },
+              select: { level: true, title: true, subtitle: true, subjectCode: true },
+            });
+            if (courseToCheck && isCourseOL(courseToCheck) && !isCourseAL(courseToCheck)) {
+              return NextResponse.json(
+                { error: "You are only authorized to schedule classes for Cambridge/Edexcel AS and A2 courses." },
+                { status: 403 }
+              );
+            }
+          }
+          if (studentId) {
+            const studentToCheck = await prisma.user.findUnique({
+              where: { id: studentId },
+              select: { student_grade: true, academicLevel: true, headline: true },
+            });
+            if (studentToCheck && isStudentOL(studentToCheck) && !isStudentAL(studentToCheck)) {
+              return NextResponse.json(
+                { error: "You are only authorized to schedule classes with Cambridge/Edexcel AS and A2 students." },
+                { status: 403 }
+              );
+            }
+          }
+          resolvedAcademicLevel = "AL";
         }
       }
 
@@ -1653,6 +1819,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Trial not found." }, { status: 404 });
       }
 
+      if (tutor.role !== Role.ADMIN) {
+        if (teachesOL && !teachesAL) {
+          if (existingTrial.course && isCourseAL(existingTrial.course) && !isCourseOL(existingTrial.course)) {
+            return NextResponse.json({ error: "You are only authorized to confirm Cambridge/Edexcel IGCSE and OL trials." }, { status: 403 });
+          }
+          if (existingTrial.student && isStudentAL(existingTrial.student) && !isStudentOL(existingTrial.student)) {
+            return NextResponse.json({ error: "You are only authorized to confirm Cambridge/Edexcel IGCSE and OL trials." }, { status: 403 });
+          }
+        } else if (teachesAL && !teachesOL) {
+          if (existingTrial.course && isCourseOL(existingTrial.course) && !isCourseAL(existingTrial.course)) {
+            return NextResponse.json({ error: "You are only authorized to confirm Cambridge/Edexcel AS and A2 trials." }, { status: 403 });
+          }
+          if (existingTrial.student && isStudentOL(existingTrial.student) && !isStudentAL(existingTrial.student)) {
+            return NextResponse.json({ error: "You are only authorized to confirm Cambridge/Edexcel AS and A2 trials." }, { status: 403 });
+          }
+        }
+      }
+
       const rawDate = confirmedDate || scheduledDate;
       const targetDate = rawDate ? new Date(rawDate) : existingTrial.preferredDate;
       const bbbMeetingId = existingTrial.meetingSpaceId || getBBBMeetingId({ trialId: existingTrial.id });
@@ -1774,11 +1958,29 @@ export async function POST(request: NextRequest) {
 
       const existingTrial = await prisma.trialRequest.findUnique({
         where: { id: trialId },
-        include: { course: true },
+        include: { course: true, student: true },
       });
 
       if (!existingTrial) {
         return NextResponse.json({ error: "Trial session not found." }, { status: 404 });
+      }
+
+      if (tutor.role !== Role.ADMIN) {
+        if (teachesOL && !teachesAL) {
+          if (existingTrial.course && isCourseAL(existingTrial.course) && !isCourseOL(existingTrial.course)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel IGCSE and OL trials." }, { status: 403 });
+          }
+          if (existingTrial.student && isStudentAL(existingTrial.student) && !isStudentOL(existingTrial.student)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel IGCSE and OL trials." }, { status: 403 });
+          }
+        } else if (teachesAL && !teachesOL) {
+          if (existingTrial.course && isCourseOL(existingTrial.course) && !isCourseAL(existingTrial.course)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel AS and A2 trials." }, { status: 403 });
+          }
+          if (existingTrial.student && isStudentOL(existingTrial.student) && !isStudentAL(existingTrial.student)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel AS and A2 trials." }, { status: 403 });
+          }
+        }
       }
 
       const updatedTrial = await prisma.trialRequest.update({
@@ -1851,6 +2053,24 @@ export async function POST(request: NextRequest) {
 
       if (!existingTrial) {
         return NextResponse.json({ error: "Trial session not found." }, { status: 404 });
+      }
+
+      if (tutor.role !== Role.ADMIN) {
+        if (teachesOL && !teachesAL) {
+          if (existingTrial.course && isCourseAL(existingTrial.course) && !isCourseOL(existingTrial.course)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel IGCSE and OL trials." }, { status: 403 });
+          }
+          if (existingTrial.student && isStudentAL(existingTrial.student) && !isStudentOL(existingTrial.student)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel IGCSE and OL trials." }, { status: 403 });
+          }
+        } else if (teachesAL && !teachesOL) {
+          if (existingTrial.course && isCourseOL(existingTrial.course) && !isCourseAL(existingTrial.course)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel AS and A2 trials." }, { status: 403 });
+          }
+          if (existingTrial.student && isStudentOL(existingTrial.student) && !isStudentAL(existingTrial.student)) {
+            return NextResponse.json({ error: "You are only authorized to reschedule Cambridge/Edexcel AS and A2 trials." }, { status: 403 });
+          }
+        }
       }
 
       let resolvedStudentId = existingTrial.studentId;
@@ -1995,6 +2215,7 @@ export async function POST(request: NextRequest) {
       if (!existingTrial) {
         return NextResponse.json({ error: "Trial not found." }, { status: 404 });
       }
+
       if (tutor.role !== Role.ADMIN && existingTrial.tutorId !== tutor.id) {
         return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
       }

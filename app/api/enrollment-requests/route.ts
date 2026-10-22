@@ -7,6 +7,7 @@ import { getSafeMeetingLink } from "@/lib/utils";
 import { generateUniqueClassCode } from "@/lib/class-id";
 import { mergeConsecutiveSlots } from "@/lib/scheduling";
 import { EventType, EventStatus, Role, EnrollmentRequestStatus } from "@prisma/client";
+import { isCourseOL, isCourseAL, isStudentOL, isStudentAL } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -47,6 +48,8 @@ export async function GET(request: NextRequest) {
             avatar: true,
             phone: true,
             timezone: true,
+            student_grade: true,
+            academicLevel: true,
           },
         },
         tutor: {
@@ -68,19 +71,50 @@ export async function GET(request: NextRequest) {
             thumbnail: true,
             price: true,
             olPrice: true,
+            level: true,
+            subtitle: true,
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    const pendingCount = requests.filter((r) => r.status === EnrollmentRequestStatus.PENDING).length;
-    const confirmedCount = requests.filter((r) => r.status === EnrollmentRequestStatus.CONFIRMED).length;
+    let filteredRequests = requests;
+    if ((user.role === Role.TUTOR || (user.role as any) === "INSTRUCTOR") && user.role !== Role.ADMIN) {
+      let teachesOL = user.teaches_ol !== undefined && user.teaches_ol !== null ? Boolean(user.teaches_ol) : true;
+      let teachesAL = user.teaches_al !== undefined && user.teaches_al !== null ? Boolean(user.teaches_al) : true;
+      if (user.bio && (user.teaches_ol === undefined || user.teaches_al === undefined)) {
+        try {
+          const parsed = typeof user.bio === "string" && user.bio.trim().startsWith("{") ? JSON.parse(user.bio) : null;
+          if (parsed) {
+            if (user.teaches_ol === undefined && parsed.isOLTutor !== undefined) teachesOL = Boolean(parsed.isOLTutor);
+            if (user.teaches_al === undefined && parsed.isALTutor !== undefined) teachesAL = Boolean(parsed.isALTutor);
+          }
+        } catch {}
+      }
+
+      if (teachesOL && !teachesAL) {
+        filteredRequests = filteredRequests.filter((r) => {
+          if (r.course) return isCourseOL(r.course);
+          if (r.student) return isStudentOL(r.student);
+          return false;
+        });
+      } else if (teachesAL && !teachesOL) {
+        filteredRequests = filteredRequests.filter((r) => {
+          if (r.course) return isCourseAL(r.course);
+          if (r.student) return isStudentAL(r.student);
+          return false;
+        });
+      }
+    }
+
+    const pendingCount = filteredRequests.filter((r) => r.status === EnrollmentRequestStatus.PENDING).length;
+    const confirmedCount = filteredRequests.filter((r) => r.status === EnrollmentRequestStatus.CONFIRMED).length;
 
     return NextResponse.json({
-      requests,
+      requests: filteredRequests,
       counts: {
-        total: requests.length,
+        total: filteredRequests.length,
         pending: pendingCount,
         confirmed: confirmedCount,
       },

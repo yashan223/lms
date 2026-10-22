@@ -193,6 +193,7 @@ export function TutorCourseWorkspaceContent({
   );
 
   const [course, setCourse] = useState<Course | null>(null);
+  const [tutorProfile, setTutorProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [savingDetails, setSavingDetails] = useState(false);
   const [bannerMsg, setBannerMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -278,10 +279,6 @@ export function TutorCourseWorkspaceContent({
   });
 
   const loadData = async (silent = false) => {
-    if (isNewCourse) {
-      setLoading(false);
-      return;
-    }
     if (!silent) setLoading(true);
     try {
       const res = await fetch("/api/tutor", {
@@ -291,6 +288,21 @@ export function TutorCourseWorkspaceContent({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tutor data");
 
+      if (data.tutor) {
+        setTutorProfile(data.tutor);
+        if (isNewCourse) {
+          if (data.tutor.teaches_ol && !data.tutor.teaches_al) {
+            setDetailsForm((prev) => ({ ...prev, level: "INTERMEDIATE" }));
+          } else {
+            setDetailsForm((prev) => ({ ...prev, level: "ADVANCED" }));
+          }
+        }
+      }
+
+      if (isNewCourse) {
+        return;
+      }
+
       const found = (data.courses || []).find((c: Course) => c.id === courseId);
       if (!found) throw new Error("Course not found in tutor curriculum.");
 
@@ -299,13 +311,20 @@ export function TutorCourseWorkspaceContent({
 
       setCourse(enrichedCourse);
 
+      let initialLevel = found.level || "ADVANCED";
+      if (data.tutor?.teaches_ol && !data.tutor?.teaches_al) {
+        initialLevel = "INTERMEDIATE";
+      } else if (data.tutor?.teaches_al && !data.tutor?.teaches_ol) {
+        initialLevel = "ADVANCED";
+      }
+
       setDetailsForm({
         title: found.title || "",
         subjectCode: found.subjectCode || "",
         category: found.category || CATEGORIES[0],
         price: String(found.price ?? 0),
         olPrice: found.olPrice !== null && found.olPrice !== undefined ? String(found.olPrice) : "",
-        level: found.level || "ADVANCED",
+        level: initialLevel,
         status: found.status || "PENDING_REVIEW",
         subtitle: found.subtitle || "",
         description: found.description || "",
@@ -1170,8 +1189,12 @@ export function TutorCourseWorkspaceContent({
                     onChange={(e) => setDetailsForm({ ...detailsForm, level: e.target.value })}
                     className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option value="ADVANCED">Cambridge/Edexcel AS and A2</option>
-                    <option value="INTERMEDIATE">Cambridge/Edexcel IGCSE and OL</option>
+                    {tutorProfile?.teaches_al !== false && (
+                      <option value="ADVANCED">Cambridge/Edexcel AS and A2</option>
+                    )}
+                    {tutorProfile?.teaches_ol !== false && (
+                      <option value="INTERMEDIATE">Cambridge/Edexcel IGCSE and OL</option>
+                    )}
                   </select>
                 </div>
 

@@ -75,6 +75,7 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { getSafeMeetingLink, normalizeMeetingLink, isGenericMeetingLink } from "@/lib/utils";
 import { formatClassId } from "@/lib/class-id-client";
 import { TutorAvailabilityManager } from "@/components/tutor/TutorAvailabilityManager";
+import { TutorFirstTimeAvailabilityModal } from "@/components/tutor/TutorFirstTimeAvailabilityModal";
 import { EnrollmentRequestsManager } from "@/components/tutor/EnrollmentRequestsManager";
 import { TutorMonthlyEarningsView } from "@/components/tutor/TutorMonthlyEarningsView";
 import { TutorRescheduleRequestsManager } from "@/components/tutor/TutorRescheduleRequestsManager";
@@ -231,6 +232,10 @@ function TutorDashboardContent() {
   const [pendingEnrollmentsCount, setPendingEnrollmentsCount] = useState(0);
   const [enrollmentsCount, setEnrollmentsCount] = useState(0);
   const [pendingReschedules, setPendingReschedules] = useState<any[]>([]);
+  const [hasConfiguredAvailability, setHasConfiguredAvailability] = useState<boolean>(true);
+  const [availabilityCount, setAvailabilityCount] = useState<number>(0);
+  const [showFirstTimeAvailabilityModal, setShowFirstTimeAvailabilityModal] = useState<boolean>(false);
+  const [dismissedAvailabilityBanner, setDismissedAvailabilityBanner] = useState<boolean>(false);
 
   const fetchEnrollmentCounts = async () => {
     try {
@@ -612,6 +617,21 @@ function TutorDashboardContent() {
       }
       if (data.pendingReschedules) {
         setPendingReschedules(data.pendingReschedules);
+      }
+      if (data.hasConfiguredAvailability !== undefined) {
+        setHasConfiguredAvailability(Boolean(data.hasConfiguredAvailability));
+      }
+      if (data.availabilityCount !== undefined) {
+        setAvailabilityCount(Number(data.availabilityCount));
+      }
+
+      // Auto-trigger top popup on 1st time login if availability is not yet configured
+      if (data.tutor && data.availabilityCount === 0) {
+        const modalShownKey = `tutor_availability_modal_shown_${data.tutor.id}`;
+        const hasShownModal = typeof window !== "undefined" ? localStorage.getItem(modalShownKey) : null;
+        if (!hasShownModal) {
+          setShowFirstTimeAvailabilityModal(true);
+        }
       }
 
       if (data.courses && data.courses.length > 0 && !newClassCourseId) {
@@ -1858,6 +1878,50 @@ function TutorDashboardContent() {
 
       <main className="max-w-[1480px] mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 flex-1 min-h-[calc(100vh-4rem)]">
 
+        {/* Top Popup Banner for 1st Time / Unconfigured Availability */}
+        {!hasConfiguredAvailability && !dismissedAvailabilityBanner && (
+          <div className="bg-gradient-to-r from-[#0c2461] via-[#103080] to-[#1e3c72] text-white p-3.5 sm:p-4 rounded-2xl shadow-md border border-blue-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-3 duration-300">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-400/30 text-amber-300 flex items-center justify-center shrink-0 shadow-inner">
+                <CalendarClock className="w-5 h-5 animate-pulse text-amber-300" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-extrabold text-xs sm:text-sm text-white">
+                    Action Required: Configure Your Teaching Time Slots
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-amber-400 text-slate-900 shadow-2xs">
+                    1st Time Setup
+                  </span>
+                </div>
+                <p className="text-[11px] text-blue-100/90 mt-0.5 max-w-3xl leading-relaxed">
+                  Students and academy coordinators cannot book 1-on-1 trial sessions or schedule enrolled classes with you until your weekly availability is set.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              <Button
+                size="sm"
+                onClick={() => setShowFirstTimeAvailabilityModal(true)}
+                className="bg-white hover:bg-blue-50 text-[#0c2461] hover:text-[#0c2461] font-extrabold text-xs rounded-xl h-8 sm:h-9 px-4 shadow-sm gap-1.5 cursor-pointer"
+              >
+                <Clock className="w-3.5 h-3.5 text-blue-700" />
+                <span>Set Time Slots Now</span>
+              </Button>
+              <button
+                type="button"
+                onClick={() => setDismissedAvailabilityBanner(true)}
+                className="text-white/60 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                title="Dismiss reminder"
+                aria-label="Dismiss reminder"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
             { id: "courses", label: "Individual Classes", icon: BookOpen, count: courses.length },
@@ -2045,9 +2109,15 @@ function TutorDashboardContent() {
                     <Clock className="w-3.5 h-3.5 text-blue-600" />
                     <span>Availability &amp; Timeslots</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold">
-                    New Page
-                  </span>
+                  {!hasConfiguredAvailability ? (
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-extrabold uppercase animate-pulse border border-amber-200">
+                      Setup Required
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-800 font-bold">
+                      {availabilityCount} Slots
+                    </span>
+                  )}
                 </button>
 
                 <Link
@@ -5644,6 +5714,17 @@ function TutorDashboardContent() {
           }
         }
         initialRecipientId={activeChatRecipientId}
+      />
+
+      <TutorFirstTimeAvailabilityModal
+        isOpen={showFirstTimeAvailabilityModal}
+        onClose={() => setShowFirstTimeAvailabilityModal(false)}
+        tutor={tutor}
+        onSuccess={() => {
+          setHasConfiguredAvailability(true);
+          setAvailabilityCount((prev) => prev + 1);
+          fetchTutorData();
+        }}
       />
     </div>
   );

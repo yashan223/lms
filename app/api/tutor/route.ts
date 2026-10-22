@@ -162,6 +162,10 @@ export async function GET(request: NextRequest) {
 
     const pendingReschedules = await getTutorPendingReschedules(tutor.id).catch(() => []);
 
+    const availabilityCount = await prisma.tutorAvailability.count({
+      where: { tutorId: tutor.id, isActive: true },
+    });
+
     return NextResponse.json(
       {
         tutor: {
@@ -177,6 +181,8 @@ export async function GET(request: NextRequest) {
           timezone: tutor.timezone || "Asia/Colombo",
           createdAt: tutor.createdAt,
         },
+        hasConfiguredAvailability: availabilityCount > 0,
+        availabilityCount,
         courses,
         students,
         events,

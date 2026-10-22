@@ -1800,16 +1800,6 @@ export default function AdminDashboardPage() {
 
   const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
   const [syncingTrialId, setSyncingTrialId] = useState<string | null>(null);
-  const [showRecordingModal, setShowRecordingModal] = useState(false);
-  const [recordingModalTarget, setRecordingModalTarget] = useState<{
-    eventId?: string;
-    trialId?: string;
-    title: string;
-    currentUrl?: string | null;
-  } | null>(null);
-  const [recordingInputUrl, setRecordingInputUrl] = useState("");
-  const [isSavingRecording, setIsSavingRecording] = useState(false);
-  const [isAutoSyncingInModal, setIsAutoSyncingInModal] = useState(false);
 
   const [analyticsModalTarget, setAnalyticsModalTarget] = useState<{
     eventId?: string | null;
@@ -1841,7 +1831,7 @@ export default function AdminDashboardPage() {
         if (found) {
           alert("✅ BigBlueButton recording found & synced successfully!");
         } else {
-          alert("Synced meeting details with BigBlueButton. No recording published yet (processing may take a few minutes). You can also click 'Attach Recording' to paste a link manually.");
+          alert("Synced session status with BigBlueButton. BigBlueButton automatically processes and publishes recordings a few minutes after ending a session. Please check back shortly.");
         }
       } else {
         alert(data.error || "Failed to sync with BigBlueButton.");
@@ -1851,47 +1841,6 @@ export default function AdminDashboardPage() {
     } finally {
       setSyncingEventId(null);
       setSyncingTrialId(null);
-    }
-  };
-
-  const handleOpenRecordingModal = (opts: {
-    eventId?: string;
-    trialId?: string;
-    title: string;
-    currentUrl?: string | null;
-  }) => {
-    setRecordingModalTarget(opts);
-    setRecordingInputUrl(opts.currentUrl || "");
-    setShowRecordingModal(true);
-  };
-
-  const handleSaveRecording = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!recordingModalTarget) return;
-
-    try {
-      setIsSavingRecording(true);
-      const res = await fetch("/api/meetings/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: recordingModalTarget.eventId,
-          trialId: recordingModalTarget.trialId,
-          manualRecordingUrl: recordingInputUrl.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setShowRecordingModal(false);
-        await fetchAdminData();
-      } else {
-        alert(data.error || "Failed to save recording link.");
-      }
-    } catch {
-      alert("Network error updating recording.");
-    } finally {
-      setIsSavingRecording(false);
     }
   };
 
@@ -1916,9 +1865,6 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       if (res.ok) {
-        if (showRecordingModal) {
-          setShowRecordingModal(false);
-        }
         await fetchAdminData();
       } else {
         alert(data.error || "Failed to delete recording.");
@@ -1927,48 +1873,6 @@ export default function AdminDashboardPage() {
       alert("Network error deleting recording.");
     } finally {
       setIsDeletingRecording(null);
-    }
-  };
-
-  const handleRemoveRecording = async () => {
-    if (!recordingModalTarget) return;
-    await handleAdminDeleteRecording({
-      eventId: recordingModalTarget.eventId,
-      trialId: recordingModalTarget.trialId,
-      title: recordingModalTarget.title,
-    });
-  };
-
-  const handleAutoSyncInModal = async () => {
-    if (!recordingModalTarget) return;
-    try {
-      setIsAutoSyncingInModal(true);
-      const res = await fetch("/api/meetings/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: recordingModalTarget.eventId,
-          trialId: recordingModalTarget.trialId,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const foundUrl = data?.event?.recordingUrl || data?.trial?.recordingUrl;
-        if (foundUrl) {
-          setRecordingInputUrl(foundUrl);
-          await fetchAdminData();
-          alert("Recording successfully found and synced from BigBlueButton!");
-          setShowRecordingModal(false);
-        } else {
-          alert("Auto-sync completed, but no recording file was published yet in BigBlueButton. BigBlueButton takes a few minutes after ending a session to process recordings. You can also paste a link manually.");
-        }
-      } else {
-        alert(data.error || "Sync attempt failed.");
-      }
-    } catch {
-      alert("Network error attempting sync.");
-    } finally {
-      setIsAutoSyncingInModal(false);
     }
   };
 
@@ -3139,22 +3043,6 @@ export default function AdminDashboardPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleOpenRecordingModal({
-                                  eventId: rec.eventId,
-                                  trialId: rec.trialId,
-                                  title: rec.title,
-                                  currentUrl: rec.recordingUrl,
-                                })}
-                                className="text-xs font-semibold text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
-                                title="Edit recording URL or re-sync with BigBlueButton"
-                              >
-                                <Video className="w-3.5 h-3.5 text-purple-600" />
-                                <span>Edit Link</span>
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
                                 onClick={() => handleAdminDeleteRecording({
                                   eventId: rec.eventId,
                                   trialId: rec.trialId,
@@ -3400,16 +3288,6 @@ export default function AdminDashboardPage() {
                                       >
                                         <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
                                         <span>Analytics</span>
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => handleOpenRecordingModal({ eventId: ev.id, title: ev.title, currentUrl: ev.recordingUrl })}
-                                        className="text-xs font-semibold text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl h-8 flex items-center gap-1 cursor-pointer transition-all"
-                                        title="Add or edit video recording link"
-                                      >
-                                        <Video className="w-3.5 h-3.5 text-purple-600" />
-                                        <span>{ev.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
                                       </Button>
                                       <Button
                                         size="sm"
@@ -6187,17 +6065,6 @@ export default function AdminDashboardPage() {
                                 >
                                   <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
                                   <span>Analytics</span>
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenRecordingModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}`, currentUrl: tr.recordingUrl })}
-                                  className="h-8.5 px-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                                  title="Add or edit video recording link"
-                                >
-                                  <Video className="w-3.5 h-3.5 text-purple-600" />
-                                  <span>{tr.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
                                 </Button>
                                 <Button
                                   type="button"
@@ -9785,16 +9652,6 @@ export default function AdminDashboardPage() {
                                 <BarChart3 className="w-3 h-3 text-blue-600" />
                                 <span>Analytics</span>
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenRecordingModal({ trialId: tr.id, title: `1-on-1 Trial: ${tr.studentName || "Student"}`, currentUrl: tr.recordingUrl })}
-                                className="h-8 px-2.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
-                                title="Attach or edit recording link"
-                              >
-                                <Video className="w-3 h-3 text-purple-600" />
-                                <span>{tr.recordingUrl ? "Edit Link" : "Attach Recording"}</span>
-                              </Button>
                             </>
                           )}
                           {!isReset && !isRejected ? (
@@ -9979,124 +9836,6 @@ export default function AdminDashboardPage() {
                 )}
               </Button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showRecordingModal && recordingModalTarget && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
-                  <Play className="w-5 h-5 fill-current" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900">
-                    {recordingModalTarget.currentUrl ? "Edit Session Recording" : "Attach Session Recording"}
-                  </h3>
-                  <p className="text-xs text-slate-500 truncate max-w-[220px]">
-                    {recordingModalTarget.title}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowRecordingModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveRecording} className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-800 block">
-                  Recording Playback URL (BigBlueButton / YouTube / Cloud Storage)
-                </label>
-                <Input
-                  placeholder="https://.../playback or https://youtu.be/..."
-                  value={recordingInputUrl}
-                  onChange={(e) => setRecordingInputUrl(e.target.value)}
-                  className="rounded-xl h-10 text-xs font-mono"
-                  required
-                />
-                <p className="text-[11px] text-slate-500">
-                  Enrolled students will immediately see a &quot;Watch Recording&quot; button on their dashboard and calendars.
-                </p>
-              </div>
-
-              {/* Helper box explaining BigBlueButton recording storage */}
-              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 space-y-2 text-slate-700">
-                <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs">
-                  <AlertCircle className="w-4 h-4 text-purple-700 shrink-0" />
-                  <span>BigBlueButton Recording Information</span>
-                </div>
-                <ul className="space-y-1.5 text-[11px] text-purple-900/90 list-disc list-inside">
-                  <li>
-                    <strong>Automatic Recording:</strong> BigBlueButton classrooms are recorded on the server when active.
-                  </li>
-                  <li>
-                    <strong>Processing:</strong> BigBlueButton processes playback recordings within a few minutes after the live session ends.
-                  </li>
-                  <li>
-                    <strong>Auto-Sync:</strong> Click <em>Auto-sync Recording</em> below or wait for automatic background sync to attach the playback URL.
-                  </li>
-                  <li>
-                    <strong>Custom Link:</strong> You can also paste any external video or cloud recording link directly above.
-                  </li>
-                </ul>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={handleAutoSyncInModal}
-                    disabled={isAutoSyncingInModal}
-                    className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
-                    title="Attempt to fetch recording automatically from BigBlueButton"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isAutoSyncingInModal ? "animate-spin" : ""}`} />
-                    <span>{isAutoSyncingInModal ? "Syncing BBB..." : "Auto-sync Recording"}</span>
-                  </button>
-                  {recordingModalTarget.currentUrl && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveRecording}
-                      disabled={isSavingRecording || isDeletingRecording !== null}
-                      className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto transition-colors"
-                      title="Permanently delete recording from BigBlueButton server and database"
-                    >
-                      {isDeletingRecording ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" />
-                      ) : (
-                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                      )}
-                      <span>{isDeletingRecording ? "Deleting..." : "Delete Recording (Admin Only)"}</span>
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowRecordingModal(false)}
-                    className="rounded-xl h-9"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSavingRecording || !recordingInputUrl.trim()}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl px-4 h-9 shadow-xs"
-                  >
-                    {isSavingRecording ? "Saving..." : "Save Recording"}
-                  </Button>
-                </div>
-              </div>
-            </form>
           </div>
         </div>
       )}

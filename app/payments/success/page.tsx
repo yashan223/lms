@@ -13,7 +13,6 @@ import {
   Check,
   ShieldCheck,
   Printer,
-  Sparkles,
 } from "lucide-react";
 
 function PaymentSuccessContent() {
@@ -98,40 +97,6 @@ function PaymentSuccessContent() {
         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       }}
     >
-      {/* Brand Header */}
-      <div
-        className="mb-5 flex items-center justify-center gap-2"
-        style={{
-          marginBottom: "20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-        }}
-      >
-        <span
-          className="text-xs font-black uppercase tracking-wider text-[#0c2461] bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-xs flex items-center gap-1.5"
-          style={{
-            fontSize: "11px",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: "#0c2461",
-            backgroundColor: "#ffffff",
-            padding: "6px 14px",
-            borderRadius: "9999px",
-            border: "1px solid #e2e8f0",
-            boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" style={{ width: 14, height: 14, color: "#2563eb" }} />
-          <span>PulseEDU Global • Official Tuition Receipt</span>
-        </span>
-      </div>
-
       {/* Main Receipt Card */}
       <div
         className="max-w-lg w-full bg-white rounded-3xl shadow-xl border border-slate-200/90 p-6 sm:p-8 text-center relative overflow-hidden"

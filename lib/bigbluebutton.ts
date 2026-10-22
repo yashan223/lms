@@ -320,6 +320,7 @@ export async function getBBBMeetingInfo(meetingId: string): Promise<{
   startTime?: Date | null;
   endTime?: Date | null;
   hasUserJoined?: boolean;
+  hasBeenForciblyEnded?: boolean;
   rawXml?: string;
 } | null> {
   try {
@@ -344,6 +345,7 @@ export async function getBBBMeetingInfo(meetingId: string): Promise<{
     const moderatorCount = parseInt(extractXmlTag(text, "moderatorCount") || "0", 10);
     const recording = extractXmlTag(text, "recording")?.toLowerCase() === "true";
     const hasUserJoined = extractXmlTag(text, "hasUserJoined")?.toLowerCase() === "true";
+    const hasBeenForciblyEnded = extractXmlTag(text, "hasBeenForciblyEnded")?.toLowerCase() === "true";
 
     const rawStartTime = extractXmlTag(text, "startTime");
     const rawEndTime = extractXmlTag(text, "endTime");
@@ -359,6 +361,7 @@ export async function getBBBMeetingInfo(meetingId: string): Promise<{
       startTime,
       endTime,
       hasUserJoined,
+      hasBeenForciblyEnded,
       rawXml: text,
     };
   } catch (err) {
@@ -549,11 +552,6 @@ export async function syncClassMeetingSession(
   }
 
   const bbbMeetingId = event.meetingSpaceId || getBBBMeetingId({ eventId });
-  if (isBigBlueButtonConfigured() && event.status === "LIVE") {
-    try {
-      await endBBBMeeting(bbbMeetingId);
-    } catch {}
-  }
   let recordingUrl = opts?.manualRecordingUrl?.trim() || event.recordingUrl;
   let actualStart = opts?.manualStartTime || event.actualStartTime || event.startedAt;
   let actualEnd = opts?.manualEndTime || event.actualEndTime || new Date();
@@ -733,11 +731,6 @@ export async function syncTrialSession(
   }
 
   const bbbMeetingId = trial.meetingSpaceId || getBBBMeetingId({ trialId });
-  if (isBigBlueButtonConfigured() && trial.status === "CONFIRMED" && trial.actualStartTime) {
-    try {
-      await endBBBMeeting(bbbMeetingId);
-    } catch {}
-  }
   let recordingUrl = opts?.manualRecordingUrl?.trim() || trial.recordingUrl;
   let actualStart = opts?.manualStartTime || trial.actualStartTime || trial.preferredDate;
   let actualEnd = opts?.manualEndTime || trial.actualEndTime || new Date();
@@ -1072,26 +1065,70 @@ export async function registerBBBWebhook(meetingId?: string): Promise<boolean> {
   }
 }
 
+let lastReconciliationTime = 0;
+
 /**
  * Actively checks all currently marked LIVE sessions against BigBlueButton.
- * If a session is marked LIVE in LMS, but BBB reports the meeting is no longer running,
- * automatically complete the session on the LMS too (deduct tokens, credit earnings, save attendance, remove live notifications).
+ * Includes a mandatory 15-minute startup grace period so newly started classes
+ * are never terminated before students/tutors have joined and connected.
+ * If a session has been active for >15 minutes and BigBlueButton reports the meeting
+ * has finished, it completes the session on the LMS (processes escrow, earnings, attendance).
  */
 export async function reconcileLiveBBBMeetings(): Promise<{ endedEvents: number; endedTrials: number }> {
+  const now = Date.now();
+  // Throttle reconciliation so it runs at most once every 45 seconds
+  if (now - lastReconciliationTime < 45 * 1000) {
+    return { endedEvents: 0, endedTrials: 0 };
+  }
+  lastReconciliationTime = now;
+
   let endedEvents = 0;
   let endedTrials = 0;
 
   try {
     const liveEvents = await prisma.event.findMany({
       where: { status: "LIVE" },
-      select: { id: true, meetingSpaceId: true, title: true, startedAt: true },
+      select: {
+        id: true,
+        meetingSpaceId: true,
+        title: true,
+        startedAt: true,
+        actualStartTime: true,
+        tutorJoinTimestamp: true,
+        dueDate: true,
+      },
     });
 
     for (const ev of liveEvents) {
-      const bbbId = ev.meetingSpaceId || getBBBMeetingId({ eventId: ev.id });
-      const running = await isBBBMeetingRunning(bbbId).catch(() => false);
+      const startTime = ev.startedAt || ev.actualStartTime || ev.tutorJoinTimestamp || ev.dueDate;
+      const startMs = startTime ? new Date(startTime).getTime() : 0;
+      const elapsedMs = now - startMs;
 
-      if (!running) {
+      // 🛡️ CRITICAL: Never auto-conclude a class within the 15-minute startup/no-show window
+      if (startMs > 0 && elapsedMs < 15 * 60 * 1000) {
+        continue;
+      }
+
+      const bbbId = ev.meetingSpaceId || getBBBMeetingId({ eventId: ev.id });
+      const info = await getBBBMeetingInfo(bbbId).catch(() => null);
+
+      // If BBB meeting is actively running with participants, keep it LIVE!
+      if (info && info.running) {
+        continue;
+      }
+
+      // If meeting was created but no user has joined yet, wait up to 30 minutes before declaring no-show
+      if (info && !info.hasUserJoined && elapsedMs < 30 * 60 * 1000) {
+        continue;
+      }
+
+      // If the meeting concluded in BBB (had users and stopped, was forcibly ended, or timed out after >15 mins)
+      const shouldConclude =
+        (info && !info.running && (info.hasUserJoined || info.hasBeenForciblyEnded || info.endTime !== null)) ||
+        (!info && elapsedMs > 20 * 60 * 1000) ||
+        (info && !info.hasUserJoined && elapsedMs >= 30 * 60 * 1000);
+
+      if (shouldConclude) {
         const { completeClassAndProcessEcosystem } = await import("@/lib/token-ecosystem");
         await completeClassAndProcessEcosystem(ev.id);
         await syncClassMeetingSession(ev.id);
@@ -1107,14 +1144,45 @@ export async function reconcileLiveBBBMeetings(): Promise<{ endedEvents: number;
           { status: "LIVE" as any },
         ],
       },
-      select: { id: true, meetingSpaceId: true, course: { select: { title: true } } },
+      select: {
+        id: true,
+        meetingSpaceId: true,
+        actualStartTime: true,
+        preferredDate: true,
+        course: { select: { title: true } },
+      },
     });
 
     for (const tr of liveTrials) {
-      const bbbId = tr.meetingSpaceId || getBBBMeetingId({ trialId: tr.id });
-      const running = await isBBBMeetingRunning(bbbId).catch(() => false);
+      const startMs = tr.actualStartTime
+        ? new Date(tr.actualStartTime).getTime()
+        : tr.preferredDate
+        ? new Date(tr.preferredDate).getTime()
+        : 0;
+      const elapsedMs = now - startMs;
 
-      if (!running) {
+      // 🛡️ CRITICAL: Never auto-conclude a trial within the 15-minute startup window
+      if (startMs > 0 && elapsedMs < 15 * 60 * 1000) {
+        continue;
+      }
+
+      const bbbId = tr.meetingSpaceId || getBBBMeetingId({ trialId: tr.id });
+      const info = await getBBBMeetingInfo(bbbId).catch(() => null);
+
+      if (info && info.running) {
+        continue;
+      }
+
+      if (info && !info.hasUserJoined && elapsedMs < 30 * 60 * 1000) {
+        continue;
+      }
+
+      const shouldConclude =
+        (info && !info.running && (info.hasUserJoined || info.hasBeenForciblyEnded || info.endTime !== null)) ||
+        (!info && elapsedMs > 20 * 60 * 1000) ||
+        (info && !info.hasUserJoined && elapsedMs >= 30 * 60 * 1000);
+
+      if (shouldConclude) {
         await syncTrialSession(tr.id);
         await removeLiveClassNotifications({ trialId: tr.id, title: tr.course?.title });
         endedTrials++;

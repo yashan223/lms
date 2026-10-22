@@ -1830,7 +1830,7 @@ function DashboardContent() {
                                         <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                                         <span>Waiting for Tutor to Start</span>
                                       </span>
-                                      {ev.meetingLink && !isGenericMeetingLink(ev.meetingLink) && (
+                                      {(ev.id || ev.trialId || (ev.meetingLink && !isGenericMeetingLink(ev.meetingLink))) && (
                                         <a
                                           href={
                                             ev.id
@@ -1841,11 +1841,11 @@ function DashboardContent() {
                                           }
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="h-8.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all shadow-2xs"
-                                          title="Classroom room is ready - click to preview or enter"
+                                          className="h-8.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all shadow-2xs"
+                                          title="Enter or preview your BigBlueButton live classroom"
                                         >
                                           <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                                          <span>Live Classroom</span>
+                                          <span>Enter Classroom</span>
                                         </a>
                                       )}
                                     </div>
@@ -2031,14 +2031,34 @@ function DashboardContent() {
                                   ) : (
                                     <div className="flex items-center gap-1">
                                       {userRole === "STUDENT" && ev.status !== "COMPLETED" && !ev.endedAt && (
-                                        <button
-                                          onClick={() => openStudentReschedule(ev)}
-                                          className="h-7.5 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
-                                          title="Reschedule Session"
-                                        >
-                                          <Clock className="w-3 h-3 text-blue-600" />
-                                          <span>Reschedule</span>
-                                        </button>
+                                        <>
+                                          <button
+                                            onClick={() => openStudentReschedule(ev)}
+                                            className="h-7.5 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                            title="Reschedule Session"
+                                          >
+                                            <Clock className="w-3 h-3 text-blue-600" />
+                                            <span>Reschedule</span>
+                                          </button>
+                                          {(ev.id || ev.trialId || (ev.meetingLink && !isGenericMeetingLink(ev.meetingLink))) && (
+                                            <a
+                                              href={
+                                                ev.id
+                                                  ? `/api/meetings/join?eventId=${ev.id}${ev.trialId ? `&trialId=${ev.trialId}` : ""}`
+                                                  : ev.trialId
+                                                  ? `/api/meetings/join?trialId=${ev.trialId}`
+                                                  : getSafeMeetingLink(ev.meetingLink)
+                                              }
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="h-7.5 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-semibold inline-flex items-center gap-1"
+                                              title="Enter BigBlueButton classroom"
+                                            >
+                                              <Video className="w-3 h-3 text-blue-600" />
+                                              <span>Classroom</span>
+                                            </a>
+                                          )}
+                                        </>
                                       )}
                                       <a
                                         href={buildGoogleCalendarUrl({

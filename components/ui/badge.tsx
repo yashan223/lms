@@ -22,9 +22,9 @@ const badgeVariants = cva(
         roleAdmin:
           "bg-[#0c2461] text-white border border-blue-900 font-bold",
         roleTutor:
-          "bg-blue-600 text-white border border-blue-500 font-bold",
+          "bg-slate-100 text-slate-700 border border-slate-200 font-medium",
         roleInstructor:
-          "bg-blue-600 text-white border border-blue-500 font-bold",
+          "bg-slate-100 text-slate-700 border border-slate-200 font-medium",
         roleStudent:
           "bg-blue-100 text-blue-800 border border-blue-200 font-bold",
       },

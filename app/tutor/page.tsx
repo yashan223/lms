@@ -1651,9 +1651,9 @@ function TutorDashboardContent() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge variant="roleTutor" className="text-[11px] px-2.5 py-1 font-bold">
+            <span className="text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-md">
               Tutor
-            </Badge>
+            </span>
 
             <NotificationBell userRole="TUTOR" />
 

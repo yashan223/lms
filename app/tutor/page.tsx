@@ -2064,29 +2064,6 @@ function TutorDashboardContent() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-2.5">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Studio Statistics
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{students.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Students</div>
-                </div>
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{courses.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Individual Classes</div>
-                </div>
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{events.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Classes</div>
-                </div>
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="font-bold text-slate-900 text-sm">{trials.length}</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Trials</div>
-                </div>
-              </div>
-            </div>
 
           </aside>
 

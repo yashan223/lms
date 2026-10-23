@@ -1982,8 +1982,8 @@ export async function POST(request: NextRequest) {
         await prisma.notification.create({
           data: {
             userId: updated.tutorId,
-            title: "🎉 Course Approved & Published!",
-            message: `Your course "${updated.title}" has been approved and is now live for student enrollments.`,
+            title: "🎉 Class Approved & Published!",
+            message: `Your class "${updated.title}" has been approved and is now live for student enrollments.`,
             type: "SUCCESS",
             link: "/tutor",
           },
@@ -1991,7 +1991,7 @@ export async function POST(request: NextRequest) {
         broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.tutorId });
       }
       broadcastLMSEvent("COURSES_CHANGED");
-      return NextResponse.json({ success: true, message: "Course published successfully!", course: updated });
+      return NextResponse.json({ success: true, message: "Class published successfully!", course: updated });
     }
 
     if (action === "reject_course") {
@@ -2005,8 +2005,8 @@ export async function POST(request: NextRequest) {
         await prisma.notification.create({
           data: {
             userId: updated.tutorId,
-            title: "📝 Course Review Feedback",
-            message: `Your course "${updated.title}" requires revisions before publishing. Feedback: ${reason || "Please review syllabus content."}`,
+            title: "📝 Class Review Feedback",
+            message: `Your class "${updated.title}" requires revisions before publishing. Feedback: ${reason || "Please review syllabus content."}`,
             type: "ALERT",
             link: "/tutor",
           },
@@ -2014,7 +2014,7 @@ export async function POST(request: NextRequest) {
         broadcastLMSEvent("NOTIFICATIONS_CHANGED", { userId: updated.tutorId });
       }
       broadcastLMSEvent("COURSES_CHANGED");
-      return NextResponse.json({ success: true, message: "Course returned to draft status.", course: updated });
+      return NextResponse.json({ success: true, message: "Class returned to draft status.", course: updated });
     }
 
     if (action === "update_bundles") {

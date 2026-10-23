@@ -389,7 +389,7 @@ export async function POST(request: NextRequest) {
 
       if (!resolvedTutorId) {
         return NextResponse.json(
-          { error: "Please select a tutor or course for your free trial session." },
+          { error: "Please select a tutor or class for your free trial session." },
           { status: 400 }
         );
       }

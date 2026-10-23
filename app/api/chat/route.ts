@@ -173,7 +173,7 @@ export async function GET(req: NextRequest) {
         const canChat = await canUsersChat(user, otherUser);
         if (!canChat) {
           return NextResponse.json(
-            { error: "Direct messaging is only permitted between students and tutors who have requested a 1-on-1 trial or enrolled in a course." },
+            { error: "Direct messaging is only permitted between students and tutors who have requested a 1-on-1 trial or enrolled in a class." },
             { status: 403 }
           );
         }
@@ -421,7 +421,7 @@ export async function POST(req: NextRequest) {
         if (!canChat) {
           return NextResponse.json(
             {
-              error: "Direct messaging is only permitted between students and tutors who have requested a 1-on-1 trial or enrolled in a course.",
+              error: "Direct messaging is only permitted between students and tutors who have requested a 1-on-1 trial or enrolled in a class.",
             },
             { status: 403 }
           );
@@ -504,7 +504,7 @@ export async function POST(req: NextRequest) {
         if (!canChat) {
           return NextResponse.json(
             {
-              error: "Direct messaging is only permitted between students and tutors who have requested a 1-on-1 trial or enrolled in a course.",
+              error: "Direct messaging is only permitted between students and tutors who have requested a 1-on-1 trial or enrolled in a class.",
             },
             { status: 403 }
           );

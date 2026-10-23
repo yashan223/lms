@@ -2623,7 +2623,7 @@ export default function AdminDashboardPage() {
                     : activeTab === "users"
                     ? "User Management"
                     : activeTab === "courses"
-                    ? "Course Management"
+                    ? "Class Management"
                     : activeTab === "subjects" || activeTab === "schools"
                     ? "Academic Subjects & Categories"
                     : activeTab === "chats"
@@ -2781,7 +2781,7 @@ export default function AdminDashboardPage() {
 
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-blue-600">Course Enrollments</span>
+                    <span className="text-xs font-medium text-blue-600">Class Enrollments</span>
                     <TrendingUp className="w-4 h-4 text-blue-600" />
                   </div>
                   <div className="text-2xl font-semibold tracking-tight text-slate-800">{totalEnrollmentsCount} Enrollments</div>
@@ -4878,7 +4878,7 @@ export default function AdminDashboardPage() {
                     }`}
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    <span>Course Enrollments & Tuition ({purchasesList.length})</span>
+                    <span>Class Enrollments & Tuition ({purchasesList.length})</span>
                   </button>
                 </div>
               </div>
@@ -5146,9 +5146,9 @@ export default function AdminDashboardPage() {
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs space-y-4 p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
-                    <h3 className="font-bold text-sm text-slate-900">Course Purchases & Student Enrollments</h3>
+                    <h3 className="font-bold text-sm text-slate-900">Class Purchases & Student Enrollments</h3>
                     <p className="text-xs text-slate-500">
-                      Live transaction ledger of verified student course purchases and unlocked study materials
+                      Live transaction ledger of verified student class purchases and unlocked study materials
                     </p>
                   </div>
 
@@ -5156,7 +5156,7 @@ export default function AdminDashboardPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const headers = "Student Name,Student Email,Course Title,Subject Code,Tuition Fee,Payment Status,Purchase Date\n";
+                      const headers = "Student Name,Student Email,Class Title,Subject Code,Tuition Fee,Payment Status,Purchase Date\n";
                       const rows = purchasesList
                         .map(
                           (p) =>
@@ -5209,11 +5209,11 @@ export default function AdminDashboardPage() {
                 {purchasesList.length === 0 ? (
                   <div className="py-12 text-center space-y-2 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                     <FileText className="w-8 h-8 text-slate-400 mx-auto" />
-                    <p className="text-xs font-bold text-slate-700">No Course Purchases Found</p>
+                    <p className="text-xs font-bold text-slate-700">No Class Purchases Found</p>
                     <p className="text-[11px] text-slate-400">
                       {purchaseSearch || purchaseCourseFilter !== "ALL"
-                        ? "Try clearing your search query or course filter."
-                        : "New student course purchases will appear here in real-time."}
+                        ? "Try clearing your search query or class filter."
+                        : "New student class purchases will appear here in real-time."}
                     </p>
                     {(purchaseSearch || purchaseCourseFilter !== "ALL") && (
                       <Button
@@ -5235,7 +5235,7 @@ export default function AdminDashboardPage() {
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                         <tr>
                           <th className="py-3 px-4">Student / Buyer</th>
-                          <th className="py-3 px-4">Course Purchased</th>
+                          <th className="py-3 px-4">Class Purchased</th>
                           <th className="py-3 px-4">Tuition Fee</th>
                           <th className="py-3 px-4">Payment & Access</th>
                           <th className="py-3 px-4">Purchase Date</th>
@@ -5356,7 +5356,7 @@ export default function AdminDashboardPage() {
 
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
                 <div className="border-b border-slate-100 pb-3">
-                  <h3 className="font-bold text-sm text-slate-900">Revenue Breakdown by Course</h3>
+                  <h3 className="font-bold text-sm text-slate-900">Revenue Breakdown by Class</h3>
                   <p className="text-xs text-slate-500">
                     Gross performance and tuition collection volume per syllabus unit
                   </p>
@@ -8111,7 +8111,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-bold text-base text-slate-900">Manage Course Enrollments</h3>
+                <h3 className="font-bold text-base text-slate-900">Manage Class Enrollments</h3>
                 <p className="text-xs text-slate-500">{selectedUserForEdit.name} ({selectedUserForEdit.email})</p>
               </div>
               <button onClick={() => setShowEnrollUserModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer" aria-label="Close"><X className="w-4 h-4" /></button>

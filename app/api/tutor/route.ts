@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
       const { courseId, title, slug, subtitle, description, category, subjectCode, price, olPrice, level, thumbnail, status } = body;
       if (!title?.trim() || !description?.trim() || !category?.trim()) {
         return NextResponse.json(
-          { error: "Course title, description, and category are required." },
+          { error: "Class title, description, and category are required." },
           { status: 400 }
         );
       }
@@ -333,14 +333,14 @@ export async function POST(request: NextRequest) {
         if (teachesOL && !teachesAL) {
           if (level === CourseLevel.ADVANCED || level === "AL") {
             return NextResponse.json(
-              { error: "You are only authorized to create and manage Cambridge/Edexcel IGCSE and OL courses." },
+              { error: "You are only authorized to create and manage Cambridge/Edexcel IGCSE and OL classes." },
               { status: 403 }
             );
           }
         } else if (teachesAL && !teachesOL) {
           if (level === CourseLevel.INTERMEDIATE || level === "OL") {
             return NextResponse.json(
-              { error: "You are only authorized to create and manage Cambridge/Edexcel AS and A2 courses." },
+              { error: "You are only authorized to create and manage Cambridge/Edexcel AS and A2 classes." },
               { status: 403 }
             );
           }
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
           where: { id: courseId, ...(isAdmin ? {} : { tutorId: tutor.id }) },
         });
         if (!existing) {
-          return NextResponse.json({ error: "Course not found or not owned by this tutor." }, { status: 404 });
+          return NextResponse.json({ error: "Class not found or not owned by this tutor." }, { status: 404 });
         }
 
         // Only Admin can set CourseStatus.PUBLISHED. Tutors can only set DRAFT or PENDING_REVIEW.
@@ -396,7 +396,7 @@ export async function POST(request: NextRequest) {
         broadcastLMSEvent("COURSES_CHANGED");
         return NextResponse.json({
           success: true,
-          message: "Course changes saved successfully.",
+          message: "Class changes saved successfully.",
           course: updated,
         });
       }
@@ -434,7 +434,7 @@ export async function POST(request: NextRequest) {
       broadcastLMSEvent("COURSES_CHANGED");
       return NextResponse.json({
         success: true,
-        message: "Course submitted for admin approval.",
+        message: "Class submitted for admin approval.",
         course: created,
       });
     }
@@ -445,11 +445,11 @@ export async function POST(request: NextRequest) {
         where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
       });
       if (!existing) {
-        return NextResponse.json({ error: "Course not found or permission denied." }, { status: 404 });
+        return NextResponse.json({ error: "Class not found or permission denied." }, { status: 404 });
       }
       await prisma.course.delete({ where: { id: courseId } });
       broadcastLMSEvent("COURSES_CHANGED");
-      return NextResponse.json({ success: true, message: "Course deleted successfully." });
+      return NextResponse.json({ success: true, message: "Class deleted successfully." });
     }
 
     if (action === "add_module") {
@@ -457,7 +457,7 @@ export async function POST(request: NextRequest) {
       const course = await prisma.course.findFirst({
         where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
       });
-      if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      if (!course) return NextResponse.json({ error: "Class not found" }, { status: 404 });
       const newModule = await prisma.module.create({
         data: {
           courseId,
@@ -532,12 +532,12 @@ export async function POST(request: NextRequest) {
     if (action === "add_course_material") {
       const { courseId, title, description, fileUrl, fileSize, fileType, category } = body;
       if (!courseId || !title || !fileUrl) {
-        return NextResponse.json({ error: "Course, title, and file are required" }, { status: 400 });
+        return NextResponse.json({ error: "Class, title, and file are required" }, { status: 400 });
       }
       const course = await prisma.course.findFirst({
         where: { id: courseId, ...(tutor.role !== Role.ADMIN ? { tutorId: tutor.id } : {}) },
       });
-      if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      if (!course) return NextResponse.json({ error: "Class not found" }, { status: 404 });
 
       const material = await prisma.courseMaterial.create({
         data: {
@@ -695,7 +695,7 @@ export async function POST(request: NextRequest) {
             });
             if (courseToCheck && isCourseAL(courseToCheck) && !isCourseOL(courseToCheck)) {
               return NextResponse.json(
-                { error: "You are only authorized to schedule classes for Cambridge/Edexcel IGCSE and OL courses." },
+                { error: "You are only authorized to schedule classes for Cambridge/Edexcel IGCSE and OL classes." },
                 { status: 403 }
               );
             }
@@ -727,7 +727,7 @@ export async function POST(request: NextRequest) {
             });
             if (courseToCheck && isCourseOL(courseToCheck) && !isCourseAL(courseToCheck)) {
               return NextResponse.json(
-                { error: "You are only authorized to schedule classes for Cambridge/Edexcel AS and A2 courses." },
+                { error: "You are only authorized to schedule classes for Cambridge/Edexcel AS and A2 classes." },
                 { status: 403 }
               );
             }
@@ -2235,7 +2235,7 @@ export async function POST(request: NextRequest) {
         });
       } else {
         return NextResponse.json(
-          { error: "Student ID and Course ID are required to unenroll student." },
+          { error: "Student ID and Class ID are required to unenroll student." },
           { status: 400 }
         );
       }
@@ -2246,7 +2246,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "Student successfully removed from the course.",
+        message: "Student successfully removed from the class.",
       });
     }
 

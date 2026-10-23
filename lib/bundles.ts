@@ -36,7 +36,7 @@ export async function getBundles(): Promise<TokenBundle[]> {
                   "Access to live syllabus individual classes",
                   "Instant token crediting to student wallet",
                   "Full flexibility: student decides how to spend",
-                  "Access to course materials & study notes",
+                  "Access to class materials & study notes",
                 ],
         };
       });

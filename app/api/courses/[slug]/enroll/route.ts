@@ -36,7 +36,7 @@ export async function POST(
     const auth = await getAuthenticatedUser(request);
     if (!auth.user) {
       return NextResponse.json(
-        { error: "Authentication required. Please sign in or register to purchase this course." },
+        { error: "Authentication required. Please sign in or register to enroll in this class." },
         { status: 401 }
       );
     }
@@ -44,7 +44,7 @@ export async function POST(
     const course = await findCourseBySlugOrId(slug);
 
     if (!course) {
-      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
     }
 
     const user = auth.user;
@@ -62,7 +62,7 @@ export async function POST(
       return NextResponse.json({
         success: true,
         alreadyEnrolled: true,
-        message: "You are already enrolled in this course.",
+        message: "You are already enrolled in this class.",
         courseId: course.id,
       });
     }

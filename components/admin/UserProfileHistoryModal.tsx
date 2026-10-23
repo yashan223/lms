@@ -577,14 +577,14 @@ export function UserProfileHistoryModal({
               <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-2xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Assigned Courses
+                    Assigned Classes
                   </span>
                   <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                     <BookOpen className="w-3.5 h-3.5" />
                   </div>
                 </div>
                 <div className="text-base sm:text-lg font-black text-slate-900">
-                  {totalCreatedCourses} <span className="text-xs font-semibold text-slate-500">Courses</span>
+                  {totalCreatedCourses} <span className="text-xs font-semibold text-slate-500">Classes</span>
                 </div>
                 <div className="text-[10px] text-slate-500 font-medium">Active Teaching Units</div>
               </div>
@@ -1426,7 +1426,7 @@ export function UserProfileHistoryModal({
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                       <tr>
-                        <th className="py-3.5 px-5">Session Title & Course</th>
+                        <th className="py-3.5 px-5">Session Title & Class</th>
                         <th className="py-3.5 px-5">Scheduled Date</th>
                         <th className="py-3.5 px-5">BBB Verified Timing</th>
                         <th className="py-3.5 px-5">Duration</th>

@@ -82,7 +82,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Join live interactive syllabus individual classes",
       "Instant token crediting to student wallet",
       "Full flexibility: student decides when & how to spend",
-      "Access to course materials & study notes",
+      "Access to class materials & study notes",
     ],
   },
   {
@@ -136,13 +136,13 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "faq-2",
     category: "Study Materials",
     question: "Do you provide downloadable past paper solutions and study handbooks?",
-    answer: "Yes. Every course includes comprehensive downloadable study materials including official study handbooks, unit formula sheets, worked past paper solutions, and practical laboratory guides without any assignment grading burdens.",
+    answer: "Yes. Every class includes comprehensive downloadable study materials including official study handbooks, unit formula sheets, worked past paper solutions, and practical laboratory guides without any assignment grading burdens.",
   },
   {
     id: "faq-3",
     category: "Tutors",
     question: "Who are the tutors on EduPulse?",
-    answer: "All courses and 1-on-1 sessions are conducted by experienced Tutors specialized in the London A/L and O/L curriculum specifications.",
+    answer: "All classes and 1-on-1 sessions are conducted by experienced Tutors specialized in the London A/L and O/L curriculum specifications.",
   },
   {
     id: "faq-4",

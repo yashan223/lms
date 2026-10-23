@@ -33,7 +33,7 @@ export function buildGoogleCalendarUrl({
   const datesParam = `${formatUtc(validStart)}/${formatUtc(end)}`;
 
   const detailsLines: string[] = [];
-  if (courseTitle) detailsLines.push(`📘 Course: ${courseTitle}`);
+  if (courseTitle) detailsLines.push(`📘 Class: ${courseTitle}`);
   if (description) detailsLines.push(`📝 Details: ${description}`);
   detailsLines.push(`🎓 PulseEDU Global • LMS (Academic Calendar)`);
 

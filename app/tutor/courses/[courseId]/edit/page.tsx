@@ -304,7 +304,7 @@ export function TutorCourseWorkspaceContent({
       }
 
       const found = (data.courses || []).find((c: Course) => c.id === courseId);
-      if (!found) throw new Error("Course not found in tutor curriculum.");
+      if (!found) throw new Error("Class not found in tutor curriculum.");
 
       const courseEvents = found.events || (data.events || []).filter((e: any) => e.courseId === courseId);
       const enrichedCourse = { ...found, events: courseEvents };
@@ -472,7 +472,7 @@ export function TutorCourseWorkspaceContent({
         });
         await loadData(true);
       }
-      showToast("success", "Course photo uploaded and saved on server!");
+      showToast("success", "Class photo uploaded and saved on server!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to upload cover image.");
     } finally {
@@ -494,7 +494,7 @@ export function TutorCourseWorkspaceContent({
           await callTutorApi({ action: "delete_course", courseId });
           router.push("/tutor?tab=courses");
         } catch (err: any) {
-          showToast("error", err.message || "Failed to delete course.");
+          showToast("error", err.message || "Failed to delete class.");
         }
       },
     });
@@ -1240,7 +1240,7 @@ export function TutorCourseWorkspaceContent({
                 </div>
 
                 <div className="md:col-span-2 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Course Tagline / Short Summary</label>
+                  <label className="text-xs font-bold text-slate-700">Class Tagline / Short Summary</label>
                   <Input
                     value={detailsForm.subtitle}
                     onChange={(e) => setDetailsForm({ ...detailsForm, subtitle: e.target.value })}
@@ -1250,13 +1250,13 @@ export function TutorCourseWorkspaceContent({
                 </div>
 
                 <div className="md:col-span-3 space-y-2">
-                  <label className="text-xs font-bold text-slate-700 block">Course Cover Thumbnail</label>
+                  <label className="text-xs font-bold text-slate-700 block">Class Cover Thumbnail</label>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-slate-200 rounded-2xl bg-slate-50/40">
                     <div className="w-32 h-20 rounded-xl bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
                       {detailsForm.thumbnail ? (
                         <img
                           src={detailsForm.thumbnail}
-                          alt="Course Cover"
+                          alt="Class Cover"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -1715,7 +1715,7 @@ export function TutorCourseWorkspaceContent({
             <div className="p-6 lg:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Course Materials & Document Repository</h2>
+                  <h2 className="text-lg font-black text-slate-900">Class Materials & Document Repository</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Upload and publish handouts, problem sheets, formula booklets, and class slides directly.
                   </p>
@@ -1802,7 +1802,7 @@ export function TutorCourseWorkspaceContent({
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 cursor-pointer shadow-xs"
                   >
                     {uploadingMat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    <span>{uploadingMat ? "Uploading File..." : "Publish Material to Course"}</span>
+                    <span>{uploadingMat ? "Uploading File..." : "Publish Material to Class"}</span>
                   </Button>
                 </div>
               </form>

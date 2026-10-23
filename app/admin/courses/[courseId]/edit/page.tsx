@@ -506,7 +506,7 @@ export function AdminCourseWorkspaceContent({
         });
         await loadData(true);
       }
-      showToast("success", "Course photo uploaded and saved on server!");
+      showToast("success", "Class photo uploaded and saved on server!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to upload cover image.");
     } finally {
@@ -769,7 +769,7 @@ export function AdminCourseWorkspaceContent({
       });
       setSelectedStudentToEnroll("");
       await loadData(true);
-      showToast("success", "Student enrolled in this course successfully!");
+      showToast("success", "Student enrolled in this class successfully!");
     } catch (err: any) {
       showToast("error", err.message || "Failed to enroll student.");
     } finally {
@@ -1870,7 +1870,7 @@ export function AdminCourseWorkspaceContent({
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 cursor-pointer shadow-xs"
                   >
                     {uploadingMat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    <span>{uploadingMat ? "Uploading File..." : "Publish Material to Course"}</span>
+                    <span>{uploadingMat ? "Uploading File..." : "Publish Material to Class"}</span>
                   </Button>
                 </div>
               </form>
@@ -1970,7 +1970,7 @@ export function AdminCourseWorkspaceContent({
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Enrolled Student Roster</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    View active course participants, enroll new students directly, or manage course access permissions.
+                    View active class participants, enroll new students directly, or manage class access permissions.
                   </p>
                 </div>
               </div>

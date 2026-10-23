@@ -585,7 +585,7 @@ Hello ${name},
 Your permanent class session is starting in 30 minutes!
 
 Class: ${classTitle}
-${courseTitle ? `Course: ${courseTitle}\n` : ""}${classType ? `Format: ${classType}\n` : ""}Tutor: ${tutorName}
+${courseTitle ? `Curriculum: ${courseTitle}\n` : ""}${classType ? `Format: ${classType}\n` : ""}Tutor: ${tutorName}
 Start Time: ${startTimeFormatted}
 
 Join the session or view your schedule:

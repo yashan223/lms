@@ -74,7 +74,7 @@ export const DEFAULT_BUNDLES: TokenBundle[] = [
       "Join live interactive syllabus individual classes",
       "Instant token crediting to student wallet",
       "Full flexibility: student decides when & how to spend",
-      "Access to course materials & study notes",
+      "Access to class materials & study notes",
     ],
   },
   {

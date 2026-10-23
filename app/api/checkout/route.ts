@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
       if (!course) {
         return NextResponse.json(
-          { error: "Selected course not found." },
+          { error: "Selected class not found." },
           { status: 404 }
         );
       }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
       if (existingEnrollment) {
         return NextResponse.json(
-          { error: "You are already enrolled in this course.", alreadyEnrolled: true },
+          { error: "You are already enrolled in this class.", alreadyEnrolled: true },
           { status: 400 }
         );
       }

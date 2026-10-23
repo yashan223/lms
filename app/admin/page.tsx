@@ -5397,111 +5397,8 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Tutor Hourly Pay Grades & Custom Per-Tutor Rates */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <CreditCard className="w-4 h-4" />
-                      </div>
-                      <h3 className="font-black text-lg text-slate-900">
-                        Active Tutors & Approved Hourly Rates
-                      </h3>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        {tutorList.length} Tutors Active
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                      Tutor hourly rates are individually configured per tutor when adding or editing an account in User Management. Class earnings are dynamically calculated based on the class Academic Level (Cambridge/Edexcel AS & A2 vs Cambridge/Edexcel IGCSE & OL) and the lead tutor&apos;s approved rate.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setActiveTab("users")}
-                      className="text-xs font-bold h-9 rounded-xl border-slate-200 hover:bg-slate-50 gap-1.5 cursor-pointer"
-                    >
-                      <Users className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Manage In Users</span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        handleOpenAddUser();
-                        setFormUserRole("TUTOR");
-                      }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 h-9 rounded-xl shadow-xs shadow-emerald-600/20 cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add New Tutor</span>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Tutors rates list */}
-                {tutorList.length === 0 ? (
-                  <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
-                    No active tutors found. Click &quot;Add New Tutor&quot; to create a tutor account and configure their approved hourly rates.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {tutorList.map((t) => {
-                      const rates = getUserRates(t);
-                      return (
-                        <div
-                          key={t.id}
-                          className="p-4 rounded-2xl bg-slate-50/60 border border-slate-200 hover:border-slate-300 transition-all space-y-3"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 font-black text-xs flex items-center justify-center shrink-0">
-                                {t.name ? t.name.charAt(0).toUpperCase() : "T"}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-bold text-xs text-slate-900 truncate">
-                                  {t.name || "Unnamed Tutor"}
-                                </div>
-                                <div className="text-[10px] text-slate-400 truncate">
-                                  {t.email}
-                                </div>
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleOpenEditUser(t)}
-                              className="h-7 px-2 text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg gap-1 cursor-pointer shrink-0"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                              <span>Edit</span>
-                            </Button>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/70 text-[11px]">
-                            <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
-                              <div className="text-[10px] font-semibold text-slate-500">London A/L</div>
-                              <div className="font-black text-indigo-700">
-                                {rates.isAL ? `Rs. ${Number(rates.alRate).toLocaleString()}/hr` : "Not Conducted"}
-                              </div>
-                            </div>
-                            <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
-                              <div className="text-[10px] font-semibold text-slate-500">London O/L</div>
-                              <div className="font-black text-blue-700">
-                                {rates.isOL ? `Rs. ${Number(rates.olRate).toLocaleString()}/hr` : "Not Conducted"}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Performance-Based Tutor Bonus System Configuration */}
-                <div className="pt-6 border-t border-slate-100 space-y-4">
+              {/* Performance-Based Tutor Bonus System Configuration */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
@@ -5766,7 +5663,6 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 </div>
-              </div>
 
               {/* Tutor Payout & Performance Bonus Overview Table */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-5">

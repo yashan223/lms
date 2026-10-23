@@ -171,11 +171,87 @@ const AUDIT_CATEGORY_CONFIG: Record<string, { label: string; icon: any; badge: s
   GENERAL: { label: "System General", icon: ShieldCheck, badge: "bg-slate-100 text-slate-800 border border-slate-200", bg: "bg-slate-50", text: "text-slate-600" },
 };
 
+export const VALID_ADMIN_TABS = [
+  "overview",
+  "live_classes",
+  "attendance",
+  "users",
+  "courses",
+  "subjects",
+  "schools",
+  "chats",
+  "finances",
+  "approvals",
+  "pricing",
+  "audit_log",
+] as const;
+
+export type AdminTab = (typeof VALID_ADMIN_TABS)[number];
+
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "live_classes" | "attendance" | "users" | "courses" | "subjects" | "schools" | "chats" | "finances" | "approvals" | "pricing" | "audit_log"
-  >("overview");
+  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const [isTabInitialized, setIsTabInitialized] = useState(false);
+
+  const handleSelectTab = (tab: AdminTab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("admin_active_tab", tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", tab);
+        window.history.replaceState(null, "", url.toString());
+      } catch (err) {
+        console.warn("Failed to persist active tab:", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get("tab") as AdminTab | null;
+      if (urlTab && (VALID_ADMIN_TABS as readonly string[]).includes(urlTab)) {
+        setActiveTab(urlTab);
+        try {
+          localStorage.setItem("admin_active_tab", urlTab);
+        } catch {}
+        setIsTabInitialized(true);
+        return;
+      }
+
+      const savedTab = localStorage.getItem("admin_active_tab") as AdminTab | null;
+      if (savedTab && (VALID_ADMIN_TABS as readonly string[]).includes(savedTab)) {
+        setActiveTab(savedTab);
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", savedTab);
+        window.history.replaceState(null, "", url.toString());
+      }
+    } catch (err) {
+      console.warn("Failed to restore active tab:", err);
+    } finally {
+      setIsTabInitialized(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get("tab") as AdminTab | null;
+      if (urlTab && (VALID_ADMIN_TABS as readonly string[]).includes(urlTab)) {
+        setActiveTab(urlTab);
+        try {
+          localStorage.setItem("admin_active_tab", urlTab);
+        } catch {}
+      } else {
+        setActiveTab("overview");
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -2468,8 +2544,7 @@ export default function AdminDashboardPage() {
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id as any);
-                  setSidebarOpen(false);
+                  handleSelectTab(item.id as AdminTab);
                 }}
                 className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 group ${
                   isActive
@@ -2675,14 +2750,15 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {loading && allUsersList.length === 0 && !fetchError && (
+          {(!isTabInitialized || (loading && allUsersList.length === 0)) && !fetchError ? (
             <div className="py-24 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
               <div className="text-sm font-bold text-slate-800">Loading Institutional Records...</div>
               <p className="text-xs text-slate-400">Synchronizing students, tutors, and curriculum.</p>
             </div>
-          )}
-          {activeTab === "overview" && (
+          ) : (
+            <>
+              {activeTab === "overview" && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
@@ -2748,7 +2824,7 @@ export default function AdminDashboardPage() {
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="font-bold text-sm text-slate-900">Recent User Registrations & Accounts</h3>
-                  <button onClick={() => setActiveTab("users")} className="text-xs font-bold text-blue-600 hover:underline">View All →</button>
+                  <button onClick={() => handleSelectTab("users")} className="text-xs font-bold text-blue-600 hover:underline cursor-pointer">View All →</button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
@@ -3829,7 +3905,7 @@ export default function AdminDashboardPage() {
 
                       <Button
                         variant="outline"
-                        onClick={() => setActiveTab("subjects")}
+                        onClick={() => handleSelectTab("subjects")}
                         className="text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 gap-1.5 h-10 rounded-xl cursor-pointer"
                         title="Manage Academic Subjects & Category Pills"
                       >
@@ -4085,7 +4161,7 @@ export default function AdminDashboardPage() {
 
                               <button
                                 onClick={() => {
-                                  setActiveTab("live_classes");
+                                  handleSelectTab("live_classes");
                                   setLiveClassSearch(tutor.name);
                                 }}
                                 className="px-3 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
@@ -7217,7 +7293,9 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
-        </main>
+        </>
+      )}
+    </main>
       </div>
 
       {showAddUserModal && (

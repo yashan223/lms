@@ -176,11 +176,11 @@ function DashboardContent() {
   const [selectedCurrency, setSelectedCurrency] = useState<"LKR" | "USD">("LKR");
 
   useEffect(() => {
-    const c = user?.country || detectedCountry;
+    const c = detectedCountry || user?.country;
     if (c) {
       setSelectedCurrency(isSriLankanStudent(c) ? "LKR" : "USD");
     }
-  }, [user?.country, detectedCountry]);
+  }, [detectedCountry, user?.country]);
 
   useEffect(() => {
     const buyBundle = searchParams?.get("buyBundle");
@@ -432,6 +432,9 @@ function DashboardContent() {
           if (bData.country) {
             setDetectedCountry(bData.country);
           }
+          if (typeof bData.isSriLanka === "boolean") {
+            setSelectedCurrency(bData.isSriLanka ? "LKR" : "USD");
+          }
         }
       } catch {}
 
@@ -458,7 +461,7 @@ function DashboardContent() {
     try {
       setTokenPurchasing(true);
       setTokenFeedbackMsg("Connecting to Payments.lk...");
-      const currency = currencyOverride || selectedCurrency || (isSriLankanStudent(user?.country || detectedCountry) ? "LKR" : "USD");
+      const currency = currencyOverride || selectedCurrency || (isSriLankanStudent(detectedCountry || user?.country) ? "LKR" : "USD");
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

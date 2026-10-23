@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { getBundles } from "@/lib/bundles";
 import { getPackageCurrency } from "@/lib/currency";
+import { resolveGeoLocation } from "@/lib/geo";
 import {
   createPaymentsLkCheckout,
   isPaymentsLkConfigured,
@@ -37,11 +38,12 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000";
 
+    const geo = await resolveGeoLocation(request.headers);
     const requestedCurrency = typeof body.currency === "string" ? body.currency.toUpperCase() : null;
     const resolvedCurrency: "LKR" | "USD" =
       requestedCurrency === "USD" || requestedCurrency === "LKR"
         ? requestedCurrency
-        : getPackageCurrency(user.country);
+        : (geo.isSriLanka ? "LKR" : "USD");
 
     let amountCents = 0;
     let gatewayAmountCents = 0;

@@ -40,6 +40,12 @@ export function extractClientIp(headers: Headers | Record<string, string | strin
   const realIp = getHeader("x-real-ip");
   if (realIp) return realIp.trim();
 
+  const clientIp = getHeader("x-client-ip");
+  if (clientIp) return clientIp.trim();
+
+  const fastlyIp = getHeader("fastly-client-ip");
+  if (fastlyIp) return fastlyIp.trim();
+
   return "127.0.0.1";
 }
 
@@ -55,9 +61,11 @@ export function extractCountryFromHeaders(headers: Headers | Record<string, stri
 
   const headerKeys = [
     "cf-ipcountry",
+    "x-vercel-ip-country",
     "x-country-code",
     "cloudfront-viewer-country",
     "x-geo-country",
+    "geoip-country-code",
     "x-mock-country",
   ];
 

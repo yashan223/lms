@@ -121,6 +121,8 @@ export function PermanentEnrollmentModal({
   const [frozenBalance, setFrozenBalance] = useState<number>(0);
   const [loadingWallet, setLoadingWallet] = useState<boolean>(true);
   const [tokenPackages, setTokenPackages] = useState<any[]>([]);
+  const [isSriLanka, setIsSriLanka] = useState<boolean>(false);
+  const [studentLevel, setStudentLevel] = useState<"OL" | "AL">("AL");
   const [topUpLoading, setTopUpLoading] = useState<string | null>(null);
   const [topUpSuccessMsg, setTopUpSuccessMsg] = useState<string | null>(null);
 
@@ -153,6 +155,12 @@ export function PermanentEnrollmentModal({
         if (Array.isArray(data.packages) && data.packages.length > 0) {
           setTokenPackages(data.packages);
         }
+        if (typeof data.isSriLanka === "boolean") {
+          setIsSriLanka(data.isSriLanka);
+        }
+        if (data.academicLevel) {
+          setStudentLevel(data.academicLevel === "OL" ? "OL" : "AL");
+        }
       }
     } catch (err) {
       console.warn("Failed to fetch student wallet:", err);
@@ -179,6 +187,7 @@ export function PermanentEnrollmentModal({
         body: JSON.stringify({
           itemType: "TOKEN_BUNDLE",
           itemId: pkg.id,
+          currency: isSriLanka ? "LKR" : "USD",
         }),
       });
 
@@ -743,10 +752,22 @@ export function PermanentEnrollmentModal({
                       ).map((pkg) => {
                         const satisfiesNeed = pkg.tokens >= shortageTokens;
                         const isLoadingThis = topUpLoading === pkg.id;
+                        const isOL = studentLevel === "OL";
+
+                        const baseUsd = isOL && pkg.olPrice && pkg.olPrice > 0 ? Number(pkg.olPrice) : Number(pkg.price || 0);
+                        const baseLkr = isOL && pkg.olLkrPrice && pkg.olLkrPrice > 0 ? Number(pkg.olLkrPrice) : Number(pkg.lkrPrice || Math.round(baseUsd * 300));
+
                         const hasDiscount = Boolean(pkg.discountEnabled && pkg.discountPercent && Number(pkg.discountPercent) > 0);
                         const discountFactor = hasDiscount ? (100 - Number(pkg.discountPercent)) / 100 : 1;
-                        const finalLkr = hasDiscount ? Math.round(Number(pkg.lkrPrice || 0) * discountFactor) : Number(pkg.lkrPrice || 0);
-                        const finalUsd = hasDiscount ? Math.round(Number(pkg.price || 0) * discountFactor * 100) / 100 : Number(pkg.price || 0);
+                        const finalLkr = hasDiscount ? Math.round(baseLkr * discountFactor) : baseLkr;
+                        const finalUsd = hasDiscount ? Math.round(baseUsd * discountFactor * 100) / 100 : baseUsd;
+
+                        const displayPriceText = isSriLanka
+                          ? `LKR ${finalLkr.toLocaleString()}`
+                          : `$${finalUsd % 1 === 0 ? finalUsd : finalUsd.toFixed(2)} USD`;
+                        const originalPriceText = isSriLanka
+                          ? `LKR ${baseLkr.toLocaleString()}`
+                          : `$${baseUsd % 1 === 0 ? baseUsd : baseUsd.toFixed(2)} USD`;
 
                         return (
                           <button
@@ -778,11 +799,11 @@ export function PermanentEnrollmentModal({
                             <div className="flex items-center justify-between text-[11px] text-slate-600 pt-1 border-t border-slate-200/60 mt-1">
                               <div className="flex items-center gap-1.5">
                                 <span className={`font-bold ${hasDiscount ? "text-amber-700" : "text-slate-900"}`}>
-                                  {pkg.lkrPrice ? `LKR ${finalLkr.toLocaleString()}` : `$${finalUsd}`}
+                                  {displayPriceText}
                                 </span>
                                 {hasDiscount && (
                                   <span className="text-[10px] text-slate-400 line-through">
-                                    {pkg.lkrPrice ? `LKR ${Number(pkg.lkrPrice).toLocaleString()}` : `$${pkg.price}`}
+                                    {originalPriceText}
                                   </span>
                                 )}
                               </div>

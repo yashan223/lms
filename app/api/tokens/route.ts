@@ -4,6 +4,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { broadcastLMSEvent } from "@/lib/events";
 import { getBundles } from "@/lib/bundles";
 import { getStudentAcademicLevel } from "@/lib/currency";
+import { resolveGeoLocation } from "@/lib/geo";
 import { Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,10 @@ export async function GET(request: NextRequest) {
     if (!auth.user) {
       return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const mockCountry = searchParams.get("country") || request.headers.get("x-mock-country");
+    const geo = await resolveGeoLocation(request.headers, mockCountry);
 
     let wallet = await prisma.tokenWallet.findUnique({
       where: { userId: auth.user.id },
@@ -48,6 +53,11 @@ export async function GET(request: NextRequest) {
       transactions: wallet.transactions,
       packages: await getBundles(),
       academicLevel,
+      isSriLanka: geo.isSriLanka,
+      currency: geo.currency,
+      country: geo.country,
+      countryCode: geo.countryCode,
+      clientIp: geo.ip,
     });
   } catch (error: any) {
     console.error("Token API GET error:", error);

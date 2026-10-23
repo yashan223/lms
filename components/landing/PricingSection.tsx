@@ -55,7 +55,7 @@ export function PricingSection({
           const dashboardData = await dashboardRes.json();
           if (dashboardData.user) {
             authenticated = true;
-            if (dashboardData.user.country) {
+            if (dashboardData.user.country && !studentCountry) {
               setStudentCountry(dashboardData.user.country);
             }
             const isFaculty =
@@ -83,7 +83,9 @@ export function PricingSection({
           if (data.bundles && Array.isArray(data.bundles) && data.bundles.length > 0) {
             setBundles(data.bundles);
           }
-          if (data.country) {
+          if (typeof data.isSriLanka === "boolean") {
+            setStudentCountry(data.isSriLanka ? "Sri Lanka" : (data.country || "United States"));
+          } else if (data.country) {
             setStudentCountry(data.country);
           }
           if (data.academicLevel) {

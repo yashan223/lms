@@ -307,6 +307,7 @@ export default function AdminDashboardPage() {
 
   const [bundlesList, setBundlesList] = useState<TokenBundle[]>([]);
   const [showBundleEditorModal, setShowBundleEditorModal] = useState(false);
+  const [isBundleEditorFullScreen, setIsBundleEditorFullScreen] = useState(true);
   const [editingBundles, setEditingBundles] = useState<TokenBundle[]>([]);
   const [selectedBundleIndex, setSelectedBundleIndex] = useState<number>(0);
   const [newFeatureInput, setNewFeatureInput] = useState<string>("");
@@ -9203,9 +9204,15 @@ export default function AdminDashboardPage() {
       )}
 
       {showBundleEditorModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-4xl w-full max-h-[95vh] overflow-y-auto shadow-2xl space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+          <div
+            className={`bg-white shadow-2xl flex flex-col transition-all duration-200 overflow-hidden ${
+              isBundleEditorFullScreen
+                ? "fixed inset-0 sm:inset-3 md:inset-5 rounded-none sm:rounded-2xl md:rounded-3xl"
+                : "max-w-5xl w-full my-auto max-h-[92vh] rounded-3xl"
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
                   <Coins className="w-5 h-5" />
@@ -9217,33 +9224,47 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowBundleEditorModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsBundleEditorFullScreen(!isBundleEditorFullScreen)}
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  title={isBundleEditorFullScreen ? "Exit Full Screen" : "Full Screen"}
+                  aria-label={isBundleEditorFullScreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  {isBundleEditorFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBundleEditorModal(false)}
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {bundleSaveMsg && (
-              <div
-                className={`p-3.5 rounded-2xl text-xs flex items-center gap-2.5 animate-in fade-in ${
-                  bundleSaveMsg.type === "success"
-                    ? "bg-blue-50 text-blue-800 border border-blue-200"
-                    : "bg-red-50 text-red-800 border border-red-200"
-                }`}
-              >
-                {bundleSaveMsg.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                )}
-                <span className="font-semibold">{bundleSaveMsg.text}</span>
+              <div className="px-6 pt-3 shrink-0">
+                <div
+                  className={`p-3.5 rounded-2xl text-xs flex items-center gap-2.5 animate-in fade-in ${
+                    bundleSaveMsg.type === "success"
+                      ? "bg-blue-50 text-blue-800 border border-blue-200"
+                      : "bg-red-50 text-red-800 border border-red-200"
+                  }`}
+                >
+                  {bundleSaveMsg.type === "success" ? (
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  )}
+                  <span className="font-semibold">{bundleSaveMsg.text}</span>
+                </div>
               </div>
             )}
 
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100">
+            <div className="flex items-center gap-1.5 overflow-x-auto px-6 py-2.5 bg-slate-50/70 border-b border-slate-100 shrink-0">
               {editingBundles.map((b, idx) => (
                 <button
                   key={b.id || idx}
@@ -9252,7 +9273,7 @@ export default function AdminDashboardPage() {
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                     selectedBundleIndex === idx
                       ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                   }`}
                 >
                   {b.popular && <span>⭐</span>}
@@ -9262,7 +9283,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={handleAddNewBundle}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Pack</span>
@@ -9272,9 +9293,10 @@ export default function AdminDashboardPage() {
             {editingBundles[selectedBundleIndex] && (() => {
               const curBundle = editingBundles[selectedBundleIndex];
               return (
-                <form onSubmit={handleSaveBundles} className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    <div className="lg:col-span-7 space-y-4">
+                <form onSubmit={handleSaveBundles} className="flex-1 flex flex-col overflow-hidden">
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start max-w-7xl mx-auto">
+                      <div className="lg:col-span-7 xl:col-span-8 space-y-4">
                       <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <span className="text-xs font-bold text-slate-700">Most Popular / Featured Card</span>
@@ -9666,7 +9688,7 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    <div className="lg:col-span-5 bg-slate-50/80 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                    <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-0 bg-slate-50/80 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
                       <div>
                         <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-3 flex items-center justify-between">
                           <span>Live Card Preview</span>
@@ -9753,49 +9775,50 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div className="shrink-0 border-t border-slate-100 bg-white px-6 py-3.5 flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetBundlesToDefault}
+                    className="rounded-xl text-xs text-slate-600 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                    <span>Reset Academy Defaults</span>
+                  </Button>
+
+                  <div className="flex items-center gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={handleResetBundlesToDefault}
-                      className="rounded-xl text-xs text-slate-600 cursor-pointer"
+                      onClick={() => setShowBundleEditorModal(false)}
+                      className="rounded-xl text-xs cursor-pointer"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                      <span>Reset Academy Defaults</span>
+                      Cancel
                     </Button>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowBundleEditorModal(false)}
-                        className="rounded-xl text-xs cursor-pointer"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={isSavingBundles}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs shadow-blue-600/20 cursor-pointer gap-1.5 h-9 px-4"
-                      >
-                        {isSavingBundles ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Saving Packages...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Save All Changes</span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={isSavingBundles}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs shadow-blue-600/20 cursor-pointer gap-1.5 h-9 px-4"
+                    >
+                      {isSavingBundles ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Saving Packages...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Save All Changes</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
+                </div>
                 </form>
               );
             })()}

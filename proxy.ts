@@ -100,6 +100,23 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
 }
 
 export async function proxy(request: NextRequest) {
+  // Safely reject malformed or unrecognized Server Action headers to prevent Next.js InvariantError crashes
+  const actionHeader = request.headers.get("next-action");
+  if (actionHeader) {
+    if (actionHeader === "r2s" || actionHeader === "cachefn" || actionHeader.length !== 42) {
+      return new NextResponse(
+        JSON.stringify({ error: "Server action not found" }),
+        {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+            "x-nextjs-action-not-found": "1",
+          },
+        }
+      );
+    }
+  }
+
   const { pathname } = request.nextUrl;
   const origin = request.headers.get("origin");
 

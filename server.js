@@ -22,8 +22,52 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
     try {
+      // Cleanly intercept and reject malformed/unrecognized Next-Action requests.
+      // Next.js 16 App Router has an upstream bug where an unrecognized Server Action returns
+      // static text/plain, triggering an internal InvariantError: "Expected RSC response, got text/plain".
+      const nextAction = req.headers["next-action"];
+      if (nextAction) {
+        const actionId = Array.isArray(nextAction) ? nextAction[0] : nextAction;
+        // In Next.js, valid server reference IDs are strictly 42 characters.
+        // Tokens like "r2s" (resume-to-stream) or "cachefn", or bots/scanners probing action endpoints
+        // cause Next.js to crash. We reject them cleanly here.
+        if (
+          !actionId ||
+          typeof actionId !== "string" ||
+          actionId.length !== 42 ||
+          actionId === "r2s" ||
+          actionId === "cachefn"
+        ) {
+          res.writeHead(404, {
+            "Content-Type": "application/json",
+            "x-nextjs-action-not-found": "1",
+          });
+          res.end(JSON.stringify({ error: "Server action not found" }));
+          return;
+        }
+      }
+
       await handle(req, res);
     } catch (err) {
+      // Gracefully handle Next.js 16 upstream RSC InvariantError without crashing or polluting logs
+      const isNextRscBug =
+        err &&
+        (err.name === "InvariantError" ||
+          (typeof err.message === "string" &&
+            (err.message.includes("Expected RSC response") ||
+              err.message.includes("Server Reference ID did not match"))));
+
+      if (isNextRscBug) {
+        if (!res.headersSent) {
+          res.writeHead(404, {
+            "Content-Type": "application/json",
+            "x-nextjs-action-not-found": "1",
+          });
+          res.end(JSON.stringify({ error: "Server action not found" }));
+        }
+        return;
+      }
+
       console.error("[server] Request handling error:", req.url, err);
       if (!res.headersSent) {
         res.statusCode = 500;

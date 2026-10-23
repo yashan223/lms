@@ -46,9 +46,21 @@ export async function GET(request: NextRequest) {
       tutorWhere.teaches_al = true;
     }
 
-    const courseWhere: any = {
-      status: "PUBLISHED",
-    };
+    const isTutorUser =
+      auth?.user?.role === Role.TUTOR ||
+      auth?.user?.role === Role.INSTRUCTOR ||
+      auth?.user?.role === Role.ADMIN;
+
+    const courseWhere: any = isTutorUser && auth?.user?.id
+      ? {
+          OR: [
+            { status: "PUBLISHED" },
+            { tutorId: auth.user.id },
+          ],
+        }
+      : {
+          status: "PUBLISHED",
+        };
 
     if (effectiveGrade === "O/L") {
       courseWhere.tutor = { teaches_ol: true };

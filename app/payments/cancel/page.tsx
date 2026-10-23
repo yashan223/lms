@@ -3,7 +3,7 @@
 import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { XCircle, ArrowLeft, RefreshCw, Sparkles, BookOpen } from "lucide-react";
+import { XCircle, ArrowLeft, RefreshCw, BookOpen } from "lucide-react";
 
 function PaymentCancelContent() {
   const searchParams = useSearchParams();
@@ -53,7 +53,6 @@ function PaymentCancelContent() {
             gap: "6px",
           }}
         >
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" style={{ width: 14, height: 14, color: "#2563eb" }} />
           <span>PulseEDU Global • Checkout Session</span>
         </span>
       </div>

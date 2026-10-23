@@ -43,3 +43,6 @@ next-env.d.ts
 # local persistent storage uploads
 storage/
 storage/uploads/
+
+# agent skills
+.agents/

@@ -158,6 +158,12 @@ export default function CoursesPage() {
 
   useEffect(() => {
     loadCourses(true);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "tutors" || params.get("mode") === "tutors") {
+        setViewMode("tutors");
+      }
+    }
   }, []);
 
   useRealtimeSync({

@@ -133,9 +133,9 @@ export function RoleTabsShowcase() {
                 <div className="lg:col-span-6 bg-slate-50 rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-inner">
                   <div className="relative aspect-video rounded-xl bg-slate-900 overflow-hidden shadow-md flex items-center justify-center group cursor-pointer">
                     <img
-                      src="/images/campus_library_study.jpg"
+                      src="/images/platform_classroom_mockup.png"
                       alt="Class Preview"
-                      className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 

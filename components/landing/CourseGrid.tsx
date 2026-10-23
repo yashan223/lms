@@ -18,6 +18,8 @@ import {
   GraduationCap,
   CalendarCheck,
   Award,
+  Star,
+  Atom,
 } from "lucide-react";
 import {
   FacultyTutor,
@@ -28,6 +30,21 @@ import {
 import { TrialRequestModal } from "@/components/trials/TrialRequestModal";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { getStudentAcademicLevel, isCourseOL, isCourseAL } from "@/lib/currency";
+import { ScrollReveal } from "@/components/landing/ScrollEffects";
+
+function getTutorPhoto(tutor: FacultyTutor): string {
+  if (tutor.avatar && (tutor.avatar.startsWith("http") || tutor.avatar.startsWith("/"))) {
+    return tutor.avatar;
+  }
+  const nameLower = (tutor.name || "").toLowerCase();
+  if (nameLower.includes("yashan")) {
+    return "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80";
+  }
+  if (nameLower.includes("enigma") || nameLower.includes("science")) {
+    return "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+  }
+  return "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80";
+}
 
 interface CourseGridProps {
   initialAcademicLevel?: "OL" | "AL" | null;
@@ -37,7 +54,7 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
   const [courses, setCourses] = useState<any[]>([]);
   const [tutors, setTutors] = useState<FacultyTutor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"tutors" | "classes">("tutors");
+  const [viewMode, setViewMode] = useState<"all" | "tutors" | "classes">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedLevel, setSelectedLevel] = useState<string>(initialAcademicLevel || "ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -146,6 +163,35 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
 
   useEffect(() => {
     loadCourses();
+
+    const handleSwitchTab = (e: Event) => {
+      const customEvent = e as CustomEvent<"all" | "tutors" | "classes">;
+      if (customEvent.detail) {
+        setViewMode(customEvent.detail);
+      }
+    };
+
+    const handleSearchEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ query?: string; level?: string; mode?: "all" | "tutors" | "classes" }>;
+      if (customEvent.detail) {
+        if (typeof customEvent.detail.query === "string") {
+          setSearchQuery(customEvent.detail.query);
+        }
+        if (customEvent.detail.level) {
+          setSelectedLevel(customEvent.detail.level);
+        }
+        if (customEvent.detail.mode) {
+          setViewMode(customEvent.detail.mode);
+        }
+      }
+    };
+
+    window.addEventListener("edupulse:switch-tab", handleSwitchTab);
+    window.addEventListener("edupulse:search", handleSearchEvent);
+    return () => {
+      window.removeEventListener("edupulse:switch-tab", handleSwitchTab);
+      window.removeEventListener("edupulse:search", handleSearchEvent);
+    };
   }, []);
 
   useRealtimeSync({
@@ -157,9 +203,11 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
-      const effectiveLevel = userAcademicLevel || selectedLevel;
+      const effectiveLevel = selectedLevel;
       const matchesCategory =
-        selectedCategory === "All" || course.category === selectedCategory;
+        selectedCategory === "All" ||
+        (course.category &&
+          course.category.toUpperCase() === selectedCategory.toUpperCase());
       const matchesLevel =
         effectiveLevel === "ALL" ||
         (effectiveLevel === "AL" && isCourseAL(course)) ||
@@ -174,13 +222,22 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
         (course.tags && course.tags.some((t: string) => t.toLowerCase().includes(q)));
       return matchesCategory && matchesLevel && matchesSearch;
     });
-  }, [courses, selectedCategory, selectedLevel, searchQuery, userAcademicLevel]);
+  }, [courses, selectedCategory, selectedLevel, searchQuery]);
 
   const filteredTutors = useMemo(() => {
     return tutors.filter((tutor) => {
-      const effectiveLevel = userAcademicLevel || selectedLevel;
+      const effectiveLevel = selectedLevel;
       const matchesCategory =
-        selectedCategory === "All" || tutor.category === selectedCategory;
+        selectedCategory === "All" ||
+        (tutor.category &&
+          tutor.category.toUpperCase() === selectedCategory.toUpperCase()) ||
+        (selectedCategory.toUpperCase() === "ICT" &&
+          (tutor.headline?.toUpperCase().includes("IT") ||
+            tutor.name?.toLowerCase().includes("yashan"))) ||
+        (selectedCategory.toUpperCase() === "BIOLOGY" &&
+          (tutor.headline?.toUpperCase().includes("SCIENCE") ||
+            tutor.headline?.toUpperCase().includes("ACADEMICS") ||
+            tutor.name?.toLowerCase().includes("enigma")));
 
       const matchesLevel =
         effectiveLevel === "ALL" ||
@@ -202,443 +259,307 @@ export function CourseGrid({ initialAcademicLevel }: CourseGridProps = {}) {
 
       return matchesCategory && matchesLevel && matchesSearch;
     });
-  }, [tutors, selectedCategory, selectedLevel, searchQuery, userAcademicLevel]);
+  }, [tutors, selectedCategory, selectedLevel, searchQuery]);
+
+  const isCurrentTutor = currentUser?.role === "TUTOR" || currentUser?.role === "INSTRUCTOR";
+
+  const currentTutorCard = useMemo(() => {
+    if (!isCurrentTutor || !currentUser) return null;
+    return (
+      tutors.find(
+        (t) =>
+          t.id === currentUser.id ||
+          (currentUser.tutorId && t.tutorId === currentUser.tutorId) ||
+          (currentUser.email && (t as any).email === currentUser.email) ||
+          t.name?.toLowerCase() === currentUser.name?.toLowerCase()
+      ) || ({
+        id: currentUser.id,
+        tutorId: currentUser.tutorId || null,
+        name: currentUser.name || "Academic Tutor",
+        avatar: currentUser.avatar || "",
+        headline: currentUser.headline || "Verified Academic Tutor",
+        bio: currentUser.bio || "",
+        category: "All",
+        level: "BOTH" as const,
+        levelLabel: "Cambridge/Edexcel Specialist",
+        rating: 5.0,
+        reviewCount: 0,
+        country: currentUser.country || "Sri Lanka",
+        classesCount:
+          courses.filter(
+            (c) => c.instructor?.id === currentUser.id || c.tutorId === currentUser.id
+          ).length || 1,
+        subjects: [],
+      } as FacultyTutor)
+    );
+  }, [isCurrentTutor, currentUser, tutors, courses]);
+
+  const displayCourses = useMemo(() => {
+    if (isCurrentTutor && currentUser?.id) {
+      // Prioritize and always include current tutor's own classes even if qualification filter is selected
+      const myCourses = courses.filter(
+        (c) => c.instructor?.id === currentUser.id || c.tutorId === currentUser.id
+      );
+      const otherCourses = filteredCourses.filter(
+        (c) => c.instructor?.id !== currentUser.id && c.tutorId !== currentUser.id
+      );
+      return [...myCourses, ...otherCourses];
+    }
+    return filteredCourses;
+  }, [isCurrentTutor, currentUser, courses, filteredCourses]);
+
+  const renderTutorCard = (tutor: FacultyTutor, idx: number) => (
+    <ScrollReveal key={`tutor-${tutor.id}`} animation="fade-up" delay={idx * 60} className="h-full">
+      <div className="h-full bg-white rounded-3xl p-5 border border-slate-200/90 hover:border-blue-600 hover:shadow-xl hover:shadow-blue-600/10 transition-all duration-300 flex flex-col justify-between group">
+        <div>
+          {/* Photo & Badges */}
+          <div className="relative rounded-2xl overflow-hidden aspect-[4/4.2] mb-4 bg-slate-100">
+            <img
+              src={getTutorPhoto(tutor)}
+              alt={tutor.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            {tutor.country && (
+              <span className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-[#0c2461] backdrop-blur-md shadow-xs">
+                {tutor.country}
+              </span>
+            )}
+          </div>
+
+          {/* Name & Role */}
+          <h3 className="text-lg font-bold font-heading text-[#0c2461] group-hover:text-blue-600 transition-colors mb-1 truncate">
+            {tutor.name}
+          </h3>
+          <p className="text-xs text-slate-500 line-clamp-1 mb-4">
+            {tutor.headline || tutor.levelLabel}
+          </p>
+
+          {/* 3-Column Stats Bar */}
+          <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-100 text-center mb-4">
+            <div>
+              <div className="text-xs font-bold text-[#0c2461]">
+                {tutor.classesCount || tutor.subjects?.length || 1}+
+              </div>
+              <div className="text-[10px] text-slate-500">Classes</div>
+            </div>
+            <div className="border-x border-slate-100">
+              <div className="text-xs font-bold text-[#0c2461] truncate px-0.5">
+                {tutor.level === "OL" ? "IGCSE & OL" : tutor.level === "AL" ? "AS & A2" : "O/L & A/L"}
+              </div>
+              <div className="text-[10px] text-slate-500">Track</div>
+            </div>
+            <div>
+              <div className="flex items-center justify-center gap-1 text-xs font-bold text-[#0c2461]">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span>{tutor.rating || 4.9}</span>
+              </div>
+              <div className="text-[10px] text-slate-500">Rating</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        {currentUser?.id === tutor.id ? (
+          <Link
+            href="/tutor/profile"
+            className="w-full py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 group/btn cursor-pointer"
+          >
+            <span>Your Tutor Profile</span>
+            <ArrowRight className="w-3.5 h-3.5 transform group-hover/btn:translate-x-1 transition-transform" />
+          </Link>
+        ) : (
+          <button
+            onClick={() => {
+              setSelectedTrialTutorId(tutor.id);
+              setShowTrialModal(true);
+            }}
+            className="w-full py-2.5 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 group/btn cursor-pointer"
+          >
+            <span>Book Free Trial</span>
+            <ArrowRight className="w-3.5 h-3.5 transform group-hover/btn:translate-x-1 transition-transform" />
+          </button>
+        )}
+      </div>
+    </ScrollReveal>
+  );
+
+  const renderCourseCard = (course: any, idx: number) => (
+    <ScrollReveal key={`course-${course.id}`} animation="fade-up" delay={idx * 60} className="h-full">
+      <div className="h-full bg-white rounded-3xl p-5 border border-slate-200/90 hover:border-blue-600 hover:shadow-xl hover:shadow-blue-600/10 transition-all duration-300 flex flex-col justify-between group">
+        <div>
+          {/* Photo & Badges */}
+          <Link
+            href={`/classes/${course.slug}`}
+            className="block relative rounded-2xl overflow-hidden aspect-[4/4.2] mb-4 bg-gradient-to-br from-[#0c2461] to-[#1e3799]"
+          >
+            {course.thumbnail ? (
+              <img
+                src={course.thumbnail}
+                alt={course.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center group-hover:scale-105 transition-transform duration-500">
+                <BookOpen className="w-10 h-10 text-white/40 mb-2" />
+                <span className="text-white/80 font-bold text-xs uppercase tracking-wider">{course.category}</span>
+              </div>
+            )}
+            {course.examBoard && (
+              <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-[#0c2461] backdrop-blur-md shadow-xs">
+                {course.examBoard}
+              </span>
+            )}
+          </Link>
+
+          {/* Name & Role */}
+          <Link href={`/classes/${course.slug}`}>
+            <h3 className="text-lg font-bold font-heading text-[#0c2461] group-hover:text-blue-600 transition-colors mb-1 truncate">
+              {course.title}
+            </h3>
+          </Link>
+          <p className="text-xs text-slate-500 line-clamp-1 mb-4">
+            {course.instructor?.name || "Expert Faculty"} • {course.category}
+          </p>
+
+          {/* 3-Column Stats Bar */}
+          <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-100 text-center mb-4">
+            <div>
+              <div className="text-xs font-bold text-[#0c2461]">
+                {course.lessonsCount || 10}
+              </div>
+              <div className="text-[10px] text-slate-500">Lessons</div>
+            </div>
+            <div className="border-x border-slate-100">
+              <div className="text-xs font-bold text-[#0c2461] truncate px-0.5">
+                {course.durationHours || 12}h
+              </div>
+              <div className="text-[10px] text-slate-500">Duration</div>
+            </div>
+            <div>
+              <div className="flex items-center justify-center gap-1 text-xs font-bold text-[#0c2461]">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span>4.9</span>
+              </div>
+              <div className="text-[10px] text-slate-500">Rating</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <Link
+          href={
+            currentUser?.id === course.instructor?.id || currentUser?.id === course.tutorId
+              ? `/tutor/courses/${course.id}/edit`
+              : `/classes/${course.slug}`
+          }
+          className="w-full py-2.5 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 group/btn cursor-pointer"
+        >
+          <span>
+            {currentUser?.id === course.instructor?.id || currentUser?.id === course.tutorId
+              ? "Manage Your Class"
+              : "View Class & Enroll"}
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 transform group-hover/btn:translate-x-1 transition-transform" />
+        </Link>
+      </div>
+    </ScrollReveal>
+  );
 
   return (
-    <section id="courses" className="py-20 bg-white border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="courses" className="py-20 lg:py-24 bg-[#f8f8f8] border-b border-slate-200">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#0c2461] tracking-tight mb-3">
-              Cambridge/Edexcel AS, A2 & OL Subject Classes & Tutors
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600">
-              Unit-by-unit syllabus coverage, comprehensive tuition walkthroughs, and structured topic individual classes.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/classes"
-              className="flex px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold whitespace-nowrap transition-colors items-center gap-1 shrink-0"
-            >
-              <span>Full Directory</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 shadow-2xs">
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            <button
-              onClick={() => setViewMode("tutors")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                viewMode === "tutors"
-                  ? "bg-[#0c2461] text-white shadow-xs"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-              }`}
-            >
-              <GraduationCap className="w-4 h-4 text-blue-300" />
-              <span>O/L & A/L Tutors with Subjects</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                  viewMode === "tutors" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
-                }`}
-              >
-                {filteredTutors.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setViewMode("classes")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                viewMode === "classes"
-                  ? "bg-[#0c2461] text-white shadow-xs"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-              }`}
-            >
-              <BookOpen className="w-4 h-4 text-sky-400" />
-              <span>Individual Classes</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                  viewMode === "classes" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
-                }`}
-              >
-                {filteredCourses.length}
-              </span>
-            </button>
-          </div>
-
-          {userAcademicLevel ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">
-                Curriculum:
-              </span>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0c2461] text-white shadow-2xs">
-                {userAcademicLevel === "OL" ? (
-                  <>
-                    <BookOpen className="w-3.5 h-3.5 text-blue-200" />
-                    <span>Cambridge/Edexcel IGCSE & OL</span>
-                  </>
-                ) : (
-                  <>
-                    <GraduationCap className="w-3.5 h-3.5 text-blue-200" />
-                    <span>Cambridge/Edexcel AS & A2</span>
-                  </>
-                )}
-                <span className="text-[9px] bg-white/20 text-white px-1.5 py-0.2 rounded font-extrabold uppercase">
-                  Your Track
-                </span>
-              </div>
+        <ScrollReveal animation="fade-up" duration={700}>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-black font-heading text-[#0c2461] tracking-tight leading-tight">
+                Explore Classes.
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 mt-2">
+                Unit-by-unit syllabus coverage, comprehensive tuition walkthroughs, and structured topic individual classes.
+              </p>
             </div>
-          ) : (
-            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden md:inline">
-                Level:
-              </span>
-              {[
-                { id: "ALL", label: "All Qualifications" },
-                { id: "AL", label: "Cambridge/Edexcel AS and A2" },
-                { id: "OL", label: "Cambridge/Edexcel IGCSE and OL" },
-              ].map((lvl) => (
-                <button
-                  key={lvl.id}
-                  onClick={() => setSelectedLevel(lvl.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    selectedLevel === lvl.id
-                      ? "bg-blue-600 text-white shadow-2xs"
-                      : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+
+            <div className="flex items-center gap-3">
+              <Link
+                href="/classes"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-600 text-[#0c2461] hover:text-blue-600 text-xs font-bold whitespace-nowrap transition-all shadow-xs"
+              >
+                <span>Full Directory</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Qualification Level Filter Tabs (Cambridge/Edexcel AS & A2 and IGCSE & OL) */}
+        <div className="bg-white p-2.5 rounded-2xl border border-slate-200/90 flex flex-wrap items-center justify-start gap-2 mb-8 shadow-xs">
+          {[
+            { id: "ALL", label: "All Qualifications" },
+            { id: "AL", label: "Cambridge/Edexcel AS and A2" },
+            { id: "OL", label: "Cambridge/Edexcel IGCSE and OL" },
+          ].map((lvl) => {
+            const isSelected = selectedLevel === lvl.id;
+
+            // Calculate matching count of courses for each level
+            const count = courses.filter((c) =>
+              lvl.id === "ALL"
+                ? true
+                : lvl.id === "AL"
+                ? isCourseAL(c)
+                : isCourseOL(c)
+            ).length;
+
+            return (
+              <button
+                key={lvl.id}
+                onClick={() => setSelectedLevel(lvl.id)}
+                className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-slate-50 text-[#0c2461] hover:bg-slate-100 border border-slate-200/80"
+                }`}
+              >
+                <span>{lvl.label}</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    isSelected
+                      ? "bg-white/20 text-white"
+                      : "bg-white text-slate-700"
                   }`}
                 >
-                  {lvl.label}
-                </button>
-              ))}
-            </div>
-          )}
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-8 scrollbar-none">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                selectedCategory === cat
-                  ? "bg-[#0c2461] text-white shadow-sm shadow-blue-950/25 font-bold"
-                  : "bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-800 border border-slate-200"
-              }`}
+        {/* Classes Grid */}
+        {displayCourses.length > 0 || currentTutorCard ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {currentTutorCard && renderTutorCard(currentTutorCard, 0)}
+            {displayCourses.map((course, idx) =>
+              renderCourseCard(course, idx + (currentTutorCard ? 1 : 0))
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
+            <p className="text-slate-500 font-semibold mb-2">
+              No classes found matching your criteria.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategory("All");
+                setSelectedLevel("ALL");
+              }}
             >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {viewMode === "tutors" && (
-          <>
-            {filteredTutors.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                {filteredTutors.map((tutor) => (
-                  <div
-                    key={tutor.id}
-                    className="group rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="relative shrink-0">
-                          <Avatar className="w-16 h-16 rounded-2xl border-2 border-blue-100 shadow-xs">
-                            <AvatarImage src={tutor.avatar} alt={tutor.name} className="object-cover" />
-                            <AvatarFallback className="text-base font-bold bg-[#0c2461] text-white">
-                              {tutor.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div
-                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-white"
-                            title="Verified Active Tutor"
-                          >
-                            <ShieldCheck className="w-3 h-3" />
-                          </div>
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <h3 className="font-extrabold text-slate-900 text-base leading-snug">
-                              {tutor.name}
-                            </h3>
-                            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold py-0.5 px-2 rounded-md">
-                              Verified
-                            </Badge>
-                          </div>
-
-                          <p className="text-xs font-semibold text-blue-700 mt-1 line-clamp-2">
-                            {tutor.headline}
-                          </p>
-
-                          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                            <Badge className="bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold py-0.5">
-                              {tutor.levelLabel}
-                            </Badge>
-                            {tutor.country && (
-                              <span className="text-[11px] text-slate-400 font-medium">
-                                • {tutor.country}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {Boolean(parseTutorBio(tutor.bio)) && (
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                          <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                            {parseTutorBio(tutor.bio)}
-                          </p>
-                        </div>
-                      )}
-
-                      {tutor.subjects && tutor.subjects.length > 0 && (
-                        <div className="space-y-2 pt-2 border-t border-slate-100">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
-                              London O/L & A/L Subjects:
-                            </span>
-                            <span className="text-[11px] font-bold text-blue-600">
-                              {tutor.subjects.length} Units
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-1.5">
-                            {tutor.subjects.map((sub, idx) => (
-                              <span
-                                key={idx}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
-                                  sub.level === "AL"
-                                    ? "bg-blue-50/80 text-blue-900 border-blue-200 hover:bg-blue-100/80"
-                                    : "bg-blue-100/70 text-blue-950 border-blue-200 hover:bg-blue-100"
-                                }`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    sub.level === "AL" ? "bg-blue-600" : "bg-[#0c2461]"
-                                  }`}
-                                />
-                                <span className="font-mono text-[10px] font-bold opacity-80">
-                                  {sub.code}
-                                </span>
-                                <span>{sub.name}</span>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                      <button
-                        onClick={() => {
-                          setSelectedTrialTutorId(tutor.id);
-                          setShowTrialModal(true);
-                        }}
-                        className="flex-1 h-10 px-3.5 rounded-xl bg-[#0c2461] hover:bg-[#12366b] text-white text-xs font-bold shadow-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                        title="Book a 30-min free online trial session"
-                      >
-                        <CalendarCheck className="w-3.5 h-3.5 text-blue-200" />
-                        <span>Free 1-on-1 Trial</span>
-                      </button>
-
-                      <Link
-                        href="/classes"
-                        className="h-10 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-200 inline-flex items-center justify-center gap-1.5 transition-all"
-                      >
-                        <span>Classes</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-slate-50 rounded-3xl border border-slate-200">
-                <p className="text-slate-500 font-semibold mb-2">
-                  No tutors found matching your criteria.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory("All");
-                    setSelectedLevel("ALL");
-                  }}
-                >
-                  Reset Filters
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-
-        {viewMode === "classes" && (
-          <>
-            {filteredCourses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                {filteredCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="group rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
-                  >
-                    <div>
-                      <Link
-                        href={`/classes/${course.slug}`}
-                        prefetch={true}
-                        className="block relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-[#0c2461] to-[#1e3799] cursor-pointer group/img"
-                      >
-                        {course.thumbnail ? (
-                          <img
-                            src={course.thumbnail}
-                            alt={course.title}
-                            className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center group-hover/img:scale-105 transition-transform duration-300">
-                            <BookOpen className="w-10 h-10 text-white/30 mb-1.5" />
-                            <span className="text-white/70 font-semibold text-xs uppercase tracking-wider">{course.category}</span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
-
-                        <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                          <Badge
-                            variant="default"
-                            className="bg-white/95 text-[#0c2461] backdrop-blur-md text-[11px] font-bold shadow-xs"
-                          >
-                            {course.level}
-                          </Badge>
-                          {course.examBoard && (
-                            <Badge
-                              variant="sky"
-                              className="bg-sky-500 text-white font-bold text-[10px]"
-                            >
-                              {course.examBoard}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="absolute bottom-3 left-3 flex items-center text-white text-xs">
-                          <span className="bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md font-mono text-[11px]">
-                            {course.subjectCode}
-                          </span>
-                        </div>
-                      </Link>
-
-                      <div className="p-5 sm:p-6 space-y-3.5">
-                        <Link href={`/classes/${course.slug}`} prefetch={true}>
-                          <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-700 transition-colors leading-snug line-clamp-2">
-                            {course.title}
-                          </h3>
-                        </Link>
-
-                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                          {course.subtitle}
-                        </p>
-
-                        <div className="flex items-center gap-4 text-xs text-slate-500 py-1 border-y border-slate-100">
-                          <span className="flex items-center gap-1 font-medium">
-                            <Clock className="w-3.5 h-3.5 text-blue-600" />
-                            {course.durationHours} hrs
-                          </span>
-                          <span className="flex items-center gap-1 font-medium">
-                            <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                            {course.lessonsCount} lessons
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2.5 pt-1">
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage
-                              src={course.instructor.avatar}
-                              alt={course.instructor.name}
-                            />
-                            <AvatarFallback>
-                              {course.instructor.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <div className="text-xs font-bold text-slate-800 truncate">
-                              {course.instructor.name}
-                            </div>
-                            <div className="text-[10px] text-slate-500 truncate">
-                              {course.instructor.roleTitle}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="px-5 sm:px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
-                      {isLoggedIn ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shadow-2xs">
-                            <Coins className="w-4 h-4" />
-                          </div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-slate-900">
-                              {course.price}
-                            </span>
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                              Tokens
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <Link
-                          href="/register"
-                          className="group/lock flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
-                        >
-                          <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lock:bg-blue-50 border border-slate-200 group-hover/lock:border-blue-200 flex items-center justify-center text-slate-400 group-hover/lock:text-blue-600 transition-colors">
-                            <Lock className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-700 group-hover/lock:text-blue-600">
-                              Sign in to view
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              Student Pricing
-                            </span>
-                          </div>
-                        </Link>
-                      )}
-
-                      <Link
-                        href={`/classes/${course.slug}`}
-                        prefetch={true}
-                        className="px-4 py-2 rounded-xl bg-[#0c2461] hover:bg-[#103080] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
-                      >
-                        <span>View Syllabus</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-slate-50 rounded-3xl border border-slate-200">
-                <p className="text-slate-500 font-semibold mb-2">
-                  No syllabus units found matching &quot;{searchQuery}&quot;
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory("All");
-                    setSelectedLevel("ALL");
-                  }}
-                >
-                  Reset Filters
-                </Button>
-              </div>
-            )}
-          </>
+              Reset Filters
+            </Button>
+          </div>
         )}
 
         <TrialRequestModal

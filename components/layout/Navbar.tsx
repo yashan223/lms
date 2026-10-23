@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   GraduationCap,
   Lock,
@@ -13,6 +13,8 @@ import {
   LayoutDashboard,
   LogOut,
   BookOpen,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -23,6 +25,34 @@ export function Navbar() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [confirmLogoutModalOpen, setConfirmLogoutModalOpen] = useState(false);
+  const pathname = usePathname();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showNavLogo, setShowNavLogo] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 24);
+
+      if (pathname === "/") {
+        const heroEl = document.getElementById("hero");
+        if (heroEl) {
+          const heroRect = heroEl.getBoundingClientRect();
+          // Hide top nav logo while hero section is in view
+          setShowNavLogo(heroRect.bottom <= 120);
+        } else {
+          setShowNavLogo(scrollY > 380);
+        }
+      } else {
+        // On non-home routes, always display the nav logo
+        setShowNavLogo(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -69,6 +99,7 @@ export function Navbar() {
         element.scrollIntoView({ behavior: "smooth" });
       }
       window.history.replaceState(null, "", `/#${targetId}`);
+      setMobileMenuOpen(false);
     }
   };
 
@@ -87,282 +118,246 @@ export function Navbar() {
     window.location.href = "/";
   };
 
-  const displayName = useMemo(() => {
-    if (!userEmail) {
-      return userRole ? `${userRole.charAt(0) + userRole.slice(1).toLowerCase()}` : "Account";
-    }
-    const username = userEmail.split("@")[0];
-    return username
-      .split(/[._-]/)
-      .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  }, [userEmail, userRole]);
-
-  const roleConfig = useMemo(() => {
-    switch (userRole?.toUpperCase()) {
-      case "ADMIN":
-        return {
-          label: "System Admin",
-          shortRole: "Admin",
-          badgeVariant: "roleAdmin" as const,
-          avatarGradient: "from-blue-700 via-blue-800 to-[#0c2461]",
-          icon: ShieldCheck,
-        };
-      case "TUTOR":
-      case "INSTRUCTOR":
-        return {
-          label: "Tutor",
-          shortRole: "Tutor",
-          badgeVariant: "roleTutor" as const,
-          avatarGradient: "from-blue-600 via-sky-600 to-blue-700",
-          icon: BookOpen,
-        };
-      case "STUDENT":
-      default:
-        return {
-          label: "Student",
-          shortRole: "Student",
-          badgeVariant: "roleStudent" as const,
-          avatarGradient: "from-blue-500 via-blue-600 to-sky-700",
-          icon: GraduationCap,
-        };
-    }
-  }, [userRole]);
-
   return (
-    <header className="w-full z-40 bg-white/95 backdrop-blur-md text-slate-800 shadow-2xs relative border-b border-slate-200">
-      <div className="max-w-[1440px] mx-auto flex items-center justify-between min-h-[76px] px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 group py-1.5 sm:py-2">
-          <img
-            src="/logo-wide.png"
-            alt="PulseEDU Global"
-            className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto object-contain transition-transform group-hover:scale-[1.02]"
-          />
-        </Link>
-
-        <nav className="hidden lg:flex items-center gap-8 text-xs font-bold tracking-widest uppercase">
+    <>
+      {/* ─── Main Navigation Header (Dynamic Elevation on Scroll) ─── */}
+      <header
+        className={`sticky top-0 w-full z-40 transition-all duration-300 relative ${
+          isScrolled
+            ? "bg-white/95 backdrop-blur-md shadow-md shadow-blue-900/5 border-b border-blue-200/60"
+            : "bg-white/95 backdrop-blur-md shadow-xs border-b border-slate-200/80"
+        }`}
+      >
+        <div
+          className={`max-w-[1440px] mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
+            isScrolled ? "min-h-[68px]" : "min-h-[76px]"
+          }`}
+        >
+          
+          {/* Brand Logo (hidden when on hero section) */}
           <Link
             href="/"
-            className="text-blue-700 hover:text-blue-800 transition-colors py-1 font-black"
+            className={`flex items-center gap-2 group py-1.5 sm:py-2 transition-all duration-300 ${
+              showNavLogo
+                ? "opacity-100 translate-y-0 pointer-events-auto"
+                : "opacity-0 -translate-y-2 pointer-events-none"
+            }`}
+            aria-label="PulseEdu Home"
           >
-            Home
+            <img
+              src="/logo-wide.png"
+              alt="PulseEdu"
+              className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+            />
           </Link>
-          <Link
-            href="/#about"
-            onClick={(e) => handleAnchorClick(e, "about")}
-            className="text-slate-600 hover:text-blue-700 transition-colors py-1"
-          >
-            ABOUT
-          </Link>
-          <Link
-            href="/#faq"
-            onClick={(e) => handleAnchorClick(e, "faq")}
-            className="text-slate-600 hover:text-blue-700 transition-colors py-1"
-          >
-            FAQ
-          </Link>
-        </nav>
 
-        <div className="hidden lg:flex items-center gap-3">
-          {userRole ? (
-            <div className="flex items-center gap-2.5">
-              {userRole === "ADMIN" ? (
-                <Link
-                  href="/admin"
-                  title="Admin Command Console"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
-                >
-                  <ShieldCheck className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
-                  <span>Admin Console</span>
-                </Link>
-              ) : userRole === "TUTOR" || userRole === "INSTRUCTOR" ? (
-                <Link
-                  href="/tutor"
-                  title="Tutor Studio"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
-                >
-                  <GraduationCap className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
-                  <span>Tutor Studio</span>
-                </Link>
-              ) : (
-                <Link
-                  href="/dashboard"
-                  title="My Dashboard"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
-                  <span className="hidden xl:inline">Dashboard</span>
-                </Link>
-              )}
-
-              <button
-                onClick={() => setConfirmLogoutModalOpen(true)}
-                title="Sign Out"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-600 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-              >
-                <LogOut className="w-4 h-4 text-red-500 transition-transform group-hover:scale-110" />
-                <span className="hidden xl:inline">Sign Out</span>
-              </button>
-
-            </div>
-          ) : (
-            <>
-              <Link
-                href="/register"
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-800 hover:bg-blue-50/80 border border-slate-300 transition-all flex items-center gap-1.5"
-              >
-                <UserPlus className="w-3.5 h-3.5 text-blue-600" />
-                <span>Register</span>
-              </Link>
-
-              <Link
-                href="/login"
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20 transition-all flex items-center gap-1.5"
-              >
-                <Lock className="w-3.5 h-3.5 text-white" />
-                <span>Sign In</span>
-              </Link>
-            </>
-          )}
-        </div>
-
-        <div className="flex lg:hidden items-center gap-2">
-          <Link
-            href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : userRole ? "/dashboard" : "/login"}
-            className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs whitespace-nowrap"
-          >
-            <span className="hidden sm:inline">
-              {userRole === "ADMIN" ? "Admin Console" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "Tutor Studio" : userRole ? "Dashboard" : "Sign In"}
-            </span>
-            <span className="sm:hidden">
-              {userRole === "ADMIN" ? "Admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "Studio" : userRole ? "Dashboard" : "Sign In"}
-            </span>
-          </Link>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-1.5 rounded-lg text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
-            aria-label="Toggle Navigation"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-      </div>
-
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-slate-200 px-5 py-4 space-y-4 animate-in slide-in-from-top-2 shadow-lg">
-          {userRole && (
-            <Link
-              href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : "/dashboard"}
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-3 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/30 to-blue-50/20 border border-slate-200/80 flex items-center gap-3 hover:border-blue-300 transition-colors"
-            >
-              <div
-                className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${roleConfig.avatarGradient} text-white flex items-center justify-center text-sm font-black shadow-xs ring-2 ring-white shrink-0`}
-              >
-                {userEmail ? userEmail.charAt(0).toUpperCase() : (userRole?.charAt(0) || "U")}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-900 truncate">
-                    {displayName}
-                  </span>
-                  <Badge variant={roleConfig.badgeVariant} className="text-[9px] px-1.5 py-0 font-bold">
-                    {roleConfig.shortRole}
-                  </Badge>
-                </div>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                  {userEmail || `${userRole?.toLowerCase()}@edupulse.uk`}
-                </p>
-              </div>
-            </Link>
-          )}
-
-          <div className="flex flex-col gap-2 text-xs font-bold tracking-wider uppercase">
-            {userRole && (
-              <Link
-                href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : "/dashboard"}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-blue-700 hover:text-blue-800 py-1.5 px-2 rounded-lg hover:bg-blue-50/50 font-black"
-              >
-                {userRole === "ADMIN" ? "ADMIN COMMAND CONSOLE" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "TUTOR STUDIO" : "MY DASHBOARD"}
-              </Link>
-            )}
+          {/* Center Navigation Links (Edunex Style) */}
+          <nav className="hidden xl:flex items-center gap-7 text-xs sm:text-sm font-bold font-heading text-[#0c2461]">
             <Link
               href="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-blue-700 hover:text-blue-800 py-1.5 px-2 rounded-lg hover:bg-blue-50/50"
+              className="text-blue-600 hover:text-blue-700 transition-colors py-1 font-extrabold"
             >
               Home
             </Link>
             <Link
-              href="/#about"
-              onClick={(e) => {
-                setMobileMenuOpen(false);
-                handleAnchorClick(e, "about");
-              }}
-              className="text-slate-700 hover:text-blue-700 py-1.5 px-2 rounded-lg hover:bg-slate-50"
+              href="/#courses"
+              onClick={(e) => handleAnchorClick(e, "courses")}
+              className="text-[#0c2461] hover:text-blue-600 transition-colors py-1"
             >
-              ABOUT
+              Classes
+            </Link>
+            <Link
+              href="/#tutors"
+              onClick={(e) => handleAnchorClick(e, "tutors")}
+              className="text-[#0c2461] hover:text-blue-600 transition-colors py-1"
+            >
+              Tutors
+            </Link>
+            <Link
+              href="/#about"
+              onClick={(e) => handleAnchorClick(e, "about")}
+              className="text-[#0c2461] hover:text-blue-600 transition-colors py-1"
+            >
+              About Us
             </Link>
             <Link
               href="/#faq"
-              onClick={(e) => {
-                setMobileMenuOpen(false);
-                handleAnchorClick(e, "faq");
-              }}
-              className="text-slate-700 hover:text-blue-700 py-1.5 px-2 rounded-lg hover:bg-slate-50"
+              onClick={(e) => handleAnchorClick(e, "faq")}
+              className="text-[#0c2461] hover:text-blue-600 transition-colors py-1"
             >
-              FAQ
+              FAQs
             </Link>
-          </div>
+          </nav>
 
-          <div className="pt-3 border-t border-slate-200 space-y-2">
+          {/* Right Action Area */}
+          <div className="hidden lg:flex items-center gap-3">
             {userRole ? (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setConfirmLogoutModalOpen(true);
-                }}
-                className="w-full px-3 py-2.5 rounded-xl text-xs font-bold bg-red-50 text-red-700 hover:bg-red-100/80 text-center flex items-center justify-center gap-2 border border-red-200 cursor-pointer transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </button>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  href="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-300 text-slate-700 text-center flex items-center justify-center gap-1.5 hover:bg-slate-50"
+              <div className="flex items-center gap-2.5">
+                {userRole === "ADMIN" ? (
+                  <Link
+                    href="/admin"
+                    title="Admin Command Console"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
+                    <span>Admin Console</span>
+                  </Link>
+                ) : userRole === "TUTOR" || userRole === "INSTRUCTOR" ? (
+                  <Link
+                    href="/tutor"
+                    title="Tutor Studio"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 text-blue-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
+                  >
+                    <GraduationCap className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
+                    <span>Tutor Studio</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/dashboard"
+                    title="My Dashboard"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-700 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-blue-600 transition-transform group-hover:scale-110" />
+                    <span>Dashboard</span>
+                  </Link>
+                )}
+
+                <button
+                  onClick={() => setConfirmLogoutModalOpen(true)}
+                  title="Sign Out"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-600 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
                 >
-                  <UserPlus className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Register</span>
-                </Link>
+                  <LogOut className="w-4 h-4 text-red-500 transition-transform group-hover:scale-110" />
+                  <span className="hidden xl:inline">Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white text-center flex items-center justify-center gap-1.5 shadow-xs"
+                  className="px-4 py-2 text-xs sm:text-sm font-bold text-[#0c2461] hover:text-blue-600 transition-colors"
                 >
-                  <Lock className="w-3.5 h-3.5 text-white" />
-                  <span>Sign In</span>
+                  Log in
+                </Link>
+
+                <Link
+                  href="/register"
+                  className="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-600/25 flex items-center gap-2 transition-all hover:scale-105 group"
+                >
+                  <span>Register</span>
+                  <span className="w-6 h-6 rounded-full bg-white text-blue-600 flex items-center justify-center group-hover:translate-x-0.5 transition-transform shadow-xs">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
                 </Link>
               </div>
             )}
           </div>
-        </div>
-      )}
 
+          {/* Mobile Hamburger Button */}
+          <div className="flex lg:hidden items-center gap-2">
+            <Link
+              href={userRole === "ADMIN" ? "/admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "/tutor" : userRole ? "/dashboard" : "/login"}
+              className="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs whitespace-nowrap"
+            >
+              {userRole === "ADMIN" ? "Admin" : (userRole === "TUTOR" || userRole === "INSTRUCTOR") ? "Studio" : userRole ? "Dashboard" : "Log In"}
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-lg text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer"
+              aria-label="Toggle Navigation"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+
+        </div>
+
+        {/* Mobile Dropdown Drawer */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-white border-t border-slate-200 px-5 py-4 space-y-4 animate-in slide-in-from-top-2 shadow-lg">
+            <nav className="flex flex-col space-y-2.5 text-sm font-bold font-heading text-[#0c2461]">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-blue-600 py-1"
+              >
+                Home
+              </Link>
+              <Link
+                href="/#courses"
+                onClick={(e) => handleAnchorClick(e, "courses")}
+                className="hover:text-blue-600 py-1"
+              >
+                Classes
+              </Link>
+              <Link
+                href="/#tutors"
+                onClick={(e) => handleAnchorClick(e, "tutors")}
+                className="hover:text-blue-600 py-1"
+              >
+                Tutors
+              </Link>
+              <Link
+                href="/#about"
+                onClick={(e) => handleAnchorClick(e, "about")}
+                className="hover:text-blue-600 py-1"
+              >
+                About Us
+              </Link>
+              <Link
+                href="/#faq"
+                onClick={(e) => handleAnchorClick(e, "faq")}
+                className="hover:text-blue-600 py-1"
+              >
+                FAQs
+              </Link>
+            </nav>
+
+            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+              {!userRole ? (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-2.5 text-center text-xs font-bold text-[#0c2461] border border-slate-200 rounded-full"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-2.5 text-center text-xs font-bold bg-blue-600 text-white rounded-full shadow-sm"
+                  >
+                    Register
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setConfirmLogoutModalOpen(true);
+                  }}
+                  className="w-full py-2 text-center text-xs font-bold text-red-600 bg-red-50 rounded-full"
+                >
+                  Sign Out
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={confirmLogoutModalOpen}
-        onClose={() => setConfirmLogoutModalOpen(false)}
-        onConfirm={handleSignOut}
-        variant="danger"
-        title="Sign Out of EduPulse?"
-        description="Are you sure you want to end your session? You will need to sign in again to access your active class materials, syllabus vaults, and study guides."
+        title="Sign Out"
+        description="Are you sure you want to sign out of your EduPulse account?"
         confirmText="Sign Out"
         cancelText="Stay Signed In"
+        variant="danger"
+        onConfirm={handleSignOut}
+        onClose={() => setConfirmLogoutModalOpen(false)}
       />
-    </header>
+    </>
   );
 }

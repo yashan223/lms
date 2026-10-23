@@ -1,81 +1,71 @@
 "use client";
 
 import React from "react";
-import { PLATFORM_METRICS } from "@/lib/constants";
-import {
-  Users,
-  Award,
-  CheckCircle,
-  Building2,
-  TrendingUp,
-} from "lucide-react";
+import { Users, BookOpen, GraduationCap, Award } from "lucide-react";
+import { ScrollReveal, AnimatedCounter } from "@/components/landing/ScrollEffects";
 
 export function MetricsStrip() {
-  const metricIcons = [Users, Award, CheckCircle, Building2];
-
-  const partners = [
-    { name: "Oxford Academic", tag: "Research Partner" },
-    { name: "Cambridge Guild", tag: "Curriculum Sponsor" },
-    { name: "Earth Sciences Inst.", tag: "Accredited Educators" },
-    { name: "Harvard Educator Net", tag: "Academic Partner" },
-    { name: "Sorbonne Alliance", tag: "Fellowship Network" },
-    { name: "Stanford Research", tag: "Global Partner" },
+  const metrics = [
+    {
+      value: "25,000+",
+      label: "Active Students",
+      desc: "Enrolled in live & syllabus classes",
+      icon: Users,
+      color: "text-blue-600 bg-blue-50",
+    },
+    {
+      value: "150+",
+      label: "Quality Classes",
+      desc: "Cambridge & Edexcel modules",
+      icon: BookOpen,
+      color: "text-blue-700 bg-blue-50/80",
+    },
+    {
+      value: "80+",
+      label: "Expert Instructors",
+      desc: "Certified syllabus specialists",
+      icon: GraduationCap,
+      color: "text-[#0c2461] bg-blue-100/60",
+    },
+    {
+      value: "99.4%",
+      label: "Satisfaction Rate",
+      desc: "Verified student & parent ratings",
+      icon: Award,
+      color: "text-sky-600 bg-sky-50",
+    },
   ];
 
   return (
-    <section className="py-12 bg-white border-y border-blue-100/70">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12">
-          {PLATFORM_METRICS.map((metric, idx) => {
-            const Icon = metricIcons[idx % metricIcons.length];
+    <section className="py-14 bg-white border-b border-slate-100">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          {metrics.map((item, idx) => {
+            const Icon = item.icon;
             return (
-              <div
+              <ScrollReveal
                 key={idx}
-                className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-50/40 via-white to-slate-50 border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200"
+                animation="fade-up"
+                delay={idx * 120}
+                className="h-full"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                    <Icon className="w-5 h-5" />
+                <div className="h-full p-6 rounded-2xl bg-[#f8f8f8] border border-slate-200/80 hover:border-blue-600 hover:shadow-lg hover:shadow-blue-600/5 transition-all flex flex-col items-center text-center group">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${item.color}`}>
+                    <Icon className="w-7 h-7" />
                   </div>
-                  <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    {metric.growth}
-                  </span>
+                  <div className="text-3xl sm:text-4xl font-black font-heading text-[#0c2461] tracking-tight mb-1">
+                    <AnimatedCounter value={item.value} duration={1500} />
+                  </div>
+                  <div className="text-sm font-bold text-[#0c2461] mb-1">
+                    {item.label}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {item.desc}
+                  </div>
                 </div>
-
-                <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-1">
-                  {metric.value}
-                </div>
-                <div className="text-sm font-bold text-slate-800 mb-0.5">
-                  {metric.label}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {metric.subtext}
-                </div>
-              </div>
+              </ScrollReveal>
             );
           })}
-        </div>
-
-        <div className="pt-4 border-t border-slate-100">
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">
-            Partnered with leading universities & academic faculties worldwide
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-center justify-items-center">
-            {partners.map((partner, index) => (
-              <div
-                key={index}
-                className="px-4 py-2.5 rounded-xl bg-slate-50/80 border border-slate-200/60 w-full text-center hover:bg-blue-50/60 hover:border-blue-200 transition-colors"
-              >
-                <div className="font-extrabold text-sm text-slate-700 tracking-tight">
-                  {partner.name}
-                </div>
-                <div className="text-[10px] text-blue-600 font-medium">
-                  {partner.tag}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>

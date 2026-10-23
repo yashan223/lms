@@ -413,7 +413,7 @@ export async function POST(request: NextRequest) {
           price: isAdmin && Number.isFinite(tokenPrice) ? tokenPrice : 0,
           olPrice: isAdmin ? olTokenPrice : null,
           level: (level as CourseLevel) || CourseLevel.ADVANCED,
-          status: isAdmin && status === CourseStatus.PUBLISHED ? CourseStatus.PUBLISHED : (status === CourseStatus.DRAFT ? CourseStatus.DRAFT : CourseStatus.PENDING_REVIEW),
+          status: status === CourseStatus.DRAFT ? CourseStatus.DRAFT : CourseStatus.PUBLISHED,
           tutorId: tutor.id,
           modules: {
             create: [
